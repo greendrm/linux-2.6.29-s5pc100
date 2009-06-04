@@ -38,13 +38,15 @@
 #include <linux/ioport.h>
 #include <linux/clk.h>
 #include <linux/spinlock.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 
 #include <mach/hardware.h>
+#include <mach/map.h>
 #include <asm/irq.h>
 
 #include <plat/cpu-freq.h>
-
+#include <plat/regs-clock.h>
 #include <plat/clock.h>
 #include <plat/cpu.h>
 
@@ -295,6 +297,26 @@ struct clk clk_usb_bus = {
 	.parent		= &clk_upll,
 };
 
+#ifdef CONFIG_CPU_S5PC100
+
+struct clk clk_hd0 = {
+	.name		= "hclkd0",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_pd0 = {
+	.name		= "pclkd0",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+#endif
 
 
 struct clk s3c24xx_uclk = {
@@ -357,6 +379,13 @@ int __init s3c24xx_register_baseclocks(unsigned long xtal)
 	if (s3c24xx_register_clock(&clk_f) < 0)
 		printk(KERN_ERR "failed to register cpu fclk\n");
 
+#ifdef CONFIG_CPU_S5PC100
+	if (s3c24xx_register_clock(&clk_hd0) < 0)
+		printk(KERN_ERR "failed to register cpu hclkd0\n");
+
+	if (s3c24xx_register_clock(&clk_pd0) < 0)
+		printk(KERN_ERR "failed to register cpu pclkd0\n");
+#endif
 	if (s3c24xx_register_clock(&clk_h) < 0)
 		printk(KERN_ERR "failed to register cpu hclk\n");
 

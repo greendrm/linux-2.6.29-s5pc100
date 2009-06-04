@@ -32,6 +32,17 @@
 #ifndef __ASM_ARM_REGS_SERIAL_H
 #define __ASM_ARM_REGS_SERIAL_H
 
+#if defined(CONFIG_PLAT_S3C64XX) || defined(CONFIG_PLAT_S5PC1XX) 
+#define S3C24XX_VA_UART0      (S3C_VA_UART)
+#define S3C24XX_VA_UART1      (S3C_VA_UART + 0x400)
+#define S3C24XX_VA_UART2      (S3C_VA_UART + 0x800)
+#define S3C24XX_VA_UART3      (S3C_VA_UART + 0xC00)
+
+#define S3C2410_PA_UART0      (S3C24XX_PA_UART)
+#define S3C2410_PA_UART1      (S3C24XX_PA_UART + 0x400)
+#define S3C2410_PA_UART2      (S3C24XX_PA_UART + 0x800)
+#define S3C2443_PA_UART3      (S3C24XX_PA_UART + 0xC00)
+#else
 #define S3C24XX_VA_UART0      (S3C_VA_UART)
 #define S3C24XX_VA_UART1      (S3C_VA_UART + 0x4000 )
 #define S3C24XX_VA_UART2      (S3C_VA_UART + 0x8000 )
@@ -41,6 +52,7 @@
 #define S3C2410_PA_UART1      (S3C24XX_PA_UART + 0x4000 )
 #define S3C2410_PA_UART2      (S3C24XX_PA_UART + 0x8000 )
 #define S3C2443_PA_UART3      (S3C24XX_PA_UART + 0xC000 )
+#endif
 
 #define S3C2410_URXH	  (0x24)
 #define S3C2410_UTXH	  (0x20)
@@ -188,6 +200,138 @@
 #define S3C2410_UMSTAT_DeltaCTS	  (1<<2)
 
 #define S3C2443_DIVSLOT		  (0x2C)
+
+/* S3C64XX only */
+#define S3C64XX_ULCON_WORD_5BIT	(0 << 0)
+#define S3C64XX_ULCON_WORD_6BIT	(1 << 0)
+#define S3C64XX_ULCON_WORD_7BIT	(2 << 0)
+#define S3C64XX_ULCON_WORD_8BIT	(3 << 0)
+
+#define S3C64XX_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL  | \
+					S3C2410_UCON_RXILEVEL  | \
+					S3C2410_UCON_TXIRQMODE | \
+					S3C2410_UCON_RXIRQMODE | \
+					S3C2410_UCON_RXFIFO_TOI | \
+					S3C2443_UCON_RXERR_IRQEN)
+
+#define S3C64XX_UFCON_DEFAULT	(S3C2410_UFCON_FIFOMODE | \
+					S3C2440_UFCON_TXTRIG16  | \
+					S3C2410_UFCON_RXTRIG8 )
+
+#define S3C64XX_ULCON_DEFAULT	S3C64XX_ULCON_WORD_8BIT
+
+#if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5P6440)|| defined(CONFIG_CPU_S5PC100) 
+#define S3C_ULCON         (0x00)
+#define S3C_UCON          (0x04)
+#define S3C_UFCON         (0x08)
+#define S3C_UMCON         (0x0C)
+#define S3C_UTRSTAT       (0x10)
+#define S3C_UERSTAT       (0x14)
+#define S3C_UFSTAT        (0x18)
+#define S3C_UMSTAT        (0x1C)
+#define S3C_UTXH          (0x20)
+#define S3C_URXH          (0x24)
+#define S3C_UBRDIV        (0x28)
+#define S3C_UDIVSLOT      (0x2C)
+#define S3C_UINTPND       (0x30)
+#define S3C_UINTSP        (0x34)
+#define S3C_UINTMSK       (0x38)
+
+/* base definitions for UART Line Control Register */
+#define S3C_LCON_CFGMASK        (0x7f)
+
+#define S3C_LCON_CS5    (0x0)
+#define S3C_LCON_CS6    (0x1)
+#define S3C_LCON_CS7    (0x2)
+#define S3C_LCON_CS8    (0x3)
+#define S3C_LCON_CSMASK (0x3)
+
+#define S3C_LCON_PNONE  (0x0)
+#define S3C_LCON_PEVEN  (0x5 << 3)
+#define S3C_LCON_PODD   (0x4 << 3)
+#define S3C_LCON_PMASK  (0x7 << 3)
+
+#define S3C_LCON_STOPB          (1<<2)
+#define S3C_LCON_IRM            (1<<6)
+
+#define S3C_UCON_CLKMASK        (3<<10)
+#define S3C_UCON_PCLK           (0<<10)
+#define S3C_UCON_UCLK           (1<<10)
+#define S3C_UCON_PCLK2          (2<<10)
+#define S3C_UCON_FCLK           (3<<10)
+
+#define S3C_UCON_TXILEVEL       (1<<9)
+#define S3C_UCON_RXILEVEL       (1<<8)
+#define S3C_UCON_TXIRQMODE      (1<<2)
+#define S3C_UCON_RXIRQMODE      (1<<0)
+#define S3C_UCON_RXFIFO_TOI     (1<<7)
+#define S3C_UCON_RX_ESIE        (1<<6)
+#define S3C_UCON_LOOP_OPERATION (0<<5)
+#define S3C_UCON_NO_SBS         (0<<4)
+
+
+#define S3C_UCON_DEFAULT          (S3C_UCON_TXILEVEL  | \
+                                   S3C_UCON_RXILEVEL  | \
+                                   S3C_UCON_TXIRQMODE | \
+                                   S3C_UCON_RXIRQMODE | \
+                                   S3C_UCON_RXFIFO_TOI)
+
+/* base definitions for UART FIFO Control Register */
+#define S3C_UFCON_FIFOMODE        (1<<0)
+#define S3C_UFCON_RXTRIG12        (2<<4)
+
+/* S3C2413 FIFO trigger levels */
+#define S3C_UFCON_RXTRIG1         (0<<4)
+#define S3C_UFCON_RXTRIG8         (1<<4)
+#define S3C_UFCON_RXTRIG16        (2<<4)
+#define S3C_UFCON_RXTRIG32        (3<<4)
+
+#define S3C_UFCON_TXTRIG0         (0<<6)
+#define S3C_UFCON_TXTRIG16        (1<<6)
+#define S3C_UFCON_TXTRIG32        (2<<6)
+#define S3C_UFCON_TXTRIG48        (3<<6)
+
+#define S3C_UFCON_RESETBOTH       (3<<1)
+#define S3C_UFCON_RESETTX         (1<<2)
+#define S3C_UFCON_RESETRX         (1<<1)
+#define S3C_UFCON_FIFO_ENABLE     (1<<0)
+
+#define S3C_UFCON_DEFAULT         (S3C_UFCON_FIFOMODE | \
+                                   S3C_UFCON_TXTRIG0  | \
+                                   S3C_UFCON_RXTRIG8 )
+
+#define S3C_UMCOM_AFC             (1<<4)
+#define S3C_UMCOM_RTS_LOW         (1<<0)
+
+#define S3C_UFSTAT_TXFULL         (1<<14)
+#define S3C_UFSTAT_RXFULL         (1<<6)
+#define S3C_UFSTAT_TXSHIFT        (8)
+#define S3C_UFSTAT_RXSHIFT        (0)
+#define S3C_UFSTAT_TXMASK         (63<<8)
+#define S3C_UFSTAT_RXMASK         (63)
+
+#define S3C_UTRSTAT_TXE           (1<<2)
+#define S3C_UTRSTAT_TXFE          (1<<1)
+#define S3C_UTRSTAT_RXDR          (1<<0)
+
+#define UART_RX_INT             (1<<0)
+#define UART_TX_INT             (1<<2)
+#define UART_ERR_INT            (1<<1)
+#define UART_MODEM_INT          (1<<3)
+
+#define S3C_UERSTAT_OVERRUN       (1<<0)
+#define S3C_UERSTAT_FRAME         (1<<2)
+#define S3C_UERSTAT_BREAK         (1<<3)
+#define S3C_UERSTAT_ANY   (S3C_UERSTAT_OVERRUN | \
+                                   S3C_UERSTAT_FRAME | \
+                                   S3C_UERSTAT_BREAK)
+
+#define S3C_UMSTAT_CTS            (1<<0)
+#define S3C_UMSTAT_DeltaCTS       (1<<2)
+
+#endif
+
+
 
 #ifndef __ASSEMBLY__
 

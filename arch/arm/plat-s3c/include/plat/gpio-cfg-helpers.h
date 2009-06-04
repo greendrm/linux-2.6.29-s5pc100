@@ -84,6 +84,24 @@ extern int s3c_gpio_setcfg_s3c24xx_a(struct s3c_gpio_chip *chip,
 extern int s3c_gpio_setcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 					unsigned int off, unsigned int cfg);
 
+/**
+ * s3c_gpio_setcfg_s5pc1xx - S5PC1XX 4bit single register GPIO config.
+ * @chip: The gpio chip that is being configured.
+ * @off: The offset for the GPIO being configured.
+ * @cfg: The configuration value to set.
+ *
+ * This helper deal with the GPIO cases where the control register has 4 bits
+ * of control per GPIO, generally in the form of:
+ *	0000 = Input
+ *	0001 = Output
+ *	others = Special functions (dependant on bank)
+ *
+ * Note, since the code to deal with the case where there are two control
+ * registers instead of one, we do not have a seperate set of functions for
+ * each case.
+*/
+extern int s3c_gpio_setcfg_s5pc1xx(struct s3c_gpio_chip *chip,
+					unsigned int off, unsigned int cfg);
 
 /* Pull-{up,down} resistor controls.
  *

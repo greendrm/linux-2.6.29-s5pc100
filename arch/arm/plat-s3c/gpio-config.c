@@ -14,6 +14,7 @@
 
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/module.h>
 #include <linux/io.h>
 
 #include <mach/gpio-core.h>
@@ -56,6 +57,9 @@ int s3c_gpio_setpull(unsigned int pin, s3c_gpio_pull_t pull)
 
 	return ret;
 }
+
+EXPORT_SYMBOL(s3c_gpio_cfgpin);
+EXPORT_SYMBOL(s3c_gpio_setpull);
 
 #ifdef CONFIG_S3C_GPIO_CFG_S3C24XX
 int s3c_gpio_setcfg_s3c24xx_banka(struct s3c_gpio_chip *chip,
@@ -132,6 +136,28 @@ int s3c_gpio_setcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 	return 0;
 }
 #endif /* CONFIG_S3C_GPIO_CFG_S3C64XX */
+
+#ifdef CONFIG_S3C_GPIO_CFG_S5PC1XX
+int s3c_gpio_setcfg_s5pc1xx(struct s3c_gpio_chip *chip,
+				 unsigned int off, unsigned int cfg)
+{
+	void __iomem *reg = chip->base;
+	unsigned int shift = (off & 7) * 4;
+	u32 con;
+
+	if (s3c_gpio_is_cfg_special(cfg)) {
+		cfg &= 0xf;
+		cfg <<= shift;
+	}
+
+	con = __raw_readl(reg);
+	con &= ~(0xf << shift);
+	con |= cfg;
+	__raw_writel(con, reg);
+
+	return 0;
+}
+#endif /* CONFIG_S3C_GPIO_CFG_S5PC1XX */
 
 #ifdef CONFIG_S3C_GPIO_PULL_UPDOWN
 int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
