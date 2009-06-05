@@ -202,7 +202,7 @@ v2.6.29.4-r0d1: Kukjin Kim
 		A	drivers/serial/s5pc100.c
 
 v2.6.29.4-r0d2: Kukjin Kim
-	- Support S5PC100
+	- Support S5PC100 NFS
 
 	Added / Modified / Deleted Files:
 		M	Makefile
