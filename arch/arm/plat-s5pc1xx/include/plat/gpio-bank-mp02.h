@@ -23,8 +23,6 @@
 #define S5PC1XX_MP02_INPUT(__gpio)	(0x0 << ((__gpio) * 4))
 #define S5PC1XX_MP02_OUTPUT(__gpio)	(0x1 << ((__gpio) * 4))
 
-#if defined(CONFIG_CPU_S5PC100)
-
 #define S5PC1XX_MP02_0_EBI_ADDR_16	(0x2 << 0)
 #define S5PC1XX_MP02_1_EBI_ADDR_17	(0x2 << 4)
 #define S5PC1XX_MP02_2_EBI_ADDR_18	(0x2 << 8)
@@ -34,11 +32,3 @@
 #define S5PC1XX_MP02_6_EBI_DATA_1	(0x2 << 24)
 #define S5PC1XX_MP02_7_EBI_DATA_2	(0x2 << 28)
 
-#elif defined(CONFIG_CPU_S5PC110)
-
-#define S5PC1XX_MP02_0_EBI_BEn_0	(0x2 << 0)
-#define S5PC1XX_MP02_1_EBI_BEn_1	(0x2 << 4)
-#define S5PC1XX_MP02_2_SROM_WAITn_	(0x2 << 8)
-#define S5PC1XX_MP02_3_EBI_DATA_RDn	(0x2 << 12)
-
-#endif

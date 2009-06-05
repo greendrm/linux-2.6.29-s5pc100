@@ -218,8 +218,6 @@ static void s5pc1xx_timer_setup (void)
 	unsigned long pclk;
 	struct clk *clk;
 
-	unsigned long reg;
-
 #ifdef T32_DEBUG_GPD
 	reg = __raw_readl(S5PC1XX_GPDCON);
 	reg &=~(0xf << 4);
@@ -297,11 +295,7 @@ static void s5pc1xx_timer_setup (void)
 	       tcon, tcnt, icntb, tcfg, timer_usec_ticks);
 
 	/* Interrupt Start and Enable */
-#ifdef CONFIG_CPU_S5PC110
-	s5pc1xx_systimer_write(S3C_SYSTIMER_INT_CSTAT, (S3C_SYSTIMER_INT_ICNTEIE|S3C_SYSTIMER_INT_EN));
-#else
 	s5pc1xx_systimer_write(S3C_SYSTIMER_INT_CSTAT, (S3C_SYSTIMER_INT_ICNTEIE));
-#endif
 }
 
 static void __init s5pc1xx_timer_init(void)

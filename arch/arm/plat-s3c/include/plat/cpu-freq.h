@@ -14,6 +14,7 @@
 #include <linux/cpufreq.h>
 
 #if defined(CONFIG_CPU_S5PC100)
+
 #define USE_FREQ_TABLE
 
 //#define USE_DVS
@@ -48,8 +49,8 @@ static u32 clkdiv0_val[5][3] = {
 	{7, 0, 0},	/* L4 " 83/83 */
 	/*{ ARM_RATIO, D0_BUS_RATIO, PCLKD0_RATIO }*/
 };
+#endif	/* CONFIG_CPU_S5PC100 */
 
-#endif
 struct s3c_cpufreq_info;
 struct s3c_cpufreq_board;
 struct s3c_iotimings;

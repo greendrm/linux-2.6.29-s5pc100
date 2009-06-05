@@ -220,7 +220,7 @@
 
 #define S3C64XX_ULCON_DEFAULT	S3C64XX_ULCON_WORD_8BIT
 
-#if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5P6440)|| defined(CONFIG_CPU_S5PC100) 
+#if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5PC100) 
 #define S3C_ULCON         (0x00)
 #define S3C_UCON          (0x04)
 #define S3C_UFCON         (0x08)

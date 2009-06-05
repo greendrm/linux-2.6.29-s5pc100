@@ -23,8 +23,6 @@
 #define S5PC1XX_GPA1_INPUT(__gpio)	(0x0 << ((__gpio) * 4))
 #define S5PC1XX_GPA1_OUTPUT(__gpio)	(0x1 << ((__gpio) * 4))
 
-#if defined(CONFIG_CPU_S5PC100)
-
 #define S5PC1XX_GPA1_0_UART_2_RXD	(0x2 << 0)
 #define S5PC1XX_GPA1_0_GPIO_INT1_0	(0xf << 0)
 
@@ -45,24 +43,3 @@
 #define S5PC1XX_GPA1_4_IrDA_SDBW	(0x4 << 16)
 #define S5PC1XX_GPA1_4_GPIO_INT1_4	(0xf << 16)
 
-#elif defined(CONFIG_CPU_S5PC110)
-
-#define S5PC1XX_GPA1_0_UART_2_RXD	(0x2 << 0)
-#define S5PC1XX_GPA1_0_UART_AUDIO_RXD	(0x4 << 0)
-#define S5PC1XX_GPA1_0_GPIO_INT2_0	(0xf << 0)
-
-#define S5PC1XX_GPA1_1_UART_2_TXD	(0x2 << 4)
-#define S5PC1XX_GPA1_1_UART_AUDIO_TXD	(0x4 << 4)
-#define S5PC1XX_GPA1_1_GPIO_INT2_1	(0xf << 4)
-
-#define S5PC1XX_GPA1_2_UART_3_RXD	(0x2 << 8)
-#define S5PC1XX_GPA1_2_UART_2_CTSn	(0x3 << 8)
-#define S5PC1XX_GPA1_2_UART_AUDIO_CTSn	(0x4 << 8)
-#define S5PC1XX_GPA1_2_GPIO_INT2_2	(0xf << 8)
-
-#define S5PC1XX_GPA1_3_UART_3_TXD	(0x2 << 12)
-#define S5PC1XX_GPA1_3_UART_2_RTSn	(0x3 << 12)
-#define S5PC1XX_GPA1_3_UART_AUDIO_RTSn	(0x4 << 12)
-#define S5PC1XX_GPA1_3_GPIO_INT2_3	(0xf << 12)
-
-#endif

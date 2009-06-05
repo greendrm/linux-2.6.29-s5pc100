@@ -30,8 +30,6 @@
 
 #define S5PC1XX_GPIOREG(x)		(S5PC1XX_VA_GPIO + (x))
 
-#if defined(CONFIG_CPU_S5PC100)
-
 #define S5PC1XX_EINT0CON		S5PC1XX_GPIOREG(0xE00)		/* EINT0  ~ EINT7  */
 #define S5PC1XX_EINT1CON		S5PC1XX_GPIOREG(0xE04)		/* EINT8  ~ EINT15 */
 #define S5PC1XX_EINT2CON		S5PC1XX_GPIOREG(0xE08)		/* EINT16 ~ EINT23 */
@@ -59,38 +57,6 @@
 #define S5PC1XX_EINT2PEND		S5PC1XX_GPIOREG(0xF48)		/* EINT16 ~ EINT23 */
 #define S5PC1XX_EINT3PEND		S5PC1XX_GPIOREG(0xF4C)		/* EINT24 ~ EINT31 */
 #define S5PC1XX_EINTPEND(x)		(S5PC1XX_EINT0PEND+x*04)	/* EINT0 ~  EINT31  */
-
-#elif defined(CONFIG_CPU_S5PC110)
-
-#define S5PC1XX_EINT30CON		S5PC1XX_GPIOREG(0xE00)		/* EINT0  ~ EINT7  */
-#define S5PC1XX_EINT31CON		S5PC1XX_GPIOREG(0xE04)		/* EINT8  ~ EINT15 */
-#define S5PC1XX_EINT32CON		S5PC1XX_GPIOREG(0xE08)		/* EINT16 ~ EINT23 */
-#define S5PC1XX_EINT33CON		S5PC1XX_GPIOREG(0xE0C)		/* EINT24 ~ EINT31 */
-#define S5PC1XX_EINTCON(x)		(S5PC1XX_EINT30CON+x*0x4)	/* EINT0  ~ EINT31  */
-
-#define S5PC1XX_EINT30FLTCON0		S5PC1XX_GPIOREG(0xE80)		/* EINT0  ~ EINT3  */
-#define S5PC1XX_EINT30FLTCON1		S5PC1XX_GPIOREG(0xE84)
-#define S5PC1XX_EINT31FLTCON0		S5PC1XX_GPIOREG(0xE88)		/* EINT8 ~  EINT11 */
-#define S5PC1XX_EINT31FLTCON1		S5PC1XX_GPIOREG(0xE8C)
-#define S5PC1XX_EINT32FLTCON0		S5PC1XX_GPIOREG(0xE90)
-#define S5PC1XX_EINT32FLTCON1		S5PC1XX_GPIOREG(0xE94)
-#define S5PC1XX_EINT33FLTCON0		S5PC1XX_GPIOREG(0xE98)
-#define S5PC1XX_EINT33FLTCON1		S5PC1XX_GPIOREG(0xE9C)
-#define S5PC1XX_EINTFLTCON(x)		(S5PC1XX_EINT30FLTCON0+x*0x4)	/* EINT0  ~ EINT31 */
-
-#define S5PC1XX_EINT30MASK		S5PC1XX_GPIOREG(0xF00)		/* EINT30[0] ~  EINT30[7]  */
-#define S5PC1XX_EINT31MASK		S5PC1XX_GPIOREG(0xF04)		/* EINT31[0] ~  EINT31[7] */
-#define S5PC1XX_EINT32MASK		S5PC1XX_GPIOREG(0xF08)		/* EINT32[0] ~  EINT32[7] */
-#define S5PC1XX_EINT33MASK		S5PC1XX_GPIOREG(0xF0C)		/* EINT33[0] ~  EINT33[7] */
-#define S5PC1XX_EINTMASK(x)		(S5PC1XX_EINT30MASK+x*0x4)	/* EINT0 ~  EINT31  */
-
-#define S5PC1XX_EINT30PEND		S5PC1XX_GPIOREG(0xF40)		/* EINT30[0] ~  EINT30[7]  */
-#define S5PC1XX_EINT31PEND		S5PC1XX_GPIOREG(0xF44)		/* EINT31[0] ~  EINT31[7] */
-#define S5PC1XX_EINT32PEND		S5PC1XX_GPIOREG(0xF48)		/* EINT32[0] ~  EINT32[7] */
-#define S5PC1XX_EINT33PEND		S5PC1XX_GPIOREG(0xF4C)		/* EINT33[0] ~  EINT33[7] */
-#define S5PC1XX_EINTPEND(x)		(S5PC1XX_EINT30PEND+x*04)	/* EINT0 ~  EINT31  */
-
-#endif
 
 #define eint_offset(irq)		((irq) < IRQ_EINT16_31 ? ((irq)-IRQ_EINT0) :  \
 					((irq-S3C_IRQ_EINT_BASE)+IRQ_EINT16_31-IRQ_EINT0))
@@ -177,7 +143,6 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	ctrl |= newvalue << shift;
 	__raw_writel(ctrl, S5PC1XX_EINTCON(eint_conf_reg(irq)));
 
-#if defined(CONFIG_CPU_S5PC100)
 	if((0 <= offs) && (offs < 8))
 		s3c_gpio_cfgpin(S5PC1XX_GPH0(offs&0x7), 0x2<<((offs&0x7)*4));
 	else if((8 <= offs) && (offs < 16))
@@ -188,18 +153,6 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 		s3c_gpio_cfgpin(S5PC1XX_GPH3(offs&0x7), 0x2<<((offs&0x7)*4));
 	else
 		printk(KERN_ERR "No such irq number %d", offs);
-#elif defined(CONFIG_CPU_S5PC110)
-	if((0 <= offs) && (offs < 8))
-		s3c_gpio_cfgpin(S5PC1XX_GPH0(offs&0x7), 0xf<<((offs&0x7)*4));
-	else if((8 <= offs) && (offs < 16))
-		s3c_gpio_cfgpin(S5PC1XX_GPH1(offs&0x7), 0xf<<((offs&0x7)*4));
-	else if((16 <= offs) && (offs < 24))
-		s3c_gpio_cfgpin(S5PC1XX_GPH2(offs&0x7), 0xf<<((offs&0x7)*4));
-	else if((24 <= offs) && (offs < 32))
-		s3c_gpio_cfgpin(S5PC1XX_GPH3(offs&0x7), 0xf<<((offs&0x7)*4));
-	else
-		printk(KERN_ERR "No such irq number %d", offs);
-#endif
 		
 	return 0;
 }

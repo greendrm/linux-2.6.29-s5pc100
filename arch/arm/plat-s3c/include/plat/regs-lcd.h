@@ -22,7 +22,7 @@
 #define S3C_VIDCON0		S3C_LCDREG(0x00)  	/* Video control 0 register */
 #define S3C_VIDCON1		S3C_LCDREG(0x04)  	/* Video control 1 register */
 
-#if defined(CONFIG_CPU_S3C2443)||defined(CONFIG_CPU_S3C2450) || defined(CONFIG_CPU_S3C2416)
+#if defined(CONFIG_CPU_S3C2443) || defined(CONFIG_CPU_S3C2450) || defined(CONFIG_CPU_S3C2416)
 #define S3C_VIDTCON0		S3C_LCDREG(0x08)  	/* LCD CONTROL 1 */
 #define S3C_VIDTCON1		S3C_LCDREG(0x0C)  	/* LCD CONTROL 1 */
 #define S3C_VIDTCON2		S3C_LCDREG(0x10) 	/* LCD CONTROL 1 */
@@ -57,7 +57,7 @@
 #define S3C_SIFCCON2		S3C_LCDREG(0x144)  	/* LCD CONTROL 1 */
 #define S3C_CPUTRIGCON2		S3C_LCDREG(0x160)  	/* LCD CONTROL 1 */
 
-#elif defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5P6440) || defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
+#elif defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5PC100)
 #define S3C_VIDCON2		S3C_LCDREG(0x08)  	/* Video control 2 register */
 #define S3C_VIDTCON0		S3C_LCDREG(0x10)  	/* Video time control 0 register */
 #define S3C_VIDTCON1		S3C_LCDREG(0x14)  	/* Video time control 1 register */

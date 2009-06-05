@@ -108,7 +108,7 @@ config S3C_LOWLEVEL_UART_PORT
 
 config SPLIT_ROOT_FILESYSTEM
 	bool "S3C MTD has 4 partitions"
-	depends on (ARCH_S3C64XX || ARCH_S5PC1XX || ARCH_S5P64XX) && MTD
+	depends on (ARCH_S3C64XX || ARCH_S5PC1XX) && MTD
 	help
 	  Choose this if you want to use 4 mtd partitions
 

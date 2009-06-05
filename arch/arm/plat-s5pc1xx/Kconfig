@@ -32,7 +32,7 @@ config CPU_S5PC100_INIT
 	default y
 	help
 	  Common initialisation code for the S5PC100 that is shared
-	  by other CPUs in the series, such as the S5PC100.
+	  by other CPUs in the series, such as the S5PC1XX.
 
 config CPU_S5PC100_CLOCK
 	bool
@@ -40,7 +40,7 @@ config CPU_S5PC100_CLOCK
 	default y	
 	help
 	  Common clock support code for the S5PC100 that is shared
-	  by other CPUs in the series, such as the S5PC110.
+	  by other CPUs in the series, such as the S5PC1XX.
 
 # platform specific device setup
 

@@ -185,57 +185,12 @@
 #define IRQ_MDNIE2		S5PC1XX_IRQ_VIC3(7)
 #define IRQ_MDNIE3		S5PC1XX_IRQ_VIC3(8)
 
-#if defined(CONFIG_CPU_S5PC100)
 #define S3C_IRQ_EINT_BASE	IRQ_SDMFIQ+1
-#elif defined(CONFIG_CPU_S5PC110)
-#define S3C_IRQ_EINT_BASE	IRQ_MDNIE3+1
-#endif
 
 #define S3C_EINT(x)		((x) + S3C_IRQ_EINT_BASE)
 #define IRQ_EINT(x)		S3C_EINT(x)
 
 #define NR_IRQS 		(IRQ_EINT(31)+1)
-
-#if 0
-/* Next the external interrupt groups. These are similar to the IRQ_EINT(x)
- * that they are sourced from the GPIO pins but with a different scheme for
- * priority and source indication.
- *
- * The IRQ_EINT(x) can be thought of as 'group 0' of the available GPIO
- * interrupts, but for historical reasons they are kept apart from these
- * next interrupts.
- *
- * Use IRQ_EINT_GROUP(group, offset) to get the number for use in the
- * machine specific support files.
- */
-
-#define IRQ_EINT_GROUP1_NR	(15)
-#define IRQ_EINT_GROUP2_NR	(8)
-#define IRQ_EINT_GROUP3_NR	(5)
-#define IRQ_EINT_GROUP4_NR	(14)
-#define IRQ_EINT_GROUP5_NR	(7)
-#define IRQ_EINT_GROUP6_NR	(10)
-#define IRQ_EINT_GROUP7_NR	(16)
-#define IRQ_EINT_GROUP8_NR	(15)
-#define IRQ_EINT_GROUP9_NR	(9)
-
-#define IRQ_EINT_GROUP_BASE	S3C_EINT(28)
-#define IRQ_EINT_GROUP1_BASE	(IRQ_EINT_GROUP_BASE + 0x00)
-#define IRQ_EINT_GROUP2_BASE	(IRQ_EINT_GROUP1_BASE + IRQ_EINT_GROUP1_NR)
-#define IRQ_EINT_GROUP3_BASE	(IRQ_EINT_GROUP2_BASE + IRQ_EINT_GROUP2_NR)
-#define IRQ_EINT_GROUP4_BASE	(IRQ_EINT_GROUP3_BASE + IRQ_EINT_GROUP3_NR)
-#define IRQ_EINT_GROUP5_BASE	(IRQ_EINT_GROUP4_BASE + IRQ_EINT_GROUP4_NR)
-#define IRQ_EINT_GROUP6_BASE	(IRQ_EINT_GROUP5_BASE + IRQ_EINT_GROUP5_NR)
-#define IRQ_EINT_GROUP7_BASE	(IRQ_EINT_GROUP6_BASE + IRQ_EINT_GROUP6_NR)
-#define IRQ_EINT_GROUP8_BASE	(IRQ_EINT_GROUP7_BASE + IRQ_EINT_GROUP7_NR)
-#define IRQ_EINT_GROUP9_BASE	(IRQ_EINT_GROUP8_BASE + IRQ_EINT_GROUP8_NR)
-
-#define IRQ_EINT_GROUP(group, no)	(IRQ_EINT_GROUP##group##__BASE + (x))
-
-/* Set the default NR_IRQS */
-
-#define NR_IRQS	(IRQ_EINT_GROUP9_BASE + IRQ_EINT_GROUP9_NR + 1)
-#endif
 
 #endif /* __ASM_PLAT_S5PC1XX_IRQS_H */
 

@@ -23,7 +23,6 @@
 #define S5PC1XX_GPB_INPUT(__gpio)	(0x0 << ((__gpio) * 4))
 #define S5PC1XX_GPB_OUTPUT(__gpio)	(0x1 << ((__gpio) * 4))
 
-#if defined(CONFIG_CPU_S5PC100)
 #define S5PC1XX_GPB0_SPI_0_MISO		(0x2 << 0)
 #define S5PC1XX_GPB0_GPIO_INT2_0	(0xf << 0)
 
@@ -48,29 +47,3 @@
 #define S5PC1XX_GPB7_SPI_1_nSS		(0x2 << 28)
 #define S5PC1XX_GPB7_GPIO_INT2_7	(0xf << 28)
 
-#elif defined(CONFIG_CPU_S5PC110)
-
-#define S5PC1XX_GPB0_SPI_0_MISO		(0x2 << 0)
-#define S5PC1XX_GPB0_GPIO_INT3_0	(0xf << 0)
-
-#define S5PC1XX_GPB1_SPI_0_CLK		(0x2 << 4)
-#define S5PC1XX_GPB1_GPIO_INT3_1	(0xf << 4)
-
-#define S5PC1XX_GPB2_SPI_0_MOSI		(0x2 << 8)
-#define S5PC1XX_GPB2_GPIO_INT3_2	(0xf << 8)
-
-#define S5PC1XX_GPB3_SPI_0_nSS		(0x2 << 12)
-#define S5PC1XX_GPB3_GPIO_INT3_3	(0xf << 12)
-
-#define S5PC1XX_GPB4_SPI_1_MISO		(0x2 << 16)
-#define S5PC1XX_GPB4_GPIO_INT3_4	(0xf << 16)
-
-#define S5PC1XX_GPB5_SPI_1_CLK		(0x2 << 20)
-#define S5PC1XX_GPB5_GPIO_INT3_5	(0xf << 20)
-
-#define S5PC1XX_GPB6_SPI_1_MOSI		(0x2 << 24)
-#define S5PC1XX_GPB6_GPIO_INT3_6	(0xf << 24)
-
-#define S5PC1XX_GPB7_SPI_1_nSS		(0x2 << 28)
-#define S5PC1XX_GPB7_GPIO_INT3_7	(0xf << 28)
-#endif

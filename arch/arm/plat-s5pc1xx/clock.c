@@ -34,7 +34,6 @@ struct clk clk_27m = {
 	.rate		= 27000000,
 };
 
-#if defined(CONFIG_CPU_S5PC100)
 static int clk_48m_ctrl(struct clk *clk, int enable)
 {
 	unsigned long flags;
@@ -66,7 +65,6 @@ struct clk clk_54m = {
 	.id		= -1,
 	.rate		= 54000000,
 };
-#endif
 
 static int inline s5pc1xx_clk_gate(void __iomem *reg,
 				struct clk *clk,
@@ -108,7 +106,6 @@ static int s5pc1xx_setrate_sclk_cam(struct clk *clk, unsigned long rate)
 	return 0;
 }
 
-#if defined(CONFIG_CPU_S5PC100)
 static int s5pc1xx_clk_d00_ctrl(struct clk *clk, int enable)
 {
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D00, clk, enable);
@@ -714,163 +711,13 @@ static struct clk init_clocks[] = {
 		.set_rate	= s5pc1xx_setrate_sclk_cam,
 	},
 };
-#elif defined(CONFIG_CPU_S5PC110)
-static int s5pc1xx_clk_main0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_MAIN0, clk, enable);
-}
-
-static int s5pc1xx_clk_main1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_MAIN1, clk, enable);
-}
-
-static int s5pc1xx_clk_main2_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_MAIN2, clk, enable);
-}
-
-static int s5pc1xx_clk_peri0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_PERI0, clk, enable);
-}
-
-static int s5pc1xx_clk_peri1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_PERI1, clk, enable);
-}
-
-static int s5pc1xx_clk_sclk0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_SCLK0, clk, enable);
-}
-
-static int s5pc1xx_clk_sclk1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_SCLK1, clk, enable);
-}
-
-int s5pc1xx_sclk0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_SCLKGATE0, clk, enable);
-}
-
-int s5pc1xx_sclk1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_SCLKGATE1, clk, enable);
-}
-
-static int s5pc1xx_clk_ip0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_IP0, clk, enable);
-}
-
-static int s5pc1xx_clk_ip1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_IP1, clk, enable);
-}
-
-static int s5pc1xx_clk_ip2_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_IP2, clk, enable);
-}
-
-static int s5pc1xx_clk_ip3_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_IP3, clk, enable);
-}
-
-static int s5pc1xx_clk_ip4_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_IP4, clk, enable);
-}
-
-static int s5pc1xx_clk_block_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_BLOCK, clk, enable);
-}
-
-static int s5pc1xx_clk_bus0_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_BUS0, clk, enable);
-}
-
-static int s5pc1xx_clk_bus1_ctrl(struct clk *clk, int enable)
-{
-	return s5pc1xx_clk_gate(S5P_CLKGATE_BUS1, clk, enable);
-}
-
-static struct clk init_clocks_disable[] = {
-
-};
-
-static struct clk init_clocks[] = {
-	{
-		.name		= "systimer",
-		.id		= -1,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_SYSTIMER,
-	}, {
-		.name		= "watchdog",
-		.id		= -1,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_WDT,
-	}, {
-		.name		= "rtc",
-		.id		= -1,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_RTC,
-	},
-
-	
-	{
-		.name		= "uart",
-		.id		= 0,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_UART0,
-	}, {
-		.name		= "uart",
-		.id		= 1,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_UART1,
-	}, {
-		.name		= "uart",
-		.id		= 2,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_UART2,
-	}, {
-		.name		= "uart",
-		.id		= 3,
-		.parent		= &clk_p66,
-		.enable		= s5pc1xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_UART3,
-	},		
-
-
-	{
-		.name		= "lcd",
-		.id		= -1,
-		.parent		= &clk_h166,
-		.enable		= s5pc1xx_clk_ip1_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP1_FIMD,
-	},		
-};	
-#endif
 
 static struct clk *clks[] __initdata = {
 	&clk_ext,
 	&clk_epll,
 	&clk_27m,
-#if defined(CONFIG_CPU_S5PC100)
 	&clk_48m,
 	&clk_54m,
-#endif	
 };
 
 void __init s5pc1xx_register_clocks(void)

@@ -25,7 +25,6 @@ struct platform_device; /* don't need the contents */
 void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 {
 	int i;
-#if defined(CONFIG_CPU_S5PC100)
 	s3c_gpio_cfgpin(S5PC1XX_GPE0(0), S5PC1XX_GPE0_0_CAM_A_PCLK);
 	s3c_gpio_cfgpin(S5PC1XX_GPE0(1), S5PC1XX_GPE0_1_CAM_A_VSYNC);
 	s3c_gpio_cfgpin(S5PC1XX_GPE0(2), S5PC1XX_GPE0_2_CAM_A_HREF);
@@ -66,8 +65,5 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 
 	for (i = 0; i < 4; i++)
 		s3c_gpio_setpull(S5PC1XX_GPH3(i), S3C_GPIO_PULL_UP);
-
-#elif defined(CONFIG_CPU_S5PC110)
-
-#endif
 }
+

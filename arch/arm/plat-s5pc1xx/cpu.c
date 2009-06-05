@@ -33,13 +33,11 @@
 #include <plat/devs.h>
 #include <plat/clock.h>
 #include <plat/s5pc100.h>
-#include <plat/s5pc110.h>
 
 /* table of supported CPUs */
 
 static const char name_s5pc100[] = "S5PC100";
 static const char name_s5pc100_pop[] = "S5PC100[POP]";
-static const char name_s5pc110[] = "S5PC110";
 
 static struct cpu_table cpu_ids[] __initdata = {
 	{
@@ -60,15 +58,6 @@ static struct cpu_table cpu_ids[] __initdata = {
 		.init		= s5pc100_init,
 		.name		= name_s5pc100_pop
 	},
-	{
-		.idcode		= 0xABABAB00,
-		.idmask		= 0xfffffff0,
-		.map_io		= s5pc110_map_io,
-		.init_clocks    = s5pc110_init_clocks,
-		.init_uarts	= s5pc110_init_uarts,
-		.init		= s5pc110_init,
-		.name		= name_s5pc110
-	},	
 };
 
 /* minimal IO mapping */
@@ -103,13 +92,6 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.length		= SZ_16K,
 		.type		= MT_DEVICE,
 	}, {
-#if defined(CONFIG_CPU_S5PC110)	
-		.virtual	= (unsigned long)S3C_VA_VIC3,
-		.pfn		= __phys_to_pfn(S5PC1XX_PA_VIC3),
-		.length		= SZ_16K,
-		.type		= MT_DEVICE,
-#endif		
-	}, {
 		.virtual	= (unsigned long)S3C_VA_TIMER,
 		.pfn		= __phys_to_pfn(S3C_PA_TIMER),
 		.length		= SZ_16K,
@@ -125,7 +107,6 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
 	}, 
-#if 1
 	{
 		.virtual	= (unsigned long)S5PC1XX_VA_IEC,
 		.pfn		= __phys_to_pfn(S5PC1XX_PA_IEC),
@@ -137,7 +118,6 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
 	},
-#endif	
 };
 
 /* read cpu identification code */
@@ -151,9 +131,6 @@ void __init s5pc1xx_init_io(struct map_desc *mach_desc, int size)
 	iotable_init(mach_desc, size);
 
 	idcode = __raw_readl(S5PC1XX_VA_CHIPID);
-#ifdef CONFIG_CPU_S5PC110
-	idcode = 0xABABAB00;
-#endif
 
 	s3c_init_cpu(idcode, cpu_ids, ARRAY_SIZE(cpu_ids));
 }

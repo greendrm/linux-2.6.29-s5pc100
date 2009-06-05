@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2003-2008,2009 Samsung Electronics
  *
- * S5PC1XX, S5P6440 DMAC core (PL330 DMAC)
+ * S5PC1XX DMAC core (PL330 DMAC)
  *
  * http://www.samsung.com/
  *

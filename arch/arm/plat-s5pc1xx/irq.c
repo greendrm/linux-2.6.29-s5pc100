@@ -233,13 +233,11 @@ void __init s5pc1xx_init_irq(u32 vic0_valid, u32 vic1_valid, u32 vic2_valid, u32
 	printk(KERN_DEBUG "%s: initialising interrupts\n", __func__);
 
 	/* initialise the pair of VICs */
+
 	vic_init(S3C_VA_VIC0, S3C_VIC0_BASE, vic0_valid);
 	vic_init(S3C_VA_VIC1, S3C_VIC1_BASE, vic1_valid);
 	vic_init(S3C_VA_VIC2, S3C_VIC2_BASE, vic2_valid);
 	
-#if defined(CONFIG_CPU_S5PC110)	
-	vic_init(S3C_VA_VIC3, S3C_VIC3_BASE, vic3_valid);
-#endif
 	/* add the timer sub-irqs */
 
 	set_irq_chained_handler(IRQ_TIMER0, s3c_irq_demux_timer0);

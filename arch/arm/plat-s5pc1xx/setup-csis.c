@@ -26,7 +26,6 @@ void s3c_csis_cfg_gpio(struct platform_device *dev)
 
 void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
 {
-#if defined(CONFIG_CPU_S5PC100)	
 	u32 cfg;
 
 	if (on) {
@@ -45,5 +44,4 @@ void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
 		cfg &= ~S5P_OTHERS_MIPI_DPHY_EN;
 		__raw_writel(cfg, S5P_OTHERS);
 	}
-#endif	
 }

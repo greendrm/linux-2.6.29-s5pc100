@@ -23,8 +23,6 @@
 #define S5PC1XX_MP03_INPUT(__gpio)	(0x0 << ((__gpio) * 4))
 #define S5PC1XX_MP03_OUTPUT(__gpio)	(0x1 << ((__gpio) * 4))
 
-#if defined(CONFIG_CPU_S5PC100)
-
 #define S5PC1XX_MP03_0_EBI_DATA_3	(0x2 << 0)
 #define S5PC1XX_MP03_1_EBI_DATA_4	(0x2 << 4)
 #define S5PC1XX_MP03_2_EBI_DATA_5	(0x2 << 8)
@@ -33,28 +31,4 @@
 #define S5PC1XX_MP03_5_EBI_DATA_8	(0x2 << 20)
 #define S5PC1XX_MP03_6_EBI_DATA_9	(0x2 << 24)
 #define S5PC1XX_MP03_7_EBI_DATA_10	(0x2 << 28)
-
-#elif defined(CONFIG_CPU_S5PC110)
-
-#define S5PC1XX_MP03_0_NF_CLE		(0x2 << 0)
-#define S5PC1XX_MP03_0_ONANDXL_ADDRVALID	(0x5 << 0)
-
-#define S5PC1XX_MP03_1_NF_ALE		(0x2 << 4)
-#define S5PC1XX_MP03_1_ONANDXL_SMCLK	(0x5 << 4)
-
-#define S5PC1XX_MP03_2_NF_FWEn		(0x2 << 8)
-#define S5PC1XX_MP03_2_ONANDXL_RPn	(0x5 << 8)
-
-#define S5PC1XX_MP03_3_NF_FREn		(0x2 << 12)
-
-#define S5PC1XX_MP03_4_NF_RnB_0		(0x2 << 16)
-#define S5PC1XX_MP03_4_ONANDXL_INT_0	(0x5 << 16)
-
-#define S5PC1XX_MP03_5_NF_RnB_1		(0x2 << 20)
-#define S5PC1XX_MP03_5_ONANDXL_INT_1	(0x5 << 20)
-
-#define S5PC1XX_MP03_6_NF_RnB_2		(0x2 << 24)
-
-#define S5PC1XX_MP03_6_NF_RnB_3		(0x2 << 28)
-#endif
 

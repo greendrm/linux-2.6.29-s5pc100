@@ -36,19 +36,11 @@ static struct resource s3c_smc911x_resources[] = {
               .end    = S5PC1XX_PA_SMC9115 + 0x1fffffff,
               .flags  = IORESOURCE_MEM,
       },
-#if defined(CONFIG_CPU_S5PC110)
-      [1] = {
-              .start = IRQ_EINT0,
-              .end   = IRQ_EINT0,
-              .flags = IORESOURCE_IRQ,
-        },
-#else
       [1] = {
               .start = IRQ_EINT10,
               .end   = IRQ_EINT10,
               .flags = IORESOURCE_IRQ,
         },
-#endif
 };
 
 struct platform_device s3c_device_smc911x = {

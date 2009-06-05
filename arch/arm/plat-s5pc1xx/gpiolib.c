@@ -131,7 +131,6 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.label	= "GPB",
 		},
 	}, 
-#if defined(CONFIG_CPU_S5PC100)
 	{
 		.base	= S5PC1XX_GPC_BASE,
 		.config	= &gpio_cfg,
@@ -149,45 +148,6 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.label	= "GPD",
 		},
 	}, 
-#elif defined(CONFIG_CPU_S5PC110)
-	{
-		.base	= S5PC1XX_GPC0_BASE,
-		.config	= &gpio_cfg,
-		.chip	= {
-			.base	= S5PC1XX_GPC0(0),
-			.ngpio	= S5PC1XX_GPIO_C0_NR,
-			.label	= "GPC0",
-		},
-	}, {
-		.base	= S5PC1XX_GPC1_BASE,
-		.config	= &gpio_cfg,
-		.chip	= {
-			.base	= S5PC1XX_GPC1(0),
-			.ngpio	= S5PC1XX_GPIO_C1_NR,
-			.label	= "GPC1",
-		},
-	}, {
-		.base	= S5PC1XX_GPD0_BASE,
-		.config	= &gpio_cfg,
-		.chip	= {
-			.base	= S5PC1XX_GPD0(0),
-			.ngpio	= S5PC1XX_GPIO_D0_NR,
-			.label	= "GPD0",
-		},
-	}, {
-		.base	= S5PC1XX_GPD1_BASE,
-		.config	= &gpio_cfg,
-		.chip	= {
-			.base	= S5PC1XX_GPD1(0),
-			.ngpio	= S5PC1XX_GPIO_D1_NR,
-			.label	= "GPD1",
-		},
-	}, 
-
-#else
-#error "CPU type should be defined(S5PC100, S5PC110)"
-#endif
-
 	{
 		.base	= S5PC1XX_GPE0_BASE,
 		.config	= &gpio_cfg,
@@ -348,9 +308,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.ngpio	= S5PC1XX_GPIO_J4_NR,
 			.label	= "GPJ4",
 		},
-	}, 
-#if defined(CONFIG_CPU_S5PC100)
-	{
+	}, {
 		.base	= S5PC1XX_GPK0_BASE,
 		.config	= &gpio_cfg_noint,
 		.chip	= {
@@ -390,9 +348,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.ngpio	= S5PC1XX_GPIO_MP00_NR,
 			.label	= "MP00",
 		},
-	}, 
-#endif
-	{
+	}, {
 		.base	= S5PC1XX_MP01_BASE,
 		.config	= &gpio_cfg_noint,
 		.chip	= {
@@ -425,178 +381,6 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.label	= "MP04",
 		},
 	}, 
-#if defined(CONFIG_CPU_S5PC110)
-	{
-		.base	= S5PC1XX_MP05_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP05(0),
-			.ngpio	= S5PC1XX_GPIO_MP05_NR,
-			.label	= "MP05",
-		},
-	}, {
-		.base	= S5PC1XX_MP06_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP06(0),
-			.ngpio	= S5PC1XX_GPIO_MP06_NR,
-			.label	= "MP06",
-		},
-	}, {
-		.base	= S5PC1XX_MP07_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP07(0),
-			.ngpio	= S5PC1XX_GPIO_MP07_NR,
-			.label	= "MP07",
-		},
-	}, {
-		.base	= S5PC1XX_MP10_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP10(0),
-			.ngpio	= S5PC1XX_GPIO_MP10_NR,
-			.label	= "MP10",
-		},
-	}, {
-		.base	= S5PC1XX_MP11_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP11(0),
-			.ngpio	= S5PC1XX_GPIO_MP11_NR,
-			.label	= "MP11",
-		},
-	}, {
-		.base	= S5PC1XX_MP12_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP12(0),
-			.ngpio	= S5PC1XX_GPIO_MP12_NR,
-			.label	= "MP12",
-		},
-	}, {
-		.base	= S5PC1XX_MP13_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP13(0),
-			.ngpio	= S5PC1XX_GPIO_MP13_NR,
-			.label	= "MP13",
-		},
-	}, {
-		.base	= S5PC1XX_MP14_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP14(0),
-			.ngpio	= S5PC1XX_GPIO_MP14_NR,
-			.label	= "MP14",
-		},
-	}, {
-		.base	= S5PC1XX_MP15_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP15(0),
-			.ngpio	= S5PC1XX_GPIO_MP15_NR,
-			.label	= "MP15",
-		},
-	}, {
-		.base	= S5PC1XX_MP16_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP16(0),
-			.ngpio	= S5PC1XX_GPIO_MP16_NR,
-			.label	= "MP16",
-		},
-	}, {
-		.base	= S5PC1XX_MP17_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP17(0),
-			.ngpio	= S5PC1XX_GPIO_MP17_NR,
-			.label	= "MP17",
-		},
-	}, {
-		.base	= S5PC1XX_MP18_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP18(0),
-			.ngpio	= S5PC1XX_GPIO_MP18_NR,
-			.label	= "MP18",
-		},
-	}, {
-		.base	= S5PC1XX_MP20_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP20(0),
-			.ngpio	= S5PC1XX_GPIO_MP20_NR,
-			.label	= "MP120",
-		},
-	}, {
-		.base	= S5PC1XX_MP21_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP21(0),
-			.ngpio	= S5PC1XX_GPIO_MP21_NR,
-			.label	= "MP21",
-		},
-	}, {
-		.base	= S5PC1XX_MP22_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP22(0),
-			.ngpio	= S5PC1XX_GPIO_MP22_NR,
-			.label	= "MP22",
-		},
-	}, {
-		.base	= S5PC1XX_MP23_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP23(0),
-			.ngpio	= S5PC1XX_GPIO_MP23_NR,
-			.label	= "MP23",
-		},
-	}, {
-		.base	= S5PC1XX_MP24_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP24(0),
-			.ngpio	= S5PC1XX_GPIO_MP24_NR,
-			.label	= "MP24",
-		},
-	}, {
-		.base	= S5PC1XX_MP25_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP25(0),
-			.ngpio	= S5PC1XX_GPIO_MP25_NR,
-			.label	= "MP25",
-		},
-	}, {
-		.base	= S5PC1XX_MP26_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP26(0),
-			.ngpio	= S5PC1XX_GPIO_MP26_NR,
-			.label	= "MP26",
-		},
-	}, {
-		.base	= S5PC1XX_MP27_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP27(0),
-			.ngpio	= S5PC1XX_GPIO_MP27_NR,
-			.label	= "MP27",
-		},
-	}, {
-		.base	= S5PC1XX_MP28_BASE,
-		.config	= &gpio_cfg_noint,
-		.chip	= {
-			.base	= S5PC1XX_MP28(0),
-			.ngpio	= S5PC1XX_GPIO_MP28_NR,
-			.label	= "MP28",
-		},
-	},
-
-#endif
 };
 
 static __init void s5pc1xx_gpiolib_link(struct s3c_gpio_chip *chip)
