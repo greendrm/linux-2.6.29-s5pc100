@@ -261,3 +261,7 @@ v2.6.29.4-r0d2: Kukjin Kim
 		M	drivers/net/smc911x.h
 		M	drivers/serial/Kconfig
 
+v2.6.29.4-r0d3: Kukjin Kim
+	- Support S5PC100 I2C, RTC, WDT
+
+	Added / Modified / Deleted Files:

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29.4
-# Fri Jun  5 09:10:13 2009
+# Fri Jun  5 13:47:44 2009
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -192,6 +192,7 @@ CONFIG_PLAT_S3C=y
 #
 # Boot options
 #
+# CONFIG_S3C_BOOT_WATCHDOG is not set
 # CONFIG_S3C_BOOT_ERROR_RESET is not set
 CONFIG_S3C_BOOT_UART_FORCE_FIFO=y
 
@@ -793,6 +794,7 @@ CONFIG_I2C_CHARDEV=y
 #
 # CONFIG_I2C_GPIO is not set
 # CONFIG_I2C_OCORES is not set
+CONFIG_I2C_S3C2410=y
 # CONFIG_I2C_SIMTEC is not set
 
 #
@@ -930,6 +932,7 @@ CONFIG_WATCHDOG=y
 # Watchdog Device Drivers
 #
 # CONFIG_SOFT_WATCHDOG is not set
+CONFIG_S3C2410_WATCHDOG=y
 
 #
 # USB-based Watchdog Cards
@@ -1312,6 +1315,7 @@ CONFIG_RTC_INTF_DEV=y
 #
 # on-CPU RTC drivers
 #
+CONFIG_RTC_DRV_S3C=y
 # CONFIG_DMADEVICES is not set
 # CONFIG_REGULATOR is not set
 # CONFIG_UIO is not set
