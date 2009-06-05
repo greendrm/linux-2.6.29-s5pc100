@@ -274,5 +274,20 @@ v2.6.29.4-r0d3: Kukjin Kim
 v2.6.29.4-r0d4: Kukjin Kim
 	- Support S5PC100 MTD_NAND, KEYPAD, S3C_MEM
 
-	Modified Files:
+	Added / Modified Files:
+     		M	Makefile
+     		M	arch/arm/configs/smdkc100nfs_defconfig
+     		M	arch/arm/plat-s3c/include/plat/regs-nand.h
+     		M	drivers/char/Kconfig
+     		M	drivers/char/Makefile
+     		M	drivers/char/mem.c
+     		A	drivers/char/s3c_mem.c
+     		A	drivers/char/s3c_mem.h
+     		M	drivers/input/keyboard/Kconfig
+     		M	drivers/input/keyboard/Makefile
+     		A	drivers/input/keyboard/s3c-keypad.c
+     		A	drivers/input/keyboard/s3c-keypad.h
+     		M	drivers/mtd/nand/Kconfig
+     		M	drivers/mtd/nand/Makefile
+     		A	drivers/mtd/nand/s3c_nand.c
 
