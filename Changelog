@@ -271,3 +271,8 @@ v2.6.29.4-r0d3: Kukjin Kim
 		M	drivers/rtc/Kconfig
 		M	drivers/watchdog/Kconfig
 
+v2.6.29.4-r0d4: Kukjin Kim
+	- Support S5PC100 MTD_NAND, KEYPAD, S3C_MEM
+
+	Modified Files:
+

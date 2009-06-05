@@ -1101,5 +1101,14 @@ config DEVPORT
 
 source "drivers/s390/char/Kconfig"
 
+config S3C_MEM
+	bool "Support for /dev/s3c-mem"
+	default y
+	---help---
+	  If you do say Y here, you can allocate physically linear memories from system memory.
+	  And you can share the memory at the other process using re-allocation ioctl.
+
+	  If unsure, say Y.
+
 endmenu
 
