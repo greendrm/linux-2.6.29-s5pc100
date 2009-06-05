@@ -264,4 +264,10 @@ v2.6.29.4-r0d2: Kukjin Kim
 v2.6.29.4-r0d3: Kukjin Kim
 	- Support S5PC100 I2C, RTC, WDT
 
-	Added / Modified / Deleted Files:
+	Modified Files:
+		M	arch/arm/configs/smdkc100nfs_defconfig
+		M	arch/arm/plat-s3c/include/plat/regs-rtc.h
+		M	drivers/i2c/busses/Kconfig
+		M	drivers/rtc/Kconfig
+		M	drivers/watchdog/Kconfig
+
