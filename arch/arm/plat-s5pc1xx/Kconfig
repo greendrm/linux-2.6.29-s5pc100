@@ -105,14 +105,14 @@ config S5PC1XX_SETUP_FIMC2
 # FB part
 config S5PC1XX_DEV_FB
 	bool
-	depends on FB_S3C_V2
+	depends on FB_S3C
 	default y
 	help
 	  Compile in platform device definitions for FIMD controller
 
 config S5PC1XX_SETUP_FB
 	bool
-	depends on FB_S3C_V2
+	depends on FB_S3C
 	default y
 	help
 	  Common setup code for FIMD controller.
