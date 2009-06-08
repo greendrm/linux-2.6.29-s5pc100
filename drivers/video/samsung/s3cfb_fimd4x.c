@@ -318,9 +318,9 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 			cfg &= ~S3C_WINCON1_LOCALSEL_MASK;
 
 			if (win->local_channel == 0)
-				cfg |= S3C_WINCON1_LOCALSEL_FIMC1;
-			else
 				cfg |= S3C_WINCON1_LOCALSEL_TV;
+			else
+				cfg |= S3C_WINCON1_LOCALSEL_FIMC1;
 		}
 	} else {
 		dev_dbg(ctrl->dev, "[fb%d] data path: dma\n", id);
