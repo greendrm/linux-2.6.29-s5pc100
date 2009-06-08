@@ -314,3 +314,8 @@ v2.6.29.4-r0d5: Jinsung Yang
 		M       drivers/video/Kconfig
 		M       drivers/video/Makefile
 
+v2.6.29.4-r1: Jinsung Yang
+	- Official Release (2009.06.08)
+	- S5PC100 Alpha Version
+
+
