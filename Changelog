@@ -291,3 +291,26 @@ v2.6.29.4-r0d4: Kukjin Kim
      		M	drivers/mtd/nand/Makefile
      		A	drivers/mtd/nand/s3c_nand.c
 
+v2.6.29.4-r0d5: Jinsung Yang
+	- Framebuffer driver support
+
+	Added files:
+		A       drivers/video/samsung/Kconfig
+		A       drivers/video/samsung/Makefile
+		A       drivers/video/samsung/logo_rgb24.h
+		A       drivers/video/samsung/s3cfb.c
+		A       drivers/video/samsung/s3cfb.h
+		A       drivers/video/samsung/s3cfb_fimd4x.c
+		A       drivers/video/samsung/s3cfb_fimd5x.c
+		A       drivers/video/samsung/s3cfb_fimd6x.c
+		A       drivers/video/samsung/s3cfb_lte480wv.c
+
+	Modified files:
+		M       arch/arm/configs/smdkc100nfs_defconfig
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/plat-s3c/include/plat/fb.h
+		M       arch/arm/plat-s5pc1xx/Kconfig
+		M       arch/arm/plat-s5pc1xx/dev-fb.c
+		M       drivers/video/Kconfig
+		M       drivers/video/Makefile
+
