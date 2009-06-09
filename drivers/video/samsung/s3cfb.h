@@ -38,8 +38,8 @@
  *
 */
 enum s3cfb_data_path_t {
-	DATA_PATH_DMA,
-	DATA_PATH_FIFO,
+	DATA_PATH_FIFO = 0,
+	DATA_PATH_DMA = 1,
 };
 
 enum s3cfb_alpha_t {
@@ -182,7 +182,6 @@ struct s3cfb_window {
 	int			id;
 	int			enabled;
 	atomic_t		in_use;
-	wait_queue_head_t	wq;
 	int			x;
 	int			y;
 	enum 			s3cfb_data_path_t path;

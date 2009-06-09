@@ -682,6 +682,10 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 	int ret = 0;
 
 	switch (cmd) {
+	case FBIO_ALLOC:
+		win->path = (enum s3cfb_data_path_t) argp;
+		break;
+
 	case FBIOGET_FSCREENINFO:
 		ret = memcpy(argp, &fb->fix, sizeof(fb->fix)) ? 0 : -EFAULT;
 		break;
@@ -735,6 +739,10 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 
 		break;
 
+	/*
+	 * for FBIO_WAITFORVSYNC, S3CFB_WIN_ON, S3CFB_WIN_OFF 
+	 * and S3CFB_WIN_OFF_ALL
+	*/
 	default:
 		ret = s3cfb_ioctl(fb, cmd, arg);
 		break;
@@ -757,7 +765,6 @@ static int s3cfb_init_fbinfo(int id)
 	memset(win, 0, sizeof(struct s3cfb_window));
 	platform_set_drvdata(to_platform_device(ctrl->dev), fb);
 	strcpy(fix->id, S3CFB_NAME);
-	init_waitqueue_head(&win->wq);
 
 	/* fimd specific */
 	win->id = id;
