@@ -325,3 +325,9 @@ v2.6.29.4-r1d1: Abhilash Kesavan
 	- Added MTD default configuration file
 
 		A	arch/arm/configs/smdkc100mtd_defconfig
+
+v2.6.29.4-r1d2: Abhilash Kesavan
+	- Added support for RTC
+
+	 	M	arch/arm/mach-s5pc100/mach-smdkc100.c
+	  	M	drivers/rtc/rtc-s3c.c
