@@ -321,3 +321,7 @@ v2.6.29.4-r1: Jinsung Yang
 v2.6.29.4-r1d0: Jinsung Yang
 	- r1 tree initial tag
 
+v2.6.29.4-r1d1: Abhilash Kesavan
+	- Added MTD default configuration file
+
+		A	arch/arm/configs/smdkc100mtd_defconfig
