@@ -417,6 +417,7 @@ static int s3cfb_release_window(struct fb_info *fb)
 	struct s3cfb_window *win = fb->par;
 
 	if (win->id != pdata->default_win) {
+		s3cfb_disable_window(win->id);
 		s3cfb_unmap_video_memory(fb);
 		s3cfb_set_buffer_address(ctrl, win->id);
 	}
@@ -431,7 +432,6 @@ static int s3cfb_release(struct fb_info *fb, int user)
 {
 	struct s3cfb_window *win = fb->par;
 
-	s3cfb_disable_window(win->id);
 	s3cfb_release_window(fb);
 
 	mutex_lock(&ctrl->lock);
