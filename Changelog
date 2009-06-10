@@ -331,3 +331,58 @@ v2.6.29.4-r1d2: Abhilash Kesavan
 
 	 	M	arch/arm/mach-s5pc100/mach-smdkc100.c
 	  	M	drivers/rtc/rtc-s3c.c
+
+v2.6.29.4-r1d2: Thomas Abraham
+	- Added support for USB OHCI an USB OTG
+
+	Added files:
+		A       drivers/usb/gadget/s3c_udc.h
+		A       drivers/usb/gadget/s3c_udc_otg.c
+		A       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+		A       drivers/usb/gadget/s3c_udc_otg_xfer_slave.c
+		A       drivers/usb/host/s3c-otg/Makefile
+		A       drivers/usb/host/s3c-otg/s3c-otg-common-common.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-common-const.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-common-datastruct.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-common-errorcode.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-common-regdef.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-debug.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-driver.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-driver.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-kal.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-list.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-hcdi-memory.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-isr.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-isr.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-oci.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-oci.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-roothub.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-roothub.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-scheduler-ischeduler.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-scheduler-readyq.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-scheduler-scheduler.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-scheduler-scheduler.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-transfer-common.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transfer-nonperiodic.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-bulk.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-bulk.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-checker.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-common.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-common.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-control.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-control.h
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-interrupt.c
+		A       drivers/usb/host/s3c-otg/s3c-otg-transferchecker-interrupt.h
+
+	Modified files:
+		M       drivers/usb/Kconfig
+		M       drivers/usb/gadget/Kconfig
+		M       drivers/usb/gadget/Makefile
+		M       drivers/usb/gadget/epautoconf.c
+		M       drivers/usb/gadget/gadget_chips.h
+		M       drivers/usb/gadget/u_ether.c
+		M       drivers/usb/host/Kconfig
+		M       drivers/usb/host/Makefile
+		M       drivers/usb/host/ohci-hcd.c
