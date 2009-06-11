@@ -318,6 +318,77 @@ struct clk clk_pd0 = {
 };
 #endif
 
+#ifdef CONFIG_CPU_S5PC110
+struct clk clk_vpll = {
+	.name		= "vpll",
+	.id		= -1,
+};
+
+struct clk clk_h200 = {
+	.name		= "hclk200",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_h100 = {
+	.name		= "hclk100",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_h166 = {
+	.name		= "hclk166",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_h133 = {
+	.name		= "hclk133",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+
+struct clk clk_p100 = {
+	.name		= "pclk100",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_p83 = {
+	.name		= "pclk83",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+
+struct clk clk_p66 = {
+	.name		= "pclk66",
+	.id		= -1,
+	.rate		= 0,
+	.parent		= NULL,
+	.ctrlbit	= 0,
+	.set_rate	= clk_default_setrate,
+};
+#endif
+
 
 struct clk s3c24xx_uclk = {
 	.name		= "uclk",

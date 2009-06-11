@@ -10,7 +10,7 @@
 
 #if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410)
 #include <mach/dma-pl080.h>
-#elif defined(CONFIG_CPU_S5PC100)
+#elif defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 #include <mach/dma-pl330.h>
 #endif
 

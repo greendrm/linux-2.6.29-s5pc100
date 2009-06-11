@@ -13,8 +13,10 @@ obj-				:=
 
 obj-y				+= init.o
 ifndef CONFIG_ARCH_S5PC1XX
+ifndef CONFIG_ARCH_S5PC11X
 obj-y				+= time.o
 endif 
+endif
 obj-y				+= clock.o
 obj-y				+= pwm-clock.o
 obj-y				+= gpio.o

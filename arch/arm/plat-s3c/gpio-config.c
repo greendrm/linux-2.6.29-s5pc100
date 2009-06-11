@@ -138,6 +138,7 @@ int s3c_gpio_setcfg_s3c64xx_4bit(struct s3c_gpio_chip *chip,
 #endif /* CONFIG_S3C_GPIO_CFG_S3C64XX */
 
 #ifdef CONFIG_S3C_GPIO_CFG_S5PC1XX
+#if defined(CONFIG_PLAT_S5PC1XX)
 int s3c_gpio_setcfg_s5pc1xx(struct s3c_gpio_chip *chip,
 				 unsigned int off, unsigned int cfg)
 {
@@ -157,6 +158,27 @@ int s3c_gpio_setcfg_s5pc1xx(struct s3c_gpio_chip *chip,
 
 	return 0;
 }
+#elif defined(CONFIG_PLAT_S5PC11X)
+int s3c_gpio_setcfg_s5pc11x(struct s3c_gpio_chip *chip,
+				 unsigned int off, unsigned int cfg)
+{
+	void __iomem *reg = chip->base;
+	unsigned int shift = (off & 7) * 4;
+	u32 con;
+
+	if (s3c_gpio_is_cfg_special(cfg)) {
+		cfg &= 0xf;
+		cfg <<= shift;
+	}
+
+	con = __raw_readl(reg);
+	con &= ~(0xf << shift);
+	con |= cfg;
+	__raw_writel(con, reg);
+
+	return 0;
+}
+#endif /* CONFIG_PLAT_S5PC1XX */
 #endif /* CONFIG_S3C_GPIO_CFG_S5PC1XX */
 
 #ifdef CONFIG_S3C_GPIO_PULL_UPDOWN

@@ -6,7 +6,7 @@
 
 config PLAT_S3C
 	bool
-	depends on ARCH_S3C2410 || ARCH_S3C24A0 || ARCH_S3C64XX || ARCH_S5PC1XX
+	depends on ARCH_S3C2410 || ARCH_S3C24A0 || ARCH_S3C64XX || ARCH_S5PC1XX || ARCH_S5PC11X
 	default y
 	select NO_IOPORT
 	help
@@ -108,7 +108,7 @@ config S3C_LOWLEVEL_UART_PORT
 
 config SPLIT_ROOT_FILESYSTEM
 	bool "S3C MTD has 4 partitions"
-	depends on (ARCH_S3C64XX || ARCH_S5PC1XX) && MTD
+	depends on (ARCH_S3C64XX || ARCH_S5PC1XX || ARCH_S5PC11X) && MTD
 	help
 	  Choose this if you want to use 4 mtd partitions
 

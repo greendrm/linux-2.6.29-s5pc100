@@ -57,6 +57,16 @@ extern struct clk clk_54m;
 extern struct clk clk_dout_mpll2;
 #endif
 
+#ifdef CONFIG_CPU_S5PC110
+extern struct clk clk_vpll;
+extern struct clk clk_h200;
+extern struct clk clk_h166;
+extern struct clk clk_h133;
+extern struct clk clk_p100;
+extern struct clk clk_p83;
+extern struct clk clk_p66;
+#endif
+
 /* S3C64XX specific clocks */
 extern struct clk clk_27m;
 extern struct clk clk_48m;
@@ -90,10 +100,14 @@ extern void s3c2443_setup_clocks(void);
 
 extern int s3c64xx_sclk_ctrl(struct clk *clk, int enable);
 
-#ifdef CONFIG_ARCH_S5PC1XX
+#if defined(CONFIG_ARCH_S5PC1XX)
 extern void s5pc1xx_register_clocks(void);
 extern int s5pc1xx_sclk0_ctrl(struct clk *clk, int enable);
 extern int s5pc1xx_sclk1_ctrl(struct clk *clk, int enable);
+#elif defined(CONFIG_ARCH_S5PC11X)
+extern void s5pc11x_register_clocks(void);
+extern int s5pc11x_sclk0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_sclk1_ctrl(struct clk *clk, int enable);
 #endif
 
 /* Init for pwm clock code */

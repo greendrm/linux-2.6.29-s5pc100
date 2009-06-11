@@ -8,7 +8,7 @@ config FB_S3C
 	select FB_CFB_COPYAREA
 	select FB_CFB_IMAGEBLIT
 	select FRAMEBUFFER_CONSOLE_DETECT_PRIMARY
-	depends on FB && (ARCH_S3C64XX || ARCH_S5P64XX || ARCH_S5PC1XX)
+	depends on FB && (ARCH_S3C64XX || ARCH_S5P64XX || ARCH_S5PC1XX || ARCH_S5PC11X)
 	default n
 	---help---
 	  This enables support for Samsung Display Controller (FIMD)
