@@ -20,12 +20,12 @@
 #include <linux/pwm.h>
 #include <linux/gpio.h>
 
+#include <asm/irq.h>
 #include <mach/map.h>
 #include <plat/devs.h>
 #include <plat/regs-timer.h>
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
-#include <plat/gpio-bank-d.h>
 
 struct pwm_device {
 	struct list_head	 list;

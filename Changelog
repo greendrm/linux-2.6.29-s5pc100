@@ -545,3 +545,13 @@ v2.6.29.4-r1d3: Jongpill Lee
 		M       arch/arm/plat-s3c/include/plat/gpio-cfg-helpers.h
 		M       arch/arm/tools/mach-types
 		M       drivers/video/samsung/Kconfig
+
+v2.6.29.4-r1d6: Abhilash Kesavan
+	- Support backlight class driver by PWM on SMDKC100
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/cpu.c
+		M	arch/arm/plat-s5pc1xx/pwm.c
+		M	drivers/video/backlight/Kconfig
+
+
