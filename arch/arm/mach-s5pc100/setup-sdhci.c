@@ -54,6 +54,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
         /* GPG1 chip Detect */
         s3c_gpio_setpull(S5PC1XX_GPG1(2), S3C_GPIO_PULL_UP);
         s3c_gpio_cfgpin(S5PC1XX_GPG1(2), S3C_GPIO_SFN(2));
+        writel(0xf, S5PC1XX_GPG0DRV);
 }
 
 void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,

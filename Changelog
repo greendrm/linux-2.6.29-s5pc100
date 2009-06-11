@@ -554,4 +554,19 @@ v2.6.29.4-r1d6: Abhilash Kesavan
 		M	arch/arm/plat-s5pc1xx/pwm.c
 		M	drivers/video/backlight/Kconfig
 
+v2.6.29.4-r1d7: Abhilash Kesavan
+	- Support SDHCI on SMDKC100
 
+	Added Files:
+		A	drivers/mmc/host/sdhci-s3c.c
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/setup-sdhci.c
+		M	arch/arm/plat-s3c/dev-hsmmc.c
+		M	arch/arm/plat-s3c/dev-hsmmc1.c
+		M	arch/arm/plat-s3c/include/plat/sdhci.h
+		M	drivers/mmc/host/Kconfig
+		M	drivers/mmc/host/Makefile
+		M	drivers/mmc/host/sdhci.c
+		M	drivers/mmc/host/sdhci.h
+		M	include/linux/mmc/host.h
