@@ -579,3 +579,16 @@ v2.6.29.4-r1d8: Jinsung Yang
 		M       arch/arm/configs/smdkc100nfs_defconfig
 		M       arch/arm/configs/smdkc110nfs_defconfig
 
+v2.6.29.4-r1d9: Thomas Abraham
+	-  Fixed the cause for "BUG: sleeping function called from
+	   invalid context at mm/slub.c" warning message.
+
+	   In the functions ed_create and td_create, the memory is being
+	   allocated using GFP_KERNEL flag. Since ed_create and td_create
+	   functions are called in a context with spinlock held, the
+	   GFP_ATOMIC flag will have to be used for memory allocation. 
+	   This message was observed when in USB OTG Host mass
+	   storage test during connect, disconnect and data transfer.
+
+	Modified files:
+	        M      drivers/usb/host/s3c-otg/s3c-otg-transfer-common.c
