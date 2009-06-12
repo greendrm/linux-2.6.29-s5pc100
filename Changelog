@@ -570,3 +570,12 @@ v2.6.29.4-r1d7: Abhilash Kesavan
 		M	drivers/mmc/host/sdhci.c
 		M	drivers/mmc/host/sdhci.h
 		M	include/linux/mmc/host.h
+
+v2.6.29.4-r1d8: Jinsung Yang
+	- Disable Branch Prediction
+
+	Modified files:
+		M       arch/arm/configs/smdkc100mtd_defconfig
+		M       arch/arm/configs/smdkc100nfs_defconfig
+		M       arch/arm/configs/smdkc110nfs_defconfig
+
