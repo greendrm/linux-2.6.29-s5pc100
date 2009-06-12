@@ -228,7 +228,7 @@ int 	create_ed(ed_t	**new_ed)
 {
 	int err_code = USB_ERR_SUCCESS;
 	
-	err_code =  otg_mem_alloc((void **)new_ed,(u16)sizeof(ed_t), USB_MEM_SYNC);
+	err_code =  otg_mem_alloc((void **)new_ed,(u16)sizeof(ed_t), USB_MEM_ASYNC);
 	otg_mem_set(*new_ed, 0, sizeof(ed_t));
 	return err_code;
 }
@@ -461,7 +461,7 @@ int  	create_td(td_t 	**new_td)
 {
 	int	err_code = USB_ERR_SUCCESS;
 	
-	err_code =  otg_mem_alloc((void **)new_td,(u16)sizeof(td_t), USB_MEM_SYNC);
+	err_code =  otg_mem_alloc((void **)new_td,(u16)sizeof(td_t), USB_MEM_ASYNC);
 	otg_mem_set(*new_td, 0, sizeof(td_t));
 	return err_code;
 }
