@@ -175,7 +175,7 @@ config BACKLIGHT_CARILLO_RANCH
 
 config BACKLIGHT_PWM
 	tristate "Generic PWM based Backlight Driver"
-	depends on BACKLIGHT_CLASS_DEVICE && (HAVE_PWM || TIMER_PWM)
+	depends on BACKLIGHT_CLASS_DEVICE && HAVE_PWM
 	help
 	  If you have a LCD backlight adjustable by PWM, say Y to enable
 	  this driver.

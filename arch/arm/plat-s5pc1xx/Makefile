@@ -33,8 +33,7 @@ obj-$(CONFIG_CPU_FREQ)		+= s5pc1xx-cpufreq.o ltc3714.o
 obj-$(CONFIG_S5PC1XX_SETUP_I2C0) += setup-i2c0.o
 obj-$(CONFIG_S5PC1XX_SETUP_I2C1) += setup-i2c1.o
 obj-$(CONFIG_S5PC1XX_ADC)        += adc.o
-obj-$(CONFIG_TIMER_PWM)          += pwm.o
-obj-$(CONFIG_S5PC1XX_PWM)        += pwm-s5pc100.o
+obj-$(CONFIG_HAVE_PWM)		 += pwm.o
 
 # Device setup - FIMC
 obj-$(CONFIG_S5PC1XX_DEV_FIMC0)	  += dev-fimc0.o

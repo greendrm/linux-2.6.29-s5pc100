@@ -128,7 +128,7 @@ void __init s5pc100_init_clocks(int xtal)
 	s5pc1xx_register_clocks();
 	s5pc100_register_clocks();
 	s5pc100_setup_clocks();
-#if defined(CONFIG_TIMER_PWM)
+#if defined(CONFIG_HAVE_PWM)
         s3c_pwmclk_init();
 #endif
 }

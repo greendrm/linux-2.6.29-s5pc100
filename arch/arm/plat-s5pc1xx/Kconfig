@@ -130,25 +130,10 @@ config S5PC1XX_SETUP_CSIS
 	help
 	  Common setup code for MIPI-CSIS
 
-choice
-        prompt "PWM device support"
-        default NO_PWM
-
-config S5PC1XX_PWM
-        bool "Support Old API"
-        help
-          Support for exporting the PWM timer blocks via old type API
-
-config TIMER_PWM
+config S5P_HAVE_PWM
         bool "PWM device support"
+        select HAVE_PWM
         help
            Support for exporting the PWM timer blocks via the pwm device
-
-config NO_PWM
-        bool "No PWM support"
-        help
-           PWM is not supported
-
-endchoice
 
 endif

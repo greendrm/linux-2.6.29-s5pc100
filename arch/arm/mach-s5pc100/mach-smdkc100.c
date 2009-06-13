@@ -199,7 +199,7 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 	&s3c_device_g2d,
 	&s3c_device_rotator,
 	&s3c_device_csis,
-#if defined(CONFIG_TIMER_PWM)
+#if defined(CONFIG_HAVE_PWM)
         &s3c_device_timer[0],
         &s3c_device_timer[1],
 #endif
@@ -228,7 +228,7 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
-#if defined(CONFIG_TIMER_PWM)
+#if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
         .pwm_id         = 0,
         .max_brightness = 255,

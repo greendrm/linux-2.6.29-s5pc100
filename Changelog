@@ -592,3 +592,17 @@ v2.6.29.4-r1d9: Thomas Abraham
 
 	Modified files:
 	        M      drivers/usb/host/s3c-otg/s3c-otg-transfer-common.c
+
+v2.6.29.4-r1d10: Abhilash Kesavan
+	- Removed Old PWM driver and fixed Kconfig for C100
+	
+	Modified files:
+		M	arch/arm/mach-s5pc100/cpu.c
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/plat-s5pc1xx/Kconfig
+		M	arch/arm/plat-s5pc1xx/Makefile
+		M	drivers/video/backlight/Kconfig
+	
+	Deleted files:
+		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.c
+		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.h
