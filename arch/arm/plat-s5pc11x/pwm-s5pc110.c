@@ -303,7 +303,6 @@ int S5PC11X_pwm_free (pwmch_t channel, s3c_pwm_client_t *client)
 
 	/* sort out stopping and freeing the channel */
 
-
 	chan->client = NULL;
 	chan->in_use = 0;
 

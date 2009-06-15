@@ -82,22 +82,12 @@ extern struct sys_timer s5pc11x_timer;
 extern void s5pc11x_reserve_bootmem(void);
 
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
-#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
-/* HS-UART Clock using SCLK */
-        [0] = {
-                .name           = "uclk1",
-                .divisor        = 1,
-                .min_baud       = 0,
-                .max_baud       = 0,
-        },
-#else
         [0] = {
                 .name           = "pclk",
                 .divisor        = 1,
                 .min_baud       = 0,
                 .max_baud       = 0,
         },
-#endif
 };
 
 static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
@@ -201,7 +191,7 @@ static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
-	s3c24xx_init_clocks(10000000);
+	s3c24xx_init_clocks(16000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
 	s5pc11x_reserve_bootmem();
 }

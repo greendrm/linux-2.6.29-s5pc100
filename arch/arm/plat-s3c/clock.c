@@ -457,6 +457,28 @@ int __init s3c24xx_register_baseclocks(unsigned long xtal)
 	if (s3c24xx_register_clock(&clk_pd0) < 0)
 		printk(KERN_ERR "failed to register cpu pclkd0\n");
 #endif
+
+#ifdef CONFIG_CPU_S5PC110
+        if (s3c24xx_register_clock(&clk_h200) < 0)
+                printk(KERN_ERR "failed to register cpu hclk200\n");
+
+        if (s3c24xx_register_clock(&clk_h100) < 0)
+                printk(KERN_ERR "failed to register cpu hclk100\n");
+
+        if (s3c24xx_register_clock(&clk_h166) < 0)
+                printk(KERN_ERR "failed to register cpu hclk166\n");
+
+        if (s3c24xx_register_clock(&clk_h133) < 0)
+                printk(KERN_ERR "failed to register cpu hclk133\n");
+
+        if (s3c24xx_register_clock(&clk_p100) < 0)
+                printk(KERN_ERR "failed to register cpu pclk100\n");
+
+        if (s3c24xx_register_clock(&clk_p83) < 0)
+                printk(KERN_ERR "failed to register cpu pclk83\n");
+        if (s3c24xx_register_clock(&clk_p66) < 0)
+                printk(KERN_ERR "failed to register cpu pclk66\n");
+#endif
 	if (s3c24xx_register_clock(&clk_h) < 0)
 		printk(KERN_ERR "failed to register cpu hclk\n");
 

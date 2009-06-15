@@ -24,5 +24,5 @@
 
 void __init s5pc110_common_init_uarts(struct s3c2410_uartcfg *cfg, int no)
 {
-	s3c24xx_init_uartdevs("s5pc110-uart", s5pc11x_uart_resources, cfg, no);
+	s3c24xx_init_uartdevs("s5pc100-uart", s5pc11x_uart_resources, cfg, no);
 }

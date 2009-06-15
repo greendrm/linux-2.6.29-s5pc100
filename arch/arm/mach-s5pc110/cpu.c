@@ -75,36 +75,17 @@ static struct map_desc s5pc110_iodesc[] __initdata = {
 static void s5pc110_idle(void)
 {
 	unsigned int tmp;
-
-#if defined(T32_PROBE_DEBUGGING)
-/* debugging with T32  GPIO port GPD1 which is connected with 2 pin of J1 connector */
-	gpio_direction_output(S5PC11X_GPD(1), 0);
-#endif
 /*
  * 1. Set CFG_STANDBYWFI field of PWR_CFG to 2¡¯b01.
  * 2. Set PMU_INT_DISABLE bit of OTHERS register to 1¡¯b1 to prevent interrupts from
  *    occurring while entering IDLE mode.
  * 3. Execute Wait For Interrupt instruction (WFI).
 */
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= S5P_CFG_WFI_CLEAN;
-	tmp |= S5P_CFG_WFI_IDLE;
-	__raw_writel(tmp, S5P_PWR_CFG);
-
-	cpu_do_idle();
-
-#if defined(T32_PROBE_DEBUGGING)
-	gpio_direction_output(S5PC11X_GPD(1), 1);
-#endif
 }
 
 void __init s5pc110_map_io(void)
 {
 	iotable_init(s5pc110_iodesc, ARRAY_SIZE(s5pc110_iodesc));
-
-        /* HS-MMC Platform data */
-        s3c6410_default_sdhci0();
-        s3c6410_default_sdhci1();
 
 	/* set s5pc110 idle function */
 	s5pc11x_idle = s5pc110_idle;

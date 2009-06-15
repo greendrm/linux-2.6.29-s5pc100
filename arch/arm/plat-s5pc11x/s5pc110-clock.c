@@ -194,28 +194,6 @@ int s5pc11x_clk_doutarm_set_rate(struct clk *clk, unsigned long rate)
 
 #ifdef PREVENT_BUS_CLOCK_CHANGE
 
-#if 0
-	iter = 0x4000;
-	flag = __raw_readl(S5P_CLK_DIV0);
-	__asm__  __volatile__ ("mcr p15, 0, %0, c7, c10, 4" \
-				    : : "r" (flag) : "memory");
-	__asm__  __volatile__ ("mcr p15, 0, %0, c7, c10, 5" \
-				    : : "r" (flag) : "memory");
-	
-	do {
-		iter--;
-		if(iter == 0x2000) {
-			__asm__  __volatile__ ("mcr p15, 0, %0, c7, c10, 4" \
-						    : : "r" (flag) : "memory");
-			__asm__  __volatile__ ("mcr p15, 0, %0, c7, c10, 5" \
-						    : : "r" (flag) : "memory");
-			__raw_writel(val, S5P_CLK_DIV0);			
-		}
-		if(iter <= 0)
-			break;
-		
-	} while(1);
-#else
 	/* Clock Down */
 	if(arm_ratio_old < (div_arm - 1)) {
 		val = __raw_readl(S5P_CLK_DIV0);
@@ -239,8 +217,6 @@ int s5pc11x_clk_doutarm_set_rate(struct clk *clk, unsigned long rate)
 		val |= (div_arm - 1) << S5P_CLKDIV0_APLL_SHIFT;
 		__raw_writel(val, S5P_CLK_DIV0);
 	}
-
-#endif
 
 #else
 	__raw_writel(val, S5P_CLK_DIV0);

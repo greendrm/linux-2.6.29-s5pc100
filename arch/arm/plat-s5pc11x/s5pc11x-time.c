@@ -55,9 +55,6 @@ static unsigned long timer_usec_ticks;
 #define TICK_MAX (0xffff)
 #endif
 
-//#define T32_DEBUG_GPD
-//#define CLK_OUT_PROBING
-
 #define TIMER_USEC_SHIFT 16
 
 static unsigned int s5pc11x_systimer_read(unsigned int *reg_offset)
@@ -171,27 +168,6 @@ static irqreturn_t s5pc11x_timer_interrupt(int irq, void *dev_id)
 	temp_cstat |= S3C_SYSTIMER_INT_STATS;
 
 	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT, temp_cstat);
-#ifdef T32_DEBUG_GPD
-	u32 tmp;  
-	tmp = __raw_readl(S5PC11X_GPDDAT);  
-	tmp |= (0x1<<1);	
-	__raw_writel(tmp, S5PC11X_GPDDAT);
-
-#endif
-
-#if 0
-	do {				
-		if(!(s5pc11x_systimer_read(S3C_SYSTIMER_INT_CSTAT) & S3C_SYSTIMER_INT_STATS))
-			break;
-	} while(1);
-#endif
-
-#ifdef T32_DEBUG_GPD
-	tmp = __raw_readl(S5PC11X_GPDDAT);  
-	tmp &=~(0x1<<1);	
-	__raw_writel(tmp, S5PC11X_GPDDAT);
-
-#endif
 	timer_tick();
 
 	return IRQ_HANDLED;
@@ -219,25 +195,6 @@ static void s5pc11x_timer_setup (void)
 	struct clk *clk;
 
 	unsigned long reg;
-
-#ifdef T32_DEBUG_GPD
-	reg = __raw_readl(S5PC11X_GPDCON);
-	reg &=~(0xf << 4);
-	reg |= (0x1 << 4);
-	__raw_writel(reg, S5PC11X_GPDCON);
-
-	reg = __raw_readl(S5PC11X_GPDDAT);
-	reg &=~(0x1<<1);
-	__raw_writel(reg, S5PC11X_GPDDAT);   
-	
-#endif
-
-#ifdef CLK_OUT_PROBING
-	reg = __raw_readl(S5P_CLK_OUT);
-	reg &=~(0x1f<<12);
-	reg |= (0x6<<12);
-	__raw_writel(reg, S5P_CLK_OUT);
-#endif
 
 	tcnt = TICK_MAX;  /* default value for tcnt */
 

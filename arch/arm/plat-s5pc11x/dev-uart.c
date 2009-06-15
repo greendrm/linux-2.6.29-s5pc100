@@ -46,7 +46,6 @@ static struct resource s5pc11x_uart0_resource[] = {
 		.start	= IRQ_S3CUART_TX0,
 		.end	= IRQ_S3CUART_TX0,
 		.flags	= IORESOURCE_IRQ,
-
 	},
 	[3] = {
 		.start	= IRQ_S3CUART_ERR0,

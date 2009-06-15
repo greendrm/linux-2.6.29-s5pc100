@@ -67,6 +67,9 @@
 /* flag to ignore all characters comming in */
 #define RXSTAT_DUMMY_READ (0x10000000)
 
+const unsigned int nSlotTable[16] = {0x0000, 0x0080, 0x0808, 0x0888, 0x2222, 0x4924, 0x4a52, 0x54aa,
+                                                0x5555, 0xd555, 0xd5d5, 0xddd5, 0xdddd, 0xdfdd, 0xdfdf, 0xffdf};
+
 static inline struct s3c24xx_uart_port *to_ourport(struct uart_port *port)
 {
 	return container_of(port, struct s3c24xx_uart_port, port);
@@ -509,6 +512,7 @@ struct baud_calc {
 	struct s3c24xx_uart_clksrc	*clksrc;
 	unsigned int			 calc;
 	unsigned int			 quot;
+        unsigned int                     slot;
 	struct clk			*src;
 };
 
@@ -517,27 +521,44 @@ static int s3c24xx_serial_calcbaud(struct baud_calc *calc,
 				   struct s3c24xx_uart_clksrc *clksrc,
 				   unsigned int baud)
 {
-	unsigned long rate;
+	unsigned long rate,nslot;
+	unsigned long tempdiv;
+	unsigned int serial_result_1,serial_result_2;
 
 	calc->src = clk_get(port->dev, clksrc->name);
 	if (calc->src == NULL || IS_ERR(calc->src))
 		return 0;
 
+	baud/=100;
+
 	rate = clk_get_rate(calc->src);
 	rate /= clksrc->divisor;
 
 	calc->clksrc = clksrc;
-	calc->quot = (rate + (8 * baud)) / (16 * baud);
-	calc->calc = (rate / (calc->quot * 16));
 
-	calc->quot--;
+	tempdiv = (rate*10/(baud*16))-1000;
+	serial_result_1 = ((tempdiv%1000)*16)/1000;
+	serial_result_2 = (((tempdiv%1000)*16) - (serial_result_1*1000));
+
+#if 0
+	if (serial_result_2 >=500)
+		nslot = serial_result_1+1;
+	else
+		nslot = serial_result_1;
+#endif
+	nslot = serial_result_1;
+
+	calc->quot = tempdiv/1000;
+	calc->calc = (rate / (calc->quot * 16));
+	calc->slot = nSlotTable[nslot];
+
 	return 1;
 }
 
 static unsigned int s3c24xx_serial_getclk(struct uart_port *port,
 					  struct s3c24xx_uart_clksrc **clksrc,
 					  struct clk **clk,
-					  unsigned int baud)
+                                          unsigned int baud, unsigned int *slot)
 {
 	struct s3c2410_uartcfg *cfg = s3c24xx_port_to_cfg(port);
 	struct s3c24xx_uart_clksrc *clkp;
@@ -603,12 +624,17 @@ static unsigned int s3c24xx_serial_getclk(struct uart_port *port,
 		}
 	}
 
+	if(best) {
 	/* store results to pass back */
 
 	*clksrc = best->clksrc;
 	*clk    = best->src;
+	        *slot   = best->slot;
 
 	return best->quot;
+	} else {
+		return -EINVAL;
+	}
 }
 
 static void s3c24xx_serial_set_termios(struct uart_port *port,
@@ -623,7 +649,7 @@ static void s3c24xx_serial_set_termios(struct uart_port *port,
 	unsigned int baud, quot;
 	unsigned int ulcon;
 	unsigned int umcon;
-
+	unsigned int slot = 0;
 	/*
 	 * We don't support modem control lines.
 	 */
@@ -634,12 +660,12 @@ static void s3c24xx_serial_set_termios(struct uart_port *port,
 	 * Ask the core to calculate the divisor for us.
 	 */
 
-	baud = uart_get_baud_rate(port, termios, old, 0, 115200*8);
+	baud = uart_get_baud_rate(port, termios, old, 0, 4000000);
 
 	if (baud == 38400 && (port->flags & UPF_SPD_MASK) == UPF_SPD_CUST)
 		quot = port->custom_divisor;
 	else
-		quot = s3c24xx_serial_getclk(port, &clksrc, &clk, baud);
+		quot = s3c24xx_serial_getclk(port, &clksrc, &clk, baud, &slot);
 
 	/* check to see if we need  to change clock source */
 
@@ -701,6 +727,7 @@ static void s3c24xx_serial_set_termios(struct uart_port *port,
 
 	wr_regl(port, S3C2410_ULCON, ulcon);
 	wr_regl(port, S3C2410_UBRDIV, quot);
+	wr_regl(port, S3C_UDIVSLOT, slot);
 	wr_regl(port, S3C2410_UMCON, umcon);
 
 	dbg("uart: ulcon = 0x%08x, ucon = 0x%08x, ufcon = 0x%08x\n",
