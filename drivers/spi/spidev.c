@@ -37,7 +37,7 @@
 
 #include <asm/uaccess.h>
 
-
+#include "spi_sam.h"
 /*
  * This supports acccess to SPI devices using normal userspace I/O calls.
  * Note that while traditional UNIX/POSIX I/O semantics are half duplex,
@@ -66,7 +66,7 @@ static unsigned long	minors[N_SPI_MINORS / BITS_PER_LONG];
  * REVISIT should changing those two modes be privileged?
  */
 #define SPI_MODE_MASK		(SPI_CPHA | SPI_CPOL | SPI_CS_HIGH \
-				| SPI_LSB_FIRST | SPI_3WIRE | SPI_LOOP)
+				| SPI_LSB_FIRST | SPI_3WIRE | SPI_LOOP | SPI_SLAVE)
 
 struct spidev_data {
 	dev_t			devt;
