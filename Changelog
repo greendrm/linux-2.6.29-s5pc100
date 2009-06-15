@@ -606,3 +606,21 @@ v2.6.29.4-r1d10: Abhilash Kesavan
 	Deleted files:
 		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.c
 		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.h
+
+v2.6.29.4-r1d11: Jongpill Lee
+	- temporary support SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/cpu.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s3c/clock.c
+		M       arch/arm/plat-s3c/include/plat/regs-serial.h
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/dev-uart.c
+		M       arch/arm/plat-s5pc11x/pwm-s5pc110.c
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+		M       arch/arm/plat-s5pc11x/s5pc110-init.c
+		M       arch/arm/plat-s5pc11x/s5pc11x-time.c
+		M       drivers/net/smc911x.h
+		M       drivers/serial/Kconfig
+		M       drivers/serial/samsung.c
