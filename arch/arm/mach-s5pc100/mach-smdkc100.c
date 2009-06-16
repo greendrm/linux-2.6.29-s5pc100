@@ -379,6 +379,9 @@ static void __init smdkc100_map_io(void)
 	s3c_device_nand.name = "s5pc100-nand";
 	s5pc1xx_init_io(smdkc100_iodesc, ARRAY_SIZE(smdkc100_iodesc));
 	s3c24xx_init_clocks(0);
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+        writel((readl(S5P_CLK_DIV2) & ~(0xf << 0)), S5P_CLK_DIV2);
+#endif
 	s3c24xx_init_uarts(smdkc100_uartcfgs, ARRAY_SIZE(smdkc100_uartcfgs));
 	s5pc1xx_reserve_bootmem();
 }

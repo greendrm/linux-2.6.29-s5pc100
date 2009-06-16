@@ -640,3 +640,15 @@ v2.6.29.4-r1d12: Hatim Ali
 
 v2.6.29.4-r1d13: Jassi
 	- Updated support for SPI in SMDKC100
+
+v2.6.29.4-r1d15: Abhilash Kesavan
+	- Added UART-DMA Support on SMDKC100
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/dma.c
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/plat-s3c/dma-pl330.c
+		M	arch/arm/plat-s5pc1xx/dev-uart.c
+		M	drivers/serial/Kconfig
+		M	drivers/serial/samsung.c
+		M	drivers/serial/samsung.h

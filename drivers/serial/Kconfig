@@ -541,7 +541,7 @@ config SERIAL_S5PC100
 	  Serial port support for the Samsung S5PC100 SoCs
 
 config SERIAL_S5PC1XX_HSUART
-        bool "Support for High speed UART(4Mbps) on S5PC1XX serial port"
+        bool "Support for High speed UART(3Mbps) on S5PC1XX serial port"
         depends on SERIAL_S5PC100=y
         select SERIAL_CORE
           help

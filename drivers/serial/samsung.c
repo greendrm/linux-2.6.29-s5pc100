@@ -53,6 +53,30 @@
 
 #include "samsung.h"
 
+#if defined(CONFIG_S5P_UART_DMA_EN)
+#include <asm/dma.h>
+#include <mach/s3c-dma.h>
+#include <linux/dma-mapping.h>
+#include <linux/semaphore.h>
+
+static struct s3c2410_dma_client uart_dma_client_tx = {
+    .name       = "uart-dma-tx",
+};
+
+static struct s3c2410_dma_client uart_dma_client_rx = {
+    .name       = "uart-dma-rx",
+};
+
+#define S3C_DMA_XFER_BYTE       (1)
+#define S3C2410_UCON_RXDMAMODE_MASK (0x3)
+#define S3C2410_UCON_RXDMAMODE_SIG0 (2)
+#define S3C2410_UCON_RXDMAMODE_SIG1 (3)
+
+#define S3C2410_UCON_TXDMAMODE_MASK (0xC)
+#define S3C2410_UCON_TXDMAMODE_SIG0 (2<<2)
+#define S3C2410_UCON_TXDMAMODE_SIG1 (3<<2)
+#endif
+
 /* UART name and device definitions */
 
 #define S3C24XX_SERIAL_NAME	"ttySAC"
@@ -137,17 +161,218 @@ static void s3c24xx_serial_stop_tx(struct uart_port *port)
 	}
 }
 
+#if defined(CONFIG_S5P_UART_DMA_EN)
+void s3c24xx_flush_buffer(struct uart_port *port)
+{
+	struct s3c24xx_uart_port *ourport = to_ourport(port);
+	
+	if ( ourport->dma_busy == 1 ) {
+		//s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_STOP);
+		s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_FLUSH);
+		ourport->dma_busy = 0;
+        }
+}
+
+/* s5pc1xx_uart_enqueue
+ *
+ * place a dma buffer onto the queue for the dma system
+ * to handle.
+*/
+
+static void s5pc1xx_uart_enqueue(struct s3c24xx_uart_port *uart)
+{
+	struct s3c24xx_uart_port *ourport = uart;
+	struct uart_port *port = &ourport->port;
+	struct circ_buf *xmit = &port->info->xmit;
+	uint32_t len, ucon;
+
+        if (ourport->dma_busy == 1)
+                return;
+	
+	if (uart_circ_empty(xmit) || uart_tx_stopped(port)) 
+		return;
+	
+	ourport->dma_busy = 1;
+	len = CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE);
+	if (len > (UART_XMIT_SIZE - xmit->tail))
+                len = UART_XMIT_SIZE - xmit->tail;
+
+	ucon = s3c2410_dma_enqueue(ourport->dma_ch_tx, (void *) ourport,
+                (dma_addr_t) virt_to_dma(NULL, (char*) &(xmit->buf[xmit->tail]) ), len);
+
+	ucon = rd_regl(port, S3C2410_UCON);
+	ucon &= ~(S3C2410_UCON_TXDMAMODE_MASK);
+        ucon |= S3C2410_UCON_TXDMAMODE_SIG0;
+        wr_regl(port, S3C2410_UCON, ucon);
+}
+
+static void s5pc1xx_uart_tx_buffdone(struct s3c2410_dma_chan *channel,
+                void *dev_id, int size,
+                enum s3c2410_dma_buffresult result)
+{
+	struct s3c24xx_uart_port *ourport = dev_id;
+	struct uart_port *port = &ourport->port;
+	struct circ_buf *circ = &ourport->port.info->xmit;
+
+	spin_lock(&port->lock);
+	ourport->dma_busy = 0;
+
+	if (result == S3C2410_RES_ABORT || result == S3C2410_RES_ERR) 
+		ourport->dma_busy = 0;
+	else {
+		if ( circ->head != circ->tail )
+			circ->tail = (circ->tail + size) & (UART_XMIT_SIZE - 1);
+	
+		port->icount.tx += size;
+		if (uart_circ_chars_pending(circ) < WAKEUP_CHARS)
+        		uart_write_wakeup(port);
+
+		s5pc1xx_uart_enqueue(ourport);
+	}
+        spin_unlock(&port->lock);
+}
+
+//static dma_addr_t rx_buf_dma_handle;
+
+/* ? - where has parity gone?? */
+#define S3C2410_UERSTAT_PARITY (0x1000)
+
+#define UART_RX_SIZE  (PAGE_SIZE)
+#define DMA_RX_FLUSH_JIFFIES	(HZ/150)
+
+static void s5p_dma_rx_chars(struct s3c24xx_uart_port *ourport)
+{
+	struct uart_port *port = &ourport->port;
+	struct tty_struct *tty = port->info->port.tty;
+	unsigned int ufcon, flag, uerstat;
+    int count, flags;
+
+    s3c2410_dma_getposition(ourport->dma_ch_rx, NULL, &(ourport->dma_phy_pos) );
+    ourport->rx_buf.head = (int) (ourport->dma_phy_pos - ourport->rx_buf_dma_handle) ;
+
+	count = CIRC_CNT(ourport->rx_buf.head, ourport->rx_buf.tail, UART_RX_SIZE);
+       spin_lock_irqsave(&port->lock, flags);
+
+    if(count) {
+		ufcon = rd_regl(port, S3C2410_UFCON);
+		uerstat = rd_regl(port, S3C2410_UERSTAT);
+
+		if (port->flags & UPF_CONS_FLOW) {
+			int txe = s3c24xx_serial_txempty_nofifo(port);
+
+			if (rx_enabled(port)) {
+				if (!txe) {
+					rx_enabled(port) = 0;
+//					continue;
+				}
+			} else {
+				if (txe) {
+					ufcon |= S3C2410_UFCON_RESETRX;
+					wr_regl(port, S3C2410_UFCON, ufcon);
+					rx_enabled(port) = 1;
+					goto out;
+				}
+//				continue;
+			}
+		}
+
+
+		/* insert the character into the buffer */
+		flag = TTY_NORMAL;
+		port->icount.rx += count;
+
+		if (unlikely(uerstat & S3C2410_UERSTAT_ANY)) {
+			dbg("rxerr: port ch=0x%02x, rxs=0x%08x\n",
+			    ch, uerstat);
+
+			/* check for break */
+			if (uerstat & S3C2410_UERSTAT_BREAK) {
+				dbg("break!\n");
+				port->icount.brk++;
+				if (uart_handle_break(port))
+				    //goto ignore_char;
+				    {}
+			}
+
+			if (uerstat & S3C2410_UERSTAT_FRAME)
+				port->icount.frame++;
+			if (uerstat & S3C2410_UERSTAT_OVERRUN)
+				port->icount.overrun++;
+
+			uerstat &= port->read_status_mask;
+
+			if (uerstat & S3C2410_UERSTAT_BREAK)
+				flag = TTY_BREAK;
+			else if (uerstat & S3C2410_UERSTAT_PARITY)
+				flag = TTY_PARITY;
+			else if (uerstat & (S3C2410_UERSTAT_FRAME |
+					    S3C2410_UERSTAT_OVERRUN))
+				flag = TTY_FRAME;
+		}
+
+	    for (; ourport->rx_buf.tail != ourport->rx_buf.head;) {
+		    if (uart_handle_sysrq_char(port, ourport->rx_buf.buf[ourport->rx_buf.tail]))
+			    goto ignore_char;
+
+    		uart_insert_char(port, uerstat, S3C2410_UERSTAT_OVERRUN,
+	    			 ourport->rx_buf.buf[ourport->rx_buf.tail], flag);
+
+            ourport->rx_buf.tail = (ourport->rx_buf.tail +1); 
+
+            if(ourport->rx_buf.tail == UART_RX_SIZE/2){
+                s3c2410_dma_enqueue(ourport->dma_ch_rx, (void *) ourport, (dma_addr_t) ourport->rx_buf_dma_handle, UART_RX_SIZE/2);
+            } 
+
+            if( (ourport->rx_buf.tail) == UART_RX_SIZE){
+		s3c2410_dma_enqueue(ourport->dma_ch_rx, (void *) ourport, (dma_addr_t) (ourport->rx_buf_dma_handle + (UART_RX_SIZE/2)) , UART_RX_SIZE/2);
+            }
+
+            ourport->rx_buf.tail = (ourport->rx_buf.tail) & (UART_RX_SIZE - 1);
+
+ignore_char:
+		continue;
+        }
+
+	    tty_flip_buffer_push(tty);
+    }
+out:
+	spin_unlock_irqrestore(&port->lock, flags);
+	return;
+}
+
+static void s5pc1xx_uart_rx_buffdone(struct s3c2410_dma_chan *channel,
+                void *dev_id, int size,
+                enum s3c2410_dma_buffresult result)
+{
+}
+
+void s5p_serial_rx_dma_timeout(struct s3c24xx_uart_port *ourport)
+{
+    s5p_dma_rx_chars(ourport);
+    mod_timer(&(ourport->rx_dma_timer), jiffies + DMA_RX_FLUSH_JIFFIES);
+}
+#endif
 static void s3c24xx_serial_start_tx(struct uart_port *port)
 {
 	struct s3c24xx_uart_port *ourport = to_ourport(port);
 
-	if (!tx_enabled(port)) {
-		if (port->flags & UPF_CONS_FLOW)
-			s3c24xx_serial_rx_disable(port);
+#if defined(CONFIG_S5P_UART_DMA_EN)
+        if (!ourport->dma_busy) {
+                if (port->flags & UPF_CONS_FLOW)
+                        s3c24xx_serial_rx_disable(port);
+                tx_enabled(port) = 1;
+                s5pc1xx_uart_enqueue(ourport);
+        }
+#else
+        if (!tx_enabled(port)) {
+                if (port->flags & UPF_CONS_FLOW)
+                        s3c24xx_serial_rx_disable(port);
 
-		enable_irq(ourport->tx_irq);
-		tx_enabled(port) = 1;
-	}
+                enable_irq(ourport->tx_irq);
+                tx_enabled(port) = 1;
+        }
+#endif
+
 }
 
 
@@ -391,6 +616,29 @@ static void s3c24xx_serial_shutdown(struct uart_port *port)
 		ourport->rx_claimed = 0;
 		rx_enabled(port) = 0;
 	}
+#if defined(CONFIG_S5P_UART_DMA_EN)
+    if(ourport->dma_ch_tx) {
+		//s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_STOP);
+		s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_FLUSH);
+        s3c2410_dma_free(ourport->dma_ch_tx, &uart_dma_client_tx );
+    }
+    if( ourport->rx_buf.buf ) {
+	dma_free_coherent(NULL, UART_RX_SIZE, ourport->rx_buf.buf, ourport->rx_buf_dma_handle);
+        ourport->rx_buf.buf = 0;
+    }
+    del_timer(&(ourport->rx_dma_timer));
+
+    if(ourport->dma_ch_rx) {
+		//s3c2410_dma_ctrl(ourport->dma_ch_rx, S3C2410_DMAOP_STOP);
+		s3c2410_dma_ctrl(ourport->dma_ch_rx, S3C2410_DMAOP_FLUSH);
+	s3c2410_dma_free(ourport->dma_ch_rx, &uart_dma_client_rx );
+    }
+#endif
+      if(ourport->tx_claimed && ourport->rx_claimed) {
+               printk("calling shutdown from startup \n");
+               s3c24xx_serial_shutdown(port);
+       }
+
 }
 
 
@@ -398,6 +646,10 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 {
 	struct s3c24xx_uart_port *ourport = to_ourport(port);
 	int ret;
+#if defined(CONFIG_S5P_UART_DMA_EN)
+	unsigned int ucon;
+#endif
+
 
 	dbg("s3c24xx_serial_startup: port=%p (%08lx,%p)\n",
 	    port->mapbase, port->membase);
@@ -429,6 +681,59 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 	ourport->tx_claimed = 1;
 
 	dbg("s3c24xx_serial_startup ok\n");
+
+#if defined(CONFIG_S5P_UART_DMA_EN)
+
+	if (s3c2410_dma_request(ourport->dma_ch_tx, &uart_dma_client_tx, NULL)) {
+		printk(KERN_ERR  "unable to get DMA channel for UART tx.\n" );
+		ourport->dma_ch_tx = 0;
+		goto err;
+	}
+   	s3c2410_dma_set_buffdone_fn(ourport->dma_ch_tx, s5pc1xx_uart_tx_buffdone);
+	s3c2410_dma_set_opfn(ourport->dma_ch_tx,  NULL);
+
+	s3c2410_dma_devconfig(ourport->dma_ch_tx, S3C2410_DMASRC_MEM, 0, (port->mapbase + S3C2410_UTXH) );
+	s3c2410_dma_config(ourport->dma_ch_tx, S3C_DMA_XFER_BYTE, 0);
+	s3c2410_dma_setflags(ourport->dma_ch_tx, S3C2410_DMAF_AUTOSTART);
+
+//for rx
+    if (s3c2410_dma_request(ourport->dma_ch_rx, &uart_dma_client_rx, NULL)) {
+        printk(KERN_ERR  "unable to get DMA channel for UART rx.\n" );
+        ourport->dma_ch_rx = 0;
+        goto err;
+    }
+    s3c2410_dma_set_buffdone_fn(ourport->dma_ch_rx, s5pc1xx_uart_rx_buffdone);
+    s3c2410_dma_set_opfn(ourport->dma_ch_rx,  NULL);
+
+    s3c2410_dma_devconfig(ourport->dma_ch_rx, S3C2410_DMASRC_HW, 0, (port->mapbase + S3C2410_URXH) );
+    s3c2410_dma_config(ourport->dma_ch_rx, S3C_DMA_XFER_BYTE, 0);
+    s3c2410_dma_setflags(ourport->dma_ch_rx, S3C2410_DMAF_AUTOSTART);
+
+    ucon = rd_regl(port, S3C2410_UCON);
+    ucon &= ~(S3C2410_UCON_RXDMAMODE_MASK);
+       ucon |= S3C2410_UCON_RXDMAMODE_SIG1;
+    wr_regl(port, S3C2410_UCON, ucon);
+
+    ucon = rd_regl(port, S3C2410_UFCON);
+    ucon &= ~(3<<4);
+    wr_regl(port, S3C2410_UFCON, ucon);
+
+    ourport->rx_buf.buf = 0;
+    ourport->rx_buf.buf = (unsigned char *)dma_alloc_coherent(NULL, UART_RX_SIZE, &(ourport->rx_buf_dma_handle), GFP_KERNEL);
+    ourport->rx_buf.head = 0;
+    ourport->rx_buf.tail = 0;
+
+    s3c2410_dma_enqueue(ourport->dma_ch_rx, (void *) ourport, (dma_addr_t) ourport->rx_buf_dma_handle, UART_RX_SIZE/2);
+    s3c2410_dma_enqueue(ourport->dma_ch_rx, (void *) ourport, (dma_addr_t) (ourport->rx_buf_dma_handle + (UART_RX_SIZE/2)) , UART_RX_SIZE/2);
+
+    init_timer( &(ourport->rx_dma_timer) );
+
+    ourport->rx_dma_timer.data = (unsigned long)(ourport);
+    ourport->rx_dma_timer.function = (void *)s5p_serial_rx_dma_timeout;
+    ourport->rx_dma_timer.expires = jiffies + DMA_RX_FLUSH_JIFFIES;
+    add_timer(&(ourport->rx_dma_timer));
+//for rx
+#endif
 
 	/* the port reset code should have done the correct
 	 * register setup for the port controls */
@@ -845,6 +1150,9 @@ static struct uart_ops s3c24xx_serial_ops = {
 	.request_port	= s3c24xx_serial_request_port,
 	.config_port	= s3c24xx_serial_config_port,
 	.verify_port	= s3c24xx_serial_verify_port,
+#if defined(CONFIG_S5P_UART_DMA_EN)
+	.flush_buffer   = s3c24xx_flush_buffer,
+#endif
 };
 
 
@@ -1084,6 +1392,26 @@ static int s3c24xx_serial_init_port(struct s3c24xx_uart_port *ourport,
 
 	ourport->clk	= clk_get(&platdev->dev, "uart");
 
+#if defined(CONFIG_S5P_UART_DMA_EN)
+    res = platform_get_resource(platdev, IORESOURCE_DMA, 0);
+    if (res == NULL) {
+        ourport->dma_ch_tx = 0;
+        dev_err(&platdev->dev, "no DMA CHANNEL defined for uart.\n");
+        return -ENODEV;
+    }
+
+    ourport->dma_ch_tx = res->start;
+
+    res = platform_get_resource(platdev, IORESOURCE_DMA, 1);
+    if (res == NULL) {
+        ourport->dma_ch_rx = 0;
+        dev_err(&platdev->dev, "no DMA CHANNEL defined for uart rx.\n");
+        return -ENODEV;
+    }
+
+    ourport->dma_ch_rx = res->start;
+#endif
+
 	dbg("port: map=%08x, mem=%08x, irq=%d (%d,%d), clock=%ld\n",
 	    port->mapbase, port->membase, port->irq,
 	    ourport->rx_irq, ourport->tx_irq, port->uartclk);
@@ -1120,6 +1448,9 @@ int s3c24xx_serial_probe(struct platform_device *dev,
 	ourport = &s3c24xx_serial_ports[probe_index];
 	probe_index++;
 
+#if defined(CONFIG_S5P_UART_DMA_EN)
+	ourport->dma_busy = 0;
+#endif
 	dbg("%s: initialising port %p...\n", __func__, ourport);
 
 	ret = s3c24xx_serial_init_port(ourport, info, dev);

@@ -20,7 +20,7 @@
 #include <linux/platform_device.h>
 
 #include <asm/mach/arch.h>
-#include <asm/dma.h>
+#include <mach/dma.h>
 #include <asm/mach/irq.h>
 #include <mach/hardware.h>
 #include <mach/map.h>
@@ -53,18 +53,16 @@ static struct resource s5pc1xx_uart0_resource[] = {
 		.end	= IRQ_S3CUART_ERR0,
 		.flags	= IORESOURCE_IRQ,
 	},
-#if 0
-    [4] = {
+	[4] = {
 		.start	= DMACH_UART0,
 		.end	= DMACH_UART0,
 		.flags	= IORESOURCE_DMA,
-    },
-    [5] = {
+	},
+	[5] = {
 		.start	= DMACH_UART0_SRC2,
 		.end	= DMACH_UART0_SRC2,
 		.flags	= IORESOURCE_DMA,
-    }
-#endif
+	}
 };
 
 static struct resource s5pc1xx_uart1_resource[] = {
@@ -88,6 +86,16 @@ static struct resource s5pc1xx_uart1_resource[] = {
 		.start	= IRQ_S3CUART_ERR1,
 		.end	= IRQ_S3CUART_ERR1,
 		.flags	= IORESOURCE_IRQ,
+	},
+	[4] = {
+		.start	= DMACH_UART1,
+		.end	= DMACH_UART1,
+		.flags	= IORESOURCE_DMA,
+	},
+	[5] = {
+		.start	= DMACH_UART1_SRC2,
+		.end	= DMACH_UART1_SRC2,
+		.flags	= IORESOURCE_DMA,
 	},
 };
 
