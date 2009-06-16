@@ -19,12 +19,6 @@ config S5PC1XX_SETUP_SDHCI
         help
           Internal helper functions for S5PC1XX based SDHCI systems
 
-config S5PC110_PM
-	bool "S5PC110 PM Support"
-	depends on PM && CPU_S5PC110
-	help
-	  Internal config node to apply S5PC110 power management
-
 config MACH_SMDKC110
 	bool "SMDKC110"
 	select CPU_S5PC110

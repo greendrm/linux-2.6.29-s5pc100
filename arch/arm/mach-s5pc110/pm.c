@@ -1,4 +1,4 @@
-/* linux/arch/arm/mach-s5pc100/pm.c
+/* linux/arch/arm/mach-s5pc110/pm.c
  *
  * Copyright (c) 2006 Samsung Electronics
  *
@@ -36,9 +36,10 @@
 #include <plat/cpu.h>
 #include <plat/pm.h>
 
+
 #define DBG(fmt...) printk(KERN_DEBUG fmt)
 
-void s5pc100_cpu_suspend(void)
+void s5pc110_cpu_suspend(void)
 {
 	unsigned long tmp;
 
@@ -64,44 +65,44 @@ void s5pc100_cpu_suspend(void)
 	panic("sleep resumed to originator?");
 }
 
-static void s5pc100_pm_prepare(void)
+static void s5pc110_pm_prepare(void)
 {
 
 }
 
-static int s5pc100_pm_add(struct sys_device *sysdev)
+static int s5pc110_pm_add(struct sys_device *sysdev)
 {
-	pm_cpu_prep = s5pc100_pm_prepare;
-	pm_cpu_sleep = s5pc100_cpu_suspend;
+	pm_cpu_prep = s5pc110_pm_prepare;
+	pm_cpu_sleep = s5pc110_cpu_suspend;
 
 	return 0;
 }
 
-static struct sleep_save s5pc100_sleep[] = {
+static struct sleep_save s5pc110_sleep[] = {
 
 };
 
-static int s5pc100_pm_suspend(struct sys_device *dev, pm_message_t state)
+static int s5pc110_pm_suspend(struct sys_device *dev, pm_message_t state)
 {
-	s5pc1xx_pm_do_save(s5pc100_sleep, ARRAY_SIZE(s5pc100_sleep));
+	s5pc11x_pm_do_save(s5pc110_sleep, ARRAY_SIZE(s5pc110_sleep));
 	return 0;
 }
 
-static int s5pc100_pm_resume(struct sys_device *dev)
+static int s5pc110_pm_resume(struct sys_device *dev)
 {
-	s5pc1xx_pm_do_restore(s5pc100_sleep, ARRAY_SIZE(s5pc100_sleep));
+	s5pc11x_pm_do_restore(s5pc110_sleep, ARRAY_SIZE(s5pc110_sleep));
 	return 0;
 }
 
-static struct sysdev_driver s5pc100_pm_driver = {
-	.add		= s5pc100_pm_add,
-	.resume		= s5pc100_pm_resume,
+static struct sysdev_driver s5pc110_pm_driver = {
+	.add		= s5pc110_pm_add,
+	.resume		= s5pc110_pm_resume,
 };
 
-static __init int s5pc100_pm_drvinit(void)
+static __init int s5pc110_pm_drvinit(void)
 {
-	return sysdev_driver_register(&s5pc100_sysclass, &s5pc100_pm_driver);
+	return sysdev_driver_register(&s5pc110_sysclass, &s5pc110_pm_driver);
 }
 
-arch_initcall(s5pc100_pm_drvinit);
+arch_initcall(s5pc110_pm_drvinit);
 

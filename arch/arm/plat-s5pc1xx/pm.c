@@ -597,12 +597,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	if (s5pc100_cpu_save(regs_save) == 0) {
 		flush_cache_all();
 		/* This function for Chip bug on EVT0 */
-#if 0
-		s5pc1xx_pm_clk(PM_APLL, 512 , 2 , 5);
-		s5pc1xx_pm_clk(PM_MPLL, 128 , 2 , 5);
-		s5pc1xx_pm_clk(PM_EPLL, 128 , 2 , 5);
-		s5pc1xx_pm_clk(PM_HPLL, 128 , 2 , 5);
-#endif
 		pm_cpu_sleep();
 	}
 

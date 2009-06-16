@@ -15,12 +15,6 @@ config CPU_S5PC100
 	help
 	  Enable S5PC100 CPU support
 
-config S5PC100_PM
-	bool "S5PC100 PM Support"
-	depends on PM && CPU_S5PC100
-	help
-	  Internal config node to apply S5PC100 power management
-
 config S5PC1XX_SETUP_SDHCI
         bool
         help

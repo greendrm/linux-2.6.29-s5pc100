@@ -225,7 +225,7 @@ static void __init smdkc110_machine_init(void)
 #endif
 
 #if defined(CONFIG_PM)
-	s5pc11x_pm_init();
+//	s5pc11x_pm_init();
 #endif
 }
 
