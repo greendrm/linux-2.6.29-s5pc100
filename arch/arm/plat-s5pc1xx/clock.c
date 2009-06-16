@@ -151,7 +151,7 @@ static int s5pc1xx_clk_d15_ctrl(struct clk *clk, int enable)
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D15, clk, enable);
 }
 
-static int s5pc1xx_clk_d20_ctrl(struct clk *clk, int enable)
+int s5pc1xx_clk_d20_ctrl(struct clk *clk, int enable)
 {
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D20, clk, enable);
 }
@@ -203,12 +203,6 @@ static struct clk init_clocks_disable[] = {
 		.parent		= NULL,
 		.enable		= s5pc1xx_clk_d20_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D20_HCLKD2,
-	}, {
-		.name		= "iis-d2",
-		.id		= -1,
-		.parent		= NULL,
-		.enable		= s5pc1xx_clk_d20_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D20_I2SD2,
 	}, {
 		.name		= "otg",
 		.id		= -1,
@@ -569,23 +563,23 @@ static struct clk init_clocks[] = {
 
 	/* Audio (D1_5) devices */
 	{
-		.name		= "iis",
+		.name		= "i2s_v50",
 		.id		= 0,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D15_IIS0,
+		.ctrlbit	= S5P_CLKGATE_D15_IIS0, /* I2S0 is v5.0 */
 	}, {
-		.name		= "iis",
+		.name		= "i2s_v32",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc1xx_clk_d15_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D15_IIS1, /* I2S1 is v3.2 */
+	}, {
+		.name		= "i2s_v32",
 		.id		= 1,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D15_IIS1,
-	}, {
-		.name		= "iis",
-		.id		= 2,
-		.parent		= &clk_p,
-		.enable		= s5pc1xx_clk_d15_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D15_IIS2,
+		.ctrlbit	= S5P_CLKGATE_D15_IIS2, /* I2S2 is v3.2 */
 	}, {
 		.name		= "ac97",
 		.id		= -1,

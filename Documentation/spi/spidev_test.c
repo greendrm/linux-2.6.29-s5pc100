@@ -23,79 +23,112 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+#define MAX_LEN	SPIDEV_MAX_BUFFSIZE
+#define DATA_LEN 16
+
+static const char *device = "/dev/spi0";
+static const char *data = NULL;
+static uint8_t mode = 0;
+static uint8_t bits = 8;
+static uint32_t pktsz = MAX_LEN/2;
+static uint8_t recv = 0;
+static uint8_t send = 0;
+static uint32_t speed = 500000;
+static uint16_t delay;
+
 static void pabort(const char *s)
 {
 	perror(s);
 	abort();
 }
 
-static const char *device = "/dev/spidev1.1";
-static uint8_t mode;
-static uint8_t bits = 8;
-static uint32_t speed = 500000;
-static uint16_t delay;
-
 static void transfer(int fd)
 {
-	int ret;
-	uint8_t tx[] = {
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0x40, 0x00, 0x00, 0x00, 0x00, 0x95,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xDE, 0xAD, 0xBE, 0xEF, 0xBA, 0xAD,
-		0xF0, 0x0D,
-	};
-	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	int l, ret;
+	uint8_t txbuf[MAX_LEN];
+	uint8_t rxbuf[MAX_LEN];
 	struct spi_ioc_transfer tr = {
-		.tx_buf = (unsigned long)tx,
-		.rx_buf = (unsigned long)rx,
-		.len = ARRAY_SIZE(tx),
+		.tx_buf = NULL,
+		.rx_buf = NULL,
+		.len = pktsz,
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
 	};
 
-	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret == 1)
-		pabort("can't send spi message");
-
-	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
-		if (!(ret % 6))
-			puts("");
-		printf("%.2X ", rx[ret]);
+	if(send){
+	   if(data != NULL){
+	      l = strlen(data);
+	      printf("data=%s datalen=%d\n", data, strlen(data));
+	      for(ret=0; ret<pktsz; ret++){
+		txbuf[ret] = *(char *)(data + (ret % l));
+	      }
+	   }else{
+	      for(ret=0; ret<pktsz; ret++)
+		txbuf[ret] = ret;
+	   }
+	   tr.tx_buf = (unsigned long)txbuf;
 	}
-	puts("");
+
+	if(recv){
+	   tr.rx_buf = (unsigned long)rxbuf;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret <= 0)
+		pabort("spi message aborted");
+
+	if(recv)
+	   printf("Data Recvd:- %dbytes\n", pktsz);
+	for(ret=0; recv && ret<pktsz; ret++){
+#if 1
+	   if(ret%16 == 0)
+		printf("\n");
+	   printf("%.2x ", rxbuf[ret]);
+#else
+	   printf("%c", rxbuf[ret]);
+#endif
+	}
+	printf("\n");
 }
 
 void print_usage(const char *prog)
 {
-	printf("Usage: %s [-DsbdlHOLC3]\n", prog);
-	puts("  -D --device   device to use (default /dev/spidev1.1)\n"
-	     "  -s --speed    max speed (Hz)\n"
-	     "  -d --delay    delay (usec)\n"
-	     "  -b --bpw      bits per word \n"
-	     "  -l --loop     loopback\n"
-	     "  -H --cpha     clock phase\n"
-	     "  -O --cpol     clock polarity\n"
-	     "  -L --lsb      least significant bit first\n"
-	     "  -C --cs-high  chip select active high\n"
-	     "  -3 --3wire    SI/SO signals shared\n");
+	printf("Usage: %s [-DsbpdlHOLC3]\n", prog);
+	puts("  -D --device       device to use (default /dev/spi0)\n"
+	     "  -v --data         data pattern\n"
+	     "  -s --speed        max speed (Hz)\n"
+	     "  -d --delay        delay (usec)\n"
+	     "  -b --bpw          bits per word \n"
+	     "  -p --pkt          packet size \n"
+	     "  -x --xfer{0,1,2}  Tx(0)/Rx(1)/TxRx(2) \n"
+	     "  -l --loop         loopback\n"
+	     "  -H --cpha         clock phase\n"
+	     "  -O --cpol         clock polarity\n"
+	     "  -S --slave        Slave mode\n"
+	     "  -L --lsb          least significant bit first\n"
+	     "  -C --cs-high      chip select active high\n"
+	     "  -3 --3wire        SI/SO signals shared\n");
 	exit(1);
 }
 
 void parse_opts(int argc, char *argv[])
 {
+	int xfr = 0;
+
 	while (1) {
 		static const struct option lopts[] = {
 			{ "device",  1, 0, 'D' },
+			{ "data",    1, 0, 'v' },
 			{ "speed",   1, 0, 's' },
 			{ "delay",   1, 0, 'd' },
 			{ "bpw",     1, 0, 'b' },
+			{ "pkt",     1, 0, 'p' },
+			{ "xfer",    1, 0, 'x' },
 			{ "loop",    0, 0, 'l' },
 			{ "cpha",    0, 0, 'H' },
 			{ "cpol",    0, 0, 'O' },
+			{ "slave",   0, 0, 'S' },
 			{ "lsb",     0, 0, 'L' },
 			{ "cs-high", 0, 0, 'C' },
 			{ "3wire",   0, 0, '3' },
@@ -103,7 +136,7 @@ void parse_opts(int argc, char *argv[])
 		};
 		int c;
 
-		c = getopt_long(argc, argv, "D:s:d:b:lHOLC3", lopts, NULL);
+		c = getopt_long(argc, argv, "D:v:s:d:b:p:x:lHOSLC3", lopts, NULL);
 
 		if (c == -1)
 			break;
@@ -111,6 +144,9 @@ void parse_opts(int argc, char *argv[])
 		switch (c) {
 		case 'D':
 			device = optarg;
+			break;
+		case 'v':
+			data = optarg;
 			break;
 		case 's':
 			speed = atoi(optarg);
@@ -121,6 +157,12 @@ void parse_opts(int argc, char *argv[])
 		case 'b':
 			bits = atoi(optarg);
 			break;
+		case 'p':
+			pktsz = atoi(optarg);
+			break;
+		case 'x':
+			xfr = atoi(optarg);
+			break;
 		case 'l':
 			mode |= SPI_LOOP;
 			break;
@@ -129,6 +171,9 @@ void parse_opts(int argc, char *argv[])
 			break;
 		case 'O':
 			mode |= SPI_CPOL;
+			break;
+		case 'S':
+			mode |= SPI_SLAVE;
 			break;
 		case 'L':
 			mode |= SPI_LSB_FIRST;
@@ -144,6 +189,18 @@ void parse_opts(int argc, char *argv[])
 			break;
 		}
 	}
+
+	if(xfr == 2){	/* Full Duplex */
+	   recv = 1;
+	   send = 1;
+	}else if(xfr == 1){ /* Rx only */
+	   recv = 1;
+	   send = 0;
+	}else{		/* Tx only */
+	   recv = 0;
+	   send = 1;
+	}
+
 }
 
 int main(int argc, char *argv[])

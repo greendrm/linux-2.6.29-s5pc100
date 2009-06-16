@@ -25,7 +25,7 @@
 
 #define S5PC1XX_GPG3_0_SD_2_CLK		(0x2 << 0)
 #define S5PC1XX_GPG3_0_SD_3_CLK		(0x2 << 0)
-#define S5PC1XX_GPG3_0_SPI_2_CLK	(0x3 << 0)
+#define S5PC1XX_GPG3_0_SPI_CLK2		(0x3 << 0)
 #define S5PC1XX_GPG3_0_I2S_2_SCLK	(0x4 << 0)
 #define S5PC1XX_GPG3_0_PCM_0_SCLK	(0x5 << 0)
 #define S5PC1XX_GPG3_0_GPIO_INT14_0	(0xf << 0)
@@ -33,7 +33,7 @@
 
 #define S5PC1XX_GPG3_1_SD_2_CMD		(0x2 << 4)
 #define S5PC1XX_GPG3_1_SD_3_CMD		(0x2 << 4)
-#define S5PC1XX_GPG3_1_SPI_2_nSS	(0x3 << 4)
+#define S5PC1XX_GPG3_1_SPI_CS2		(0x3 << 4)
 #define S5PC1XX_GPG3_1_I2S_2_CDCLK	(0x4 << 4)
 #define S5PC1XX_GPG3_1_PCM_0_EXTCLK	(0x5 << 4)
 #define S5PC1XX_GPG3_1_GPIO_INT14_1	(0xf << 4)
@@ -41,7 +41,7 @@
 
 #define S5PC1XX_GPG3_2_SD_2_DATA0	(0x2 << 8)
 #define S5PC1XX_GPG3_2_SD_3_CDn		(0x2 << 8)
-#define S5PC1XX_GPG3_2_SPI_2_MISO	(0x3 << 8)
+#define S5PC1XX_GPG3_2_SPI_MISO2	(0x3 << 8)
 #define S5PC1XX_GPG3_2_I2S_2_LRCK	(0x4 << 8)
 #define S5PC1XX_GPG3_2_PCM_0_FSYNC	(0x5 << 8)
 #define S5PC1XX_GPG3_2_GPIO_INT14_2	(0xf << 8)
@@ -49,7 +49,7 @@
 
 #define S5PC1XX_GPG3_3_SD_2_DATA1	(0x2 << 12)
 #define S5PC1XX_GPG3_3_SD_3_DATA0	(0x2 << 12)
-#define S5PC1XX_GPG3_3_SPI_2_MOSI	(0x3 << 12)
+#define S5PC1XX_GPG3_3_SPI_MOSI2	(0x3 << 12)
 #define S5PC1XX_GPG3_3_SD_2_DATA4	(0x3 << 12)
 #define S5PC1XX_GPG3_3_I2S_2_SDI	(0x4 << 12)
 #define S5PC1XX_GPG3_3_PCM_0_SIN	(0x5 << 12)
@@ -77,4 +77,3 @@
 #define S5PC1XX_GPG3_6_SPDIF_EXTCLK	(0x5 << 24)
 #define S5PC1XX_GPG3_6_GPIO_INT14_6	(0xf << 24)
 #define S5PC1XX_GPG3_6_GPIO_INT17_6	(0xf << 24)
-

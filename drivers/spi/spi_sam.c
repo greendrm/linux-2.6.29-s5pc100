@@ -15,13 +15,12 @@
 #include <linux/workqueue.h>
 #include <linux/spi/spi.h>
 #include <linux/err.h>
-#include <linux/clk.h>
 #include <linux/io.h>
 #include <linux/dma-mapping.h>
-#include <asm/gpio.h>
 #include <asm/dma.h>
 
 #include "spi_sam.h"
+
 //#define DEBUGSPI
 
 #ifdef DEBUGSPI
@@ -60,129 +59,29 @@ static void dump_regs(struct samspi_bus *sspi)
 	printk("Rx/TxLvl=%d,%d\n", (val>>13)&0x7f, (val>>6)&0x7f);
 }
 
+static void dump_spidevice_info(struct spi_device *spi)
+{
+	dbg_printk("Modalias = %s\n", spi->modalias);
+	dbg_printk("Slave-%d on Bus-%d\n", spi->chip_select, spi->master->bus_num);
+	dbg_printk("max_speed_hz = %d\n", spi->max_speed_hz);
+	dbg_printk("bits_per_word = %d\n", spi->bits_per_word);
+	dbg_printk("irq = %d\n", spi->irq);
+	dbg_printk("Clk Phs = %d\n", spi->mode & SPI_CPHA);
+	dbg_printk("Clk Pol = %d\n", spi->mode & SPI_CPOL);
+	dbg_printk("ActiveCS = %s\n", (spi->mode & (1<<2)) ? "high" : "low" );
+	dbg_printk("Our Mode = %s\n", (spi->mode & SPI_SLAVE) ? "Slave" : "Master");
+}
 #else
 
-#define dump_regs(sspi) 	/**/
-#define dbg_printk(x...)	/**/
+#define dbg_printk(x...)		/**/
+#define dump_regs(sspi) 		/**/
+#define dump_spidevice_info(spi) 	/**/
 
 #endif
 
 static struct s3c2410_dma_client samspi_dma_client = {
 	.name = "samspi-dma",
 };
-
-static int sspi_getclcks(struct samspi_bus *sspi)
-{
-	struct clk *cspi, *cp, *cm, *cf;
-
-	cp = NULL;
-	cm = NULL;
-	cf = NULL;
-	cspi = sspi->clk;
-
-	if(cspi == NULL){
-		cspi = clk_get(&sspi->pdev->dev, "spi");
-		if(IS_ERR(cspi)){
-			printk("Unable to get spi!\n");
-			return -EBUSY;
-		}
-	}
-	dbg_printk("%s:%d Got clk=spi\n", __func__, __LINE__);
-
-#if defined(CONFIG_SPICLK_SRC_SCLK48M) || defined(CONFIG_SPICLK_SRC_EPLL) || defined(CONFIG_SPICLK_SRC_SPIEXT)
-	cp = clk_get(&sspi->pdev->dev, spiclk_src);
-	if(IS_ERR(cp)){
-		printk("Unable to get parent clock(%s)!\n", spiclk_src);
-		if(sspi->clk == NULL){
-			clk_disable(cspi);
-			clk_put(cspi);
-		}
-		return -EBUSY;
-	}
-	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, spiclk_src);
-
-#if defined(CONFIG_SPICLK_SRC_EPLL) || defined(CONFIG_SPICLK_SRC_SPIEXT)
-	cm = clk_get(&sspi->pdev->dev, spisclk_src);
-	if(IS_ERR(cm)){
-		printk("Unable to get %s\n", spisclk_src);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, spisclk_src);
-	if(clk_set_parent(cp, cm)){
-		printk("failed to set %s as the parent of %s\n", spisclk_src, spiclk_src);
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Set %s as the parent of %s\n", spisclk_src, spiclk_src);
-
-#if defined(CONFIG_SPICLK_EPLL_MOUTEPLL) /* MOUTepll through EPLL */
-	cf = clk_get(&sspi->pdev->dev, "fout_epll");
-	if(IS_ERR(cf)){
-		printk("Unable to get fout_epll\n");
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Got fout_epll\n");
-	if(clk_set_parent(cm, cf)){
-		printk("failed to set FOUTepll as parent of %s\n", spisclk_src);
-		clk_put(cf);
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Set FOUTepll as parent of %s\n", spisclk_src);
-	clk_put(cf);
-#endif
-	clk_put(cm);
-#endif
-
-	sspi->prnt_clk = cp;
-#endif
-
-	sspi->clk = cspi;
-	return 0;
-}
-
-static void sspi_putclcks(struct samspi_bus *sspi)
-{
-	if(sspi->prnt_clk != NULL)
-		clk_put(sspi->prnt_clk);
-
-	clk_put(sspi->clk);
-}
-
-static int sspi_enclcks(struct samspi_bus *sspi)
-{
-	if(sspi->prnt_clk != NULL)
-		clk_enable(sspi->prnt_clk);
-
-	return clk_enable(sspi->clk);
-}
-
-static void sspi_disclcks(struct samspi_bus *sspi)
-{
-	if(sspi->prnt_clk != NULL)
-		clk_disable(sspi->prnt_clk);
-
-	clk_disable(sspi->clk);
-}
-
-static unsigned long sspi_getrate(struct samspi_bus *sspi)
-{
-	if(sspi->prnt_clk != NULL)
-		return clk_get_rate(sspi->prnt_clk);
-	else
-		return clk_get_rate(sspi->clk);
-}
-
-static int sspi_setrate(struct samspi_bus *sspi, unsigned long r)
-{
- /* We don't take charge of the Src Clock, yet */
-	return 0;
-}
 
 static inline void enable_spidma(struct samspi_bus *sspi, struct spi_transfer *xfer)
 {
@@ -284,18 +183,52 @@ static inline void enable_spienqueue(struct samspi_bus *sspi, struct spi_transfe
 	}
 }
 
-static inline void enable_spics(struct samspi_bus *sspi, struct spi_transfer *xfer)
+static inline void enable_cs(struct samspi_bus *sspi, struct spi_device *spi)
 {
-	u32 val = 0;
+	u32 val;
+	struct sam_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
 
 	val = readl(sspi->regs + SAMSPI_SLAVE_SEL);
+
 	if(sspi->cur_mode & SPI_SLAVE){
 	   val |= SPI_SLAVE_AUTO; /* Auto Mode */
 	   val |= SPI_SLAVE_SIG_INACT;
-	}else{
+	}else{ /* Master Mode */
 	   val &= ~SPI_SLAVE_AUTO; /* Manual Mode */
 	   val &= ~SPI_SLAVE_SIG_INACT; /* Activate CS */
+	   if(spi->mode & SPI_CS_HIGH){
+	      spd->cs_set(spd->cs_pin, CS_HIGH);
+	      spd->cs_level = CS_HIGH;
+	   }else{
+	      spd->cs_set(spd->cs_pin, CS_LOW);
+	      spd->cs_level = CS_LOW;
+	   }
 	}
+
+	writel(val, sspi->regs + SAMSPI_SLAVE_SEL);
+}
+
+static inline void disable_cs(struct samspi_bus *sspi, struct spi_device *spi)
+{
+	u32 val;
+	struct sam_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
+
+	val = readl(sspi->regs + SAMSPI_SLAVE_SEL);
+
+	if(sspi->cur_mode & SPI_SLAVE){
+	   val |= SPI_SLAVE_AUTO; /* Auto Mode */
+	}else{ /* Master Mode */
+	   val &= ~SPI_SLAVE_AUTO; /* Manual Mode */
+	   val |= SPI_SLAVE_SIG_INACT; /* DeActivate CS */
+	   if(spi->mode & SPI_CS_HIGH){
+	      spd->cs_set(spd->cs_pin, CS_LOW);
+	      spd->cs_level = CS_LOW;
+	   }else{
+	      spd->cs_set(spd->cs_pin, CS_HIGH);
+	      spd->cs_level = CS_HIGH;
+	   }
+	}
+
 	writel(val, sspi->regs + SAMSPI_SLAVE_SEL);
 }
 
@@ -317,12 +250,13 @@ static inline void set_polarity(struct samspi_bus *sspi)
 static inline void set_clock(struct samspi_bus *sspi)
 {
 	u32 val;
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
 
 	val = readl(sspi->regs + SAMSPI_CLK_CFG);
 	val &= ~(SPI_CLKSEL_SRCMSK | SPI_ENCLK_ENABLE | 0xff);
 	val |= SPI_CLKSEL_SRC;
 	if(!(sspi->cur_mode & SPI_SLAVE)){
-	   val |= ((sspi_getrate(sspi) / sspi->cur_speed / 2 - 1) << 0);	// PCLK and PSR
+	   val |= ((smi->spiclck_getrate(smi) / sspi->cur_speed / 2 - 1) << 0);	// PCLK and PSR
 	   val |= SPI_ENCLK_ENABLE;
 	}
 	writel(val, sspi->regs + SAMSPI_CLK_CFG);
@@ -398,10 +332,6 @@ static void samspi_hwinit(struct samspi_bus *sspi, int channel)
 	   SET_MODECFG(val, 1);
 	val |= (SPI_TRAILCNT << SPI_TRAILCNT_OFF);
 	writel(val, sspi->regs + SAMSPI_MODE_CFG);
-
-	sspi->cur_bpw = 8;
-	sspi->cur_mode = SPI_SLAVE; /* Start in Slave mode */
-	sspi->cur_speed = sspi->min_speed;
 }
 
 static irqreturn_t samspi_interrupt(int irq, void *dev_id)
@@ -421,7 +351,10 @@ static irqreturn_t samspi_interrupt(int irq, void *dev_id)
 	if(sspi->rx_done != PASS){
 	   sspi->rx_done = FAIL;
 	}
-	sspi->state = STOPPED;
+
+	/* No need to spinlock, as called in IRQ_DISABLED mode */
+	atomic_set(&sspi->state, atomic_read(&sspi->state) | IRQERR);
+
 	complete(&sspi->xfer_completion);
 
 	return IRQ_HANDLED;
@@ -433,13 +366,13 @@ void samspi_dma_rxcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enum
 
 	if(res == S3C2410_RES_OK){
 	   sspi->rx_done = PASS;
-	   dbg_printk("DmaRx-%d ", size);
+	   //dbg_printk("DmaRx-%d ", size);
 	}else{
 	   sspi->rx_done = FAIL;
 	   dbg_printk("DmaAbrtRx-%d ", size);
 	}
 
-	if(sspi->tx_done != BUSY && sspi->state != STOPPED) /* If other done and all OK */
+	if(sspi->tx_done != BUSY && !(atomic_read(&sspi->state) & IRQERR)) /* If other done and all OK */
 	   complete(&sspi->xfer_completion);
 }
 
@@ -449,13 +382,13 @@ void samspi_dma_txcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enum
 
 	if(res == S3C2410_RES_OK){
 	   sspi->tx_done = PASS;
-	   dbg_printk("DmaTx-%d ", size);
+	   //dbg_printk("DmaTx-%d ", size);
 	}else{
 	   sspi->tx_done = FAIL;
 	   dbg_printk("DmaAbrtTx-%d ", size);
 	}
 
-	if(sspi->rx_done != BUSY && sspi->state != STOPPED) /* If other done and all OK */
+	if(sspi->rx_done != BUSY && !(atomic_read(&sspi->state) & IRQERR)) /* If other done and all OK */
 	   complete(&sspi->xfer_completion);
 }
 
@@ -481,7 +414,7 @@ static int wait_for_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer)
 	if(sspi->cur_mode & SPI_SLAVE)
 	   val += msecs_to_jiffies(5000); /* 5secs to switch on the Master */
 	else
-	   val += msecs_to_jiffies(1000); /* just some more */
+	   val += msecs_to_jiffies(10); /* just some more */
 	status = wait_for_completion_interruptible_timeout(&sspi->xfer_completion, val);
 
 	if(status == 0)
@@ -514,16 +447,15 @@ static int wait_for_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer)
  */
 static int samspi_map_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer)
 {
-	struct device *dev = &sspi->pdev->dev;
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
+	struct device *dev = &smi->pdev->dev;
 
 	sspi->rx_tmp = NULL;
 	sspi->tx_tmp = NULL;
 
 	xfer->tx_dma = xfer->rx_dma = INVALID_DMA_ADDRESS;
 	if(xfer->tx_buf != NULL){
-		xfer->tx_dma = dma_map_single(dev,
-				(void *) xfer->tx_buf, xfer->len,
-				DMA_TO_DEVICE);
+		xfer->tx_dma = dma_map_single(dev, (void *) xfer->tx_buf, xfer->len, DMA_TO_DEVICE);
 		if(dma_mapping_error(dev, xfer->tx_dma))
 			goto alloc_from_buffer;
 	}
@@ -533,9 +465,7 @@ static int samspi_map_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer)
 				DMA_FROM_DEVICE);
 		if(dma_mapping_error(dev, xfer->rx_dma)){
 			if(xfer->tx_buf)
-				dma_unmap_single(dev,
-						xfer->tx_dma, xfer->len,
-						DMA_TO_DEVICE);
+				dma_unmap_single(dev, xfer->tx_dma, xfer->len, DMA_TO_DEVICE);
 			goto alloc_from_buffer;
 		}
 	}
@@ -555,18 +485,16 @@ alloc_from_buffer: /* If the xfer->[r/t]x_buf was not on contiguous memory */
 	}else{
 	   dbg_printk("If you plan to use this Xfer size often, increase SAMSPI_DMABUF_LEN\n");
 	   if(xfer->rx_buf != NULL){
-	      sspi->rx_tmp = dma_alloc_coherent(&sspi->pdev->dev, SAMSPI_DMABUF_LEN, 
+	      sspi->rx_tmp = dma_alloc_coherent(dev, SAMSPI_DMABUF_LEN, 
 							&xfer->rx_dma, GFP_KERNEL | GFP_DMA);
 		if(sspi->rx_tmp == NULL)
 		   return -ENOMEM;
 	   }
 	   if(xfer->tx_buf != NULL){
-	      sspi->tx_tmp = dma_alloc_coherent(&sspi->pdev->dev, 
-						SAMSPI_DMABUF_LEN, &xfer->tx_dma, GFP_KERNEL | GFP_DMA);
+	      sspi->tx_tmp = dma_alloc_coherent(dev, SAMSPI_DMABUF_LEN, &xfer->tx_dma, GFP_KERNEL | GFP_DMA);
 		if(sspi->tx_tmp == NULL){
 		   if(xfer->rx_buf != NULL)
-		      dma_free_coherent(&sspi->pdev->dev, 
-						SAMSPI_DMABUF_LEN, sspi->rx_tmp, xfer->rx_dma);
+		      dma_free_coherent(dev, SAMSPI_DMABUF_LEN, sspi->rx_tmp, xfer->rx_dma);
 		   return -ENOMEM;
 		}
 	   }
@@ -580,6 +508,9 @@ alloc_from_buffer: /* If the xfer->[r/t]x_buf was not on contiguous memory */
 
 static void samspi_unmap_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer)
 {
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
+	struct device *dev = &smi->pdev->dev;
+
 	if((sspi->rx_tmp == NULL) && (sspi->tx_tmp == NULL)) /* if map_single'd */
 	   return;
 
@@ -588,9 +519,9 @@ static void samspi_unmap_xfer(struct samspi_bus *sspi, struct spi_transfer *xfer
 
 	if(xfer->len > SAMSPI_DMABUF_LEN){
 	   if(xfer->rx_buf != NULL)
-	      dma_free_coherent(&sspi->pdev->dev, SAMSPI_DMABUF_LEN, sspi->rx_tmp, xfer->rx_dma);
+	      dma_free_coherent(dev, SAMSPI_DMABUF_LEN, sspi->rx_tmp, xfer->rx_dma);
 	   if(xfer->tx_buf != NULL)
-	      dma_free_coherent(&sspi->pdev->dev, SAMSPI_DMABUF_LEN, sspi->tx_tmp, xfer->tx_dma);
+	      dma_free_coherent(dev, SAMSPI_DMABUF_LEN, sspi->tx_tmp, xfer->tx_dma);
 	}else{
 	   sspi->rx_tmp = NULL;
 	   sspi->tx_tmp = NULL;
@@ -630,7 +561,6 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 		/* Pending only which is to be done */
 		sspi->rx_done = PASS;
 		sspi->tx_done = PASS;
-		sspi->state = RUNNING;
 
 		/* Configure Clock */
 		set_clock(sspi);
@@ -651,9 +581,8 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 		enable_spichan(sspi, xfer);
 
 		/* Slave Select */
-		enable_spics(sspi, xfer);
+		enable_cs(sspi, spi);
 
-		//dump_regs(sspi);
 		status = wait_for_xfer(sspi, xfer);
 
 		/**************
@@ -663,7 +592,6 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 		if(status == -ETIMEDOUT){
 		   dev_err(&spi->dev, "Xfer: Timeout!\n");
 		   dump_regs(sspi);
-		   sspi->state = STOPPED;
 		   /* DMA Disable*/
 		   val = readl(sspi->regs + SAMSPI_MODE_CFG);
 		   val &= ~(SPI_MODE_TXDMA_ON | SPI_MODE_RXDMA_ON);
@@ -677,7 +605,6 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 		if(status == -EINTR){
 		   dev_err(&spi->dev, "Xfer: Interrupted!\n");
 		   dump_regs(sspi);
-		   sspi->state = STOPPED;
 		   /* DMA Disable*/
 		   val = readl(sspi->regs + SAMSPI_MODE_CFG);
 		   val &= ~(SPI_MODE_TXDMA_ON | SPI_MODE_RXDMA_ON);
@@ -691,7 +618,6 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 		if(status == -EIO){ /* Some Xfer failed */
 		   dev_err(&spi->dev, "Xfer: Failed!\n");
 		   dump_regs(sspi);
-		   sspi->state = STOPPED;
 		   /* DMA Disable*/
 		   val = readl(sspi->regs + SAMSPI_MODE_CFG);
 		   val &= ~(SPI_MODE_TXDMA_ON | SPI_MODE_RXDMA_ON);
@@ -705,12 +631,12 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 
 		if(xfer->delay_usecs){
 		   udelay(xfer->delay_usecs);
-		   dbg_printk("xfer-delay=%u\n", xfer->delay_usecs);
+		   dbg_printk("%s:%s:%d Unverified Control Flow Path!\n", __FILE__, __func__, __LINE__);
 		}
+
 		if(xfer->cs_change && !(sspi->cur_mode & SPI_SLAVE)){
-		   writel(readl(sspi->regs + SAMSPI_SLAVE_SEL) | SPI_SLAVE_SIG_INACT,
-				 sspi->regs + SAMSPI_SLAVE_SEL);
-		   dbg_printk("xfer-cs_chng=%u\n", xfer->cs_change);
+		   disable_cs(sspi, spi);
+		   dbg_printk("%s:%s:%d Unverified Control Flow Path!\n", __FILE__, __func__, __LINE__);
 		}
 
 		msg->actual_length += xfer->len;
@@ -721,10 +647,8 @@ static void handle_msg(struct samspi_bus *sspi, struct spi_message *msg)
 
 out:
 	/* Slave Deselect */
-	val = readl(sspi->regs + SAMSPI_SLAVE_SEL);
-	val &= ~SPI_SLAVE_AUTO;
-	val |= SPI_SLAVE_SIG_INACT;
-	writel(val, sspi->regs + SAMSPI_SLAVE_SEL);
+	if(!(sspi->cur_mode & SPI_SLAVE))
+	   disable_cs(sspi, spi);
 
 	/* Disable Interrupts */
 	writel(0, sspi->regs + SAMSPI_SPI_INT_EN);
@@ -742,6 +666,7 @@ out:
 	msg->status = status;
 	if(msg->complete)
 	   msg->complete(msg->context);
+
 }
 
 static void samspi_work(struct work_struct *work)
@@ -750,16 +675,19 @@ static void samspi_work(struct work_struct *work)
 	unsigned long flags;
 
 	spin_lock_irqsave(&sspi->lock, flags);
-	while (!list_empty(&sspi->queue)) {
+	while(!list_empty(&sspi->queue) && !(atomic_read(&sspi->state) & SUSPND)){
 		struct spi_message *msg;
 
 		msg = container_of(sspi->queue.next, struct spi_message, queue);
 		list_del_init(&msg->queue);
+		atomic_set(&sspi->state, atomic_read(&sspi->state) & ~ERRS); /* Clear every ERROR flag */
+		atomic_set(&sspi->state, atomic_read(&sspi->state) | XFERBUSY); /* Set Xfer busy flag */
 		spin_unlock_irqrestore(&sspi->lock, flags);
 
 		handle_msg(sspi, msg);
 
 		spin_lock_irqsave(&sspi->lock, flags);
+		atomic_set(&sspi->state, atomic_read(&sspi->state) & ~XFERBUSY);
 	}
 	spin_unlock_irqrestore(&sspi->lock, flags);
 }
@@ -776,17 +704,23 @@ static int samspi_transfer(struct spi_device *spi, struct spi_message *msg)
 	unsigned long flags;
 
 	spin_lock_irqsave(&sspi->lock, flags);
+
+	if(atomic_read(&sspi->state) & SUSPND){
+	   spin_unlock_irqrestore(&sspi->lock, flags);
+	   return -ESHUTDOWN;
+	}
+
 	msg->actual_length = 0;
 	list_add_tail(&msg->queue, &sspi->queue);
 	queue_work(sspi->workqueue, &sspi->work);
+
 	spin_unlock_irqrestore(&sspi->lock, flags);
 
 	return 0;
 }
 
 /* the spi->mode bits understood by this driver: */
-#define MODEBITS	(SPI_CPOL | SPI_CPHA | SPI_SLAVE)
-
+#define MODEBITS	(SPI_CPOL | SPI_CPHA | SPI_SLAVE | SPI_CS_HIGH)
 /*
  * Here we only check the validity of requested configuration and 
  * save the configuration in a local data-structure.
@@ -798,12 +732,20 @@ static int samspi_setup(struct spi_device *spi)
 	unsigned long flags;
 	unsigned int psr;
 	struct samspi_bus *sspi = spi_master_get_devdata(spi->master);
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
+	struct sam_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
 
 	spin_lock_irqsave(&sspi->lock, flags);
 	if(!list_empty(&sspi->queue)){	/* Any pending message? */
 		spin_unlock_irqrestore(&sspi->lock, flags);
 		dev_dbg(&spi->dev, "setup: attempt while messages in queue!\n");
 		return -EBUSY;
+	}
+
+	if(atomic_read(&sspi->state) & SUSPND){
+		spin_unlock_irqrestore(&sspi->lock, flags);
+		dev_dbg(&spi->dev, "setup: SPI-%d not active!\n", spi->master->bus_num);
+		return -ESHUTDOWN;
 	}
 	spin_unlock_irqrestore(&sspi->lock, flags);
 
@@ -825,12 +767,12 @@ static int samspi_setup(struct spi_device *spi)
 	spi->max_speed_hz = spi->max_speed_hz ? : sspi->max_speed;
 
 	/* Round-off max_speed_hz */
-	psr = sspi_getrate(sspi) / spi->max_speed_hz / 2 - 1;
+	psr = smi->spiclck_getrate(smi) / spi->max_speed_hz / 2 - 1;
 	psr &= 0xff;
-	if(spi->max_speed_hz < sspi_getrate(sspi) / 2 / (psr + 1))
+	if(spi->max_speed_hz < smi->spiclck_getrate(smi) / 2 / (psr + 1))
 	   psr = (psr+1) & 0xff;
 
-	spi->max_speed_hz = sspi_getrate(sspi) / 2 / (psr + 1);
+	spi->max_speed_hz = smi->spiclck_getrate(smi) / 2 / (psr + 1);
 
 	if (spi->max_speed_hz > sspi->max_speed
 			|| spi->max_speed_hz < sspi->min_speed){
@@ -844,18 +786,10 @@ static int samspi_setup(struct spi_device *spi)
 		return -EINVAL;
 	}
 
-/*
-	dbg_printk("@%s spi-%p sspi-%p\n", __func__, spi, sspi);
-	dbg_printk("Asked to setup mode:-");
-	dbg_printk("max_speed_hz = %d\n", spi->max_speed_hz);
-	dbg_printk("chip_select = %d\n", spi->chip_select);
-	dbg_printk("bits_per_word = %d\n", spi->bits_per_word);
-	dbg_printk("irq = %d\n", spi->irq);
-	dbg_printk("Clk Phs = %d\n", spi->mode & SPI_CPHA);
-	dbg_printk("Clk Pol = %d\n", spi->mode & SPI_CPOL);
-	dbg_printk("ChipSelct = %s\n", (spi->mode & (1<<2)) ? "high" : "low" );
-	dbg_printk("Mode = %s\n", (spi->mode & SPI_SLAVE) ? "Slave" : "Master");
-*/
+	if(!(spi->mode & SPI_SLAVE) && (spd->cs_level == CS_FLOAT)){
+	   spd->cs_config(spd->cs_pin, spd->cs_mode, (spi->mode & SPI_CS_HIGH) ? CS_LOW : CS_HIGH);
+	   disable_cs(sspi, spi);
+	}
 
 	if((sspi->cur_bpw == spi->bits_per_word) && 
 		(sspi->cur_speed == spi->max_speed_hz) && 
@@ -874,38 +808,46 @@ static int __init samspi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct samspi_bus *sspi;
+	struct sam_spi_mstr_info *smi;
 	int ret = -ENODEV;
 
 	dbg_printk("%s:%s:%d ID=%d\n", __FILE__, __func__, __LINE__, pdev->id);
 	master = spi_alloc_master(&pdev->dev, sizeof(struct samspi_bus)); /* Allocate contiguous SPI controller */
 	if (master == NULL)
 		return ret;
+
 	sspi = spi_master_get_devdata(master);
-	sspi->pdev = pdev;
-	sspi->pdata = pdev->dev.platform_data;
 	sspi->master = master;
 	platform_set_drvdata(pdev, master);
+
+	sspi->spi_mstinfo = (struct sam_spi_mstr_info *)pdev->dev.platform_data;
+	smi = sspi->spi_mstinfo;
+	smi->pdev = pdev;
 
 	INIT_WORK(&sspi->work, samspi_work);
 	spin_lock_init(&sspi->lock);
 	INIT_LIST_HEAD(&sspi->queue);
 	init_completion(&sspi->xfer_completion);
 
-	ret = sspi_getclcks(sspi);
+	ret = smi->spiclck_get(smi);
 	if(ret){
 		dev_err(&pdev->dev, "cannot acquire clock \n");
 		ret = -EBUSY;
 		goto lb1;
 	}
-	ret = sspi_enclcks(sspi);
+	ret = smi->spiclck_en(smi);
 	if(ret){
 		dev_err(&pdev->dev, "cannot enable clock \n");
 		ret = -EBUSY;
 		goto lb2;
 	}
 
-	sspi->max_speed = sspi_getrate(sspi) / 2 / (0x0 + 1);
-	sspi->min_speed = sspi_getrate(sspi) / 2 / (0xff + 1);
+	sspi->max_speed = smi->spiclck_getrate(smi) / 2 / (0x0 + 1);
+	sspi->min_speed = smi->spiclck_getrate(smi) / 2 / (0xff + 1);
+
+	sspi->cur_bpw = 8;
+	sspi->cur_mode = SPI_SLAVE; /* Start in Slave mode */
+	sspi->cur_speed = sspi->min_speed;
 
 	/* Get and Map Resources */
 	sspi->iores = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -969,7 +911,7 @@ static int __init samspi_probe(struct platform_device *pdev)
 	master->setup = samspi_setup;
 	master->transfer = samspi_transfer;
 	master->cleanup = samspi_cleanup;
-	master->num_chipselect = 1; /* Only 1 Slave connected on SMDK */
+	master->num_chipselect = sspi->spi_mstinfo->num_slaves;
 
 	if(spi_register_master(master)){
 		dev_err(&pdev->dev, "cannot register SPI master\n");
@@ -1007,7 +949,7 @@ static int __init samspi_probe(struct platform_device *pdev)
 	/* Setup Deufult Mode */
 	samspi_hwinit(sspi, pdev->id);
 
-	printk("Samsung SoC SPI Driver loaded for SPI-%d\n", pdev->id);
+	printk("Samsung SoC SPI Driver loaded for Bus SPI-%d with %d Slaves attached\n", pdev->id, master->num_chipselect);
 	printk("\tMax,Min-Speed [%d, %d]Hz\n", sspi->max_speed, sspi->min_speed);
 	printk("\tIrq=%d\tIOmem=[0x%x-0x%x]\tDMA=[Rx-%d, Tx-%d]\n",
 			sspi->irqres->start,
@@ -1034,9 +976,9 @@ lb5:
 	release_mem_region(sspi->iores->start, sspi->iores->end - sspi->iores->start + 1);
 lb4:
 lb3:
-	sspi_disclcks(sspi);
+	smi->spiclck_dis(smi);
 lb2:
-	sspi_putclcks(sspi);
+	smi->spiclck_put(smi);
 lb1:
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(master);
@@ -1048,6 +990,7 @@ static int __exit samspi_remove(struct platform_device *pdev)
 {
 	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
 	struct samspi_bus *sspi = spi_master_get_devdata(master);
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
 
 	s3c2410_dma_free(sspi->tx_dmach, &samspi_dma_client);
 	s3c2410_dma_free(sspi->rx_dmach, &samspi_dma_client);
@@ -1058,13 +1001,104 @@ static int __exit samspi_remove(struct platform_device *pdev)
 	dma_free_coherent(&pdev->dev, SAMSPI_DMABUF_LEN, sspi->tx_dma_cpu, sspi->tx_dma_phys);
 	iounmap((void *) sspi->regs);
 	release_mem_region(sspi->iores->start, sspi->iores->end - sspi->iores->start + 1);
-	sspi_disclcks(sspi);
-	sspi_putclcks(sspi);
+	smi->spiclck_dis(smi);
+	smi->spiclck_put(smi);
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(master);
 
 	return 0;
 }
+
+#if defined(CONFIG_PM)
+static int samspi_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	int i;
+	unsigned long flags;
+	struct sam_spi_pdata *spd;
+	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
+	struct samspi_bus *sspi = spi_master_get_devdata(master);
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
+
+	/* Release DMA Channels */
+	s3c2410_dma_free(sspi->tx_dmach, &samspi_dma_client);
+	s3c2410_dma_free(sspi->rx_dmach, &samspi_dma_client);
+
+	spin_lock_irqsave(&sspi->lock, flags);
+	atomic_set(&sspi->state, atomic_read(&sspi->state) | SUSPND);
+	spin_unlock_irqrestore(&sspi->lock, flags);
+
+	while(atomic_read(&sspi->state) & XFERBUSY)
+	   msleep(10);
+
+	/* Disable the clock */
+	smi->spiclck_dis(smi);
+
+	/* Set GPIOs in least power consuming state */
+	SAM_UNSETGPIOPULL(sspi);
+
+	for(i=0; i<sspi->spi_mstinfo->num_slaves; i++){
+	   spd = &sspi->spi_mstinfo->spd[i];
+	   if(spd->cs_suspend)
+	      spd->cs_suspend(spd->cs_pin, state);
+	}
+
+	return 0;
+}
+
+static int samspi_resume(struct platform_device *pdev)
+{
+	int val;
+	unsigned long flags;
+	struct sam_spi_pdata *spd;
+	struct spi_master *master = spi_master_get(platform_get_drvdata(pdev));
+	struct samspi_bus *sspi = spi_master_get_devdata(master);
+	struct sam_spi_mstr_info *smi = sspi->spi_mstinfo;
+
+	for(val=0; val<sspi->spi_mstinfo->num_slaves; val++){
+	   spd = &sspi->spi_mstinfo->spd[val];
+	   if(spd->cs_resume)
+	      spd->cs_resume(spd->cs_pin);
+	}
+
+	SAM_SETGPIOPULL(sspi);
+
+	/* Enable the clock */
+	smi->spiclck_en(smi);
+
+	samspi_hwinit(sspi, pdev->id);
+
+	spin_lock_irqsave(&sspi->lock, flags);
+	atomic_set(&sspi->state, atomic_read(&sspi->state) & ~SUSPND);
+	spin_unlock_irqrestore(&sspi->lock, flags);
+
+	/* Aquire DMA Channels */
+	val = s3c2410_dma_request(sspi->rx_dmach, &samspi_dma_client, NULL);
+	if(val){
+	   printk("%s:%d Oooops!!\n", __func__, __LINE__);
+	   return val;
+	}
+	s3c2410_dma_set_buffdone_fn(sspi->rx_dmach, samspi_dma_rxcb);
+	s3c2410_dma_devconfig(sspi->rx_dmach, S3C2410_DMASRC_HW, 0, sspi->sfr_phyaddr + SAMSPI_SPI_RX_DATA);
+	s3c2410_dma_config(sspi->rx_dmach, sspi->cur_bpw/8, 0);
+	s3c2410_dma_setflags(sspi->rx_dmach, S3C2410_DMAF_AUTOSTART);
+
+	val = s3c2410_dma_request(sspi->tx_dmach, &samspi_dma_client, NULL);
+	if(val){
+	   printk("%s:%d Oooops!!\n", __func__, __LINE__);
+	   s3c2410_dma_free(sspi->rx_dmach, &samspi_dma_client);
+	   return val;
+	}
+	s3c2410_dma_set_buffdone_fn(sspi->tx_dmach, samspi_dma_txcb);
+	s3c2410_dma_devconfig(sspi->tx_dmach, S3C2410_DMASRC_MEM, 0, sspi->sfr_phyaddr + SAMSPI_SPI_TX_DATA);
+	s3c2410_dma_config(sspi->tx_dmach, sspi->cur_bpw/8, 0);
+	s3c2410_dma_setflags(sspi->tx_dmach, S3C2410_DMAF_AUTOSTART);
+
+	return 0;
+}
+#else
+#define samspi_suspend	NULL
+#define samspi_resume	NULL
+#endif /* CONFIG_PM */
 
 static struct platform_driver sam_spi_driver = {
 	.driver = {
@@ -1072,10 +1106,8 @@ static struct platform_driver sam_spi_driver = {
 		.owner = THIS_MODULE,
 		.bus    = &platform_bus_type,
 	},
-//	.remove = sam_spi_remove,
-//	.shutdown = sam_spi_shutdown,
-//	.suspend = sam_spi_suspend,
-//	.resume = sam_spi_resume,
+	.suspend = samspi_suspend,
+	.resume = samspi_resume,
 };
 
 static int __init sam_spi_init(void)
@@ -1093,3 +1125,4 @@ module_exit(sam_spi_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Jaswinder Singh Brar <jassi.brar@samsung.com>");
 MODULE_DESCRIPTION("Samsung SOC SPI Controller");
+MODULE_ALIAS("platform:sam-spi");

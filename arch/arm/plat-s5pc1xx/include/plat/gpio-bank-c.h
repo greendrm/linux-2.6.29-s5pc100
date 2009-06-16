@@ -48,16 +48,6 @@
 #define S5PC1XX_GPC4_AC97_SDO		(0x4 << 16)
 #define S5PC1XX_GPC4_GPIO_INT3_4	(0xf << 16)
 
-#define S5PC1XX_GPB0_SPI_MISO0          (2<<0)
-#define S5PC1XX_GPB1_SPI_CLK0           (2<<4)
-#define S5PC1XX_GPB2_SPI_MOSI0          (2<<8)
-#define S5PC1XX_GPB3_SPI_CS0            (2<<12)
-
-#define S5PC1XX_GPB4_SPI_MISO1          (2<<16)
-#define S5PC1XX_GPB5_SPI_CLK1           (2<<20)
-#define S5PC1XX_GPB6_SPI_MOSI1          (2<<24)
-#define S5PC1XX_GPB7_SPI_CS1            (2<<28)
-
 #define S5PC1XX_GPG3_0SPI_CLK2          (3<<0)
 #define S5PC1XX_GPG3_1SPI_CS2           (3<<4)
 #define S5PC1XX_GPG3_2SPI_MISO2         (3<<8)

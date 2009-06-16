@@ -104,6 +104,7 @@ extern int s3c64xx_sclk_ctrl(struct clk *clk, int enable);
 extern void s5pc1xx_register_clocks(void);
 extern int s5pc1xx_sclk0_ctrl(struct clk *clk, int enable);
 extern int s5pc1xx_sclk1_ctrl(struct clk *clk, int enable);
+extern int s5pc1xx_clk_d20_ctrl(struct clk *clk, int enable);
 #elif defined(CONFIG_ARCH_S5PC11X)
 extern void s5pc11x_register_clocks(void);
 extern int s5pc11x_sclk0_ctrl(struct clk *clk, int enable);

@@ -205,79 +205,70 @@ config SPI_SH_SCI
 	  SPI driver for SuperH SCI blocks.
 
 config SPI_S5PC100
-        tristate "S5PC100 SPI Driver"
-        depends on SPI && CPU_S5PC100
-        select SPI_CNTRLR_0
-        help
-          Say Y here to include support for SPI controller in the
-          Samsung S5PC100 based System-on-Chip devices.
+	tristate "S5PC100 SPI Driver"
+	depends on SPI && CPU_S5PC100
+	select SPI_CNTRLR_0
+	help
+	  Say Y here to include support for SPI controller in the
+	  Samsung S5PC100 based System-on-Chip devices.
 
 config SPI_CNTRLR_0
-        bool
-        depends on SPI_S5PC100
-        default y
+	bool
+	depends on SPI_S5PC100
+	default y
 
 config SPI_CNTRLR_1
-        bool "SPI-1 Support"
-        depends on SPI_S5PC100
-        default n
-        help
-          Say N(recommended). This will initialize two controllers.
+	bool "SPI-1 Support"
+	depends on SPI_S5PC100
+	default n
+	help
+	  Say N(recommended). This will initialize two controllers.
+
+#config SPI_CNTRLR_2
+#	bool "SPI-2 Support"
+#	depends on SPI_S5PC100
+#	default n
+#	help
+#	  Say N(recommended). This will initialize three controllers.
 
 choice
         prompt "SPI Source Clock"
-        depends on SPI_S5PC100
+	depends on SPI_S5PC100
 
 config SPICLK_SRC_PCLK
-        bool "PCLK"
-        depends on SPI_S5PC100
-        help
-          Say Y if you want to source SPI clock from PCLK.
+	bool "PCLK"
+	help
+	  Say Y if you want to source SPI clock from PCLK.
 
 config SPICLK_SRC_SCLK48M
-        bool "SCLK48M for SPI"
-        depends on SPI_S5PC100
-        help
-          Say Y if you want to source SPI clock from SCLK48M.
+	bool "SCLK48M for SPI"
+	help
+	  Say Y if you want to source SPI clock from SCLK48M.
 
 config SPICLK_SRC_EPLL
-        bool "EPLL Clock"
-        depends on SPI_S5PC100
-        help
-          Say Y if you want to source SPI clock from EPLL.
-
-config SPICLK_SRC_SPIEXT
-        bool "SPI External Clock"
-        depends on  SPI_S5P6440
-        help
-          Say Y if you want to source SPI clock from Ext SPICLK.
+	bool "EPLL Clock"
+	help
+	  Say Y if you want to source SPI clock from EPLL.
 
 endchoice
 
 choice
         prompt "Select EPLL Source"
-        depends on (SPICLK_SRC_EPLL || SPICLK_SRC_SPIEXT)
+	depends on (SPICLK_SRC_EPLL)
 
 config SPICLK_EPLL_MOUTEPLL
-        bool "MOUTepll"
+	bool "MOUTepll"
 
 config SPICLK_EPLL_DOUT
-        bool "DOUTmpll"
+	bool "DOUTmpll"
 
 config SPICLK_EPLL_FIN
-        bool "FINepll"
-
-config SPICLK_EPLL_27MHZ
-        bool "27MHz"
-        depends on SPI_S3C6410
+	bool "FINepll"
 
 config SPICLK_EPLL_MOUTHPLL
-        bool "MOUThpll"
-        depends on SPI_S5PC100
+	bool "MOUThpll"
 
 endchoice
-
-
 
 config SPI_TXX9
 	tristate "Toshiba TXx9 SPI controller"

@@ -637,3 +637,6 @@ v2.6.29.4-r1d12: Hatim Ali
 	Added Files:
 		A	drivers/spi/spi_sam.c
 		A	drivers/spi/spi_sam.h
+
+v2.6.29.4-r1d13: Jassi
+	- Updated support for SPI in SMDKC100

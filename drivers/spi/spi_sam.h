@@ -9,16 +9,15 @@
 
 #include <mach/s3c-dma.h>
 #include <mach/map.h>
+#include <mach/gpio.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-cfg.h>
-
-#define SPI_SLAVE 0x40
+#include <plat/spi.h>
 
 /* AP specific headers */
-#ifdef CONFIG_CPU_S3C6410
-#elif defined (CONFIG_CPU_S5P6440)
-#elif defined (CONFIG_CPU_S5PC100)
-#include <plat/gpio-bank-c.h>
+#if defined(CONFIG_CPU_S5PC100)
+#include <plat/gpio-bank-b.h>
+//#include <plat/gpio-bank-g3.h>
 #endif
 
 #define SAMSPI_CH_CFG		(0x00)      //SPI configuration
@@ -50,8 +49,6 @@
 
 #ifdef CONFIG_SPICLK_SRC_PCLK
 #define SPI_CLKSEL_SRC	(0 << 9)
-#elif defined (CONFIG_SPICLK_SRC_SPIEXT)
-#define SPI_CLKSEL_SRC	(1 << 9)
 #elif defined (CONFIG_SPICLK_SRC_SCLK48M)
 #define SPI_CLKSEL_SRC	(1 << 9)
 #elif defined (CONFIG_SPICLK_SRC_EPLL)
@@ -110,15 +107,7 @@
 #define SPI_FBCLK_6NS		(2<<0)
 #define SPI_FBCLK_9NS		(3<<0)
 
-#ifdef CONFIG_CPU_S3C6410
-#define CH0_TX_MAXBYTES		   (64)
-#define CH0_RX_MAXBYTES		   (64)
-#define CH0_PER_UNIT               (1)
-#elif defined (CONFIG_CPU_S5P6440)
-#define CH0_TX_MAXBYTES		   (256)
-#define CH0_RX_MAXBYTES		   (256)
-#define CH0_PER_UNIT               (4)
-#elif defined (CONFIG_CPU_S5PC100)
+#if defined(CONFIG_CPU_S5PC100)
 #define CH0_TX_MAXBYTES		   (64)
 #define CH0_RX_MAXBYTES		   (64)
 #define CH0_PER_UNIT               (1)
@@ -144,22 +133,10 @@
 #define SPI_CH1_RXFIFO_LEN		SPI_CH1_RXFIFO_MAXLEN
 #define SPI_TRAILCNT			SPI_MAX_TRAILCNT
 
-#ifdef CONFIG_CPU_S3C6410
-
-#define SAMSPI_PA_SPI0 S3C64XX_PA_SPI0
-#define SAMSPI_PA_SPI1 S3C64XX_PA_SPI1
-
-#elif defined (CONFIG_CPU_S5P6440)
-
-#define SAMSPI_PA_SPI0 S5P64XX_PA_SPI0
-#define SAMSPI_PA_SPI1 S5P64XX_PA_SPI1
-
-#elif defined (CONFIG_CPU_S5PC100)
-
+#if defined(CONFIG_CPU_S5PC100)
 #define SAMSPI_PA_SPI0 S5PC1XX_PA_SPI0
 #define SAMSPI_PA_SPI1 S5PC1XX_PA_SPI1
 //#define SAMSPI_PA_SPI2 S5PC1XX_PA_SPI2
-
 #endif
 
 #define DMACH_SPIIN_0        DMACH_SPI0_IN
@@ -176,32 +153,7 @@
 #define GPMOSI_1             6
 #define GPCS_1               7
 
-#ifdef CONFIG_CPU_S3C6410
-
-#define GPNAME               S3C64XX_GPC
-#define GPIO_MISO_0          S3C64XX_GPC0_SPI_MISO0
-#define GPIO_CLK_0           S3C64XX_GPC1_SPI_CLK0
-#define GPIO_MOSI_0          S3C64XX_GPC2_SPI_MOSI0
-#define GPIO_CS_0            S3C64XX_GPC3_SPI_nCS0
-#define GPIO_MISO_1          S3C64XX_GPC4_SPI_MISO1
-#define GPIO_CLK_1           S3C64XX_GPC5_SPI_CLK1
-#define GPIO_MOSI_1          S3C64XX_GPC6_SPI_MOSI1
-#define GPIO_CS_1            S3C64XX_GPC7_SPI_nCS1
-
-#elif defined (CONFIG_CPU_S5P6440)
-
-#define GPNAME               S5P64XX_GPC
-#define GPIO_MISO_0          S5P64XX_GPC0_SPI_MISO0
-#define GPIO_CLK_0           S5P64XX_GPC1_SPI_CLK0
-#define GPIO_MOSI_0          S5P64XX_GPC2_SPI_MOSI0
-#define GPIO_CS_0            S5P64XX_GPC3_SPI_nCS0
-#define GPIO_MISO_1          S5P64XX_GPC4_SPI_MISO1
-#define GPIO_CLK_1           S5P64XX_GPC5_SPI_CLK1
-#define GPIO_MOSI_1          S5P64XX_GPC6_SPI_MOSI1
-#define GPIO_CS_1            S5P64XX_GPC7_SPI_nCS1
-
-#elif defined (CONFIG_CPU_S5PC100)
-
+#if defined(CONFIG_CPU_S5PC100)
 //#define DMACH_SPIIN_2        DMACH_SPI2_IN
 //#define DMACH_SPIOUT_2       DMACH_SPI2_OUT
 #define GPNAME               S5PC1XX_GPB
@@ -213,17 +165,21 @@
 #define GPIO_CLK_1           S5PC1XX_GPB5_SPI_CLK1
 #define GPIO_MOSI_1          S5PC1XX_GPB6_SPI_MOSI1
 #define GPIO_CS_1            S5PC1XX_GPB7_SPI_CS1
-//#define GPIO_MISO_2          S5PC1XX_GPG3_2SPI_MISO2
-//#define GPIO_CLK_2           S5PC1XX_GPG3_0SPI_CLK2
-//#define GPIO_MOSI_2          S5PC1XX_GPG3_3SPI_MOSI2
-//#define GPIO_CS_2            S5PC1XX_GPG3_1SPI_CS2
+//#define GPIO_MISO_2          S5PC1XX_GPG3_2_SPI_MISO2
+//#define GPIO_CLK_2           S5PC1XX_GPG3_0_SPI_CLK2
+//#define GPIO_MOSI_2          S5PC1XX_GPG3_3_SPI_MOSI2
+//#define GPIO_CS_2            S5PC1XX_GPG3_1_SPI_CS2
 //#define GPMISO_2             4
 //#define GPCLK_2              5
 //#define GPMOSI_2             6
 //#define GPCS_2               7
-
 #endif
 
+/* Going by the AP, SPI controller, in Master mode, can control only 1 Slave.
+ * Inorder to control more Slaves, we disable ChipSelect(CS) pin for Master altogether.
+ * ChipSelects are defined as GPIO pins and set/config functions are provided by plat-specific code.
+ * So, here we set CS only if SPI controller is in SLAVE mode.
+ */
 #define SETUP_SPI(sspi, n)	do{                                                             \
 				   sspi->sfr_phyaddr = SAMSPI_PA_SPI##n;                        \
 				   sspi->rx_dmach = DMACH_SPIIN_##n;                            \
@@ -231,28 +187,51 @@
 				   s3c_gpio_cfgpin(GPNAME(GPMISO_##n), GPIO_MISO_##n);          \
 				   s3c_gpio_cfgpin(GPNAME(GPCLK_##n), GPIO_CLK_##n);            \
 				   s3c_gpio_cfgpin(GPNAME(GPMOSI_##n), GPIO_MOSI_##n);          \
-				   s3c_gpio_cfgpin(GPNAME(GPCS_##n), GPIO_CS_##n);              \
+				   if(sspi->cur_mode & SPI_SLAVE){			        \
+				      s3c_gpio_cfgpin(GPNAME(GPCS_##n), GPIO_CS_##n);           \
+				   }                                                            \
 				}while(0)
 
-#define SET_GPIOPULL(sspi, n)	do{                                                             \
-				   if(sspi->cur_mode & SPI_SLAVE){				\
-					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_DOWN);      \
-					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_NONE);       \
-					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_UP);      \
-					   s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_NONE);        \
+#define SET_GPIOPULL(sspi, n)	do{                                                                     \
+				   if(sspi->cur_mode & SPI_SLAVE){				        \
+					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_DOWN);    \
+					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_NONE);     \
+					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_DOWN);    \
+					   s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_NONE);      \
 				   }else{								\
-					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_DOWN);      \
-					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_DOWN);       \
-					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_UP);      \
-					   s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_UP);        \
+					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_UP);    \
+					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_UP);     \
+					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_UP);    \
+					   /*s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_UP);*/    \
 				   }									\
 				}while(0)
 
-#define SAM_SETGPIOPULL(sspi)   do{				\
-				   if(sspi->pdev->id == 0)	\
-					SET_GPIOPULL(sspi, 0);	\
-				   else if(sspi->pdev->id == 1)	\
-					SET_GPIOPULL(sspi, 1);	\
+#define SAM_SETGPIOPULL(sspi)   do{                                          \
+				   if(sspi->spi_mstinfo->pdev->id == 0)      \
+					SET_GPIOPULL(sspi, 0);               \
+				   else if(sspi->spi_mstinfo->pdev->id == 1) \
+					SET_GPIOPULL(sspi, 1);               \
+				}while(0)
+
+#define UNSET_GPIOPULL(sspi, n)	do{                                                                     \
+				   if(sspi->cur_mode & SPI_SLAVE){				        \
+					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_UP);    \
+					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_UP);     \
+					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_UP);    \
+					   s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_UP);      \
+				   }else{								\
+					   s3c_gpio_setpull(GPNAME(GPMISO_##n), S3C_GPIO_PULL_UP);    \
+					   s3c_gpio_setpull(GPNAME(GPCLK_##n), S3C_GPIO_PULL_UP);     \
+					   s3c_gpio_setpull(GPNAME(GPMOSI_##n), S3C_GPIO_PULL_UP);    \
+					   /*s3c_gpio_setpull(GPNAME(GPCS_##n), S3C_GPIO_PULL_UP);*/    \
+				   }									\
+				}while(0)
+
+#define SAM_UNSETGPIOPULL(sspi)   do{                                          \
+				   if(sspi->spi_mstinfo->pdev->id == 0)      \
+					UNSET_GPIOPULL(sspi, 0);               \
+				   else if(sspi->spi_mstinfo->pdev->id == 1) \
+					UNSET_GPIOPULL(sspi, 1);               \
 				}while(0)
 
 #define SET_MODECFG(v, n)   do{                                                                      \
@@ -264,10 +243,13 @@
 
 #define SAMSPI_DMABUF_LEN	(16*1024)
 
-enum samspi_state {
-	RUNNING,
-	STOPPED,
-};
+#define SUSPND     (1<<0)
+#define XFERBUSY   (1<<1)
+#define IRQERR     (1<<2)
+#define TOUTERR    (1<<3)
+#define INTERR     (1<<4)
+#define IOERR      (1<<5)
+#define ERRS       (IRQERR | TOUTERR | INTERR | IOERR)
 
 enum xfer_state {
 	PASS,
@@ -279,12 +261,11 @@ enum xfer_state {
 struct samspi_bus {
 	struct spi_master        *master;
 	struct workqueue_struct	 *workqueue;
-	struct platform_device   *pdev;
-	void                     *pdata;
+	struct sam_spi_mstr_info *spi_mstinfo;
 	struct work_struct       work;
 	struct list_head         queue;
 	spinlock_t               lock;	/* protect 'queue' */
-	enum samspi_state        state;
+	atomic_t                 state;
 	enum dma_ch              rx_dmach;
 	enum dma_ch              tx_dmach;
 	u32                      sfr_phyaddr;
@@ -298,8 +279,6 @@ struct samspi_bus {
 	void __iomem             *tx_tmp;
 	dma_addr_t               tx_dma_phys;
 	dma_addr_t               rx_dma_phys;
-	struct clk               *prnt_clk; /* PCLK, USBCLK or Epll_CLK */
-	struct clk               *clk;
 	struct completion        xfer_completion;
 	enum xfer_state          tx_done;
 	enum xfer_state          rx_done;
@@ -309,33 +288,5 @@ struct samspi_bus {
 	u8 	                 cur_mode, cur_bpw, active_chip;
 	u32                      cur_speed;
 };
-
-#if defined(CONFIG_SPICLK_SRC_SCLK48M)
-static char *spiclk_src = "sclk_spi_48";
-
-#elif defined(CONFIG_SPICLK_SRC_EPLL) || defined(CONFIG_SPICLK_SRC_SPIEXT)
-static char *spiclk_src = "spi_epll";
-
-#if defined(CONFIG_SPICLK_EPLL_MOUTEPLL)
-static char *spisclk_src = "mout_epll";
-
-#elif defined(CONFIG_SPICLK_EPLL_DOUT)
-#if defined (CONFIG_SPI_S5PC100)
-static char *spisclk_src = "dout_mpll2";
-#else
-static char *spisclk_src = "dout_mpll";
-#endif
-
-#elif defined(CONFIG_SPICLK_EPLL_FIN)
-static char *spisclk_src = "ext_xtal";
-
-#elif defined(CONFIG_SPICLK_EPLL_27MHZ)
-static char *spisclk_src = "clk_27m";
-
-#elif defined(CONFIG_SPICLK_EPLL_MOUTHPLL)
-static char *spisclk_src = "mout_hpll";
-#endif
-
-#endif
 
 #endif 	//_LINUX_SPI_SAM_H
