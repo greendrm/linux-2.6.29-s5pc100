@@ -652,3 +652,10 @@ v2.6.29.4-r1d15: Abhilash Kesavan
 		M	drivers/serial/Kconfig
 		M	drivers/serial/samsung.c
 		M	drivers/serial/samsung.h
+
+v2.6.29.4-r1d16: Jongpill Lee
+	- Support PM for S5PC100
+
+	Modified Files:
+		M       arch/arm/plat-s5pc1xx/pm.c
+		M       arch/arm/plat-s5pc1xx/sleep.S
