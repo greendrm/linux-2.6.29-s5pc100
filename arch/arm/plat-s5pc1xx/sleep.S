@@ -104,6 +104,7 @@ resume_with_mmu:
 	bic	r8, r8, #0xF0000000
 	orr	r8, r8, r9
 	str	r12, [r8]
+
 #if 0
 	ldmfd	sp!, { r4 - r12, pc }
 #else

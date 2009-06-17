@@ -47,35 +47,7 @@
 #include <plat/regs-clock.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-cfg.h>
-#include <plat/gpio-bank-a0.h>
-#include <plat/gpio-bank-a1.h>
-#include <plat/gpio-bank-b.h>
-#include <plat/gpio-bank-c.h>
-#include <plat/gpio-bank-d.h>
-#include <plat/gpio-bank-e0.h>
-#include <plat/gpio-bank-e1.h>
-#include <plat/gpio-bank-f0.h>
-#include <plat/gpio-bank-f1.h>
-#include <plat/gpio-bank-f2.h>
-#include <plat/gpio-bank-f3.h>
-#include <plat/gpio-bank-g0.h>
-#include <plat/gpio-bank-g1.h>
-#include <plat/gpio-bank-g2.h>
-#include <plat/gpio-bank-g3.h>
-#include <plat/gpio-bank-h0.h>
-#include <plat/gpio-bank-h1.h>
-#include <plat/gpio-bank-h2.h>
-#include <plat/gpio-bank-h3.h>
-#include <plat/gpio-bank-i.h>
-#include <plat/gpio-bank-j0.h>
-#include <plat/gpio-bank-j1.h>
-#include <plat/gpio-bank-j2.h>
-#include <plat/gpio-bank-j3.h>
-#include <plat/gpio-bank-j4.h>
-#include <plat/gpio-bank-k0.h>
-#include <plat/gpio-bank-k1.h>
-#include <plat/gpio-bank-k2.h>
-#include <plat/gpio-bank-k3.h>
+
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
 #include <asm/gpio.h>
@@ -408,8 +380,6 @@ static void s5pc1xx_pm_configure_extint(void)
 
 	u32 tmp;
 
-	weint_base = ioremap(S5P_APM_BASE, 0x350);
-
 	/* Mask all External Interrupt */
 	writel(0xff , weint_base + S5P_APM_WEINT0_MASK);
 	writel(0xfb , weint_base + S5P_APM_WEINT1_MASK);
@@ -570,7 +540,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp = __raw_readl(S5P_WAKEUP_STAT);
 	__raw_writel(tmp, S5P_WAKEUP_STAT);
 
-#if 1
 	/* Set Power Stable Count */
 	tmp = __raw_readl(S5P_OTHERS);
 	tmp &=~(1 << S5P_OTHER_STA_TYPE);
@@ -588,7 +557,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp = __raw_readl(S5P_SLEEP_CFG);
 	tmp &= ~(1 << 0);
 	__raw_writel(tmp, S5P_SLEEP_CFG);
-#endif
 
 	/* s5pc1xx_cpu_save will also act as our return point from when
 	 * we resume as it saves its own register state, so use the return
@@ -655,6 +623,9 @@ static struct platform_suspend_ops s5pc1xx_pm_ops = {
 int __init s5pc1xx_pm_init(void)
 {
 	printk("s5pc1xx Power Management, (c) 2008 Samsung Electronics\n");
+
+	weint_base = ioremap(S5P_APM_BASE, 0x350);
+
 	/* set the irq configuration for wake */
 	suspend_set_ops(&s5pc1xx_pm_ops);
 	return 0;
