@@ -666,3 +666,20 @@ v2.6.29.4-r1d18: Thomas Abraham
 
 	Modified Files:
 		M	drivers/usb/host/Makefile
+
+v2.6.29.4-r1d19: Thomas Abraham
+	- USB OTG: Adding check to ensure that endpoint is in 'Enabled'
+	  state before performing a URB dequeue in s3c6410_otghcd_urb_dequeue
+	  function.
+
+	  When a device is dettached, all the pending transfers for all the
+	  device endpoints are terminated and the endpoint is disabled. When
+	  the USB HID class is notified about the device being unplugged, it
+	  again tries to dequeue all the URB's. Since the endpoint are
+	  disabled prior to this, this causes a kernel crash in the
+	  cancel_transfer function. Adding a check to ensure that endpoint is
+	  not disabled prior to dequeing a URB resolves this issue. The kernel
+	  crash was observed when USB Keyboard was unplugged at the OTG port.
+
+	Modified Files:
+		M	drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.c	

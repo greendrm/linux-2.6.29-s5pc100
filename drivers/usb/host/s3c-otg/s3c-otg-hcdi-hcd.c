@@ -442,6 +442,10 @@ int		s3c6410_otghcd_urb_dequeue(struct usb_hcd *_hcd, struct urb *_urb, int stat
 	
 	unsigned long	spin_lock_flag = 0;
 	td_t *cancel_td = (td_t *)_urb->hcpriv;
+
+	/* Dequeue should be performed only if endpoint is enabled */
+	if (_urb->ep->enabled == 0)
+		return USB_ERR_SUCCESS;
 		
 	spin_lock_irg_save_otg(&otg_hcd_spin_lock, spin_lock_flag);
 
