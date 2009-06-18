@@ -10,7 +10,7 @@
  * published by the Free Software Foundation.
 */
 
-#include "s3cfb2.h"
+#include "s3cfb.h"
 
 static struct s3cfb_lcd tl2796 = {
 	.width = 480,
