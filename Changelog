@@ -659,3 +659,10 @@ v2.6.29.4-r1d16: Jongpill Lee
 	Modified Files:
 		M       arch/arm/plat-s5pc1xx/pm.c
 		M       arch/arm/plat-s5pc1xx/sleep.S
+
+v2.6.29.4-r1d18: Thomas Abraham
+	- Updating drivers/usb/Makefile to include compilation
+	  for 'host' if CONFIG_USB_S3C_OTG_HOST is defined.
+
+	Modified Files:
+		M	drivers/usb/host/Makefile
