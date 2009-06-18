@@ -21,6 +21,7 @@
 #include <linux/irq.h>
 #include <linux/mm.h>
 #include <linux/fb.h>
+#include <linux/ctype.h>
 #include <linux/dma-mapping.h>
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
@@ -77,6 +78,15 @@ static irqreturn_t s3cfb_irq_frame(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+
+#ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
+static irqreturn_t s3cfb_irq_fifo(int irq, void *dev_id)
+{
+	s3cfb_clear_interrupt(ctrl);
+
+	return IRQ_HANDLED;
+}
+#endif
 
 static int s3cfb_enable_window(int id)
 {
@@ -371,19 +381,25 @@ static int s3cfb_setcolreg(unsigned int regno, unsigned int red,
 	return 0;
 }
 
-#if 1
-/* we allow multi-open temporary with warning messages */
 static int s3cfb_open(struct fb_info *fb, int user)
 {
+	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	struct s3cfb_window *win = fb->par;
 	int ret = 0;
 
 	mutex_lock(&ctrl->lock);
 
 	if (atomic_read(&win->in_use)) {
-		err("[fb%d] you are trying to open multiple instances, " \
-			"allowed temporary\n", win->id);
+		if (win->id == pdata->default_win) {
+			dev_dbg(ctrl->dev, \
+				"multiple open for default window\n");
 		ret = 0;
+		} else {
+			dev_dbg(ctrl->dev, \
+				"do not allow multiple open " \
+				"for non-default window\n");
+			ret = -EBUSY;
+		}
 	} else
 		atomic_inc(&win->in_use);
 
@@ -391,25 +407,6 @@ static int s3cfb_open(struct fb_info *fb, int user)
 
 	return ret;
 }
-#else
-static int s3cfb_open(struct fb_info *fb, int user)
-{
-	struct s3cfb_window *win = fb->par;
-	int ret = 0;
-
-	mutex_lock(&ctrl->lock);
-
-	if (atomic_read(&win->in_use))
-		ret = -EBUSY;
-	else
-		atomic_inc(&win->in_use);
-
-	mutex_unlock(&ctrl->lock);
-
-	return ret;
-}
-
-#endif
 
 static int s3cfb_release_window(struct fb_info *fb)
 {
@@ -596,6 +593,10 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param)
 	win->path = DATA_PATH_FIFO;
 	win->local_channel = ch;
 
+	s3cfb_set_vsync_interrupt(ctrl, 1);
+	s3cfb_wait_for_vsync();
+	s3cfb_set_vsync_interrupt(ctrl, 0);
+
 	if (do_priv) {
 		if (do_priv(param)) {
 			err("failed to run for private fifo open\n");
@@ -621,6 +622,10 @@ int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sleep)
 		win->path = DATA_PATH_FIFO;
 	else
 		win->path = DATA_PATH_DMA;
+
+	s3cfb_set_vsync_interrupt(ctrl, 1);
+	s3cfb_wait_for_vsync();
+	s3cfb_set_vsync_interrupt(ctrl, 0);
 
 	s3cfb_display_off(ctrl);
 	s3cfb_check_line_count(ctrl);
@@ -653,6 +658,7 @@ void s3cfb_enable_local(int id, int in_yuv, int ch)
 	s3cfb_set_vsync_interrupt(ctrl, 0);
 
 	s3cfb_set_window_control(ctrl, id);
+	s3cfb_enable_window(id);
 }
 
 /* for backward compatibilities */
@@ -666,6 +672,7 @@ void s3cfb_enable_dma(int id)
 	s3cfb_wait_for_vsync();
 	s3cfb_set_vsync_interrupt(ctrl, 0);
 
+	s3cfb_disable_window(id);
 	s3cfb_display_off(ctrl);
 	s3cfb_set_window_control(ctrl, id);
 	s3cfb_display_on(ctrl);
@@ -736,7 +743,14 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 			win->y = user_win.y;
 
 		s3cfb_set_window_position(ctrl, win->id);
+		break;
 
+	case S3CFB_SET_SUSPEND_FIFO:
+		win->suspend_fifo = argp;
+		break;
+
+	case S3CFB_SET_RESUME_FIFO:
+		win->resume_fifo = argp;
 		break;
 
 	/*
@@ -897,6 +911,61 @@ int s3cfb_register_framebuffer(void)
 	return 0;
 }
 
+static int s3cfb_sysfs_show_win_power(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct s3c_platform_fb *pdata = to_fb_plat(dev);
+	struct s3cfb_window *win;
+	char temp[16];
+	int i;
+
+	for (i = 0; i < pdata->nr_wins; i++) {
+		win = ctrl->fb[i]->par;
+		sprintf(temp, "[fb%d] %s\n", i, win->enabled ? "on" : "off");
+		strcat(buf, temp);
+	}
+
+	return strlen(buf);
+}
+
+static int s3cfb_sysfs_store_win_power(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t len)
+{
+	struct s3c_platform_fb *pdata = to_fb_plat(dev);
+	char temp[4] = {0, };
+	const char *p = buf;
+	int id, to;
+
+	while (*p != '\0') {
+		if (!isspace(*p))
+			strncat(temp, p, 1);
+		p++;
+	}
+
+	if (strlen(temp) != 2)
+		return -EINVAL;
+
+	id = simple_strtoul(temp, NULL, 10) / 10;
+	to = simple_strtoul(temp, NULL, 10) % 10;
+
+	if (id < 0 || id > pdata->nr_wins)
+		return -EINVAL;
+
+	if (to != 0 && to != 1)
+		return -EINVAL;
+
+	if (to == 0)
+		s3cfb_disable_window(id);
+	else
+		s3cfb_enable_window(id);
+
+	return len;
+}
+
+static DEVICE_ATTR(win_power, 0644, \
+			s3cfb_sysfs_show_win_power,
+			s3cfb_sysfs_store_win_power);
+
 static int s3cfb_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fb *pdata;
@@ -962,6 +1031,18 @@ static int s3cfb_probe(struct platform_device *pdev)
 		goto err_irq;
 	}
 
+#ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
+	if (request_irq(platform_get_irq(pdev, 1), s3cfb_irq_fifo, \
+			IRQF_DISABLED, pdev->name, ctrl)) {
+		err("request_irq failed\n");
+		ret = -EINVAL;
+		goto err_irq;
+	}
+
+	s3cfb_set_fifo_interrupt(ctrl, 1);
+	info("fifo underrun trace\n");
+#endif
+
 	/* init global */
 	s3cfb_init_global();
 	s3cfb_display_on(ctrl);
@@ -985,6 +1066,10 @@ static int s3cfb_probe(struct platform_device *pdev)
 
 	s3cfb_set_clock(ctrl);
 	s3cfb_enable_window(pdata->default_win);
+
+	ret = device_create_file(&(pdev->dev), &dev_attr_win_power);
+	if (ret < 0)
+		err("failed to add sysfs entries\n");
 
 	info("registered successfully\n");
 
@@ -1036,6 +1121,18 @@ static int s3cfb_remove(struct platform_device *pdev)
 
 int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	struct s3c_platform_fb *pdata = to_fb_plat(&pdev->dev);
+	struct s3cfb_window *win;
+	int i;
+
+	for (i = 0; i < pdata->nr_wins; i++) {
+		win = ctrl->fb[i]->par;
+		if (win->path == DATA_PATH_FIFO && win->suspend_fifo) {
+			if (win->suspend_fifo())
+				info("failed to run the suspend for fifo\n");
+		}
+	}
+	
 	s3cfb_display_off(ctrl);
 	clk_disable(ctrl->clock);
 
@@ -1072,10 +1169,15 @@ int s3cfb_resume(struct platform_device *pdev)
 		fb = ctrl->fb[i];
 		win = fb->par;
 
-		if (win->enabled) {
-			s3cfb_check_var(&fb->var, fb);
-			s3cfb_set_par(fb);
-			s3cfb_enable_window(win->id);
+		if (win->path == DATA_PATH_FIFO && win->resume_fifo) {
+			if (win->resume_fifo())
+				info("failed to run the resume for fifo\n");
+		} else {
+			if (win->enabled) {
+				s3cfb_check_var(&fb->var, fb);
+				s3cfb_set_par(fb);
+				s3cfb_enable_window(win->id);
+			}
 		}
 	}
 

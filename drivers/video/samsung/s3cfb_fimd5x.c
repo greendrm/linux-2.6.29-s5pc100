@@ -254,9 +254,40 @@ int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable)
 	return 0;	
 }
 
+#ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
+int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable)
+{
+	unsigned int cfg = 0;
+
+	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
+
+	cfg &= ~(S3C_VIDINTCON0_FIFOSEL_MASK | S3C_VIDINTCON0_FIFOLEVEL_MASK);
+	cfg |= (S3C_VIDINTCON0_FIFOSEL_ALL | S3C_VIDINTCON0_FIFOLEVEL_EMPTY);
+
+	if (enable) {
+		dev_dbg(ctrl->dev, "fifo interrupt is on\n");
+		cfg |= (S3C_VIDINTCON0_INTFIFO_ENABLE | \
+			S3C_VIDINTCON0_INT_ENABLE);
+	} else {
+		dev_dbg(ctrl->dev, "fifo interrupt is off\n");
+		cfg &= ~(S3C_VIDINTCON0_INTFIFO_ENABLE | \
+			S3C_VIDINTCON0_INT_ENABLE);
+	}
+
+	writel(cfg, ctrl->regs + S3C_VIDINTCON0);
+
+	return 0;	
+}
+#endif
+
 int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 {
 	unsigned int cfg = 0;
+
+	cfg = readl(ctrl->regs + S3C_VIDINTCON1);
+
+	if (cfg & S3C_VIDINTCON1_INTFIFOPEND)
+		info("fifo underrun occur\n");
 
 	cfg |= (S3C_VIDINTCON1_INTVPPEND | S3C_VIDINTCON1_INTI80PEND | \
 		S3C_VIDINTCON1_INTFRMPEND | S3C_VIDINTCON1_INTFIFOPEND);

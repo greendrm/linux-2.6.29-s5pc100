@@ -17,6 +17,10 @@ config FB_S3C_DEBUG
         bool "S3C Framebuffer debug messages"
         depends on FB_S3C
 
+config FB_S3C_TRACE_UNDERRUN
+	bool "S3C Framebuffer FIFO underrun trace"
+	depends on FB_S3C
+
 config FB_S3C_DEFAULT_WINDOW
 	int "Default Window (0-4)"
 	depends on FB_S3C
@@ -40,5 +44,11 @@ config FB_S3C_LTE480WV
 	bool "LTE480WV"
 	---help---
 	  This enables support for Samsung LTE480WV 4.8\" WVGA LCD panel
+
+config FB_S3C_TL2796
+	bool "TL2796"
+	---help---
+	  This enables support for Samsung  TL2796 WVGA LCD panel
+
 endchoice	
 

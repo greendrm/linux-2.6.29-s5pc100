@@ -190,6 +190,8 @@ struct s3cfb_window {
 	unsigned int		pseudo_pal[16];
 	struct			s3cfb_alpha alpha;
 	struct			s3cfb_chroma chroma;
+	int			(*suspend_fifo)(void);
+	int			(*resume_fifo)(void);
 };
 
 /*
@@ -260,6 +262,8 @@ struct s3cfb_user_chroma {
 #define S3CFB_WIN_SET_PLANE_ALPHA	_IOW ('F', 204, struct s3cfb_user_plane_alpha)
 #define S3CFB_WIN_SET_CHROMA		_IOW ('F', 205, struct s3cfb_user_chroma)
 #define S3CFB_SET_VSYNC_INT		_IOW ('F', 206, unsigned int)
+#define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
+#define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
 
 
 /*
@@ -281,6 +285,7 @@ extern int s3cfb_set_timing(struct s3cfb_global *ctrl);
 extern int s3cfb_set_lcd_size(struct s3cfb_global *ctrl);
 extern int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable);
+extern int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_clear_interrupt(struct s3cfb_global *ctrl);
 extern int s3cfb_window_on(struct s3cfb_global *ctrl, int id);
 extern int s3cfb_window_off(struct s3cfb_global *ctrl, int id);
