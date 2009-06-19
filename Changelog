@@ -683,3 +683,6 @@ v2.6.29.4-r1d19: Thomas Abraham
 
 	Modified Files:
 		M	drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.c	
+
+v2.6.29.4-r2: Kyoungil Kim
+	- Official Release (2009.06.19)
