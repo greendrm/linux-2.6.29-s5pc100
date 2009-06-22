@@ -393,7 +393,7 @@ static int s3cfb_open(struct fb_info *fb, int user)
 		if (win->id == pdata->default_win) {
 			dev_dbg(ctrl->dev, \
 				"multiple open for default window\n");
-		ret = 0;
+			ret = 0;
 		} else {
 			dev_dbg(ctrl->dev, \
 				"do not allow multiple open " \
