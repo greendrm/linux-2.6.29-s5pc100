@@ -393,7 +393,7 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 			}
 			break;
 
-		case 24: /* packed 24 bpp: nothing to do for 5.x fimd */
+		case 24: /* packed 24 bpp: nothing to do for 6.x fimd */
 			break;
 
 		case 32:
