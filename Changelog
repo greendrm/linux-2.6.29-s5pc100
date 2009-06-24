@@ -717,3 +717,12 @@ v2.6.29.4-r2d1: Jinsung Yang
 		M       drivers/video/samsung/s3cfb.c
 		M       drivers/video/samsung/s3cfb_tl2796.c
 
+v2.6.29.4-r2d1: Kukjin Kim
+	- Bug fixed for PL330 DMA
+	- Modified indent
+
+	Modified Files:
+		M	arch/arm/plat-s3c/dma-pl330.c
+		M	arch/arm/plat-s5pc1xx/irq-eint.c
+		M	arch/arm/plat-s5pc1xx/irq.c
+
