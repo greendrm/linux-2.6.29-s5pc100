@@ -688,3 +688,32 @@ v2.6.29.4-r2: Kyoungil Kim
 	- Official Release (2009.06.19)
 
 v2.6.29.4-r2d0: Kyoungil Kim
+
+v2.6.29.4-r2d1: Jinsung Yang
+	- S5PC100 Universal Board Support
+	- FB platform data optimization
+
+	Added files:
+		A       arch/arm/configs/s5pc100_universal_defconfig
+		A       arch/arm/mach-s5pc100/mach-universal.c
+
+	Deleted files:
+		D       arch/arm/plat-s5pc11x/setup-fb.c
+		D       arch/arm/plat-s5pc1xx/setup-fb.c
+
+	Modified files:
+		M       arch/arm/mach-s5pc100/Kconfig
+		M       arch/arm/mach-s5pc100/Makefile
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/dev-fb.c
+		M       arch/arm/plat-s5pc1xx/Kconfig
+		M       arch/arm/plat-s5pc1xx/Makefile
+		M       arch/arm/plat-s5pc1xx/dev-fb.c
+		M       drivers/spi/spi_gpio.c
+		M       drivers/video/samsung/Kconfig
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb_tl2796.c
+
