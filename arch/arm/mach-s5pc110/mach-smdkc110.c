@@ -129,15 +129,89 @@ static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
         },
 };
 
+#ifdef CONFIG_FB_S3C
+static void smdkc110_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF0(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF1(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF2(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 4; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF3(i), S3C_GPIO_SFN(2));
+
+	/* mDNIe SEL: why we shall write 0x2 ? */
+	writel(0x2, S5P_MDNIE_SEL);
+}
+
+static int smdkc110_backlight_on(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC1XX_GPD0(3), "GPD0");
+
+	if (err) {
+		printk(KERN_ERR "failed to request GPD0 for "
+			"lcd backlight control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC1XX_GPD0(3), 1);
+	gpio_free(S5PC1XX_GPD0(3));
+
+	return 0;
+}
+
+static int smdkc110_reset_lcd(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC1XX_GPH0(6), "GPH0");
+	if (err) {
+		printk(KERN_ERR "failed to request GPH0 for "
+			"lcd reset control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC1XX_GPH0(6), 1);
+	mdelay(100);
+
+	gpio_set_value(S5PC1XX_GPH0(6), 0);
+	mdelay(10);
+
+	gpio_set_value(S5PC1XX_GPH0(6), 1);
+	mdelay(10);
+
+	gpio_free(S5PC1XX_GPH0(6));
+
+	return 0;
+}
+
+static struct s3c_platform_fb fb_data __initdata = {
+	.hw_ver	= 0x50,
+	.clk_name = "lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
+	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
+
+	.cfg_gpio = smdkc110_cfg_gpio,
+	.backlight_on = smdkc110_backlight_on,
+	.reset_lcd = smdkc110_reset_lcd,
+};
+#endif
+
 struct map_desc smdkc110_iodesc[] = {};
 
 static struct platform_device *smdkc110_devices[] __initdata = {
-#ifdef CONFIG_FB_S3C_V2
 	&s3c_device_fb,
-#endif
 	&s3c_device_smc911x,
- };
-
+};
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
 	.delay 			= 10000,
@@ -220,8 +294,8 @@ static void __init smdkc110_machine_init(void)
 	smdkc110_smc911x_set();
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
-#ifdef CONFIG_FB_S3C_V2
-	s3cfb_set_platdata(NULL);
+#ifdef CONFIG_FB_S3C
+	s3cfb_set_platdata(&fb_data);
 #endif
 
 #if defined(CONFIG_PM)

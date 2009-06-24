@@ -1119,6 +1119,7 @@ static int s3cfb_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
 int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(&pdev->dev);
@@ -1183,6 +1184,10 @@ int s3cfb_resume(struct platform_device *pdev)
 
 	return 0;
 }
+#else
+#define s3cfb_suspend NULL
+#define s3cfb_resume NULL
+#endif
 
 static struct platform_driver s3cfb_driver = {
 	.probe		= s3cfb_probe,

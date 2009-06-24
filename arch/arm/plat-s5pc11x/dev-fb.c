@@ -47,10 +47,10 @@ struct platform_device s3c_device_fb = {
 };
 
 static struct s3c_platform_fb default_fb_data __initdata = {
-	.hw_ver	= 0x50,
+	.hw_ver	= 0x60,
 	.clk_name = "lcd",
 	.nr_wins = 5,
-	.default_win = CONFIG_FB_S3C_V2_DEFAULT_WINDOW,
+	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
 	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
 };
 
@@ -69,11 +69,7 @@ void __init s3cfb_set_platdata(struct s3c_platform_fb *pd)
 	for (i = 0; i < npd->nr_wins; i++)
 		npd->nr_buffers[i] = 1;
 
-	npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_V2_YPANSTEP + 1;
-
-	npd->cfg_gpio = s3cfb_cfg_gpio;
-	npd->backlight_on = s3cfb_backlight_on;
-	npd->reset_lcd = s3cfb_reset_lcd;
+	npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP + 1;
 
 	s3c_device_fb.dev.platform_data = npd;
 }

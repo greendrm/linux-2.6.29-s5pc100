@@ -23,6 +23,7 @@ obj-$(CONFIG_S5PC1XX_SETUP_SDHCI)       += setup-sdhci.o
 # machine support
 
 obj-$(CONFIG_MACH_SMDKC100)	+= mach-smdkc100.o
+obj-$(CONFIG_MACH_UNIVERSAL)	+= mach-universal.o
 
 # LEDs support
 led-$(CONFIG_MACH_SMDKC100)     += leds-s5pc100.o

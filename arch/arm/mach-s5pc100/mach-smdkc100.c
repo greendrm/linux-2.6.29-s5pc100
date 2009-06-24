@@ -281,6 +281,79 @@ static struct s3c2410_uartcfg smdkc100_uartcfgs[] __initdata = {
         },
 };
 
+#ifdef CONFIG_FB_S3C
+static void smdkc100_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF0(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF1(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF2(i), S3C_GPIO_SFN(2));
+
+	for (i = 0; i < 4; i++)
+		s3c_gpio_cfgpin(S5PC1XX_GPF3(i), S3C_GPIO_SFN(2));
+}
+
+static int smdkc100_backlight_on(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC1XX_GPD(0), "GPD");
+	if (err) {
+		printk(KERN_ERR "failed to request GPD for "
+			"lcd backlight control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC1XX_GPD(0), 1);
+	gpio_free(S5PC1XX_GPD(0));
+
+	return 0;
+}
+
+static int smdkc100_reset_lcd(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC1XX_GPH0(6), "GPH0");
+	if (err) {
+		printk(KERN_ERR "failed to request GPH0 for "
+			"lcd reset control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC1XX_GPH0(6), 1);
+	mdelay(100);
+
+	gpio_set_value(S5PC1XX_GPH0(6), 0);
+	mdelay(10);
+
+	gpio_set_value(S5PC1XX_GPH0(6), 1);
+	mdelay(10);
+
+	gpio_free(S5PC1XX_GPH0(6));
+
+	return 0;
+}
+
+static struct s3c_platform_fb fb_data __initdata = {
+	.hw_ver	= 0x50,
+	.clk_name = "lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
+	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
+
+	.cfg_gpio = smdkc100_cfg_gpio,
+	.backlight_on = smdkc100_backlight_on,
+	.reset_lcd = smdkc100_reset_lcd,
+};
+#endif
+
 struct map_desc smdkc100_iodesc[] = {};
 
 static struct platform_device *smdkc100_devices[] __initdata = {
@@ -445,7 +518,7 @@ static void __init smdkc100_machine_init(void)
 
 	/* fb */
 #ifdef CONFIG_FB_S3C
-	s3cfb_set_platdata(NULL);
+	s3cfb_set_platdata(&fb_data);
 #endif
 
 	/* mipi-csi2 */
