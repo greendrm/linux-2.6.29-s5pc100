@@ -741,3 +741,20 @@ v2.6.29.4-r2d4: Kukjin Kim
 		M	arch/arm/plat-s5pc11x/s5pc11x-time.c
 		M	arch/arm/plat-s5pc11x/include/plat/regs-sys-timer.h
 
+v2.6.29.4-r2d5: jongpill Lee	
+	- some code modify for pm on S5PC100
+
+	Added Files:
+		A       arch/arm/mach-s5pc100/s5pc100-button.c
+		A       arch/arm/plat-s3c/s3c-button.c
+	
+	Modified Files:
+		M       arch/arm/mach-s5pc100/Makefile
+		M       arch/arm/mach-s5pc100/include/mach/regs-irq.h
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/plat-s3c/Makefile
+		M       arch/arm/plat-s5pc11x/s5pc11x-time.c
+		M       arch/arm/plat-s5pc1xx/gpiolib.c
+		M       arch/arm/plat-s5pc1xx/irq-eint.c
+		M       arch/arm/plat-s5pc1xx/pm.c
+
