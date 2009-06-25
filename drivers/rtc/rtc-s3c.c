@@ -26,6 +26,8 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/mach/time.h>
+
 #include <plat/regs-rtc.h>
 
 /* I have yet to find an S3C implementation with more than one

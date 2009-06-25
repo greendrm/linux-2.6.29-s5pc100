@@ -207,7 +207,7 @@ static struct irq_chip s3c_irq_uart = {
 
 static void __init s5p_uart_irq(struct uart_irq *uirq)
 {
-	void *reg_base = uirq->regs;
+	void __iomem *reg_base = uirq->regs;
 	unsigned int irq;
 	int offs;
 

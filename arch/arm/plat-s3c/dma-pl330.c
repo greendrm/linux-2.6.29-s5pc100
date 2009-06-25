@@ -217,6 +217,7 @@ static int s3c_dma_waitforload(struct s3c2410_dma_chan *chan, int line)
 	return 0;
 }
 
+static inline void s3c_dma_freebuf(struct s3c_dma_buf * buf);
 
 /* s3c_dma_loadbuffer
  *
@@ -228,6 +229,8 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 	unsigned long tmp;
 	pl330_DMA_parameters_t dma_param;
 	struct s3c_dma_buf *firstbuf;
+	struct s3c_dma_buf *last1buf;
+	struct s3c_dma_buf *last2buf;
 	int bwJump = 0;
 
 	memset(&dma_param, 0, sizeof(pl330_DMA_parameters_t));
@@ -243,6 +246,8 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 	pr_debug("%s: DMA Loop count - %08x\n", __FUNCTION__, (buf->size / chan->xfer_unit));
 
 	firstbuf = buf;
+	last1buf = buf;
+	last2buf = buf;
 
 	do {
 		dma_param.mPeriNum = chan->config_flags;
@@ -281,15 +286,17 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 		dma_param.mLoop = 0;
 		dma_param.mControl = *(pl330_DMA_control_t *) &chan->dcon;
 
+		last2buf = last1buf;
+		last1buf = buf;
+
 		chan->next = buf->next;
 		buf = chan->next;
 
-		if(buf==NULL) {
+		if (buf == NULL) {
 			firstbuf->next = NULL;
 			dma_param.mLastReq = 1;
 			dma_param.mIrqEnable = 1;
-		}
-		else {
+		} else {
 			dma_param.mLastReq = 0;
 			dma_param.mIrqEnable = 0;
 		}
@@ -297,9 +304,15 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 		bwJump += setup_DMA_channel(((u8 *)firstbuf->mcptr_cpu)+bwJump, dma_param, chan->number);
 		pr_debug("%s: DMA bwJump - %d\n", __FUNCTION__, bwJump);
 
-	}while(buf != NULL);
+		if (last2buf != firstbuf)
+			s3c_dma_freebuf(last2buf);
 
-	if(dma_param.mIrqEnable) {
+	} while (buf != NULL);
+
+	if (last1buf != firstbuf)
+		s3c_dma_freebuf(last1buf);
+
+	if (dma_param.mIrqEnable) {
 		tmp = dma_rdreg(chan->dma_con, S3C_DMAC_INTEN);
 		tmp |= (1 << chan->number);
 		dma_wrreg(chan->dma_con, S3C_DMAC_INTEN, tmp);
