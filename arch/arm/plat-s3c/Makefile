@@ -12,6 +12,11 @@ obj-				:=
 # Core support for all Samsung SoCs
 
 obj-y				+= init.o
+
+ifdef CONFIG_ARCH_S5PC1XX
+obj-y				+= s3c-button.o
+endif
+
 ifndef CONFIG_ARCH_S5PC1XX
 ifndef CONFIG_ARCH_S5PC11X
 obj-y				+= time.o

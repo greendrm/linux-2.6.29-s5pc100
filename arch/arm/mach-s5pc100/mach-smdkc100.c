@@ -537,6 +537,7 @@ static void __init smdkc100_machine_init(void)
 	s5pc1xx_pm_init();
 #endif
         smdk_backlight_register();
+
 }
 
 MACHINE_START(SMDKC100, "SMDKC100")

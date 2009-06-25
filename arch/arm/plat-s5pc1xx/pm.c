@@ -212,6 +212,15 @@ static struct sleep_save irq_save[] = {
 	SAVE_ITEM(S5PC100_VIC2SOFTINT),
 };
 
+static struct sleep_save eint_save[] = {
+	SAVE_ITEM(S5PC1XX_EINT0CON),
+	SAVE_ITEM(S5PC1XX_EINT1CON),
+	SAVE_ITEM(S5PC1XX_EINT2CON),
+	SAVE_ITEM(S5PC1XX_EINT0MASK),
+	SAVE_ITEM(S5PC1XX_EINT1MASK),
+	SAVE_ITEM(S5PC1XX_EINT2MASK),
+};
+
 static struct sleep_save sromc_save[] = {
 	SAVE_ITEM(S5PC1XX_SROM_BW),
 	SAVE_ITEM(S5PC1XX_SROM_BC0),
@@ -362,13 +371,6 @@ static void s5pc1xx_pm_show_resume_irqs(int start, unsigned long which,
 	}
 }
 
-static irqreturn_t s5pc1xx_eint11_interrupt(int irq, void *dev_id)
-{
-	printk("EINT11 is occured\n");
-
-	return IRQ_HANDLED;
-}
-
 static void s5pc1xx_pm_configure_extint(void)
 {
 /* for each of the external interrupts (EINT0..EINT15) we
@@ -392,37 +394,8 @@ static void s5pc1xx_pm_configure_extint(void)
 	writel(0xff , weint_base + S5P_APM_WEINT2_PEND);
 	writel(0xff , weint_base + S5P_APM_WEINT3_PEND);
 
-	/* GPH1(3) setting */
-	tmp = readl(weint_base + S5P_APM_GPH1CON);
-	tmp &= ~(0xf << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_GPH1CON);
-
-	/* LED Off for test */
-	tmp = readl(weint_base + S5P_APM_GPH1DAT);
-	tmp &= ~(0xf0);
-	writel(tmp , weint_base + S5P_APM_GPH1DAT);
-
-	/* EINT1_CON Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_CON);
-	tmp &= ~(0x7 << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_WEINT1_CON);
-
-	/* EINT1 MASK Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_MASK);
-	tmp &= ~(1 << 3);
-	writel(tmp , weint_base + S5P_APM_WEINT1_MASK);
-
-	udelay(50);
-
-	set_irq_type(IRQ_EINT11, IRQ_TYPE_EDGE_FALLING);
-	if (request_irq(IRQ_EINT11, s5pc1xx_eint11_interrupt, IRQF_TRIGGER_FALLING, "EINT11", NULL)){
-		printk(KERN_ERR "EINT interrupt can not register\n");
-	}
-
 	tmp = readl(S5P_EINT_WAKEUP_MASK);
-	tmp = ~(1 << (IRQ_EINT11 - IRQ_EINT0));
+	tmp = ~((1 << 11) | (1 << 31));
 	writel(tmp , S5P_EINT_WAKEUP_MASK);
 }
 
@@ -485,6 +458,8 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	s5pc1xx_pm_do_save(sromc_save, ARRAY_SIZE(sromc_save));
 	s5pc1xx_pm_do_save(nand_save, ARRAY_SIZE(nand_save));
 	s5pc1xx_pm_do_save(uart_save, ARRAY_SIZE(uart_save));
+	s5pc1xx_pm_do_save(eint_save, ARRAY_SIZE(eint_save));
+
 
 	/* ensure INF_REG0  has the resume address */
 	__raw_writel(virt_to_phys(s5pc100_cpu_resume), S5P_INFORM0);
@@ -594,6 +569,7 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	s5pc1xx_pm_do_restore(sromc_save, ARRAY_SIZE(sromc_save));
 	s5pc1xx_pm_do_restore(nand_save, ARRAY_SIZE(nand_save));
 	s5pc1xx_pm_do_restore(uart_save, ARRAY_SIZE(uart_save));
+	s5pc1xx_pm_do_restore(eint_save, ARRAY_SIZE(eint_save));
 
 	tmp = readl(weint_base + S5P_APM_WEINT1_PEND);
 	writel(tmp , weint_base + S5P_APM_WEINT1_PEND);
