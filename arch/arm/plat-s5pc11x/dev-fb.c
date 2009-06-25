@@ -19,6 +19,7 @@
 
 #include <plat/fb.h>
 #include <plat/devs.h>
+#include <plat/irqs.h>
 
 static struct resource s3cfb_resource[] = {
 	[0] = {
