@@ -50,6 +50,7 @@
 
 static unsigned long timer_startval;
 static unsigned long timer_usec_ticks;
+static unsigned long timer_icnt;
 
 #ifndef TICK_MAX
 #define TICK_MAX (0xffff)
@@ -134,10 +135,15 @@ static unsigned long s5pc11x_gettimeoffset (void)
 {
 	unsigned long tdone;
 	unsigned long tval;
+	unsigned long clk_tick_totcnt;
+
+	clk_tick_totcnt = (timer_icnt + 1) * timer_startval;
 
 	/* work out how many ticks have gone since last timer interrupt */
-	tval = s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
-	tdone = timer_startval - tval;
+	tval = s5pc11x_systimer_read(S3C_SYSTIMER_ICNTO) * timer_startval;
+	tval += s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
+
+	tdone = clk_tick_totcnt - tval;
 
 	/* check to see if there is an interrupt pending */
 	if (s5pc11x_ostimer_pending()) {
@@ -146,16 +152,17 @@ static unsigned long s5pc11x_gettimeoffset (void)
 		 * timer has re-loaded from wrapping.
 		 */
 
-		tval =  s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
-		tdone = timer_startval - tval;
+		tval = s5pc11x_systimer_read(S3C_SYSTIMER_ICNTO) * timer_startval;
+		tval += s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
+
+		tdone = clk_tick_totcnt - tval;
 
 		if (tval != 0)
-			tdone += timer_startval;
+			tdone += clk_tick_totcnt;
 	}
 
 	return timer_ticks_to_usec(tdone);
 }
-
 
 /*
  * IRQ handler for the timer
@@ -188,13 +195,10 @@ static void s5pc11x_timer_setup (void)
 	unsigned long tcon;
 	unsigned long tcnt;
 	unsigned long tcfg;
-	unsigned long icntb;
 
 	/* clock configuration setting and enable */
 	unsigned long pclk;
 	struct clk *clk;
-
-	unsigned long reg;
 
 	tcnt = TICK_MAX;  /* default value for tcnt */
 
@@ -212,7 +216,6 @@ static void s5pc11x_timer_setup (void)
 	/* read the current timer configuration bits */
 	tcon = s5pc11x_systimer_read(S3C_SYSTIMER_TCON);
 	tcfg = s5pc11x_systimer_read(S3C_SYSTIMER_TCFG);
-	icntb = s5pc11x_systimer_read(S3C_SYSTIMER_ICNTB);
 
 	clk = clk_get(NULL, "systimer");
 	if (IS_ERR(clk))
@@ -244,21 +247,17 @@ static void s5pc11x_timer_setup (void)
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCNTB, tcnt);
 
 	/* set Interrupt tick value */
-	icntb = (S3C_SYSTIMER_TARGET_HZ / HZ) - 1;
-	s5pc11x_systimer_write(S3C_SYSTIMER_ICNTB, icntb);
+	timer_icnt = (S3C_SYSTIMER_TARGET_HZ / HZ) - 1;
+	s5pc11x_systimer_write(S3C_SYSTIMER_ICNTB, timer_icnt);
 
 	tcon = S3C_SYSTIMER_INT_AUTO | S3C_SYTIMERS_START | S3C_SYSTIMER_INT_START | S3C_SYSTIMER_AUTO_RELOAD;
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
 
 	printk("timer tcon=%08lx, tcnt %04lx, icnt %04lx, tcfg %08lx, usec %08lx\n",
-	       tcon, tcnt, icntb, tcfg, timer_usec_ticks);
+	       tcon, tcnt, timer_icnt, tcfg, timer_usec_ticks);
 
 	/* Interrupt Start and Enable */
-#ifdef CONFIG_CPU_S5PC110
 	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT, (S3C_SYSTIMER_INT_ICNTEIE|S3C_SYSTIMER_INT_EN));
-#else
-	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT, (S3C_SYSTIMER_INT_ICNTEIE));
-#endif
 }
 
 static void __init s5pc11x_timer_init(void)
