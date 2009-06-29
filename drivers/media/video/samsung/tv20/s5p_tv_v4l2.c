@@ -1249,7 +1249,7 @@ static int s5p_tv_v4l2_default(struct file *file, void *fh, int cmd, void *arg)
 #define VIDIOC_HDCP_STATUS _IOR('V', 101, unsigned int)
 #define VIDIOC_HDCP_PROT_STATUS _IOR('V', 102, unsigned int)
 
-int s5p_tv_v_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 //	void *fh = file->private_data;
 
@@ -1310,7 +1310,7 @@ int s5p_tv_v_ioctl(struct inode *inode, struct file *file, unsigned int cmd, uns
 	return video_ioctl2(file, cmd, arg);
 }
 
-int s5p_tv_vo_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+int s5p_tv_vo_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	void *fh = file->private_data;
 

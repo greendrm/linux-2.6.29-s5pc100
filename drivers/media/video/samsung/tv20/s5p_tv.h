@@ -15,7 +15,7 @@
 
 #include "s5pc100/tv_out_s5pc100.h"
 
-//#define COFIG_TVOUT_DBG
+#define COFIG_TVOUT_DBG
 
 #define S5P_TVMAX_CTRLS 	3
 
@@ -530,8 +530,8 @@ extern const struct v4l2_ioctl_ops s5p_tv_v4l2_v_ops;
 extern const struct v4l2_ioctl_ops s5p_tv_v4l2_vo_ops;
 
 extern void s5p_tv_v4l2_init_param(void);
-extern int s5p_tv_v_ioctl(struct inode *inode, struct file *file, u32 cmd, unsigned long arg);
-extern int s5p_tv_vo_ioctl(struct inode *inode, struct file *file, u32 cmd, unsigned long arg);
+extern int s5p_tv_v_ioctl(struct file *file, u32 cmd, unsigned long arg);
+extern int s5p_tv_vo_ioctl(struct file *file, u32 cmd, unsigned long arg);
 
 /*
  * STDA layer api - must be refine!!

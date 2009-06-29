@@ -793,12 +793,8 @@ bool _s5p_tv_if_start(void)
 		__s5p_tv_poweron();
 	}
 
-//	clk_disable(s5ptv_status.mixer_clk);
-//	clk_disable(s5ptv_status.sclk_mixer);
-//	clk_enable(s5ptv_status.mixer_clk);
-//	clk_enable(s5ptv_status.sclk_mixer);
-	//__s5p_tv_clk_set_vmixer_hclk_onoff(true);
-	//__s5p_tv_clk_set_vmixer_sclk_onoff(true);
+	__s5p_tv_clk_set_vmixer_hclk_onoff(true);
+	__s5p_tv_clk_set_vmixer_sclk_onoff(true);
 
 	switch (out_mode) {
 
@@ -811,33 +807,21 @@ bool _s5p_tv_if_start(void)
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
 
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
-		clk_disable(s5ptv_status.tvenc_clk);
-		clk_disable(s5ptv_status.sclk_tv);
-		clk_set_rate(s5ptv_status.sclk_mixer, 54000000);
-		clk_enable(s5ptv_status.tvenc_clk);
-		clk_enable(s5ptv_status.sclk_tv);
-		clk_disable(s5ptv_status.hdmi_clk);
-		clk_disable(s5ptv_status.sclk_hdmi);
-//		__s5p_tv_clk_init_video_mixer(TVOUT_CLK_VMIXER_SRCCLK_VCLK_54);
-//		__s5p_tv_clk_set_sdout_hclk_onoff(true);
-//		__s5p_tv_clk_set_sdout_sclk_onoff(true);
-//		__s5p_tv_clk_set_hdmi_hclk_onoff(false);
-//		__s5p_tv_clk_set_hdmi_sclk_onoff(false);
+		__s5p_tv_clk_init_video_mixer(TVOUT_CLK_VMIXER_SRCCLK_VCLK_54);
+		__s5p_tv_clk_set_sdout_hclk_onoff(true);
+		__s5p_tv_clk_set_sdout_sclk_onoff(true);
+		__s5p_tv_clk_set_hdmi_hclk_onoff(false);
+		__s5p_tv_clk_set_hdmi_sclk_onoff(false);
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
-		clk_set_rate(s5ptv_status.sclk_mixer, 54000000);
-		clk_disable(s5ptv_status.tvenc_clk);
-		clk_disable(s5ptv_status.sclk_tv);
-		clk_enable(s5ptv_status.hdmi_clk);
-		clk_enable(s5ptv_status.sclk_hdmi);
-//		__s5p_tv_clk_init_video_mixer(TVOUT_CLK_VMIXER_SRCCLK_MOUT_HPLL);
-//		__s5p_tv_clk_set_sdout_hclk_onoff(false);
-//		__s5p_tv_clk_set_sdout_sclk_onoff(false);
-//		__s5p_tv_clk_set_hdmi_hclk_onoff(true);
-//		__s5p_tv_clk_set_hdmi_sclk_onoff(true);
+		__s5p_tv_clk_init_video_mixer(TVOUT_CLK_VMIXER_SRCCLK_MOUT_HPLL);
+		__s5p_tv_clk_set_sdout_hclk_onoff(false);
+		__s5p_tv_clk_set_sdout_sclk_onoff(false);
+		__s5p_tv_clk_set_hdmi_hclk_onoff(true);
+		__s5p_tv_clk_set_hdmi_sclk_onoff(true);
 
-/*
+
 		cerr = __s5p_tv_clk_init_href(S5P_TV_CLK_HPLL_REF_27M);
 
 		if (cerr != S5P_TV_CLK_ERR_NO_ERROR) {
@@ -851,7 +835,7 @@ bool _s5p_tv_if_start(void)
 		}
 
 		__s5p_tv_clk_init_hdmi_ratio(2);
-*/
+
 		switch (disp_mode) {
 
 		case TVOUT_480P_60_16_9:
@@ -879,7 +863,7 @@ bool _s5p_tv_if_start(void)
 			break;
 		}
 
-//		__s5p_tv_clk_hpll_onoff(true);
+		__s5p_tv_clk_hpll_onoff(true);
 
 		__s5p_tv_poweroff();
 		__s5p_tv_poweron();
@@ -982,7 +966,7 @@ bool _s5p_tv_if_stop(void)
 	__s5p_vm_stop();
 
 	if (__s5p_tv_power_get_power_status()) {
-		//__s5p_tv_clk_stop();
+		__s5p_tv_clk_stop();
 		__s5p_tv_poweroff();
 	}
 

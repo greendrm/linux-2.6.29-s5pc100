@@ -240,7 +240,7 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 /*
  * ftn for video
  */
-static int s5p_tv_v_open(struct inode *inode, struct file *file)
+static int s5p_tv_v_open(struct file *file)
 {
 	int ret = 0;
 
@@ -295,7 +295,7 @@ int s5p_tv_v_mmap(struct file *filp, struct vm_area_struct *vma)
 	return 0;
 }
 
-int s5p_tv_v_release(struct inode *inode, struct file *filp)
+int s5p_tv_v_release(struct file *filp)
 {
 	_s5p_vlayer_stop();
 	_s5p_tv_if_stop();
@@ -339,10 +339,9 @@ static int check_layer(dev_t dev)
 
 }
 
-static int s5p_tv_vo_open(struct inode *inode, struct file *file)
+static int vo_open(int layer, struct file *file)
 {
 	int ret = 0;
-	int layer = 0;
 
 	mutex_lock(mutex_for_fo);
 
@@ -352,9 +351,6 @@ static int s5p_tv_vo_open(struct inode *inode, struct file *file)
 		ret =  -EACCES;
 		goto resource_busy;
 	}
-
-	/* check graphic layer !! */
-	layer = check_layer(inode->i_rdev);
 
 	if (s5ptv_status.grp_layer_enable[layer]) {
 		BASEPRINTK("grp %d layer is busy!!\n", layer);
@@ -378,15 +374,37 @@ resource_busy:
 	return ret;
 }
 
-int s5p_tv_vo_release(struct inode *inode, struct file *filp)
+int vo_release(int layer, struct file *filp)
 {
-	int layer = 0;
-
-	layer = check_layer(inode->i_rdev);
 
 	_s5p_grp_stop(layer);
 
 	return 0;
+}
+
+/* modified for 2.6.29 v4l2-dev.c */
+static int s5p_tv_vo0_open(struct file *file)
+{
+	vo_open(0, file);
+	return 0;
+}
+
+static int s5p_tv_vo0_release(struct file *file)
+{
+	vo_release(0,file);
+	return 0;
+}
+
+static int s5p_tv_vo1_open(struct file *file)
+{
+	vo_open(1, file);
+	return 0;	
+}
+
+static int s5p_tv_vo1_release(struct file *file)
+{
+	vo_release(1,file);
+	return 0;	
 }
 
 /*
@@ -403,13 +421,23 @@ static struct v4l2_file_operations s5p_tv_v_fops = {
 };
 
 /*
- * struct for graphic
+ * struct for graphic0
  */
-static struct v4l2_file_operations s5p_tv_vo_fops = {
+static struct v4l2_file_operations s5p_tv_vo0_fops = {
 	.owner		= THIS_MODULE,
-	.open		= s5p_tv_vo_open,
+	.open		= s5p_tv_vo0_open,
 	.ioctl		= s5p_tv_vo_ioctl,
-	.release	= s5p_tv_vo_release
+	.release	= s5p_tv_vo0_release
+};
+
+/*
+ * struct for graphic1
+ */
+static struct v4l2_file_operations s5p_tv_vo1_fops = {
+	.owner		= THIS_MODULE,
+	.open		= s5p_tv_vo1_open,
+	.ioctl		= s5p_tv_vo_ioctl,
+	.release	= s5p_tv_vo1_release
 };
 
 
@@ -431,7 +459,7 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
 	[1] = {
 		.name = "S5PC1xx TVOUT Overlay0",
 		//.type2 = V4L2_CAP_VIDEO_OUTPUT_OVERLAY,
-		.fops = &s5p_tv_vo_fops,
+		.fops = &s5p_tv_vo0_fops,
 		.ioctl_ops = &s5p_tv_v4l2_vo_ops,
 		.release  = s5p_tv_vdev_release,
 		.minor = TVOUT_MINOR_GRP0,
@@ -440,7 +468,7 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
 	[2] = {
 		.name = "S5PC1xx TVOUT Overlay1",
 		//.type2 = V4L2_CAP_VIDEO_OUTPUT_OVERLAY,
-		.fops = &s5p_tv_vo_fops,
+		.fops = &s5p_tv_vo1_fops,
 		.ioctl_ops = &s5p_tv_v4l2_vo_ops,
 		.release  = s5p_tv_vdev_release,
 		.minor = TVOUT_MINOR_GRP1,
