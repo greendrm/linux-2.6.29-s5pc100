@@ -278,7 +278,7 @@ static void __init universal_machine_init(void)
 	platform_add_devices(universal_devices, ARRAY_SIZE(universal_devices));
 }
 
-MACHINE_START(SMDKC100, "smdkc100")
+MACHINE_START(UNIVERSAL, "UNIVERSAL")
 	/* Maintainer: InKi Dae <inki.dae@samsung.com> */
 	.phys_io	= S3C_PA_UART & 0xfff00000,
 	.io_pg_offst	= (((u32)S3C_VA_UART) >> 18) & 0xfffc,
