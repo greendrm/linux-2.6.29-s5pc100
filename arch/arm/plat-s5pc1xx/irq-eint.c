@@ -24,49 +24,10 @@
 #include <plat/gpio-cfg.h>
 
 #include <mach/map.h>
+#include <mach/regs-irq.h>
 #include <plat/cpu.h>
 
 #include <mach/gpio.h>
-
-#define S5PC1XX_GPIOREG(x)		(S5PC1XX_VA_GPIO + (x))
-
-#define S5PC1XX_EINT0CON		S5PC1XX_GPIOREG(0xE00)		/* EINT0  ~ EINT7  */
-#define S5PC1XX_EINT1CON		S5PC1XX_GPIOREG(0xE04)		/* EINT8  ~ EINT15 */
-#define S5PC1XX_EINT2CON		S5PC1XX_GPIOREG(0xE08)		/* EINT16 ~ EINT23 */
-#define S5PC1XX_EINT3CON		S5PC1XX_GPIOREG(0xE0C)		/* EINT24 ~ EINT31 */
-#define S5PC1XX_EINTCON(x)		(S5PC1XX_EINT0CON+((x)*0x4))	/* EINT0  ~ EINT31  */
-
-#define S5PC1XX_EINT0FLTCON0		S5PC1XX_GPIOREG(0xE80)		/* EINT0  ~ EINT3  */
-#define S5PC1XX_EINT0FLTCON1		S5PC1XX_GPIOREG(0xE84)
-#define S5PC1XX_EINT1FLTCON0		S5PC1XX_GPIOREG(0xE88)		/* EINT8 ~  EINT11 */
-#define S5PC1XX_EINT1FLTCON1		S5PC1XX_GPIOREG(0xE8C)
-#define S5PC1XX_EINT2FLTCON0		S5PC1XX_GPIOREG(0xE90)
-#define S5PC1XX_EINT2FLTCON1		S5PC1XX_GPIOREG(0xE94)
-#define S5PC1XX_EINT3FLTCON0		S5PC1XX_GPIOREG(0xE98)
-#define S5PC1XX_EINT3FLTCON1		S5PC1XX_GPIOREG(0xE9C)
-#define S5PC1XX_EINTFLTCON(x)		(S5PC1XX_EINT0FLTCON0+((x)*0x4))	/* EINT0  ~ EINT31 */
-
-#define S5PC1XX_EINT0MASK		S5PC1XX_GPIOREG(0xF00)		/* EINT0 ~  EINT7  */
-#define S5PC1XX_EINT1MASK		S5PC1XX_GPIOREG(0xF04)		/* EINT8 ~  EINT15 */
-#define S5PC1XX_EINT2MASK		S5PC1XX_GPIOREG(0xF08)		/* EINT16 ~ EINT23 */
-#define S5PC1XX_EINT3MASK		S5PC1XX_GPIOREG(0xF0C)		/* EINT24 ~ EINT31 */
-#define S5PC1XX_EINTMASK(x)		(S5PC1XX_EINT0MASK+((x)*0x4))	/* EINT0 ~  EINT31  */
-
-#define S5PC1XX_EINT0PEND		S5PC1XX_GPIOREG(0xF40)		/* EINT0 ~  EINT7  */
-#define S5PC1XX_EINT1PEND		S5PC1XX_GPIOREG(0xF44)		/* EINT8 ~  EINT15 */
-#define S5PC1XX_EINT2PEND		S5PC1XX_GPIOREG(0xF48)		/* EINT16 ~ EINT23 */
-#define S5PC1XX_EINT3PEND		S5PC1XX_GPIOREG(0xF4C)		/* EINT24 ~ EINT31 */
-#define S5PC1XX_EINTPEND(x)		(S5PC1XX_EINT0PEND+((x)*0x4))	/* EINT0 ~  EINT31  */
-
-#define eint_offset(irq)		((irq) < IRQ_EINT16_31 ? ((irq)-IRQ_EINT0) :  \
-					((irq-S3C_IRQ_EINT_BASE)+IRQ_EINT16_31-IRQ_EINT0))
-					
-#define eint_irq_to_bit(irq)		(1 << (eint_offset(irq) & 0x7))
-
-#define eint_conf_reg(irq)		((eint_offset(irq)) >> 3)
-#define eint_filt_reg(irq)		((eint_offset(irq)) >> 2)
-#define eint_mask_reg(irq)		((eint_offset(irq)) >> 3)
-#define eint_pend_reg(irq)		((eint_offset(irq)) >> 3)
 
 static inline void s3c_irq_eint_mask(unsigned int irq)
 {

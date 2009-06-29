@@ -6,7 +6,7 @@
 # Licensed under GPLv2
 
 obj-y				:=
-led-y                           := leds.o
+led-y                           := leds.o 
 obj-m				:=
 obj-n				:=
 obj-				:=

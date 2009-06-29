@@ -48,7 +48,7 @@
 #define S3C_SYSTIMER_INT_START		(1<<3)
 #define S3C_SYSTIMER_AUTO_RELOAD	(1<<2)
 #define S3C_SYSTIMER_IMM_UPDATE		(1<<1)
-#define S3C_SYTIMERS_START		(1<<0)
+#define S3C_SYSTIMER_START		(1<<0)
 
 /* Value for INT_CSTAT */
 #define S3C_SYSTIMER_INT_IWIE		(1<<9)

@@ -404,6 +404,7 @@ static __init void s5pc1xx_gpiolib_add(struct s3c_gpio_chip *chips,
 
 static __init int s5pc1xx_gpiolib_init(void)
 {
+	printk("S5PC1XX GPIO Driver Init\n");
 	s5pc1xx_gpiolib_add(gpio_chips, ARRAY_SIZE(gpio_chips),
 			    s5pc1xx_gpiolib_link);
 

@@ -135,16 +135,16 @@ static void smdkc110_cfg_gpio(struct platform_device *pdev)
 	int i;
 
 	for (i = 0; i < 8; i++)
-		s3c_gpio_cfgpin(S5PC1XX_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_cfgpin(S5PC11X_GPF0(i), S3C_GPIO_SFN(2));
 
 	for (i = 0; i < 8; i++)
-		s3c_gpio_cfgpin(S5PC1XX_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_cfgpin(S5PC11X_GPF1(i), S3C_GPIO_SFN(2));
 
 	for (i = 0; i < 8; i++)
-		s3c_gpio_cfgpin(S5PC1XX_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_cfgpin(S5PC11X_GPF2(i), S3C_GPIO_SFN(2));
 
 	for (i = 0; i < 4; i++)
-		s3c_gpio_cfgpin(S5PC1XX_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_cfgpin(S5PC11X_GPF3(i), S3C_GPIO_SFN(2));
 
 	/* mDNIe SEL: why we shall write 0x2 ? */
 	writel(0x2, S5P_MDNIE_SEL);
@@ -154,7 +154,7 @@ static int smdkc110_backlight_on(struct platform_device *pdev)
 {
 	int err;
 
-	err = gpio_request(S5PC1XX_GPD0(3), "GPD0");
+	err = gpio_request(S5PC11X_GPD0(3), "GPD0");
 
 	if (err) {
 		printk(KERN_ERR "failed to request GPD0 for "
@@ -162,8 +162,8 @@ static int smdkc110_backlight_on(struct platform_device *pdev)
 		return err;
 	}
 
-	gpio_direction_output(S5PC1XX_GPD0(3), 1);
-	gpio_free(S5PC1XX_GPD0(3));
+	gpio_direction_output(S5PC11X_GPD0(3), 1);
+	gpio_free(S5PC11X_GPD0(3));
 
 	return 0;
 }
@@ -172,23 +172,23 @@ static int smdkc110_reset_lcd(struct platform_device *pdev)
 {
 	int err;
 
-	err = gpio_request(S5PC1XX_GPH0(6), "GPH0");
+	err = gpio_request(S5PC11X_GPH0(6), "GPH0");
 	if (err) {
 		printk(KERN_ERR "failed to request GPH0 for "
 			"lcd reset control\n");
 		return err;
 	}
 
-	gpio_direction_output(S5PC1XX_GPH0(6), 1);
+	gpio_direction_output(S5PC11X_GPH0(6), 1);
 	mdelay(100);
 
-	gpio_set_value(S5PC1XX_GPH0(6), 0);
+	gpio_set_value(S5PC11X_GPH0(6), 0);
 	mdelay(10);
 
-	gpio_set_value(S5PC1XX_GPH0(6), 1);
+	gpio_set_value(S5PC11X_GPH0(6), 1);
 	mdelay(10);
 
-	gpio_free(S5PC1XX_GPH0(6));
+	gpio_free(S5PC11X_GPH0(6));
 
 	return 0;
 }
