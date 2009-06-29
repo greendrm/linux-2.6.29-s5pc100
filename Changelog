@@ -758,3 +758,43 @@ v2.6.29.4-r2d5: jongpill Lee
 		M       arch/arm/plat-s5pc1xx/irq-eint.c
 		M       arch/arm/plat-s5pc1xx/pm.c
 
+v2.6.29.4-r2d6: SangPil Moon	
+	- added drv. resource for tvout drv 
+	- modified for v4l2-dev.c...
+	- hdmi asp set ftn. modified for asp_sp_flat reg. set error.
+
+	Added Files:
+		A       drivers/media/video/samsung/Kconfig
+		A       drivers/media/video/samsung/Makefile
+		A       drivers/media/video/samsung/tv20/Kconfig
+		A       drivers/media/video/samsung/tv20/Makefile
+		A       drivers/media/video/samsung/tv20/s5p_stda_grp.c
+		A       drivers/media/video/samsung/tv20/s5p_stda_hdmi.c
+		A       drivers/media/video/samsung/tv20/s5p_stda_tvout_if.c
+		A	drivers/media/video/samsung/tv20/s5p_stda_video_layer.c
+		A       drivers/media/video/samsung/tv20/s5p_tv.h
+		A       drivers/media/video/samsung/tv20/s5p_tv_base.c
+		A       drivers/media/video/samsung/tv20/s5p_tv_v4l2.c
+		A	drivers/media/video/samsung/tv20/s5pc100/hdcp_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/hdmi_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-clock_extra.h
+		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-hdmi.h
+		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-sdaout.h
+		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-vmx.h
+		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-vprocessor.h
+		A	drivers/media/video/samsung/tv20/s5pc100/sdout_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
+		A	drivers/media/video/samsung/tv20/s5pc100/tv_power_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
+		A	drivers/media/video/samsung/tv20/s5pc100/vp_coeff_s5pc100.h
+		A	drivers/media/video/samsung/tv20/s5pc100/vprocessor_s5pc100.c
+
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/include/mach/map.h
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s5pc1xx/devs.c
+		M       drivers/media/video/Kconfig
+		M       drivers/media/video/Makefile
