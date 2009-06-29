@@ -1152,11 +1152,6 @@ int s3cfb_resume(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
-	clk_enable(ctrl->clock);
-	s3cfb_init_global();
-	s3cfb_set_clock(ctrl);
-	s3cfb_display_on(ctrl);
-
 	if (pdata->backlight_on)
 		pdata->backlight_on(pdev);
 
@@ -1165,6 +1160,11 @@ int s3cfb_resume(struct platform_device *pdev)
 
 	if (ctrl->lcd->init_ldi)
 		ctrl->lcd->init_ldi();
+
+	clk_enable(ctrl->clock);
+	s3cfb_init_global();
+	s3cfb_set_clock(ctrl);
+	s3cfb_display_on(ctrl);
 
 	for (i = 0; i < pdata->nr_wins; i++) {
 		fb = ctrl->fb[i];
