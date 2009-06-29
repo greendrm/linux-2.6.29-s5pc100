@@ -148,7 +148,7 @@ void __s5p_hdmi_audio_set_asp(void)
 	HDMIPRINTK("()\n\r");
 	writel(0x0, tvout_base + S5P_ASP_CON);
 	// All Subpackets contain audio samples
-	writel(0xf, tvout_base + S5P_ASP_SP_FLAT); 
+	writel(0x0, tvout_base + S5P_ASP_SP_FLAT); 
 
 	writel(1 << 3 | 0, tvout_base + S5P_ASP_CHCFG0);
 	writel(1 << 3 | 0, tvout_base + S5P_ASP_CHCFG1);
