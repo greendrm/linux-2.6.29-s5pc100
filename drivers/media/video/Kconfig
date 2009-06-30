@@ -929,6 +929,4 @@ config USB_S2255
 
 endif # V4L_USB_DRIVERS
 
-source "drivers/media/video/samsung/Kconfig"
-
 endif # VIDEO_CAPTURE_DRIVERS
