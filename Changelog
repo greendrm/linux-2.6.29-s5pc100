@@ -758,3 +758,53 @@ v2.6.29.4-r2d5: jongpill Lee
 		M       arch/arm/plat-s5pc1xx/irq-eint.c
 		M       arch/arm/plat-s5pc1xx/pm.c
 
+v2.6.29.4-r2d6: SungJun Bae 
+	- MFC, JPEG is added.
+		A	drivers/media/video/samsung/Kconfig
+		A	drivers/media/video/samsung/Makefile
+		A	drivers/media/video/samsung/jpeg_v2/Kconfig
+		A       drivers/media/video/samsung/jpeg_v2/Makefile
+		A	drivers/media/video/samsung/jpeg_v2/jpg_conf.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_mem.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_mem.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_misc.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_misc.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_opr.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_opr.h
+		A	drivers/media/video/samsung/jpeg_v2/log_msg.c
+		A	drivers/media/video/samsung/jpeg_v2/log_msg.h
+		A	drivers/media/video/samsung/jpeg_v2/regs-jpeg.h
+		A	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.c
+		A	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.h
+		A	drivers/media/video/samsung/mfc40/Kconfig
+		A	drivers/media/video/samsung/mfc40/Makefile
+		A	drivers/media/video/samsung/mfc40/command_control_fw.c
+		A	drivers/media/video/samsung/mfc40/h263_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/h264_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/h264_enc_fw.c
+		A	drivers/media/video/samsung/mfc40/mp2_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/mp4_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/mp4_enc_fw.c
+		A	drivers/media/video/samsung/mfc40/s3c-mfc.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_common.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_common.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_errorno.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_fw.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_interface.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_intr.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_intr.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_logmsg.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_memory.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_memory.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_opr.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_opr.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_types.h
+		A	drivers/media/video/samsung/mfc40/vc1_dec_fw.c
+
+	Modified Files:
+		M	drivers/media/video/Kconfig
+		M	drivers/media/video/Makefile
+		M	drivers/media/video/samsung/tv20/Kconfig
+		M	include/linux/i2c-id.h
