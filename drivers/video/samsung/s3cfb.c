@@ -275,12 +275,6 @@ static int s3cfb_check_var(struct fb_var_screeninfo *var,
 	if (var->yoffset + var->yres > var->yres_virtual)
 		var->yoffset = var->yres_virtual - var->yres;
 
-	if (var->width != lcd->width)
-		var->width = lcd->width;
-
-	if (var->height != lcd->height)
-		var->height = lcd->height;
-
 	if (win->x + var->xres > lcd->width)
 		win->x = lcd->width - var->xres;
 
@@ -802,8 +796,8 @@ static int s3cfb_init_fbinfo(int id)
 	var->bits_per_pixel = 32;
 	var->xoffset = 0;
 	var->yoffset = 0;
-	var->width = lcd->width;
-	var->height = lcd->height;
+	var->width = 0;
+	var->height = 0;
 	var->transp.length = 0;
 
 	fix->line_length = var->xres_virtual * var->bits_per_pixel / 8;
