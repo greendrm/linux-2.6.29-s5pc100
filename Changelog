@@ -833,3 +833,11 @@ v2.6.29.4-r2d7: Taeyong Lee
 		M       sound/soc/Kconfig
 		M       sound/soc/Makefile
 		M       sound/soc/codecs/wm8580.c
+
+v2.6.29.4-r2d8: Changhwan Youn 
+	- Modified SD/MMC clock divider value and Fixed EXT_CSD_REV-related error
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc100/setup-sdhci.c
+		M       drivers/mmc/core/mmc.csound/soc/Kconfig
