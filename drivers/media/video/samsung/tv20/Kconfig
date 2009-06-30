@@ -3,7 +3,7 @@
 #
 
 config VIDEO_TV20
-	bool "Samsung TV Driver for s5pc1xx" 
+	bool "Samsung TV Driver for s5pc1xx (Not available yet)" 
 	depends on VIDEO_SAMSUNG && CPU_S5PC100
 	default n
 	---help---

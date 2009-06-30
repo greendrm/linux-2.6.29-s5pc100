@@ -223,6 +223,12 @@ config DELL_LAPTOP
 	This driver adds support for rfkill and backlight control to Dell
 	laptops.
 
+config SAMSUNG_EARJACK
+	tristate "Earjack detection driver for samsung project"
+	depends on MACH_UNIVERSAL
+	help
+	 This is earjack detection driver
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 

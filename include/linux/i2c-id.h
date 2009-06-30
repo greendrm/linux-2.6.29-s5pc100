@@ -71,6 +71,8 @@
 #define I2C_DRIVERID_VP27SMPX	93	/* Panasonic VP27s tuner internal MPX */
 #define I2C_DRIVERID_M52790 	95      /* Mitsubishi M52790SP/FP AV switch */
 #define I2C_DRIVERID_CS5345	96	/* cs5345 audio processor	*/
+#define I2C_DRIVERID_S5K3BA     501     /* Samsung S5K3BA CMOS Image Sensor */                                        
+#define I2C_DRIVERID_S5K4BA     502     /* Samsung S5K4BA CMOS Image Sensor */
 
 #define I2C_DRIVERID_OV7670 1048	/* Omnivision 7670 camera */
 
