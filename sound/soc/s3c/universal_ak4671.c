@@ -93,7 +93,7 @@ static int __init universal_init(void)
 {
 	int ret;
 
-	universal_snd_device = platform_device_alloc("soc-audio", -1);
+	universal_snd_device = platform_device_alloc("soc-audio", 0);
 	if (!universal_snd_device)
 		return -ENOMEM;
 
