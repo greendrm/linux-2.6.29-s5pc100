@@ -255,7 +255,12 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 /* I2C1 */
 static struct i2c_board_info i2c_devs1[] __initdata = {
-	/* TODO */
+	{
+		I2C_BOARD_INFO("max9877", 0x4d),
+	},
+	/* TODO
+	 * KXSD9
+	 */
 };
 
 /* GPIO I2C 2.6V */
