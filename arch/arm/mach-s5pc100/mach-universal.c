@@ -16,6 +16,7 @@
 #include <linux/platform_device.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
+#include <linux/regulator/max8698.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 
@@ -95,9 +96,161 @@ static struct s3c2410_uartcfg universal_uartcfgs[] __initdata = {
         },
 };
 
+/* PMIC */
+static struct regulator_consumer_supply dcdc1_consumers[] = {
+	{
+		.supply		= "vddarm",
+	},
+};
+
+static struct regulator_init_data max8698_dcdc1_data = {
+	.constraints	= {
+		.name		= "VCC_ARM",
+		.min_uV		=  750000,
+		.max_uV		= 1500000,
+		.always_on	= 1,
+		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
+	.consumer_supplies	= dcdc1_consumers,
+};
+
+static struct regulator_init_data max8698_dcdc2_data = {
+	.constraints	= {
+		.name		= "VCC_INTERNAL",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_dcdc3_data = {
+	.constraints	= {
+		.name		= "VCC_MEM",
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
+		.apply_uV	= 1,
+		.state_mem	= {
+			.uV	= 1800000,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 1,
+		},
+		.initial_state	= PM_SUSPEND_MEM,
+	},
+};
+
+static struct regulator_init_data max8698_ldo2_data = {
+	.constraints	= {
+		.name		= "VALIVE_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+		.always_on	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo3_data = {
+	.constraints	= {
+		.name		= "VUSB_1.2V/MIPI_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo4_data = {
+	.constraints	= {
+		.name		= "VOPTIC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+		.boot_on	= 1,
+	},
+};
+
+static struct regulator_consumer_supply universal_hsmmc1_supply = {
+	.supply			= "hsmmc",	/* FIXME what's exact name? */
+	.dev			= &s3c_device_hsmmc1.dev,
+};
+
+static struct regulator_init_data max8698_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &universal_hsmmc1_supply,
+};
+
+static struct regulator_init_data max8698_ldo6_data = {
+	.constraints	= {
+		.name		= "VCC_2.6V",
+		.min_uV		= 2600000,
+		.max_uV		= 2600000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo7_data = {
+	.constraints	= {
+		.name		= "VDAC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo8_data = {
+	.constraints	= {
+		.name		= "{VADC/VCAM/VUSB}_3.3V",
+		.min_uV		= 3300000,
+		.max_uV		= 3300000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo9_data = {
+	.constraints	= {
+		.name		= "VCAM_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct max8698_subdev_data universal_regulators[] = {
+	{ MAX8698_LDO2, &max8698_ldo2_data },
+	{ MAX8698_LDO3, &max8698_ldo3_data },
+	{ MAX8698_LDO4, &max8698_ldo4_data },
+	{ MAX8698_LDO5, &max8698_ldo5_data },
+	{ MAX8698_LDO6, &max8698_ldo6_data },
+	{ MAX8698_LDO7, &max8698_ldo7_data },
+	{ MAX8698_LDO8, &max8698_ldo8_data },
+	{ MAX8698_LDO9, &max8698_ldo9_data },
+	{ MAX8698_DCDC1, &max8698_dcdc1_data },
+	{ MAX8698_DCDC2, &max8698_dcdc2_data },
+	{ MAX8698_DCDC3, &max8698_dcdc3_data },
+};
+
+static struct max8698_platform_data max8698_platform_data = {
+	.num_regulators	= ARRAY_SIZE(universal_regulators),
+	.regulators	= universal_regulators,
+/*
+	.set1		= S5PC1XX_GPJ0(6),
+	.set2		= S5PC1XX_GPJ0(7),
+	.set3		= S5PC1XX_GPJ1(0),
+*/
+};
+
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
-	/* TODO */
+	{
+		/* The address is 0xCC used since SRAD = 0 */
+		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
+		.platform_data = &max8698_platform_data,
+	},
 };
 
 /* I2C1 */
