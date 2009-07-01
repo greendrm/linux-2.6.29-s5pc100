@@ -192,8 +192,17 @@ static const struct snd_kcontrol_new max9877_controls[] = {
 /* This function is called from ASoC machine driver */
 int max9877_add_controls(struct snd_soc_codec *codec)
 {
-	return snd_soc_add_controls(codec, max9877_controls,
-			ARRAY_SIZE(max9877_controls));
+	int err, i;
+
+	for (i = 0; i < ARRAY_SIZE(max9877_controls); i++) {
+		err = snd_ctl_add(codec->card,
+				snd_soc_cnew(&max9877_controls[i],
+					codec, NULL));
+		if (err < 0)
+			return err;
+	}
+
+	return 0;
 }
 
 static int __devinit max9877_i2c_probe(struct i2c_client *client,
