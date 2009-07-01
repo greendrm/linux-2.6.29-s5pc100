@@ -210,6 +210,22 @@ static const struct snd_kcontrol_new ak4671_snd_controls[] = {
 			AK4671_MIC_AMP_GAIN, 4, 0x15, 0, mic_amp_tlv),
 };
 
+/* add non dapm controls */
+static int ak4671_add_controls(struct snd_soc_codec *codec)
+{
+	int err, i;
+
+	for (i = 0; i < ARRAY_SIZE(ak4671_snd_controls); i++) {
+		err = snd_ctl_add(codec->card,
+				snd_soc_cnew(&ak4671_snd_controls[i],
+					codec, NULL));
+		if (err < 0)
+			return err;
+	}
+
+	return 0;
+}
+
 /* Output Mixers */
 static const struct snd_kcontrol_new ak4671_lout1_mixer_controls[] = {
 	SOC_DAPM_SINGLE("DACL", AK4671_LOUT1_SIGNAL_SELECT, 0, 1, 0),
@@ -560,14 +576,6 @@ static int ak4671_set_bias_level(struct snd_soc_codec *codec,
 
 #define AK4671_FORMATS		SNDRV_PCM_FMTBIT_S16_LE
 
-static struct snd_soc_dai_ops ak4671_dai_ops = {
-	.hw_params	= ak4671_hw_params,
-	.set_sysclk	= ak4671_set_dai_sysclk,
-	.set_fmt	= ak4671_set_dai_fmt,
-
-	/* TODO */
-};
-
 struct snd_soc_dai ak4671_dai = {
 	.name = "AK4671",
 	.playback = {
@@ -575,14 +583,21 @@ struct snd_soc_dai ak4671_dai = {
 		.channels_min = 1,
 		.channels_max = 1,
 		.rates = AK4671_RATES,
-		.formats = AK4671_FORMATS,},
+		.formats = AK4671_FORMATS,
+	},
 	.capture = {
 		.stream_name = "Capture",
 		.channels_min = 1,
 		.channels_max = 1,
 		.rates = AK4671_RATES,
-		.formats = AK4671_FORMATS,},
-	.ops = &ak4671_dai_ops,
+		.formats = AK4671_FORMATS,
+	},
+	.ops = {
+		.hw_params	= ak4671_hw_params,
+		.set_sysclk	= ak4671_set_dai_sysclk,
+		.set_fmt	= ak4671_set_dai_fmt,
+		/* TODO */
+	},
 };
 EXPORT_SYMBOL_GPL(ak4671_dai);
 
@@ -597,7 +612,7 @@ static int ak4671_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	socdev->card->codec = ak4671_codec;
+	socdev->codec = ak4671_codec;
 	codec = ak4671_codec;
 
 	/* register pcms */
@@ -607,8 +622,7 @@ static int ak4671_probe(struct platform_device *pdev)
 		goto pcm_err;
 	}
 
-	snd_soc_add_controls(codec, ak4671_snd_controls,
-			     ARRAY_SIZE(ak4671_snd_controls));
+	ak4671_add_controls(codec);
 	ak4671_add_widgets(codec);
 
 	ret = snd_soc_init_card(socdev);
