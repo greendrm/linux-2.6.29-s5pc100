@@ -14,6 +14,8 @@
 #include <linux/types.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
+#include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 
@@ -25,6 +27,7 @@
 #include <plat/devs.h>
 #include <plat/fb.h>
 #include <plat/gpio-cfg.h>
+#include <plat/iic.h>
 #include <plat/regs-serial.h>
 #include <plat/s5pc100.h>
 
@@ -90,6 +93,73 @@ static struct s3c2410_uartcfg universal_uartcfgs[] __initdata = {
                 .clocks      = universal_serial_clocks,
                 .clocks_size = ARRAY_SIZE(universal_serial_clocks),
         },
+};
+
+/* I2C0 */
+static struct i2c_board_info i2c_devs0[] __initdata = {
+	/* TODO */
+};
+
+/* I2C1 */
+static struct i2c_board_info i2c_devs1[] __initdata = {
+	/* TODO */
+};
+
+/* GPIO I2C 2.6V */
+#define I2C_GPIO_26V_BUS	2
+static struct i2c_gpio_platform_data universal_i2c_gpio_26v_data = {
+	.sda_pin	= S5PC1XX_GPJ3(6),
+	.scl_pin	= S5PC1XX_GPJ3(7),
+};
+
+static struct platform_device universal_i2c_gpio_26v = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_26V_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_26v_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_26v_devs[] __initdata = {
+	/* TODO */
+};
+
+/* GPIO I2C 2.6V - HDMI */
+#define I2C_GPIO_HDMI_BUS	3
+static struct i2c_gpio_platform_data universal_i2c_gpio_hdmi_data = {
+	.sda_pin	= S5PC1XX_GPJ4(0),
+	.scl_pin	= S5PC1XX_GPJ4(3),
+};
+
+static struct platform_device universal_i2c_gpio_hdmi = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_HDMI_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_hdmi_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_hdmi_devs[] __initdata = {
+	/* TODO */
+};
+
+/* GPIO I2C 2.8V */
+#define I2C_GPIO_28V_BUS	4
+static struct i2c_gpio_platform_data universal_i2c_gpio_28v_data = {
+	.sda_pin	= S5PC1XX_GPH2(4),
+	.scl_pin	= S5PC1XX_GPH2(5),
+};
+
+static struct platform_device universal_i2c_gpio_28v = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_28V_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_28v_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_28v_devs[] __initdata = {
+	/* TODO */
 };
 
 #define LCD_BUS_NUM 	3
@@ -197,7 +267,24 @@ static struct platform_device *universal_devices[] __initdata = {
 	&s3c_device_fb,
 	&s3c_device_mfc,
 	&universal_spi_gpio,
+	&s3c_device_i2c0,
+	&s3c_device_i2c1,
+	&universal_i2c_gpio_26v,
+	&universal_i2c_gpio_hdmi,
+	&universal_i2c_gpio_28v,
 };
+
+static void __init universal_i2c_gpio_init(void)
+{
+	s3c_gpio_setpull(S5PC1XX_GPH2(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPH2(5), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC1XX_GPJ3(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPJ3(7), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC1XX_GPJ4(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPJ4(3), S3C_GPIO_PULL_NONE);
+}
 
 static void __init universal_map_io(void)
 {
@@ -213,6 +300,20 @@ static void __init universal_map_io(void)
 static void __init universal_machine_init(void)
 {
 	tl2796_gpio_setup();
+
+	universal_i2c_gpio_init();
+
+	s3c_i2c0_set_platdata(NULL);
+	s3c_i2c1_set_platdata(NULL);
+	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+	i2c_register_board_info(I2C_GPIO_26V_BUS, i2c_gpio_26v_devs,
+				ARRAY_SIZE(i2c_gpio_26v_devs));
+	i2c_register_board_info(I2C_GPIO_HDMI_BUS, i2c_gpio_hdmi_devs,
+				ARRAY_SIZE(i2c_gpio_hdmi_devs));
+	i2c_register_board_info(I2C_GPIO_28V_BUS, i2c_gpio_28v_devs,
+				ARRAY_SIZE(i2c_gpio_28v_devs));
+
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&fb_data);
 	platform_add_devices(universal_devices, ARRAY_SIZE(universal_devices));
