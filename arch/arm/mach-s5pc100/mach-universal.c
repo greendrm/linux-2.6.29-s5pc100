@@ -279,7 +279,13 @@ static struct platform_device universal_i2c_gpio_26v = {
 };
 
 static struct i2c_board_info i2c_gpio_26v_devs[] __initdata = {
-	/* TODO */
+	{
+		I2C_BOARD_INFO("ak4671", 0x12),
+	},
+	/* TODO
+	 * Proximity, Optical Sensor - GP2AP002 (0x44)
+	 * Backlight Driver IC - BD6091GU (0x76)
+	 */
 };
 
 /* GPIO I2C 2.6V - HDMI */
