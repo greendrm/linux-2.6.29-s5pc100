@@ -1,86 +1,35 @@
 /*
  * linux/arch/arm/mach-s5pc100/mach-universal.c
  *
+ * Copyright (C) 2009 Samsung Electronics Co.Ltd
+ * Author: InKi Dae <inki.dae@samsung.com>
  *
- * Copyright (C) 2009 by Samsung Electronics
- * All rights reserved.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  *
- * @Author: InKi Dae <inki.dae@samsung.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
- * @History:
- * derived from linux/arch/arm/mach-s3c2410/mach-bast.c, written by
- * Ben Dooks <ben@simtec.co.uk>
  */
 
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/interrupt.h>
-#include <linux/list.h>
-#include <linux/timer.h>
-#include <linux/init.h>
-#include <linux/serial_core.h>
-#include <linux/platform_device.h>
-#include <linux/io.h>
-#include <linux/i2c.h>
 #include <linux/delay.h>
-#include <linux/mtd/nand.h>
-#include <linux/mtd/partitions.h>
-#include <linux/clk.h>
-#include <linux/mm.h>
-#include <linux/pwm_backlight.h>
+#include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 
+#include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
-#include <asm/mach/irq.h>
 
-#include <mach/hardware.h>
-#include <mach/map.h>
-#include <mach/regs-mem.h>
-#include <mach/gpio.h>
-
-#include <asm/irq.h>
-#include <asm/mach-types.h>
-
-#include <plat/regs-serial.h>
-#include <plat/regs-rtc.h>
-#include <plat/iic.h>
-#include <plat/fimc.h>
-#include <plat/fb.h>
-#include <plat/csis.h>
-
-#include <plat/nand.h>
-#include <plat/partition.h>
-#include <plat/s5pc100.h>
-#include <plat/clock.h>
-#include <plat/devs.h>
 #include <plat/cpu.h>
-#include <plat/ts.h>
-#include <plat/adc.h>
+#include <plat/devs.h>
+#include <plat/fb.h>
 #include <plat/gpio-cfg.h>
-#include <plat/regs-gpio.h>
-#include <plat/gpio-bank-k0.h>
-#include <plat/gpio-bank-a1.h>
-#include <plat/gpio-bank-b.h>
-#include <plat/gpio-bank-d.h>
-#include <plat/regs-clock.h>
-#include <plat/spi.h>
+#include <plat/regs-serial.h>
+#include <plat/s5pc100.h>
+
+#include <mach/gpio.h>
+#include <mach/map.h>
 
 extern struct sys_timer s5pc1xx_timer;
 extern void s5pc1xx_reserve_bootmem(void);
@@ -157,7 +106,6 @@ static struct spi_board_info spi_board_info[] __initdata = {
 	},
 };
 
-#if defined(CONFIG_FB_S3C_TL2796)
 #define DISPLAY_CLK	S5PC1XX_GPK3(6)
 #define DISPLAY_SI	S5PC1XX_GPK3(7)
 static struct spi_gpio_platform_data tl2796_spi_gpio_data = {
@@ -242,17 +190,12 @@ static struct s3c_platform_fb fb_data __initdata = {
 	.backlight_on = tl2796_power_on,
 	.reset_lcd = tl2796_reset,
 };
-#endif
 
 struct map_desc universal_iodesc[] = {};
 
 static struct platform_device *universal_devices[] __initdata = {
-#if defined(CONFIG_FB_S3C)
 	&s3c_device_fb,
-#endif
-#if defined(CONFIG_FB_S3C_TL2796)
 	&universal_spi_gpio,
-#endif
 };
 
 static void __init universal_map_io(void)
@@ -268,13 +211,9 @@ static void __init universal_map_io(void)
 
 static void __init universal_machine_init(void)
 {
-#if defined(CONFIG_FB_S3C_TL2796)
 	tl2796_gpio_setup();
-#endif
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-#if defined(CONFIG_FB_S3C)
 	s3cfb_set_platdata(&fb_data);
-#endif
 	platform_add_devices(universal_devices, ARRAY_SIZE(universal_devices));
 }
 
