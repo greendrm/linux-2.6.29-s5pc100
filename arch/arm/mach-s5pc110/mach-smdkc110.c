@@ -265,7 +265,7 @@ static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
-	s3c24xx_init_clocks(16000000);
+	s3c24xx_init_clocks(10000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
 	s5pc11x_reserve_bootmem();
 }
@@ -303,11 +303,27 @@ static void __init smdkc110_machine_init(void)
 #endif
 }
 
+static void __init smdkc110_fixup(struct machine_desc *desc,
+					struct tag *tags, char **cmdline,
+					struct meminfo *mi)
+{
+	mi->bank[0].start = 0x20000000;
+	mi->bank[0].size = 128 * SZ_1M;
+	mi->bank[0].node = 0;
+
+	mi->bank[1].start = 0x30000000;
+	mi->bank[1].size = 128 * SZ_1M;
+	mi->bank[1].node = 1;
+
+	mi->nr_banks = 2;
+}
+
 MACHINE_START(SMDKC110, "SMDKC110")
 	/* Maintainer: Ben Dooks <ben@fluff.org> */
 	.phys_io	= S3C_PA_UART & 0xfff00000,
 	.io_pg_offst	= (((u32)S3C_VA_UART) >> 18) & 0xfffc,
 	.boot_params	= S5PC11X_PA_SDRAM + 0x100,
+	.fixup		= smdkc110_fixup,
 	.init_irq	= s5pc110_init_irq,
 	.map_io		= smdkc110_map_io,
 	.init_machine	= smdkc110_machine_init,
