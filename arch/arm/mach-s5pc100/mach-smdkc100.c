@@ -87,17 +87,17 @@ extern struct sys_timer s5pc1xx_timer;
 extern void s5pc1xx_reserve_bootmem(void);
 
 #if defined(CONFIG_SPI_CNTRLR_0) || defined(CONFIG_SPI_CNTRLR_1)
-static void sam_cs_suspend(int pin, pm_message_t pm)
+static void s3c_cs_suspend(int pin, pm_message_t pm)
 {
 	/* Whatever need to be done */
 }
 
-static void sam_cs_resume(int pin)
+static void s3c_cs_resume(int pin)
 {
 	/* Whatever need to be done */
 }
 
-static void sam_cs_set(int pin, int lvl)
+static void s3c_cs_set(int pin, int lvl)
 {
 	if(lvl == CS_HIGH)
 	   s3c_gpio_setpin(pin, 1);
@@ -105,7 +105,7 @@ static void sam_cs_set(int pin, int lvl)
 	   s3c_gpio_setpin(pin, 0);
 }
 
-static void sam_cs_config(int pin, int mode, int pull)
+static void s3c_cs_config(int pin, int mode, int pull)
 {
 	s3c_gpio_cfgpin(pin, mode);
 
@@ -117,61 +117,61 @@ static void sam_cs_config(int pin, int mode, int pull)
 #endif
 
 #if defined(CONFIG_SPI_CNTRLR_0)
-static struct sam_spi_pdata sam_slv_pdata_0[] __initdata = {
+static struct s3c_spi_pdata s3c_slv_pdata_0[] __initdata = {
 	[0] = {	/* Slave-0 */
 		.cs_level     = CS_FLOAT,
 		.cs_pin       = S5PC1XX_GPB(3),
 		.cs_mode      = S5PC1XX_GPB_OUTPUT(3),
-		.cs_set       = sam_cs_set,
-		.cs_config    = sam_cs_config,
-		.cs_suspend   = sam_cs_suspend,
-		.cs_resume    = sam_cs_resume,
+		.cs_set       = s3c_cs_set,
+		.cs_config    = s3c_cs_config,
+		.cs_suspend   = s3c_cs_suspend,
+		.cs_resume    = s3c_cs_resume,
 	},
 	[1] = {	/* Slave-1 */
 		.cs_level     = CS_FLOAT,
 		.cs_pin       = S5PC1XX_GPA1(2),
 		.cs_mode      = S5PC1XX_GPA1_OUTPUT(2),
-		.cs_set       = sam_cs_set,
-		.cs_config    = sam_cs_config,
-		.cs_suspend   = sam_cs_suspend,
-		.cs_resume    = sam_cs_resume,
+		.cs_set       = s3c_cs_set,
+		.cs_config    = s3c_cs_config,
+		.cs_suspend   = s3c_cs_suspend,
+		.cs_resume    = s3c_cs_resume,
 	},
 };
 #endif
 
 #if defined(CONFIG_SPI_CNTRLR_1)
-static struct sam_spi_pdata sam_slv_pdata_1[] __initdata = {
+static struct s3c_spi_pdata s3c_slv_pdata_1[] __initdata = {
 	[0] = {	/* Slave-0 */
 		.cs_level     = CS_FLOAT,
 		.cs_pin       = S5PC1XX_GPB(7),
 		.cs_mode      = S5PC1XX_GPB_OUTPUT(7),
-		.cs_set       = sam_cs_set,
-		.cs_config    = sam_cs_config,
-		.cs_suspend   = sam_cs_suspend,
-		.cs_resume    = sam_cs_resume,
+		.cs_set       = s3c_cs_set,
+		.cs_config    = s3c_cs_config,
+		.cs_suspend   = s3c_cs_suspend,
+		.cs_resume    = s3c_cs_resume,
 	},
 	[1] = {	/* Slave-1 */
 		.cs_level     = CS_FLOAT,
 		.cs_pin       = S5PC1XX_GPA1(3),
 		.cs_mode      = S5PC1XX_GPA1_OUTPUT(3),
-		.cs_set       = sam_cs_set,
-		.cs_config    = sam_cs_config,
-		.cs_suspend   = sam_cs_suspend,
-		.cs_resume    = sam_cs_resume,
+		.cs_set       = s3c_cs_set,
+		.cs_config    = s3c_cs_config,
+		.cs_suspend   = s3c_cs_suspend,
+		.cs_resume    = s3c_cs_resume,
 	},
 	[2] = {	/* Slave-2 */
 		.cs_level     = CS_FLOAT,
 		.cs_pin       = S5PC1XX_GPD(6),
 		.cs_mode      = S5PC1XX_GPD_OUTPUT(6),
-		.cs_set       = sam_cs_set,
-		.cs_config    = sam_cs_config,
-		.cs_suspend   = sam_cs_suspend,
-		.cs_resume    = sam_cs_resume,
+		.cs_set       = s3c_cs_set,
+		.cs_config    = s3c_cs_config,
+		.cs_suspend   = s3c_cs_suspend,
+		.cs_resume    = s3c_cs_resume,
 	},
 };
 #endif
 
-static struct spi_board_info sam_spi_devs[] __initdata = {
+static struct spi_board_info s3c_spi_devs[] __initdata = {
 #if defined(CONFIG_SPI_CNTRLR_0)
 	[0] = {
 		.modalias	 = "spidev", /* Test Interface */
@@ -502,15 +502,15 @@ static void __init smdkc100_machine_init(void)
 
 	/* spi */
 #if defined(CONFIG_SPI_CNTRLR_0)
-	samspi_set_slaves(BUSNUM(0), ARRAY_SIZE(sam_slv_pdata_0), sam_slv_pdata_0);
+	s3cspi_set_slaves(BUSNUM(0), ARRAY_SIZE(s3c_slv_pdata_0), s3c_slv_pdata_0);
 #endif
 #if defined(CONFIG_SPI_CNTRLR_1)
-	samspi_set_slaves(BUSNUM(1), ARRAY_SIZE(sam_slv_pdata_1), sam_slv_pdata_1);
+	s3cspi_set_slaves(BUSNUM(1), ARRAY_SIZE(s3c_slv_pdata_1), s3c_slv_pdata_1);
 #endif
 #if defined(CONFIG_SPI_CNTRLR_2)
-	//samspi_set_slaves(BUSNUM(2), ARRAY_SIZE(sam_slv_pdata_2), sam_slv_pdata_2);
+	//s3cspi_set_slaves(BUSNUM(2), ARRAY_SIZE(s3c_slv_pdata_2), s3c_slv_pdata_2);
 #endif
-	spi_register_board_info(sam_spi_devs, ARRAY_SIZE(sam_spi_devs));
+	spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
 
 	/* fimc */
 	s3c_fimc0_set_platdata(NULL);

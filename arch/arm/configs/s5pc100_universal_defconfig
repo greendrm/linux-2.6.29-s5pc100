@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29.4
-# Wed Jul  1 17:23:21 2009
+# Thu Jul  2 15:37:26 2009
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -676,6 +676,7 @@ CONFIG_VIDEO_SAMSUNG=y
 CONFIG_VIDEO_MFC40=y
 CONFIG_VIDEO_MFC_MAX_INSTANCE=1
 # CONFIG_VIDEO_MFC40_DEBUG is not set
+CONFIG_VIDEO_ROTATOR=y
 
 #
 # Reserved memory configurations

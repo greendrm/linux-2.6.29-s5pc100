@@ -430,6 +430,7 @@ struct map_desc universal_iodesc[] = {};
 static struct platform_device *universal_devices[] __initdata = {
 	&s3c_device_fb,
 	&s3c_device_mfc,
+	&s3c_device_rotator,
 	&universal_spi_gpio,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
