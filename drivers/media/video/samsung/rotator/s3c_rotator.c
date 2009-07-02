@@ -52,6 +52,8 @@
 
 #include "s3c_rotator_common.h"
 
+struct s3c_rotator_ctrl	s3c_rot;
+
 static int s3c_rotator_irq_num = NO_IRQ;
 static struct resource *s3c_rotator_mem;
 static void __iomem *s3c_rotator_base;
@@ -122,11 +124,14 @@ static void s3c_rotator_disable_int(void)
 	__raw_writel(cfg, s3c_rotator_base + S3C_ROTATOR_CTRLCFG);
 }
 
-
 #if defined(CONFIG_CPU_S3C6410)
 irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 {
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
+
 	__raw_readl(s3c_rotator_base + S3C_ROTATOR_STATCFG);
+
+	ctrl->status = ROT_IDLE;
 
 	wake_up_interruptible(&waitq_rotator);
 
@@ -135,6 +140,7 @@ irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 #elif defined(CONFIG_CPU_S5PC100)
 irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 {
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
 	unsigned int cfg;
 
 	cfg = __raw_readl(s3c_rotator_base + S3C_ROTATOR_STATCFG);
@@ -142,6 +148,7 @@ irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 
 	__raw_writel(cfg, s3c_rotator_base + S3C_ROTATOR_STATCFG);
 
+	ctrl->status = ROT_IDLE;
 	wake_up_interruptible(&waitq_rotator);
 
 	return IRQ_HANDLED;
@@ -163,6 +170,8 @@ int s3c_rotator_open(struct inode *inode, struct file *file)
 
 	file->private_data	= (ro_params *)params;
 
+	s3c_rotator_enable_int();
+
 	return 0;
 }
 
@@ -179,15 +188,23 @@ int s3c_rotator_release(struct inode *inode, struct file *file)
 
 	kfree(params);
 
+	s3c_rotator_disable_int();	
+
 	return 0;
 }
 
 
 static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
 	ro_params *params;
 	ro_params *parg;
 	unsigned int mode, divisor = 0;
+
+	if (ctrl->status != ROT_IDLE) {
+		printk(KERN_ERR "Rotator is busy.\n");
+		return -EBUSY;
+	}
 
 	mutex_lock(h_rot_mutex);
 
@@ -261,10 +278,11 @@ static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned in
 		return -EINVAL;
 	}
 
-	s3c_rotator_enable_int();
 	s3c_rotator_set_source(params);
 	s3c_rotator_set_dest(params);
 	s3c_rotator_start(params, mode);
+
+	ctrl->status = ROT_RUN;
 
 	if(!(file->f_flags & O_NONBLOCK)) {
 		if (interruptible_sleep_on_timeout(&waitq_rotator, ROTATOR_TIMEOUT) == 0) {
@@ -272,7 +290,6 @@ static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned in
 		}
 	}
 
-	s3c_rotator_disable_int();
 	mutex_unlock(h_rot_mutex);
 
 	return 0;
@@ -311,10 +328,22 @@ static struct miscdevice s3c_rotator_dev = {
 
 int s3c_rotator_probe(struct platform_device *pdev)
 {
-	struct resource *res;
-        	int ret;
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
+	struct resource		*res;
+	int			ret;
 
 	printk(KERN_INFO "s3c_rotator_probe called\n");
+
+	/* Clock setting */
+	sprintf(ctrl->clk_name, "%s", S3C_ROT_CLK_NAME);
+
+	ctrl->clock = clk_get(&pdev->dev, ctrl->clk_name);
+	if (IS_ERR(ctrl->clock)) {
+		printk(KERN_ERR "failed to get rotator clock source\n");
+		return EPERM;
+	}
+
+	clk_enable(ctrl->clock);
 
 	/* find the IRQs */
 	s3c_rotator_irq_num = platform_get_irq(pdev, 0);
@@ -372,6 +401,9 @@ int s3c_rotator_probe(struct platform_device *pdev)
 
 static int s3c_rotator_remove(struct platform_device *dev)
 {
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
+	clk_disable(ctrl->clock);
+
 	free_irq(s3c_rotator_irq_num, NULL);
 	
 	if (s3c_rotator_mem != NULL) {   
@@ -389,14 +421,38 @@ static int s3c_rotator_remove(struct platform_device *dev)
 
 static int s3c_rotator_suspend(struct platform_device *dev, pm_message_t state)
 {
-	printk("[%s]===== \n", __FUNCTION__);
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
+	unsigned int 		i = 0;
+
+	if (ctrl->status != ROT_IDLE) {
+		ctrl->status = ROT_READY_SLEEP;
+
+		while (i++ > 1000) {
+			if (ctrl->status != ROT_IDLE)
+				printk(KERN_ERR "Rotator is running.\n");
+			else
+				break;
+		}
+	} else {
+		ctrl->status = ROT_READY_SLEEP;
+	}
+
+	ctrl->status = ROT_SLEEP;
+	clk_disable(ctrl->clock);
+
 	return 0;
 }
 
 
 static int s3c_rotator_resume(struct platform_device *pdev)
 {
-	printk("[%s]===== \n", __FUNCTION__);
+	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
+	
+	clk_enable(ctrl->clock);
+	ctrl->status = ROT_IDLE;
+
+	s3c_rotator_enable_int();
+
 	return 0;
 }
 

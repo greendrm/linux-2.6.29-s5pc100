@@ -6,13 +6,13 @@
 #define ROTATOR_MINOR			230
 #define ROTATOR_TIMEOUT			100	// normally 800 * 480 * 2 rotation takes about 20ms
 
+#define S3C_ROT_CLK_NAME		"rot"
 
 #define ROTATOR_90			_IO(ROTATOR_IOCTL_MAGIC, 0)
 #define ROTATOR_180			_IO(ROTATOR_IOCTL_MAGIC, 1)
 #define ROTATOR_270			_IO(ROTATOR_IOCTL_MAGIC, 2)
 #define HFLIP				_IO(ROTATOR_IOCTL_MAGIC, 3)
 #define VFLIP				_IO(ROTATOR_IOCTL_MAGIC, 4)
-
 
 typedef struct{
 	unsigned int src_width;			// Source Image Full Width

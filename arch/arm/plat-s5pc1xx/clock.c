@@ -400,6 +400,12 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_G3D,
+	}, {
+		.name		= "rot",
+		.id		= -1,
+		.parent		= &clk_h,
+		.enable		= s5pc1xx_clk_d11_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D11_ROTATOR,
 	},
 
 	/* Multimedia2 (D1_2) devices */
