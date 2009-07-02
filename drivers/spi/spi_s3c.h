@@ -1,11 +1,11 @@
 /*
- * spi_sam.h - Samsung SOC SPI controller driver.
+ * spi_s3c.h - Samsung SOC SPI controller driver.
  *
  * Copyright (C) 2009 Samsung Electronics Ltd.
  */
 
-#ifndef _LINUX_SPI_SAM_H
-#define _LINUX_SPI_SAM_H
+#ifndef _LINUX_SPI_S3C_H
+#define _LINUX_SPI_S3C_H
 
 #include <mach/s3c-dma.h>
 #include <mach/map.h>
@@ -20,18 +20,18 @@
 //#include <plat/gpio-bank-g3.h>
 #endif
 
-#define SAMSPI_CH_CFG		(0x00)      //SPI configuration
-#define SAMSPI_CLK_CFG		(0x04)      //Clock configuration
-#define SAMSPI_MODE_CFG		(0x08)      //SPI FIFO control
-#define SAMSPI_SLAVE_SEL	(0x0C)      //Slave selection
-#define SAMSPI_SPI_INT_EN	(0x10)      //SPI interrupt enable
-#define SAMSPI_SPI_STATUS	(0x14)      //SPI status
-#define SAMSPI_SPI_TX_DATA	(0x18)      //SPI TX data
-#define SAMSPI_SPI_RX_DATA	(0x1C)      //SPI RX data
-#define SAMSPI_PACKET_CNT	(0x20)      //count how many data master gets
-#define SAMSPI_PENDING_CLR	(0x24)      //Pending clear
-#define SAMSPI_SWAP_CFG		(0x28)      //SWAP config register
-#define SAMSPI_FB_CLK		(0x2c)      //SWAP FB config register
+#define S3C_SPI_CH_CFG		(0x00)      //SPI configuration
+#define S3C_SPI_CLK_CFG		(0x04)      //Clock configuration
+#define S3C_SPI_MODE_CFG		(0x08)      //SPI FIFO control
+#define S3C_SPI_SLAVE_SEL	(0x0C)      //Slave selection
+#define S3C_SPI_INT_EN	(0x10)      //SPI interrupt enable
+#define S3C_SPI_STATUS	(0x14)      //SPI status
+#define S3C_SPI_TX_DATA	(0x18)      //SPI TX data
+#define S3C_SPI_RX_DATA	(0x1C)      //SPI RX data
+#define S3C_SPI_PACKET_CNT	(0x20)      //count how many data master gets
+#define S3C_SPI_PENDING_CLR	(0x24)      //Pending clear
+#define S3C_SPI_SWAP_CFG		(0x28)      //SWAP config register
+#define S3C_SPI_FB_CLK		(0x2c)      //SWAP FB config register
 
 #define SPI_CH_HS_EN		(1<<6)	/* High Speed Enable */
 #define SPI_CH_SW_RST		(1<<5)
@@ -134,9 +134,9 @@
 #define SPI_TRAILCNT			SPI_MAX_TRAILCNT
 
 #if defined(CONFIG_CPU_S5PC100)
-#define SAMSPI_PA_SPI0 S5PC1XX_PA_SPI0
-#define SAMSPI_PA_SPI1 S5PC1XX_PA_SPI1
-//#define SAMSPI_PA_SPI2 S5PC1XX_PA_SPI2
+#define S3C_SPI_PA_SPI0 S5PC1XX_PA_SPI0
+#define S3C_SPI_PA_SPI1 S5PC1XX_PA_SPI1
+//#define S3C_SPI_PA_SPI2 S5PC1XX_PA_SPI2
 #endif
 
 #define DMACH_SPIIN_0        DMACH_SPI0_IN
@@ -181,7 +181,7 @@
  * So, here we set CS only if SPI controller is in SLAVE mode.
  */
 #define SETUP_SPI(sspi, n)	do{                                                             \
-				   sspi->sfr_phyaddr = SAMSPI_PA_SPI##n;                        \
+				   sspi->sfr_phyaddr = S3C_SPI_PA_SPI##n;                        \
 				   sspi->rx_dmach = DMACH_SPIIN_##n;                            \
 				   sspi->tx_dmach = DMACH_SPIOUT_##n;                           \
 				   s3c_gpio_cfgpin(GPNAME(GPMISO_##n), GPIO_MISO_##n);          \
@@ -206,7 +206,7 @@
 				   }									\
 				}while(0)
 
-#define SAM_SETGPIOPULL(sspi)   do{                                          \
+#define S3C_SETGPIOPULL(sspi)   do{                                          \
 				   if(sspi->spi_mstinfo->pdev->id == 0)      \
 					SET_GPIOPULL(sspi, 0);               \
 				   else if(sspi->spi_mstinfo->pdev->id == 1) \
@@ -227,7 +227,7 @@
 				   }									\
 				}while(0)
 
-#define SAM_UNSETGPIOPULL(sspi)   do{                                          \
+#define S3C_UNSETGPIOPULL(sspi)   do{                                          \
 				   if(sspi->spi_mstinfo->pdev->id == 0)      \
 					UNSET_GPIOPULL(sspi, 0);               \
 				   else if(sspi->spi_mstinfo->pdev->id == 1) \
@@ -241,7 +241,7 @@
                                          | (SPI_CH##n##_RXFIFO_LEN << SPI_CH##n##_RXFLEN_OFF);       \
                             }while(0)
 
-#define SAMSPI_DMABUF_LEN	(16*1024)
+#define S3C_SPI_DMABUF_LEN	(16*1024)
 
 #define SUSPND     (1<<0)
 #define XFERBUSY   (1<<1)
@@ -258,10 +258,11 @@ enum xfer_state {
 };
 
 /* Structure for each SPI controller of Samsung SOC */
-struct samspi_bus {
+struct s3cspi_bus {
 	struct spi_master        *master;
 	struct workqueue_struct	 *workqueue;
-	struct sam_spi_mstr_info *spi_mstinfo;
+	struct s3c_spi_mstr_info *spi_mstinfo;
+	struct spi_device        *tgl_spi; /* Pointer to last spi device, if toggled by spi_transfer.cs_change flag */
 	struct work_struct       work;
 	struct list_head         queue;
 	spinlock_t               lock;	/* protect 'queue' */
@@ -289,4 +290,4 @@ struct samspi_bus {
 	u32                      cur_speed;
 };
 
-#endif 	//_LINUX_SPI_SAM_H
+#endif 	//_LINUX_SPI_S3C_H

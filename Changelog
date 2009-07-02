@@ -870,3 +870,5 @@ v2.6.29.4-r3d2: Jonghun Han
 	Modified files:
 		M       arch/arm/plat-s5pc1xx/clock.c
 
++v2.6.29.4-r3d3: Jassi
+	- SPI renaming for TomTom.
