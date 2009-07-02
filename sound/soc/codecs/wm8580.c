@@ -37,6 +37,7 @@
 
 #define WM8580_VERSION "0.1"
 
+
 struct pll_state {
 	unsigned int in;
 	unsigned int out;
@@ -785,6 +786,41 @@ static int wm8580_set_bias_level(struct snd_soc_codec *codec,
 #define WM8580_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |\
 			SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE)
 
+#define NEW_DAI_STRUCT
+
+#ifdef NEW_DAI_STRUCT
+
+struct snd_soc_dai wm8580_dai[] = {
+	{
+		.name = "WM8580 Codec",
+		.id = 0,
+		.playback = {
+			.stream_name = "Playback",
+			.channels_min = 1,
+			.channels_max = 6,
+			.rates = SNDRV_PCM_RATE_8000_192000,
+			.formats = WM8580_FORMATS,
+		},
+
+
+		.capture = {
+			.stream_name = "Capture",
+			.channels_min = 2,
+			.channels_max = 2,
+			.rates = SNDRV_PCM_RATE_8000_192000,
+			.formats = WM8580_FORMATS,
+		},
+		.ops = {
+			 .hw_params = wm8580_paif_hw_params,
+			 .set_fmt = wm8580_set_paif_dai_fmt,
+			 .set_clkdiv = wm8580_set_dai_clkdiv,
+			 .set_pll = wm8580_set_dai_pll,
+		 },
+	},
+};
+
+#else
+
 struct snd_soc_dai wm8580_dai[] = {
 	{
 		.name = "WM8580 PAIFRX",
@@ -822,6 +858,8 @@ struct snd_soc_dai wm8580_dai[] = {
 		 },
 	},
 };
+#endif
+
 EXPORT_SYMBOL_GPL(wm8580_dai);
 
 /*

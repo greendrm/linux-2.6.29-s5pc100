@@ -11,6 +11,19 @@ menuconfig INPUT_TOUCHSCREEN
 
 if INPUT_TOUCHSCREEN
 
+config TOUCHSCREEN_MCS6000
+	tristate "MELFAS MCS-6000 I2C touchscreen"
+	depends on I2C
+	help
+	  Say Y here if you have the MELFAS MCS-6000 I2C touchscreen connected to
+	  your system.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called mcs6000_ts.
+
+
 config TOUCHSCREEN_ADS7846
 	tristate "ADS7846/TSC2046 and ADS7843 based touchscreens"
 	depends on SPI_MASTER

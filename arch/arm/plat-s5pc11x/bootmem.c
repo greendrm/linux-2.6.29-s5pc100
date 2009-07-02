@@ -17,8 +17,7 @@
 #include <asm/setup.h>
 #include <asm/io.h>
 #include <mach/memory.h>
-
-#include "plat/media.h"
+#include <plat/media.h>
 
 static struct s3c_media_device s3c_mdevs[] = {
 #ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC
@@ -143,7 +142,7 @@ void s5pc11x_reserve_bootmem(void)
 		if (mdev->memsize > 0) {
 			mdev->paddr = virt_to_phys(alloc_bootmem_low(mdev->memsize));
 			printk(KERN_INFO \
-				"s5pc11x: %lu bytes SDRAM reserved "
+				"s5pc11x: %lu bytes system memory reserved "
 				"for %s at 0x%08x\n",
 				(unsigned long) mdev->memsize, \
 				mdev->name, mdev->paddr);

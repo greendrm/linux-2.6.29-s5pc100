@@ -1293,6 +1293,7 @@ static void pmic_uv_handler(struct wm8350 *wm8350, int irq, void *data)
 {
 	struct regulator_dev *rdev = (struct regulator_dev *)data;
 
+	mutex_lock(&rdev->mutex);
 	if (irq == WM8350_IRQ_CS1 || irq == WM8350_IRQ_CS2)
 		regulator_notifier_call_chain(rdev,
 					      REGULATOR_EVENT_REGULATION_OUT,
@@ -1301,6 +1302,7 @@ static void pmic_uv_handler(struct wm8350 *wm8350, int irq, void *data)
 		regulator_notifier_call_chain(rdev,
 					      REGULATOR_EVENT_UNDER_VOLTAGE,
 					      wm8350);
+	mutex_unlock(&rdev->mutex);
 }
 
 static int wm8350_regulator_probe(struct platform_device *pdev)
@@ -1333,9 +1335,9 @@ static int wm8350_regulator_probe(struct platform_device *pdev)
 		break;
 	}
 
-
 	/* register regulator */
 	rdev = regulator_register(&wm8350_reg[pdev->id], &pdev->dev,
+				  pdev->dev.platform_data,
 				  dev_get_drvdata(&pdev->dev));
 	if (IS_ERR(rdev)) {
 		dev_err(&pdev->dev, "failed to register %s\n",
