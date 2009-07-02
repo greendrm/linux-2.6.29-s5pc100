@@ -37,7 +37,7 @@ static struct s3cfb_lcd lte480wv = {
 	},
 };
 
-/* name should be fixed as 's3c_fimd_set_lcd_info' */
+/* name should be fixed as 's3cfb_set_lcd_info' */
 void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 {
 	lte480wv.init_ldi = NULL;
