@@ -856,3 +856,17 @@ v2.6.29.4-r3d1: Jinsung Yang
 		M       arch/arm/mach-s5pc110/include/mach/memory.h
 		M       arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-r3d2: Jonghun Han
+	- SMDKC100 Image Rotator driver support
+
+	Added Files:
+		A       drivers/media/video/samsung/Kconfig
+		A       drivers/media/video/samsung/Makefile
+		A       drivers/media/video/samsung/rotator/Kconfig
+		A       drivers/media/video/samsung/rotator/Makefile
+		A       drivers/media/video/samsung/rotator/s3c_rotator.c
+		A       drivers/media/video/samsung/rotator/s3c_rotator_common.h
+
+	Modified files:
+		M       arch/arm/plat-s5pc1xx/clock.c
+
