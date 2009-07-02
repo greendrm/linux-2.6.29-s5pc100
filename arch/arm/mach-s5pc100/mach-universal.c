@@ -1,86 +1,39 @@
 /*
  * linux/arch/arm/mach-s5pc100/mach-universal.c
  *
+ * Copyright (C) 2009 Samsung Electronics Co.Ltd
+ * Author: InKi Dae <inki.dae@samsung.com>
  *
- * Copyright (C) 2009 by Samsung Electronics
- * All rights reserved.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  *
- * @Author: InKi Dae <inki.dae@samsung.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
- * @History:
- * derived from linux/arch/arm/mach-s3c2410/mach-bast.c, written by
- * Ben Dooks <ben@simtec.co.uk>
  */
 
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/interrupt.h>
-#include <linux/list.h>
-#include <linux/timer.h>
-#include <linux/init.h>
-#include <linux/serial_core.h>
-#include <linux/platform_device.h>
-#include <linux/io.h>
-#include <linux/i2c.h>
 #include <linux/delay.h>
-#include <linux/mtd/nand.h>
-#include <linux/mtd/partitions.h>
-#include <linux/clk.h>
-#include <linux/mm.h>
-#include <linux/pwm_backlight.h>
+#include <linux/platform_device.h>
+#include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
+#include <linux/regulator/max8698.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
 
+#include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
-#include <asm/mach/irq.h>
 
-#include <mach/hardware.h>
-#include <mach/map.h>
-#include <mach/regs-mem.h>
-#include <mach/gpio.h>
-
-#include <asm/irq.h>
-#include <asm/mach-types.h>
-
-#include <plat/regs-serial.h>
-#include <plat/regs-rtc.h>
-#include <plat/iic.h>
-#include <plat/fimc.h>
-#include <plat/fb.h>
-#include <plat/csis.h>
-
-#include <plat/nand.h>
-#include <plat/partition.h>
-#include <plat/s5pc100.h>
-#include <plat/clock.h>
-#include <plat/devs.h>
 #include <plat/cpu.h>
-#include <plat/ts.h>
-#include <plat/adc.h>
+#include <plat/devs.h>
+#include <plat/fb.h>
 #include <plat/gpio-cfg.h>
-#include <plat/regs-gpio.h>
-#include <plat/gpio-bank-k0.h>
-#include <plat/gpio-bank-a1.h>
-#include <plat/gpio-bank-b.h>
-#include <plat/gpio-bank-d.h>
-#include <plat/regs-clock.h>
-#include <plat/spi.h>
+#include <plat/iic.h>
+#include <plat/regs-serial.h>
+#include <plat/s5pc100.h>
+
+#include <mach/gpio.h>
+#include <mach/map.h>
 
 extern struct sys_timer s5pc1xx_timer;
 extern void s5pc1xx_reserve_bootmem(void);
@@ -143,6 +96,236 @@ static struct s3c2410_uartcfg universal_uartcfgs[] __initdata = {
         },
 };
 
+/* PMIC */
+static struct regulator_consumer_supply dcdc1_consumers[] = {
+	{
+		.supply		= "vddarm",
+	},
+};
+
+static struct regulator_init_data max8698_dcdc1_data = {
+	.constraints	= {
+		.name		= "VCC_ARM",
+		.min_uV		=  750000,
+		.max_uV		= 1500000,
+		.always_on	= 1,
+		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
+	.consumer_supplies	= dcdc1_consumers,
+};
+
+static struct regulator_init_data max8698_dcdc2_data = {
+	.constraints	= {
+		.name		= "VCC_INTERNAL",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_dcdc3_data = {
+	.constraints	= {
+		.name		= "VCC_MEM",
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
+		.apply_uV	= 1,
+		.state_mem	= {
+			.uV	= 1800000,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 1,
+		},
+		.initial_state	= PM_SUSPEND_MEM,
+	},
+};
+
+static struct regulator_init_data max8698_ldo2_data = {
+	.constraints	= {
+		.name		= "VALIVE_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+		.always_on	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo3_data = {
+	.constraints	= {
+		.name		= "VUSB_1.2V/MIPI_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo4_data = {
+	.constraints	= {
+		.name		= "VOPTIC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+		.boot_on	= 1,
+	},
+};
+
+static struct regulator_consumer_supply universal_hsmmc1_supply = {
+	.supply			= "hsmmc",	/* FIXME what's exact name? */
+	.dev			= &s3c_device_hsmmc1.dev,
+};
+
+static struct regulator_init_data max8698_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &universal_hsmmc1_supply,
+};
+
+static struct regulator_init_data max8698_ldo6_data = {
+	.constraints	= {
+		.name		= "VCC_2.6V",
+		.min_uV		= 2600000,
+		.max_uV		= 2600000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo7_data = {
+	.constraints	= {
+		.name		= "VDAC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo8_data = {
+	.constraints	= {
+		.name		= "{VADC/VCAM/VUSB}_3.3V",
+		.min_uV		= 3300000,
+		.max_uV		= 3300000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo9_data = {
+	.constraints	= {
+		.name		= "VCAM_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct max8698_subdev_data universal_regulators[] = {
+	{ MAX8698_LDO2, &max8698_ldo2_data },
+	{ MAX8698_LDO3, &max8698_ldo3_data },
+	{ MAX8698_LDO4, &max8698_ldo4_data },
+	{ MAX8698_LDO5, &max8698_ldo5_data },
+	{ MAX8698_LDO6, &max8698_ldo6_data },
+	{ MAX8698_LDO7, &max8698_ldo7_data },
+	{ MAX8698_LDO8, &max8698_ldo8_data },
+	{ MAX8698_LDO9, &max8698_ldo9_data },
+	{ MAX8698_DCDC1, &max8698_dcdc1_data },
+	{ MAX8698_DCDC2, &max8698_dcdc2_data },
+	{ MAX8698_DCDC3, &max8698_dcdc3_data },
+};
+
+static struct max8698_platform_data max8698_platform_data = {
+	.num_regulators	= ARRAY_SIZE(universal_regulators),
+	.regulators	= universal_regulators,
+/*
+	.set1		= S5PC1XX_GPJ0(6),
+	.set2		= S5PC1XX_GPJ0(7),
+	.set3		= S5PC1XX_GPJ1(0),
+*/
+};
+
+/* I2C0 */
+static struct i2c_board_info i2c_devs0[] __initdata = {
+	{
+		/* The address is 0xCC used since SRAD = 0 */
+		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
+		.platform_data = &max8698_platform_data,
+	},
+};
+
+/* I2C1 */
+static struct i2c_board_info i2c_devs1[] __initdata = {
+	{
+		I2C_BOARD_INFO("max9877", 0x4d),
+	},
+	/* TODO
+	 * KXSD9
+	 */
+};
+
+/* GPIO I2C 2.6V */
+#define I2C_GPIO_26V_BUS	2
+static struct i2c_gpio_platform_data universal_i2c_gpio_26v_data = {
+	.sda_pin	= S5PC1XX_GPJ3(6),
+	.scl_pin	= S5PC1XX_GPJ3(7),
+};
+
+static struct platform_device universal_i2c_gpio_26v = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_26V_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_26v_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_26v_devs[] __initdata = {
+	{
+		I2C_BOARD_INFO("ak4671", 0x12),
+	},
+	/* TODO
+	 * Proximity, Optical Sensor - GP2AP002 (0x44)
+	 * Backlight Driver IC - BD6091GU (0x76)
+	 */
+};
+
+/* GPIO I2C 2.6V - HDMI */
+#define I2C_GPIO_HDMI_BUS	3
+static struct i2c_gpio_platform_data universal_i2c_gpio_hdmi_data = {
+	.sda_pin	= S5PC1XX_GPJ4(0),
+	.scl_pin	= S5PC1XX_GPJ4(3),
+};
+
+static struct platform_device universal_i2c_gpio_hdmi = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_HDMI_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_hdmi_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_hdmi_devs[] __initdata = {
+	/* TODO */
+};
+
+/* GPIO I2C 2.8V */
+#define I2C_GPIO_28V_BUS	4
+static struct i2c_gpio_platform_data universal_i2c_gpio_28v_data = {
+	.sda_pin	= S5PC1XX_GPH2(4),
+	.scl_pin	= S5PC1XX_GPH2(5),
+};
+
+static struct platform_device universal_i2c_gpio_28v = {
+	.name		= "i2c-gpio",
+	.id		= I2C_GPIO_28V_BUS,
+	.dev		= {
+		.platform_data	= &universal_i2c_gpio_28v_data,
+	},
+};
+
+static struct i2c_board_info i2c_gpio_28v_devs[] __initdata = {
+	/* TODO */
+};
+
 #define LCD_BUS_NUM 	3
 #define DISPLAY_CS	S5PC1XX_GPK3(5)
 static struct spi_board_info spi_board_info[] __initdata = {
@@ -157,7 +340,6 @@ static struct spi_board_info spi_board_info[] __initdata = {
 	},
 };
 
-#if defined(CONFIG_FB_S3C_TL2796)
 #define DISPLAY_CLK	S5PC1XX_GPK3(6)
 #define DISPLAY_SI	S5PC1XX_GPK3(7)
 static struct spi_gpio_platform_data tl2796_spi_gpio_data = {
@@ -242,18 +424,31 @@ static struct s3c_platform_fb fb_data __initdata = {
 	.backlight_on = tl2796_power_on,
 	.reset_lcd = tl2796_reset,
 };
-#endif
 
 struct map_desc universal_iodesc[] = {};
 
 static struct platform_device *universal_devices[] __initdata = {
-#if defined(CONFIG_FB_S3C)
 	&s3c_device_fb,
-#endif
-#if defined(CONFIG_FB_S3C_TL2796)
+	&s3c_device_mfc,
 	&universal_spi_gpio,
-#endif
+	&s3c_device_i2c0,
+	&s3c_device_i2c1,
+	&universal_i2c_gpio_26v,
+	&universal_i2c_gpio_hdmi,
+	&universal_i2c_gpio_28v,
 };
+
+static void __init universal_i2c_gpio_init(void)
+{
+	s3c_gpio_setpull(S5PC1XX_GPH2(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPH2(5), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC1XX_GPJ3(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPJ3(7), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC1XX_GPJ4(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC1XX_GPJ4(3), S3C_GPIO_PULL_NONE);
+}
 
 static void __init universal_map_io(void)
 {
@@ -268,13 +463,23 @@ static void __init universal_map_io(void)
 
 static void __init universal_machine_init(void)
 {
-#if defined(CONFIG_FB_S3C_TL2796)
 	tl2796_gpio_setup();
-#endif
+
+	universal_i2c_gpio_init();
+
+	s3c_i2c0_set_platdata(NULL);
+	s3c_i2c1_set_platdata(NULL);
+	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+	i2c_register_board_info(I2C_GPIO_26V_BUS, i2c_gpio_26v_devs,
+				ARRAY_SIZE(i2c_gpio_26v_devs));
+	i2c_register_board_info(I2C_GPIO_HDMI_BUS, i2c_gpio_hdmi_devs,
+				ARRAY_SIZE(i2c_gpio_hdmi_devs));
+	i2c_register_board_info(I2C_GPIO_28V_BUS, i2c_gpio_28v_devs,
+				ARRAY_SIZE(i2c_gpio_28v_devs));
+
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-#if defined(CONFIG_FB_S3C)
 	s3cfb_set_platdata(&fb_data);
-#endif
 	platform_add_devices(universal_devices, ARRAY_SIZE(universal_devices));
 }
 

@@ -808,3 +808,41 @@ v2.6.29.4-r2d6: SungJun Bae
 		M	drivers/media/video/Makefile
 		M	drivers/media/video/samsung/tv20/Kconfig
 		M	include/linux/i2c-id.h
+
+v2.6.29.4-r2d7: Taeyong Lee
+	- Added audio driver for C100
+
+	Added Files:
+		A       sound/soc/s3c/Kconfig
+		A       sound/soc/s3c/Makefile
+		A       sound/soc/s3c/s3c-ac97.c
+		A       sound/soc/s3c/s3c-ac97.h
+		A       sound/soc/s3c/s3c-i2s.c
+		A       sound/soc/s3c/s3c-i2s.h
+		A       sound/soc/s3c/s3c-pcm.c
+		A       sound/soc/s3c/s3c-pcm.h
+		A       sound/soc/s3c/smdk6410_s5m8751.c
+		A       sound/soc/s3c/smdk6410_wm8580.c
+		A       sound/soc/s3c/smdk6410_wm9713.c
+		A       sound/soc/s3c/smdk6440_s5m8751.c
+		A       sound/soc/s3c/smdk6440_wm8580.c
+		A       sound/soc/s3c/smdkc100_s5m8751.c
+		A       sound/soc/s3c/smdkc100_wm8580.c
+		A       sound/soc/s3c/smdkc100_wm9713.c
+	Modified Files:
+		M       sound/soc/Kconfig
+		M       sound/soc/Makefile
+		M       sound/soc/codecs/wm8580.c
+
+v2.6.29.4-r2d8: Changhwan Youn 
+	- Modified SD/MMC clock divider value and Fixed EXT_CSD_REV-related error
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc100/setup-sdhci.c
+		M       drivers/mmc/core/mmc.csound/soc/Kconfig
+
+v2.6.29.4-r3: Kyoungil Kim 
+	- Official Release (2009.06.30)
+
+v2.6.29.4-r3d0: Kyoungil Kim 
