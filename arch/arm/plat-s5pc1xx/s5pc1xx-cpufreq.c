@@ -1,7 +1,7 @@
 /*
- *  linux/arch/arm/plat-s3c64xx/s3c64xx-cpufreq.c
+ *  linux/arch/arm/plat-s5pc1xx/s5pc1xx-cpufreq.c
  *
- *  CPU frequency scaling for S3C64XX
+ *  CPU frequency scaling for S5PC1XX
  *
  *  Copyright (C) 2008 Samsung Electronics
  *
@@ -32,6 +32,22 @@
 
 #define USE_IEM
 
+/* This CPU-FREQ driver supports 834Mhz as a Maximum operation speed
+*  Bootloader must set 834Mhz to support current DVFS scenario like below table
+*  If not, this driver dosen't work properly. 
+*  Commented by jc.lee@samsung.com
+*/
+
+#ifndef TRUE
+#define TRUE	1
+#endif
+
+#ifndef FALSE
+#define FALSE	0
+#endif
+
+bool iem_enabled = FALSE;
+
 /* frequency */
 static struct cpufreq_frequency_table s5pc100_freq_table[] = {
 	{L0, 834*1000},
@@ -42,12 +58,46 @@ static struct cpufreq_frequency_table s5pc100_freq_table[] = {
 	{0, CPUFREQ_TABLE_END},
 };
 
+enum iem_perf_level {
+	IEM_L1,
+	IEM_L2,
+	IEM_L3,
+	IEM_L4,
+	IEM_L5,
+	IEM_L6,
+	IEM_L7,
+	IEM_L8,		
+};
+
 static const u32 corevdd_value[8] = {
 	0x10, 0x13, 0x17, 0x1f, 0x37, 0x3f, 0x77, 0x7f
 };
 
 static const u32 target_perf_level[8] = {
 	0x08, 0x18, 0x28, 0x38, 0x48, 0x60, 0x70, 0x80
+};
+
+static const unsigned long pms_val_per_lvl[8][3] = {
+	{445, 4, 0},	// IEM_L1
+	{445, 4, 0},
+	{400, 4, 1},
+	{333, 3, 1},	// IEM_L4 : PLL 666 Mhz (333*12/3/1=666)
+	{333, 3, 1},
+	{333, 3, 1},
+	{417, 3, 1},	// IEM_L7 : PLL 833 Mhz (417*12/3/2=834)
+	{333, 3, 1}
+};
+
+static const unsigned long clk_div_per_lvl[8][4] = {
+	/* APLL_DIV, HPM_DIV, ARM_DIV, HCLKD0_DIV */
+	{2, 4, 1, 4},
+	{2, 4, 1, 4},
+	{2, 4, 1, 3},
+	{1, 4, 1, 4},	// IEM_L4 : arm=666/1/1=666, d0=166	
+	{1, 4, 5, 1},
+	{1, 4, 5, 5},
+	{1, 4, 1, 5},	// IEM_L7 : arm=833/1/1=833, d0=166
+	{1, 4, 1, 4},	
 };
 
 void enable_open_loop(void)
@@ -72,9 +122,16 @@ void set_open_loop_default_value(void)
 	
 }
 
-void set_iem_ctrl(u32 enable, enum perf_level p_lv)
+void set_iem_ctrl(bool enable, enum iem_perf_level lvl)
 {
-	__raw_writel((0xff<<16)|(enable<<0), S5P_IEM_CONTROL);
+	unsigned long target_lvl, iem_target_lvl, en_bit;
+
+	target_lvl = lvl+1;
+	
+	en_bit = (enable) ? TRUE : FALSE;
+
+	iem_target_lvl = (0xff>>(8-target_lvl));
+	__raw_writel((iem_target_lvl<<16)|(en_bit<<0), S5P_IEM_CONTROL);
 }
 
 void set_dcg_idx_and_map(void)
@@ -106,15 +163,15 @@ void set_clk_div_iem_perf_level(u32 p_lv, u32 apll, u32 hpmclk,
 
 void set_sample_iem_clk(void)
 {
-	set_apllcon_iem_pref_level(1, 417, 3, 1);	// 417 * 12 / 3 / 2 = 833
-	set_apllcon_iem_pref_level(2, 417, 3, 1);	// 417 * 12 / 3 / 2 = 833
-	set_apllcon_iem_pref_level(3, 445, 4, 1);	// 445 * 12 / 4 / 2 = 667
-	set_apllcon_iem_pref_level(4, 445, 4, 1);	// 445 * 12 / 4 / 2 = 667
+	int iter;
 
-	set_clk_div_iem_perf_level(1, 1, 4, 1, 5);	// arm=833/1/1=833, d0=166
-	set_clk_div_iem_perf_level(2, 1, 4, 5, 1);	// arm=833/1/5=166, d0=166
-	set_clk_div_iem_perf_level(3, 1, 4, 5, 4);	// arm=667/1/5=133, d0=33
-	set_clk_div_iem_perf_level(4, 1, 4, 1, 4);	// arm=667/1/1=667, d0=166
+	for (iter=0; iter<8; iter++) {
+		set_apllcon_iem_pref_level(iter+1, pms_val_per_lvl[iter][0], pms_val_per_lvl[iter][1], 
+			pms_val_per_lvl[iter][2]);
+		
+		set_clk_div_iem_perf_level(iter+1, clk_div_per_lvl[iter][0], clk_div_per_lvl[iter][1], 
+			clk_div_per_lvl[iter][2], clk_div_per_lvl[iter][3]);
+	}
 
 	__raw_writel(0xFAC688, S5P_DVCIDX_MAP);		// IECCFGDVCIDXMAP[23:0]
 	__raw_writel(0xCB5E8, S5P_FREQ_CPU);		// 833000 (KHz)
@@ -126,25 +183,66 @@ void enable_iec(void)
 	u32 regval;
 
 	regval = __raw_readl(S5P_IECDPCCR);
+	regval &= ~(1<<0);
 	regval |= (1<<0); 	//IEC enable
 
 	__raw_writel(regval, S5P_IECDPCCR);
 }
 
-void set_target_perf(enum perf_level p_lv)
+void disable_iec(void)
 {
-	__raw_writel( target_perf_level[p_lv], S5P_IECDPCTGTPERF);
+	u32 regval;
+
+	regval = __raw_readl(S5P_IECDPCCR);
+	regval &= ~(1<<0); 	//IEC disable
+
+	__raw_writel(regval, S5P_IECDPCCR);
+}
+
+
+void set_target_perf(enum iem_perf_level lvl)
+{
+	__raw_writel( target_perf_level[lvl], S5P_IECDPCTGTPERF);
+}
+
+void set_max_perf_map_idx(enum iem_perf_level lvl)
+{
+	unsigned long reg;
+	
+	if (lvl > 7) {
+		printk(KERN_ERR "Index value is over than limits 0~7");
+		return;
+	}
+	reg = __raw_readl(S5P_IECDPCCR);
+	reg &= ~(7<<5);
+	reg |= (lvl << 5);	// Max Performance Mapping Index value
+	__raw_writel(reg, S5P_IECDPCCR);
+	
+}
+
+void iem_enter(void)
+{
+	set_max_perf_map_idx(IEM_L8);
+	enable_open_loop();
+	
+	set_iem_ctrl(TRUE, IEM_L8); // Enable IEM operation, previous Target perf level=8
+	enable_iec();
+	iem_enabled = TRUE;
+	
+}
+
+void iem_exit(void)
+{
+	disable_iec();
+	set_iem_ctrl(FALSE, IEM_L8); // Disable IEM operation, previous Target perf level=8
+	iem_enabled = FALSE;
 }
 
 void iem_init(void)
 {
 	set_dcg_idx_and_map();
-	set_target_perf(1);
 	set_sample_iem_clk();
-	set_iem_ctrl(1, L0);
-	enable_iec();
 }
-
 
 /* TODO: Add support for SDRAM timing changes */
 
@@ -206,6 +304,10 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 	unsigned long arm_clk;
 	unsigned int index,reg;
 
+
+	u32 apll, clk_div0;
+
+
 	mpu_clk = clk_get(NULL, MPU_CLK);
 	if (IS_ERR(mpu_clk))
 		return PTR_ERR(mpu_clk);
@@ -254,10 +356,32 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 #else
 	if(freqs.new > freqs.old) {
 		
+		/* Frequency up */	
 		set_power(index);
 		
-		if(index == L0) {	// Need to change APLL by using IEM controller
+		switch(index) {
+
+		case L0:
+			if(!iem_enabled)	
+				iem_enter();
+			
+			set_target_perf(IEM_L7);
+			udelay(100);
+			break;
 		
+		case L1:
+		case L2:
+			reg = __raw_readl(S5P_CLK_DIV0);
+			reg &=~((0x7<<12)|(0x7<<8));
+			reg |= ((clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
+			__raw_writel(reg, S5P_CLK_DIV0);
+			
+			reg &=~(0x7<<4);
+			reg |= (clkdiv0_val[index][0]<<4);
+			__raw_writel(reg, S5P_CLK_DIV0);
+			break;
+
+		case L3:
 			reg = __raw_readl(S5P_CLK_DIV0);
 			reg &=~((0x7<<12)|(0x7<<8));
 			reg |= ((clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
@@ -267,23 +391,37 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 			reg |= (clkdiv0_val[index][0]<<4);
 			__raw_writel(reg, S5P_CLK_DIV0);
 
-			set_target_perf(0);
-			
-		} else {
-			reg = __raw_readl(S5P_CLK_DIV0);
-			reg &=~((0x7<<12)|(0x7<<8));
-			reg |= ((clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
-			__raw_writel(reg, S5P_CLK_DIV0);
-			
-			reg &=~(0x7<<4);
-			reg |= (clkdiv0_val[index][0]<<4);
-			__raw_writel(reg, S5P_CLK_DIV0);
+			reg = __raw_readl(S5P_CLK_DIV1);
+			reg &=~(0x7<<16);
+			reg |= (0x1<<16);
+			__raw_writel(reg, S5P_CLK_DIV1);
 
+			reg = __raw_readl(S5P_CLK_DIV1);
+			reg &=~(0x7<<12);
+			reg |= (0x1<<12);
+			__raw_writel(reg, S5P_CLK_DIV1);
+			break;
+		case L4:
+		default:
+			break;
 		}
-	} else if(freqs.new < freqs.old) {
-		if(index == L1) {	// Need to change APLL by using IEM controller
 		
-			set_target_perf(3);
+	} else if(freqs.new < freqs.old) {
+		
+		switch(index) {
+		case L1:
+		#if 0	
+			if(!iem_enabled)	
+				iem_enter();			
+			set_target_perf(IEM_L4);
+			udelay(100);
+		#else
+			iem_exit();
+		#endif
+			break;
+			
+		case L2:
+		case L3:
 			reg = __raw_readl(S5P_CLK_DIV0);
 			reg &=~(0x7<<4);
 			reg |= (clkdiv0_val[index][0]<<4);
@@ -292,9 +430,9 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 			reg &=~((0x7<<12)|(0x7<<8));
 			reg |= ((clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));			
 			__raw_writel(reg, S5P_CLK_DIV0);
+			break;
 			
-			
-		} else {
+		case L4:
 			reg = __raw_readl(S5P_CLK_DIV0);
 			reg &=~(0x7<<4);
 			reg |= (clkdiv0_val[index][0]<<4);
@@ -304,12 +442,33 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 			reg |= ((clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
 			__raw_writel(reg, S5P_CLK_DIV0);
 
-		}
+			reg = __raw_readl(S5P_CLK_DIV1);
+			reg &=~(0x7<<12);
+			reg |= (0x3<<12);
+			__raw_writel(reg, S5P_CLK_DIV1);
 
+			reg = __raw_readl(S5P_CLK_DIV1);
+			reg &=~(0x7<<16);
+			reg |= (0x0<<16);
+			__raw_writel(reg, S5P_CLK_DIV1);
+
+		case L0:
+		default:
+			break;
+
+		}
 		set_power(index);
 		
 	} else {
+		if (index == L0) {
+			/* IEM H/W enabled at 833Mhz speed */
+			if(!iem_enabled)	
+				iem_enter();
+			set_target_perf(IEM_L7);
+			udelay(100);
+		} else {
 		// Do nothing...
+	}
 	}
 
 #endif
@@ -338,7 +497,7 @@ static int __init s5pc100_cpu_init(struct cpufreq_policy *policy)
 	reg = __raw_readl(S5P_CLK_OUT);
 	reg &=~(0x1f << 12 | 0xf << 20);	// Mask Out CLKSEL bit field and DIVVAL
 	reg |= (0x9 << 12 | 0x1 << 20);	// CLKSEL = ARMCLK/4, DIVVAL = 1 
-	__raw_writel(reg, S5P_CLK_OUT);
+	__raw_writel(reg, S5P_CLK_OUT);		// ARMCLK = CLK_OUT*4*(DIVVAL+1)
 #endif
 	mpu_clk = clk_get(NULL, MPU_CLK);
 	if (IS_ERR(mpu_clk))

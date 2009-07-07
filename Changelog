@@ -878,3 +878,12 @@ v2.6.29.4-r3d4: Kukjin Kim
 
 	Modified files:
 		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-r3d5: Jae-Cheol Lee
+	- Bug fixed on IDLE bit definition for SMDKC100
+	- Modified DVFS driver for SMDKC100
+
+	Modified FIles:
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc1xx/ltc3714.c
+		M	arch/arm/plat-s5pc1xx/s5pc1xx-cpufreq.c
