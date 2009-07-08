@@ -326,7 +326,8 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 		if (fb->fix.smem_start)
 			s3cfb_enable_window(win->id);
 		else
-			info("no allocated memory for unblank\n");
+			info("[fb%d] no allocated memory for unblank\n", \
+				win->id);
 		break;
 
 	case FB_BLANK_POWERDOWN:
