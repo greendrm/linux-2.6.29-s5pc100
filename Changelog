@@ -887,3 +887,8 @@ v2.6.29.4-r3d5: Jae-Cheol Lee
 		M	arch/arm/plat-s5pc1xx/include/plat/regs-clock.h
 		M	arch/arm/plat-s5pc1xx/ltc3714.c
 		M	arch/arm/plat-s5pc1xx/s5pc1xx-cpufreq.c
+
+v2.6.29.4-r3d6:Sewoon Park
+	- Add mach type for S5P6442
+
+		M       arch/arm/tools/mach-types
