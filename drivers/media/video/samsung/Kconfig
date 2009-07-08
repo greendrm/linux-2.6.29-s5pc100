@@ -6,6 +6,7 @@ config VIDEO_SAMSUNG
 	---help---
 	  This is a representative video4linux configuration for Samsung multimedia devices.
 
+source "drivers/media/video/samsung/fimc/Kconfig"
 #source "drivers/media/video/samsung/post/Kconfig"
 
 if CPU_S5PC100
