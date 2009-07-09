@@ -17,8 +17,11 @@
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
 #include <linux/regulator/max8698.h>
+#include <linux/gpio.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
+#include <linux/videodev2.h>
+#include <media/s5k6aa_platform.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -27,13 +30,20 @@
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/fb.h>
-#include <plat/gpio-cfg.h>
 #include <plat/iic.h>
 #include <plat/regs-serial.h>
 #include <plat/s5pc100.h>
-
-#include <mach/gpio.h>
+#include <plat/gpio-cfg.h>
+#include <plat/gpio-bank-e0.h>
+#include <plat/gpio-bank-e1.h>
+#include <plat/gpio-bank-h2.h>
+#include <plat/gpio-bank-h3.h>
+/*#include <mach/gpio.h>*/
 #include <mach/map.h>
+
+/* Camera interface */
+#include <plat/fimc.h>
+#include <plat/csis.h>
 
 extern struct sys_timer s5pc1xx_timer;
 extern void s5pc1xx_reserve_bootmem(void);
@@ -446,9 +456,29 @@ static struct platform_device *universal_devices[] __initdata = {
 	&universal_spi_gpio,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
+	&s3c_device_fimc0,
+	&s3c_device_fimc1,
+	&s3c_device_fimc2,
+	&s3c_device_csis,
 	&universal_i2c_gpio_26v,
 	&universal_i2c_gpio_hdmi,
 	&universal_i2c_gpio_28v,
+};
+
+/* External camera module setting */
+static struct s5k6aa_platform_data s5k6aa = {
+	.default_width = 640,
+	.default_height = 480,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 24000000,
+	.is_mipi = 1,
+};
+
+static struct i2c_board_info  __initdata camera_info[] = {
+	{
+		I2C_BOARD_INFO("S5K6AA", 0x3C),
+		.platform_data = &s5k6aa,
+	},
 };
 
 static void __init universal_i2c_gpio_init(void)
@@ -474,8 +504,199 @@ static void __init universal_map_io(void)
 	s5pc1xx_reserve_bootmem();
 }
 
+/* define gpio as a name used on target */
+#define CAM_EN		S5PC1XX_GPH1(4)
+#define CAM1_3M_EN	S5PC1XX_GPC(1)
+#define VGA_CAM_nSTBY	S5PC1XX_GPB(1)
+#define VGA_CAM_nRST	S5PC1XX_GPB(0)
+
+static int camera_pin_request(void)
+{
+	int err;
+
+	/*
+	 * GPIO configuration
+	 * CAM_EN: GPH0[6]
+	 * 1.3M_EN: GPK2[4]
+	 * VGA_CAM_nSTBY: GPB[1]
+	 * VGA_CAM_nRST: GPB[0]
+	 */
+
+	/* CAM_EN: GPH0[6] */
+	err = gpio_request(CAM_EN, "CAM_EN");
+	if(err == 0) {
+		gpio_export(CAM_EN, 1);
+		gpio_direction_output(CAM_EN, 0);
+	} else {
+		printk(KERN_INFO "CAM_EN request err\n");
+		return err;
+	}
+
+	/* 1.3M_EN: GPK2[4] */
+	err = gpio_request(CAM1_3M_EN, "1.3M_EN");
+	if(err == 0) {
+		gpio_export(CAM1_3M_EN, 1);
+		gpio_direction_output(CAM1_3M_EN, 0);
+	} else {
+		printk(KERN_INFO "1.3M_EN request err\n");
+		return err;
+	}
+
+	/* VGA_CAM_nSTBY: GPB[1] */
+	err = gpio_request(VGA_CAM_nSTBY, "VGA_CAM_nSTBY");
+	if(err == 0) {
+		gpio_export(VGA_CAM_nSTBY, 1);
+		gpio_direction_output(VGA_CAM_nSTBY, 0);
+	} else {
+		printk(KERN_INFO "VGA_CAM_nSTBY request err\n");
+		return err;
+	}
+
+	/* VGA_CAM_nRST	GPB[0] */
+	err = gpio_request(VGA_CAM_nRST, "VGA_CAM_nRST");
+	if(err == 0) {
+		gpio_export(VGA_CAM_nRST, 1);
+		gpio_direction_output(VGA_CAM_nRST, 0);
+	} else {
+		printk(KERN_INFO "VGA_CAM_nRST request err\n");
+		return err;
+	}
+
+	return err;
+}
+
+static void camera_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	s3c_gpio_cfgpin(CAM_EN, S3C_GPIO_OUTPUT);
+	s3c_gpio_cfgpin(CAM1_3M_EN, S3C_GPIO_OUTPUT);
+	s3c_gpio_cfgpin(VGA_CAM_nSTBY, S3C_GPIO_OUTPUT);
+	s3c_gpio_cfgpin(VGA_CAM_nRST, S3C_GPIO_OUTPUT);
+
+	/* Following pins are C100 dedicated */
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(0), S5PC1XX_GPE0_0_CAM_A_PCLK);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(1), S5PC1XX_GPE0_1_CAM_A_VSYNC);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(2), S5PC1XX_GPE0_2_CAM_A_HREF);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(3), S5PC1XX_GPE0_3_CAM_A_DATA_0);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(4), S5PC1XX_GPE0_4_CAM_A_DATA_1);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(5), S5PC1XX_GPE0_5_CAM_A_DATA_2);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(6), S5PC1XX_GPE0_6_CAM_A_DATA_3);
+	s3c_gpio_cfgpin(S5PC1XX_GPE0(7), S5PC1XX_GPE0_7_CAM_A_DATA_4);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(0), S5PC1XX_GPE1_0_CAM_A_DATA_5);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(1), S5PC1XX_GPE1_1_CAM_A_DATA_6);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(2), S5PC1XX_GPE1_2_CAM_A_DATA_7);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(3), S5PC1XX_GPE1_3_CAM_A_CLKOUT);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(4), S5PC1XX_GPE1_4_CAM_A_RESET);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(5), S5PC1XX_GPE1_5_CAM_A_FIELD);
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_setpull(S5PC1XX_GPE0(i), S3C_GPIO_PULL_UP);
+
+	for (i = 0; i < 6; i++)
+		s3c_gpio_setpull(S5PC1XX_GPE1(i), S3C_GPIO_PULL_UP);
+
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(0), S5PC1XX_GPH2_0_CAM_B_DATA_0);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(1), S5PC1XX_GPH2_1_CAM_B_DATA_1);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(2), S5PC1XX_GPH2_2_CAM_B_DATA_2);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(3), S5PC1XX_GPH2_3_CAM_B_DATA_3);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(4), S5PC1XX_GPH2_4_CAM_B_DATA_4);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(5), S5PC1XX_GPH2_5_CAM_B_DATA_5);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(6), S5PC1XX_GPH2_6_CAM_B_DATA_6);
+	s3c_gpio_cfgpin(S5PC1XX_GPH2(7), S5PC1XX_GPH2_7_CAM_B_DATA_7);
+	s3c_gpio_cfgpin(S5PC1XX_GPH3(0), S5PC1XX_GPH3_0_CAM_B_PCLK);
+	s3c_gpio_cfgpin(S5PC1XX_GPH3(1), S5PC1XX_GPH3_1_CAM_B_VSYNC);
+	s3c_gpio_cfgpin(S5PC1XX_GPH3(2), S5PC1XX_GPH3_2_CAM_B_HREF);
+	s3c_gpio_cfgpin(S5PC1XX_GPH3(3), S5PC1XX_GPH3_3_CAM_B_FIELD);
+	s3c_gpio_cfgpin(S5PC1XX_GPE1(3), S5PC1XX_GPE1_3_CAM_A_CLKOUT);
+
+	for (i = 0; i < 8; i++)
+		s3c_gpio_setpull(S5PC1XX_GPH2(i), S3C_GPIO_PULL_UP);
+
+	for (i = 0; i < 4; i++)
+		s3c_gpio_setpull(S5PC1XX_GPH3(i), S3C_GPIO_PULL_UP);
+}
+
+static int camera_power(int onoff)
+{
+	int err;
+
+	if (onoff > 1)
+		return -EINVAL;
+	if (onoff < 0)
+		return -EINVAL;
+
+	if (onoff == 0) {
+		printk(KERN_INFO "%s: off[%d]\n", __FUNCTION__, onoff);
+		/* OFF */
+		gpio_direction_output(CAM_EN, 0);
+		gpio_direction_output(CAM1_3M_EN, 0);
+		gpio_direction_output(VGA_CAM_nSTBY, 0);
+		gpio_direction_output(VGA_CAM_nRST, 0);
+	} else {
+		printk(KERN_INFO "%s: on[%d]\n", __FUNCTION__, onoff);
+		gpio_direction_output(VGA_CAM_nRST, 0);
+		/* ON */
+		gpio_direction_output(VGA_CAM_nSTBY, 1);
+		gpio_direction_output(CAM_EN, 1);
+		gpio_direction_output(CAM1_3M_EN, 1);
+		msleep(50);
+		gpio_direction_output(VGA_CAM_nRST, 1);
+		err = 0;
+	}
+	
+	return err;
+}
+
+/* Camera interface setting */
+static struct s3c_fimc_camera camera_c = {
+	.id		= CAMERA_CSI_C,		/* FIXME */
+	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
+	.i2c_busnum	= 1,
+	.info		= &camera_info[0],
+	.pixelformat	= V4L2_PIX_FMT_YUYV,
+	.mode		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.clockrate	= 24000000,		/* 24MHz */
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 640,
+	.height		= 480,
+	.offset		= {	/* FIXME: scaler */
+		.h1	= 0,
+		.h2	= 0,
+		.v1	= 0,
+		.v2	= 0,
+	},
+
+	/* Polarity */
+	.polarity	= {
+		.pclk	= 0,
+		.vsync 	= 0,
+		.href	= 0,
+		.hsync	= 0,
+	},
+
+	.initialized = 0,
+	.cam_power = camera_power,
+};
+
+/* Interface setting */
+static struct s3c_platform_fimc fimc_setting = {
+	.srclk_name	= "dout_mpll",
+	.clk_name	= "sclk_fimc",
+	.clockrate	= 133000000,
+	.nr_frames	= 4,
+	.shared_io	= 0,
+
+	.default_cam	= CAMERA_CSI_C,
+	.cfg_gpio	= camera_cfg_gpio,
+};
+
 static void __init universal_machine_init(void)
 {
+	int err;
+
 	tl2796_gpio_setup();
 
 	universal_i2c_gpio_init();
@@ -493,6 +714,23 @@ static void __init universal_machine_init(void)
 
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&fb_data);
+
+	err = camera_pin_request();
+	if (err)
+		printk(KERN_INFO "CAMERA PIN REQUEST FAILED\n");
+
+	/* Registering external camera to platform data */
+	/*fimc_setting.camera[0] = &camera_a;*/
+	fimc_setting.camera[0] = &camera_c;
+
+	s3c_fimc0_set_platdata(&fimc_setting);
+	s3c_fimc1_set_platdata(&fimc_setting);
+	s3c_fimc2_set_platdata(&fimc_setting);	/* testing MIPI */
+	
+	/* CSI-2 */
+	s3c_csis_set_platdata(NULL);
+
+	s3c_fimc_reset_camera();
 	platform_add_devices(universal_devices, ARRAY_SIZE(universal_devices));
 }
 
