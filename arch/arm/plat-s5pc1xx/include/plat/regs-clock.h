@@ -400,7 +400,8 @@
 #define S5P_HDMI_PHY_CON0	S5P_CLKREG(0x100420)
 
 #define S5P_CFG_WFI_CLEAN	~(3<<5)
-#define S5P_CFG_WFI_IDLE	(1<<5)
+#define S5P_CFG_WFI_IDLE	(0<<5)
+#define S5P_CFG_WFI_DEEPIDLE	(1<<5)
 #define S5P_CFG_WFI_STOP	(2<<5)
 #define S5P_CFG_WFI_SLEEP	(3<<5)
 

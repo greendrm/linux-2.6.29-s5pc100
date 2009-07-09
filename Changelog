@@ -758,43 +758,156 @@ v2.6.29.4-r2d5: jongpill Lee
 		M       arch/arm/plat-s5pc1xx/irq-eint.c
 		M       arch/arm/plat-s5pc1xx/pm.c
 
-v2.6.29.4-r2d6: SangPil Moon	
-	- added drv. resource for tvout drv 
-	- modified for v4l2-dev.c...
-	- hdmi asp set ftn. modified for asp_sp_flat reg. set error.
+v2.6.29.4-r2d6: SungJun Bae 
+	- MFC, JPEG is added.
+		A	drivers/media/video/samsung/Kconfig
+		A	drivers/media/video/samsung/Makefile
+		A	drivers/media/video/samsung/jpeg_v2/Kconfig
+		A       drivers/media/video/samsung/jpeg_v2/Makefile
+		A	drivers/media/video/samsung/jpeg_v2/jpg_conf.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_mem.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_mem.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_misc.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_misc.h
+		A	drivers/media/video/samsung/jpeg_v2/jpg_opr.c
+		A	drivers/media/video/samsung/jpeg_v2/jpg_opr.h
+		A	drivers/media/video/samsung/jpeg_v2/log_msg.c
+		A	drivers/media/video/samsung/jpeg_v2/log_msg.h
+		A	drivers/media/video/samsung/jpeg_v2/regs-jpeg.h
+		A	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.c
+		A	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.h
+		A	drivers/media/video/samsung/mfc40/Kconfig
+		A	drivers/media/video/samsung/mfc40/Makefile
+		A	drivers/media/video/samsung/mfc40/command_control_fw.c
+		A	drivers/media/video/samsung/mfc40/h263_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/h264_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/h264_enc_fw.c
+		A	drivers/media/video/samsung/mfc40/mp2_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/mp4_dec_fw.c
+		A	drivers/media/video/samsung/mfc40/mp4_enc_fw.c
+		A	drivers/media/video/samsung/mfc40/s3c-mfc.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_common.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_common.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_errorno.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_fw.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_interface.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_intr.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_intr.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_logmsg.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_memory.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_memory.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_opr.c
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_opr.h
+		A	drivers/media/video/samsung/mfc40/s3c_mfc_types.h
+		A	drivers/media/video/samsung/mfc40/vc1_dec_fw.c
+
+	Modified Files:
+		M	drivers/media/video/Kconfig
+		M	drivers/media/video/Makefile
+		M	drivers/media/video/samsung/tv20/Kconfig
+		M	include/linux/i2c-id.h
+
+v2.6.29.4-r2d7: Taeyong Lee
+	- Added audio driver for C100
+
+	Added Files:
+		A       sound/soc/s3c/Kconfig
+		A       sound/soc/s3c/Makefile
+		A       sound/soc/s3c/s3c-ac97.c
+		A       sound/soc/s3c/s3c-ac97.h
+		A       sound/soc/s3c/s3c-i2s.c
+		A       sound/soc/s3c/s3c-i2s.h
+		A       sound/soc/s3c/s3c-pcm.c
+		A       sound/soc/s3c/s3c-pcm.h
+		A       sound/soc/s3c/smdk6410_s5m8751.c
+		A       sound/soc/s3c/smdk6410_wm8580.c
+		A       sound/soc/s3c/smdk6410_wm9713.c
+		A       sound/soc/s3c/smdk6440_s5m8751.c
+		A       sound/soc/s3c/smdk6440_wm8580.c
+		A       sound/soc/s3c/smdkc100_s5m8751.c
+		A       sound/soc/s3c/smdkc100_wm8580.c
+		A       sound/soc/s3c/smdkc100_wm9713.c
+	Modified Files:
+		M       sound/soc/Kconfig
+		M       sound/soc/Makefile
+		M       sound/soc/codecs/wm8580.c
+
+v2.6.29.4-r2d8: Changhwan Youn 
+	- Modified SD/MMC clock divider value and Fixed EXT_CSD_REV-related error
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc100/setup-sdhci.c
+		M       drivers/mmc/core/mmc.csound/soc/Kconfig
+
+v2.6.29.4-r3: Kyoungil Kim 
+	- Official Release (2009.06.30)
+
+v2.6.29.4-r3d0: Kyoungil Kim 
+
+v2.6.29.4-r3d1: Jinsung Yang
+	- DISCONTIGUOUS memory model support for s5pc110
+	- Dual bank DRAM support for s5pc110 fpga (128MB*2)
+
+	Modified files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/include/mach/memory.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+
+v2.6.29.4-r3d2: Jonghun Han
+	- SMDKC100 Image Rotator driver support
 
 	Added Files:
 		A       drivers/media/video/samsung/Kconfig
 		A       drivers/media/video/samsung/Makefile
-		A       drivers/media/video/samsung/tv20/Kconfig
-		A       drivers/media/video/samsung/tv20/Makefile
-		A       drivers/media/video/samsung/tv20/s5p_stda_grp.c
-		A       drivers/media/video/samsung/tv20/s5p_stda_hdmi.c
-		A       drivers/media/video/samsung/tv20/s5p_stda_tvout_if.c
-		A	drivers/media/video/samsung/tv20/s5p_stda_video_layer.c
-		A       drivers/media/video/samsung/tv20/s5p_tv.h
-		A       drivers/media/video/samsung/tv20/s5p_tv_base.c
-		A       drivers/media/video/samsung/tv20/s5p_tv_v4l2.c
-		A	drivers/media/video/samsung/tv20/s5pc100/hdcp_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/hdmi_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-clock_extra.h
-		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-hdmi.h
-		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-sdaout.h
-		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-vmx.h
-		A	drivers/media/video/samsung/tv20/s5pc100/regs/regs-vprocessor.h
-		A	drivers/media/video/samsung/tv20/s5pc100/sdout_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
-		A	drivers/media/video/samsung/tv20/s5pc100/tv_power_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
-		A	drivers/media/video/samsung/tv20/s5pc100/vp_coeff_s5pc100.h
-		A	drivers/media/video/samsung/tv20/s5pc100/vprocessor_s5pc100.c
+		A       drivers/media/video/samsung/rotator/Kconfig
+		A       drivers/media/video/samsung/rotator/Makefile
+		A       drivers/media/video/samsung/rotator/s3c_rotator.c
+		A       drivers/media/video/samsung/rotator/s3c_rotator_common.h
 
+	Modified files:
+		M       arch/arm/plat-s5pc1xx/clock.c
+
++v2.6.29.4-r3d3: Jassi
+	- SPI renaming for TomTom.
+
+v2.6.29.4-r3d4: Kukjin Kim
+	- Bug fixed for DMAC transfer size
+
+	Modified files:
+		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-r3d5: Jae-Cheol Lee
+	- Bug fixed on IDLE bit definition for SMDKC100
+	- Modified DVFS driver for SMDKC100
+
+	Modified FIles:
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc1xx/ltc3714.c
+		M	arch/arm/plat-s5pc1xx/s5pc1xx-cpufreq.c
+
+v2.6.29.4-r3d6:Sewoon Park
+	- Add mach type for S5P6442
+
+		M       arch/arm/tools/mach-types
+
+v2.6.29.4-r3d7: Thomas Abraham
+	- Add support for 4KB Page NAND device in NAND driver for c100.
+	  Add support for 8-Bit ECC for 4KB Page NAND device (SLC/MLC).
+	
+	Modified Files:
+		M	arch/arm/plat-s3c/include/plat/regs-nand.h
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c
+		M	fs/jffs2/scan.c
+		M	include/linux/mtd/nand.h
+		M	include/mtd/mtd-abi.h
+
+v2.6.29.4-r3d8: Thomas Abraham
+	- Removing debug statements used for testing in NAND driver
 
 	Modified Files:
-		M       arch/arm/mach-s5pc100/include/mach/map.h
-		M       arch/arm/mach-s5pc100/mach-smdkc100.c
-		M       arch/arm/plat-s3c/include/plat/devs.h
-		M       arch/arm/plat-s5pc1xx/devs.c
-		M       drivers/media/video/Kconfig
-		M       drivers/media/video/Makefile
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c

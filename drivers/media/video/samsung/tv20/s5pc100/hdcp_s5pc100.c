@@ -378,7 +378,8 @@ case 66:	writel(0x0,tvout_base+S5P_HAES_CON);
 case 67:	writel(0x20,tvout_base+S5P_HAES_DATA_SIZE_L);
 case 68:	writel(0x1,tvout_base+S5P_HAES_DATA_SIZE_H);
 //case 69:	writel(0x0,tvout_base+S5P_HAES_DATA);
-	}
+	}
+
 
 	writel(readl(tvout_base + S5P_HDMI_CON_0) | HDMI_EN, 
 		tvout_base + S5P_HDMI_CON_0);	
@@ -859,7 +860,8 @@ static void reset_authentication(void)
 static bool make_aes_key(void)
 {
 	u32  aes_reg_val;
-
+
+
 	aes_reg_val = readl(tvout_base + S5P_HAES_CON);
 	aes_reg_val = SCRAMBLER_KEY_START_EN;
 
@@ -1790,7 +1792,8 @@ static void hdcp_work(void *arg)
 	 * Ri int. was occurred 
 	 * for comparing Ri and Ri'(from HDMI sink) 
 	 */
-	if (hdcp_info.event & (1 << HDCP_EVENT_CHECK_RI_START)) {
+	if (hdcp_info.event & (1 << HDCP_EVENT_CHECK_RI_START)) {
+
 
 		check_ri_start_bh();
 
@@ -1813,7 +1816,8 @@ bool __s5p_is_decrypting_done(void)
 */
 
 void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
-{
+{
+
 	HDCPPRINTK("HDCP ftn. Init!!\n");
 	
 	hdcp_info.client = ddc_port;

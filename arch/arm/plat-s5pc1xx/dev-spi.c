@@ -47,7 +47,7 @@
 #define dbg_printk(x...)	do{}while(0)
 #endif
 
-static int smi_getclcks(struct sam_spi_mstr_info *smi)
+static int smi_getclcks(struct s3c_spi_mstr_info *smi)
 {
 	struct clk *cspi, *cp, *cm, *cf;
 
@@ -122,7 +122,7 @@ static int smi_getclcks(struct sam_spi_mstr_info *smi)
 	return 0;
 }
 
-static void smi_putclcks(struct sam_spi_mstr_info *smi)
+static void smi_putclcks(struct s3c_spi_mstr_info *smi)
 {
 	if(smi->prnt_clk != NULL)
 		clk_put(smi->prnt_clk);
@@ -130,7 +130,7 @@ static void smi_putclcks(struct sam_spi_mstr_info *smi)
 	clk_put(smi->clk);
 }
 
-static int smi_enclcks(struct sam_spi_mstr_info *smi)
+static int smi_enclcks(struct s3c_spi_mstr_info *smi)
 {
 	if(smi->prnt_clk != NULL)
 		clk_enable(smi->prnt_clk);
@@ -138,7 +138,7 @@ static int smi_enclcks(struct sam_spi_mstr_info *smi)
 	return clk_enable(smi->clk);
 }
 
-static void smi_disclcks(struct sam_spi_mstr_info *smi)
+static void smi_disclcks(struct s3c_spi_mstr_info *smi)
 {
 	if(smi->prnt_clk != NULL)
 		clk_disable(smi->prnt_clk);
@@ -146,7 +146,7 @@ static void smi_disclcks(struct sam_spi_mstr_info *smi)
 	clk_disable(smi->clk);
 }
 
-static u32 smi_getrate(struct sam_spi_mstr_info *smi)
+static u32 smi_getrate(struct s3c_spi_mstr_info *smi)
 {
 	if(smi->prnt_clk != NULL)
 		return clk_get_rate(smi->prnt_clk);
@@ -154,7 +154,7 @@ static u32 smi_getrate(struct sam_spi_mstr_info *smi)
 		return clk_get_rate(smi->clk);
 }
 
-static int smi_setrate(struct sam_spi_mstr_info *smi, u32 r)
+static int smi_setrate(struct s3c_spi_mstr_info *smi, u32 r)
 {
  /* We don't take charge of the Src Clock, yet */
 	return 0;
@@ -174,7 +174,7 @@ static struct resource s3c_spi0_resource[] = {
 	}
 };
 
-static struct sam_spi_mstr_info sspi0_mstr_info = {
+static struct s3c_spi_mstr_info sspi0_mstr_info = {
 	.pdev = NULL,
 	.clk = NULL,
 	.prnt_clk = NULL,
@@ -190,7 +190,7 @@ static struct sam_spi_mstr_info sspi0_mstr_info = {
 static u64 s3c_device_spi0_dmamask = 0xffffffffUL;
 
 struct platform_device s3c_device_spi0 = {
-	.name		= "sam-spi",
+	.name		= "s3c-spi",
 	.id		= 0,
 	.num_resources	= ARRAY_SIZE(s3c_spi0_resource),
 	.resource	= s3c_spi0_resource,
@@ -216,7 +216,7 @@ static struct resource s3c_spi1_resource[] = {
 	}
 };
 
-static struct sam_spi_mstr_info sspi1_mstr_info = {
+static struct s3c_spi_mstr_info sspi1_mstr_info = {
 	.pdev = NULL,
 	.clk = NULL,
 	.prnt_clk = NULL,
@@ -232,7 +232,7 @@ static struct sam_spi_mstr_info sspi1_mstr_info = {
 static u64 s3c_device_spi1_dmamask = 0xffffffffUL;
 
 struct platform_device s3c_device_spi1 = {
-	.name		= "sam-spi",
+	.name		= "s3c-spi",
 	.id		= 1,
 	.num_resources	= ARRAY_SIZE(s3c_spi1_resource),
 	.resource	= s3c_spi1_resource,
@@ -258,7 +258,7 @@ static struct resource s3c_spi2_resource[] = {
 	}
 };
 
-static struct sam_spi_mstr_info sspi2_mstr_info = {
+static struct s3c_spi_mstr_info sspi2_mstr_info = {
 	.pdev = NULL,
 	.clk = NULL,
 	.prnt_clk = NULL,
@@ -274,7 +274,7 @@ static struct sam_spi_mstr_info sspi2_mstr_info = {
 static u64 s3c_device_spi2_dmamask = 0xffffffffUL;
 
 struct platform_device s3c_device_spi2 = {
-	.name		= "sam-spi",
+	.name		= "s3c-spi",
 	.id		= 2,
 	.num_resources	= ARRAY_SIZE(s3c_spi2_resource),
 	.resource	= s3c_spi2_resource,
@@ -286,16 +286,16 @@ struct platform_device s3c_device_spi2 = {
 };
 EXPORT_SYMBOL(s3c_device_spi2);
 
-void __init samspi_set_slaves(unsigned id, int n, struct sam_spi_pdata const *dat)
+void __init s3cspi_set_slaves(unsigned id, int n, struct s3c_spi_pdata const *dat)
 {
-	struct sam_spi_mstr_info *pinfo;
+	struct s3c_spi_mstr_info *pinfo;
 
 	if(id == 0)
-	   pinfo = (struct sam_spi_mstr_info *)s3c_device_spi0.dev.platform_data;
+	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi0.dev.platform_data;
 	else if(id == 1)
-	   pinfo = (struct sam_spi_mstr_info *)s3c_device_spi1.dev.platform_data;
+	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi1.dev.platform_data;
 	else if(id == 2)
-	   pinfo = (struct sam_spi_mstr_info *)s3c_device_spi2.dev.platform_data;
+	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi2.dev.platform_data;
 	else
 	   return;
 

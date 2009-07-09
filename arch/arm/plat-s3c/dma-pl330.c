@@ -624,7 +624,6 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 				 * want to reload here, and then worry about the buffer
 				 * callback */
 
-				// should be bug fix; kgene
 				chan->load_state = S3C_DMALOAD_NONE;
 				break;
 
@@ -634,7 +633,6 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 				 * loaded.
 				 */
 
-				// should be bug fix; kgene
 				chan->load_state = S3C_DMALOAD_NONE;
 				break;
 
@@ -1191,8 +1189,7 @@ int s3c2410_dma_devconfig(int channel,
 
 		chan->config_flags = 0;
 
-		//hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
-		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
+		hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;

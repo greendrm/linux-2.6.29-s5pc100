@@ -275,12 +275,6 @@ static int s3cfb_check_var(struct fb_var_screeninfo *var,
 	if (var->yoffset + var->yres > var->yres_virtual)
 		var->yoffset = var->yres_virtual - var->yres;
 
-	if (var->width != lcd->width)
-		var->width = lcd->width;
-
-	if (var->height != lcd->height)
-		var->height = lcd->height;
-
 	if (win->x + var->xres > lcd->width)
 		win->x = lcd->width - var->xres;
 
@@ -325,9 +319,25 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 {
 	struct s3cfb_window *win = fb->par;
 
-	dev_dbg(ctrl->dev, "get into the blank screen\n");
+	dev_dbg(ctrl->dev, "change blank mode\n");
 
-	s3cfb_disable_window(win->id);
+	switch (blank_mode) {
+	case FB_BLANK_UNBLANK:
+		if (fb->fix.smem_start)
+			s3cfb_enable_window(win->id);
+		else
+			info("[fb%d] no allocated memory for unblank\n", \
+				win->id);
+		break;
+
+	case FB_BLANK_POWERDOWN:
+		s3cfb_disable_window(win->id);
+		break;
+
+	default:
+		dev_dbg(ctrl->dev, "unsupported blank mode\n");
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -461,11 +471,10 @@ static int s3cfb_wait_for_vsync(void)
 static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 			unsigned long arg)
 {
-	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	struct fb_var_screeninfo *var = &fb->var;
-	struct s3cfb_window *win = fb->par, *win_temp;
+	struct s3cfb_window *win = fb->par;
 	struct s3cfb_lcd *lcd = ctrl->lcd;
-	int ret = 0, i;
+	int ret = 0;
 
 	union {
 		struct s3cfb_user_window user_window;
@@ -477,21 +486,6 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 	switch (cmd) {
 	case FBIO_WAITFORVSYNC:
 		s3cfb_wait_for_vsync();
-		break;
-
-	case S3CFB_WIN_ON:
-		s3cfb_enable_window(win->id);
-		break;
-
-	case S3CFB_WIN_OFF:
-		s3cfb_disable_window(win->id);
-		break;
-
-	case S3CFB_WIN_OFF_ALL:
-		for (i = 0; i < pdata->nr_wins; i++) {
-			win_temp = ctrl->fb[i]->par;
-			s3cfb_disable_window(win_temp->id);
-		}
 		break;
 
 	case S3CFB_WIN_POSITION:
@@ -754,8 +748,7 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 		break;
 
 	/*
-	 * for FBIO_WAITFORVSYNC, S3CFB_WIN_ON, S3CFB_WIN_OFF 
-	 * and S3CFB_WIN_OFF_ALL
+	 * for FBIO_WAITFORVSYNC
 	*/
 	default:
 		ret = s3cfb_ioctl(fb, cmd, arg);
@@ -764,6 +757,8 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 
 	return ret;
 }
+
+EXPORT_SYMBOL(s3cfb_direct_ioctl);
 
 static int s3cfb_init_fbinfo(int id)
 {
@@ -802,8 +797,8 @@ static int s3cfb_init_fbinfo(int id)
 	var->bits_per_pixel = 32;
 	var->xoffset = 0;
 	var->yoffset = 0;
-	var->width = lcd->width;
-	var->height = lcd->height;
+	var->width = 0;
+	var->height = 0;
 	var->transp.length = 0;
 
 	fix->line_length = var->xres_virtual * var->bits_per_pixel / 8;

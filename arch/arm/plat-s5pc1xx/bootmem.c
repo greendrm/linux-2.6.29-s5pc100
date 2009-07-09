@@ -18,7 +18,7 @@
 #include <asm/io.h>
 #include <mach/memory.h>
 
-#include "plat/media.h"
+#include <plat/media.h>
 
 static struct s3c_media_device s3c_mdevs[] = {
 #ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC

@@ -28,6 +28,7 @@ config MACH_SMDKC110
         select S3C_DEV_HSMMC1
         select S5PC1XX_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
+	select ARCH_DISCONTIGMEM_ENABLE
 	help
 	  Machine support for the Samsung SMDKC110
 

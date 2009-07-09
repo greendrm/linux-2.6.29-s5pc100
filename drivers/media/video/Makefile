@@ -147,7 +147,7 @@ obj-$(CONFIG_SOC_CAMERA_PLATFORM)	+= soc_camera_platform.o
 obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
 
 obj-$(CONFIG_VIDEO_AU0828) += au0828/
-obj-$(CONFIG_VIDEO_SAMSUNG)	+= samsung/
+obj-$(CONFIG_VIDEO_SAMSUNG)     += samsung/
 
 obj-$(CONFIG_USB_VIDEO_CLASS)	+= uvc/
 
