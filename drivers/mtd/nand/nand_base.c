@@ -2399,7 +2399,6 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 		chip->cellinfo = chip->read_byte(mtd);
 		/* The 4th id byte is the important one */
 		extid = chip->read_byte(mtd);
-extid = 0x36;
 		/* Calc pagesize */
 		mtd->writesize = 1024 << (extid & 0x3);
 		extid >>= 2;

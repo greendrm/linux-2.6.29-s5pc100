@@ -904,3 +904,10 @@ v2.6.29.4-r3d7: Thomas Abraham
 		M	fs/jffs2/scan.c
 		M	include/linux/mtd/nand.h
 		M	include/mtd/mtd-abi.h
+
+v2.6.29.4-r3d8: Thomas Abraham
+	- Removing debug statements used for testing in NAND driver
+
+	Modified Files:
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c

@@ -1066,8 +1066,6 @@ static int s3c_nand_probe(struct platform_device *pdev, enum s3c_cpu_type cpu_ty
 		
 		nand->cellinfo = readb(nand->IO_ADDR_R);	/* the 3rd byte */
 		tmp = readb(nand->IO_ADDR_R);			/* the 4th byte */
-tmp = 0x36;
-
 		if (!type->pagesize) {
 			if (((nand->cellinfo >> 2) & 0x3) == 0) {
 				nand_type = S3C_NAND_TYPE_SLC;				
