@@ -892,3 +892,15 @@ v2.6.29.4-r3d6:Sewoon Park
 	- Add mach type for S5P6442
 
 		M       arch/arm/tools/mach-types
+
+v2.6.29.4-r3d7: Thomas Abraham
+	- Add support for 4KB Page NAND device in NAND driver for c100.
+	  Add support for 8-Bit ECC for 4KB Page NAND device (SLC/MLC).
+	
+	Modified Files:
+		M	arch/arm/plat-s3c/include/plat/regs-nand.h
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c
+		M	fs/jffs2/scan.c
+		M	include/linux/mtd/nand.h
+		M	include/mtd/mtd-abi.h
