@@ -46,7 +46,9 @@ static struct s3c_platform_fimc default_fimc2_data __initdata = {
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clockrate	= 133000000,
+#if 0
 	.line_length	= 1280,
+#endif
 	.nr_frames	= 4,
 	.shared_io	= 0,
 };
