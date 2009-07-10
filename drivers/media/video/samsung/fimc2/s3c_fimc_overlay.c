@@ -23,6 +23,7 @@
 static int s3c_fimc_try_fmt_overlay(struct file *filp, void *fh,
 					  struct v4l2_format *f)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
 	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
@@ -33,6 +34,7 @@ static int s3c_fimc_try_fmt_overlay(struct file *filp, void *fh,
 static int s3c_fimc_g_fmt_vid_overlay(struct file *file, void *fh,
 					struct v4l2_format *f)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
 	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
@@ -43,6 +45,7 @@ static int s3c_fimc_g_fmt_vid_overlay(struct file *file, void *fh,
 static int s3c_fimc_s_fmt_vid_overlay(struct file *file, void *fh,
 					struct v4l2_format *f)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
 	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);

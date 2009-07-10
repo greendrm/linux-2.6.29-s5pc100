@@ -23,7 +23,7 @@
 static int s3c_fimc_querycap(struct file *filp, void *fh,
 					struct v4l2_capability *cap)
 {
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	strcpy(cap->driver, "Samsung FIMC Driver");
 	strlcpy(cap->card, ctrl->vd->name, sizeof(cap->card));
@@ -39,16 +39,17 @@ static int s3c_fimc_querycap(struct file *filp, void *fh,
 static int s3c_fimc_reqbufs(struct file *filp, void *fh, 
 				struct v4l2_requestbuffers *b)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_reqbufs_capture(fh, b);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_reqbufs_output(fh, b);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -58,16 +59,17 @@ static int s3c_fimc_reqbufs(struct file *filp, void *fh,
 
 static int s3c_fimc_querybuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_querybuf_capture(fh, b);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_querybuf_output(fh, b);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -77,40 +79,43 @@ static int s3c_fimc_querybuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 
 static int s3c_fimc_g_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 {
-	fimc_info(ctrl->log_level, "[%s] called. CID = %d\n", __FUNCTION__, c->id);
-#if 0
-	switch (c->id) {
-	case V4L2_CID_ROTATION:
-		c->value = ctrl->s_ctrl.rot.degree;
-		break;
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	int ret = -1;
 
-	default:
-		fimc_err(ctrl->log_level, "invalid control id: %d\n", c->id);
+	fimc_info(ctrl->log, "[%s] called. CID = %d\n", __FUNCTION__, c->id);
+
+	if (ctrl->cap != NULL) {
+		ret = s3c_fimc_g_ctrl_capture(fh, c);
+	} else if(ctrl->out != NULL) {
+		ret = s3c_fimc_g_ctrl_output(fh, c);
+	} else {
+		fimc_err(ctrl->log, "[%s]Invalid case.\n", __FUNCTION__);
 		return -EINVAL;
 	}
-#endif	
-	return 0;
+
+	return ret;
 }
 
 static int s3c_fimc_s_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;	
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called. CID = %d, Value = %d\n", \
+	fimc_info(ctrl->log, "[%s] called. CID = %d, Value = %d\n", \
 		__FUNCTION__, c->id, c->value);
 #if 0
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
 		ret = s3c_fimc_rot_set_degree(ctrl, c->value);
 		if (ret < 0) {
-			fimc_err(ctrl->log_level, "V4L2_CID_ROTATION is failed.\n");
+			fimc_err(ctrl->log, "V4L2_CID_ROTATION is failed.\n");
 			ret = -EINVAL;
 		}
 
 		break;
 
 	default:
-		fimc_err(ctrl->log_level, "invalid control id: %d\n", c->id);
+		fimc_err(ctrl->log, "invalid control id: %d\n", c->id);
 		ret = -EINVAL;
 	}
 #endif
@@ -119,16 +124,17 @@ static int s3c_fimc_s_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 
 static int s3c_fimc_cropcap(struct file *filp, void *fh, struct v4l2_cropcap *a)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (a->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_cropcap_capture(fh, a);
 	} else if (a->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_cropcap_output(fh, a);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -138,16 +144,17 @@ static int s3c_fimc_cropcap(struct file *filp, void *fh, struct v4l2_cropcap *a)
 
 static int s3c_fimc_s_crop(struct file *filp, void *fh, struct v4l2_crop *a)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (a->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_s_crop_capture(fh, a);
 	} else if (a->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_s_crop_output(fh, a);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -157,16 +164,17 @@ static int s3c_fimc_s_crop(struct file *filp, void *fh, struct v4l2_crop *a)
 
 static int s3c_fimc_streamon(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (i == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_streamon_capture(fh);
 	} else if (i == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_streamon_output(fh);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -176,16 +184,17 @@ static int s3c_fimc_streamon(struct file *filp, void *fh, enum v4l2_buf_type i)
 
 static int s3c_fimc_streamoff(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (i == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_streamoff_capture(fh);
 	} else if (i == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_streamoff_output(fh);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -195,16 +204,17 @@ static int s3c_fimc_streamoff(struct file *filp, void *fh, enum v4l2_buf_type i)
 
 static int s3c_fimc_qbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_qbuf_capture(fh);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_qbuf_output(fh);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
@@ -214,16 +224,17 @@ static int s3c_fimc_qbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 
 static int s3c_fimc_dqbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	fimc_info(ctrl->log_level, "[%s] called\n", __FUNCTION__);
+	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = s3c_fimc_dqbuf_capture(fh);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
 		ret = s3c_fimc_dqbuf_output(fh);
 	} else {
-		fimc_err(ctrl->log_level, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+		fimc_err(ctrl->log, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
 		ret = -EINVAL;
 	}
