@@ -18,7 +18,7 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 {

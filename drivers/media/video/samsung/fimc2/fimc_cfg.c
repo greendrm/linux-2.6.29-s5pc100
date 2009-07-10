@@ -18,7 +18,7 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 int s3c_fimc_mapping_rot(struct fimc_control *ctrl, int degree)
 {

@@ -18,7 +18,7 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 static int s3c_fimc_try_fmt_overlay(struct file *filp, void *fh,
 					  struct v4l2_format *f)

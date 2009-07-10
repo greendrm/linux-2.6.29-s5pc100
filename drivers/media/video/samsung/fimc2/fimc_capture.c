@@ -18,5 +18,5 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 

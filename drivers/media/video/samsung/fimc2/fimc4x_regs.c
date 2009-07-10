@@ -20,7 +20,7 @@
 #include <plat/regs-fimc.h>
 #include <plat/fimc.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 #if 0
 void s3c_fimc_clear_irq(struct s3c_fimc_control *ctrl)
 {

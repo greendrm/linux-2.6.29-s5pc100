@@ -29,39 +29,39 @@
 /* debug macro */
 #define FIMC_LOG_DEFAULT        FIMC_LOG_WARN
 
-#define FIMC_DEBUG(num, fmt, ...) \
+#define FIMC_DEBUG(level, fmt, ...) \
 	do { \
-		if (num <= FIMC_LOG_DEBUG) \
+		if (level <= FIMC_LOG_DEBUG) \
 			printk(KERN_DEBUG S3C_FIMC_NAME ": " \
 				fmt, ##__VA_ARGS__); \
 	} while(0)
 
-#define FIMC_INFO(num, fmt, ...) \
+#define FIMC_INFO(level, fmt, ...) \
 	do { \
-		if (num <= FIMC_LOG_INFO) \
+		if (level <= FIMC_LOG_INFO) \
 			printk(KERN_INFO S3C_FIMC_NAME ": " \
 				fmt, ##__VA_ARGS__); \
 	} while (0)
 
-#define FIMC_WARN(num, fmt, ...) \
+#define FIMC_WARN(level, fmt, ...) \
 	do { \
-		if (num <= FIMC_LOG_WARN) \
+		if (level <= FIMC_LOG_WARN) \
 			printk(KERN_WARNING S3C_FIMC_NAME ": " \
 				fmt, ##__VA_ARGS__); \
 	} while (0)
 
 
-#define FIMC_ERROR(num, fmt, ...) \
+#define FIMC_ERROR(level, fmt, ...) \
 	do { \
-		if (num <= FIMC_LOG_ERR) \
+		if (level <= FIMC_LOG_ERR) \
 			printk(KERN_ERR S3C_FIMC_NAME ": " \
 				fmt, ##__VA_ARGS__); \
 	} while (0)
 
-#define fimc_dbg(num, fmt, ...)		FIMC_DEBUG(num, fmt, ##__VA_ARGS__)
-#define fimc_info(num, fmt, ...)	FIMC_INFO(num, fmt, ##__VA_ARGS__)
-#define fimc_warn(num, fmt, ...)	FIMC_WARN(num, fmt, ##__VA_ARGS__)
-#define fimc_err(num, fmt, ...)		FIMC_ERROR(num, fmt, ##__VA_ARGS__)
+#define fimc_dbg(level, fmt, ...)	FIMC_DEBUG(level, fmt, ##__VA_ARGS__)
+#define fimc_info(level, fmt, ...)	FIMC_INFO(level, fmt, ##__VA_ARGS__)
+#define fimc_warn(level, fmt, ...)	FIMC_WARN(level, fmt, ##__VA_ARGS__)
+#define fimc_err(level, fmt, ...)	FIMC_ERROR(level, fmt, ##__VA_ARGS__)
 
 #endif /* _S3C_FIMC_H */
 

@@ -229,6 +229,9 @@ static inline void disable_cs(struct s3cspi_bus *sspi, struct spi_device *spi)
 	u32 val;
 	struct s3c_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
 
+	if(sspi->tgl_spi == spi)
+	   sspi->tgl_spi = NULL;
+
 	val = readl(sspi->regs + S3C_SPI_SLAVE_SEL);
 
 	if(sspi->cur_mode & SPI_SLAVE){
@@ -324,7 +327,7 @@ static void s3c_spi_hwinit(struct s3cspi_bus *sspi, int channel)
 #elif defined (CONFIG_CPU_S5P6440)
 	writel((readl(S5P64XX_SPC_BASE) & ~(3<<28)) | (3<<28), S5P64XX_SPC_BASE);
 	writel((readl(S5P64XX_SPC_BASE) & ~(3<<18)) | (3<<18), S5P64XX_SPC_BASE);
-#elif defined (CONFIG_CPU_S5P6440)
+#elif defined (CONFIG_CPU_S5PC100)
 	/* How to control drive strength, if we must? */
 #endif
 
@@ -442,24 +445,31 @@ static int wait_for_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfer)
 	else
 	   status = 0;	/* All OK */
 
-	/* When TxLen <= SPI-FifoLen in Slave mode, DMA returns naively */
-	if(!status && (sspi->cur_mode & SPI_SLAVE) && (xfer->tx_buf != NULL)){
+	/*
+	 * DmaTx returns after simply writing data in the FIFO,
+	 * w/o waiting for real transmission on the bus to finish.
+	 * DmaRx returns only after Dma read data from FIFO which
+	 * needs bus transmission to finish, so we don't worry if 
+	 * Xfer involved Rx alone or with Tx.
+	 */
+	if(!status && (xfer->rx_buf == NULL)){
 	   val = msecs_to_jiffies(xfer->len / (sspi->min_speed / 8 / 1000)); /* Be lenient */
 	   val += msecs_to_jiffies(5000); /* 5secs to switch on the Master */
 	   status = wait_for_txshiftout(sspi, val);
-	   if(status == -1)
+	   if(status == -1){ /* Time-out */
 	      status = -ETIMEDOUT;
-	   else
+	   }else{ /* Still last byte on the bus */
 	      status = 0;
+	      udelay(1000000 / sspi->cur_speed * 8 + 5); /* time to xfer 1 byte at sspi->cur_speed plus 5 usecs extra */
+	   }
 	}
 
 	return status;
 }
 
-#define INVALID_DMA_ADDRESS	0xffffffff
-/*  First, try to map buf onto phys addr as such.
- *   If xfer->r/tx_buf was not on contiguous memory,
- *   allocate from our preallocated DMA buffer.
+/*  First, allocate from our preallocated DMA buffer.
+ *  If preallocated DMA buffers are not big enough,
+ *  then allocate new DMA Coherent buffers.
  */
 static int s3c_spi_map_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfer)
 {
@@ -468,26 +478,6 @@ static int s3c_spi_map_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfer)
 
 	sspi->rx_tmp = NULL;
 	sspi->tx_tmp = NULL;
-
-	xfer->tx_dma = xfer->rx_dma = INVALID_DMA_ADDRESS;
-	if(xfer->tx_buf != NULL){
-		xfer->tx_dma = dma_map_single(dev, (void *) xfer->tx_buf, xfer->len, DMA_TO_DEVICE);
-		if(dma_mapping_error(dev, xfer->tx_dma))
-			goto alloc_from_buffer;
-	}
-	if(xfer->rx_buf != NULL){
-		xfer->rx_dma = dma_map_single(dev,
-				xfer->rx_buf, xfer->len,
-				DMA_FROM_DEVICE);
-		if(dma_mapping_error(dev, xfer->rx_dma)){
-			if(xfer->tx_buf)
-				dma_unmap_single(dev, xfer->tx_dma, xfer->len, DMA_TO_DEVICE);
-			goto alloc_from_buffer;
-		}
-	}
-	return 0;
-
-alloc_from_buffer: /* If the xfer->[r/t]x_buf was not on contiguous memory */
 
 	if(xfer->len <= S3C_SPI_DMABUF_LEN){
 	   if(xfer->rx_buf != NULL){
@@ -527,9 +517,6 @@ static void s3c_spi_unmap_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfe
 	struct s3c_spi_mstr_info *smi = sspi->spi_mstinfo;
 	struct device *dev = &smi->pdev->dev;
 
-	if((sspi->rx_tmp == NULL) && (sspi->tx_tmp == NULL)) /* if map_single'd */
-	   return;
-
 	if((xfer->rx_buf != NULL) && (sspi->rx_tmp != NULL))
 	   memcpy(xfer->rx_buf, sspi->rx_tmp, xfer->len);
 
@@ -542,6 +529,12 @@ static void s3c_spi_unmap_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfe
 	   sspi->rx_tmp = NULL;
 	   sspi->tx_tmp = NULL;
 	}
+
+	/* Restore to t/rx_dma pointers */
+	if(xfer->rx_buf != NULL)
+	   xfer->rx_dma = NULL;
+	if(xfer->tx_buf != NULL)
+	   xfer->tx_dma = NULL;
 }
 
 static void handle_msg(struct s3cspi_bus *sspi, struct spi_message *msg)
@@ -663,12 +656,11 @@ static void handle_msg(struct s3cspi_bus *sspi, struct spi_message *msg)
 		if(xfer->delay_usecs)
 		   udelay(xfer->delay_usecs);
 
-		if( !(sspi->cur_mode & SPI_SLAVE) && xfer->cs_change ) {
-		   if( list_is_last(&xfer->transfer_list, &msg->transfers) ) { /* Hint that the next mssg is gonna be for the same device */
+		if(!(sspi->cur_mode & SPI_SLAVE) && xfer->cs_change){
+		   if(list_is_last(&xfer->transfer_list, &msg->transfers))  /* Hint that the next mssg is gonna be for the same device */
 		      sspi->spi_mstinfo->spd[spi->chip_select].cs_level = CS_TOGGLE;
-		   }else{
+		   else
 		      disable_cs(sspi, spi);
-		   }
 		}
 
 		msg->actual_length += xfer->len;
@@ -680,7 +672,7 @@ static void handle_msg(struct s3cspi_bus *sspi, struct spi_message *msg)
 out:
 	/* Slave Deselect in Master mode only if _not_ hinted for next mssg to the same device */
 	if(!(sspi->cur_mode & SPI_SLAVE)){
-	   if(sspi->spi_mstinfo->spd[spi->chip_select].cs_level != CS_TOGGLE){
+	   if((sspi->spi_mstinfo->spd[spi->chip_select].cs_level != CS_TOGGLE) || status){ /* De-select the device in case of some error */
 	      disable_cs(sspi, spi);
 	   }else{
 	      val = readl(sspi->regs + S3C_SPI_SLAVE_SEL);
@@ -752,6 +744,7 @@ static int s3c_spi_transfer(struct spi_device *spi, struct spi_message *msg)
 	}
 
 	msg->actual_length = 0;
+	msg->status = -EINPROGRESS;
 	list_add_tail(&msg->queue, &sspi->queue);
 	queue_work(sspi->workqueue, &sspi->work);
 
@@ -781,7 +774,7 @@ static int s3c_spi_setup(struct spi_device *spi)
 
 	list_for_each_entry(msg, &sspi->queue, queue){
 	   if(msg->spi == spi){ /* Is some mssg is already queued for this device */
-	      dev_dbg(&spi->dev, "setup: attempt while mssg in queue!\n");
+	      dev_err(&spi->dev, "setup: attempt while mssg in queue!\n");
 	      spin_unlock_irqrestore(&sspi->lock, flags);
 	      return -EBUSY;
 	   }
@@ -789,14 +782,14 @@ static int s3c_spi_setup(struct spi_device *spi)
 
 	if(atomic_read(&sspi->state) & SUSPND){
 		spin_unlock_irqrestore(&sspi->lock, flags);
-		dev_dbg(&spi->dev, "setup: SPI-%d not active!\n", spi->master->bus_num);
+		dev_err(&spi->dev, "setup: SPI-%d not active!\n", spi->master->bus_num);
 		return -ESHUTDOWN;
 	}
 
 	spin_unlock_irqrestore(&sspi->lock, flags);
 
 	if (spi->chip_select > spi->master->num_chipselect) {
-		dev_dbg(&spi->dev, "setup: invalid chipselect %u (%u defined)\n",
+		dev_err(&spi->dev, "setup: invalid chipselect %u (%u defined)\n",
 				spi->chip_select, spi->master->num_chipselect);
 		return -EINVAL;
 	}
@@ -810,7 +803,11 @@ static int s3c_spi_setup(struct spi_device *spi)
 		return -EINVAL;
 	}
 
-	spi->max_speed_hz = spi->max_speed_hz ? : sspi->max_speed;
+	/* XXX Should we return -EINVAL or tolerate it XXX */
+	if(spi->max_speed_hz < sspi->min_speed)
+		spi->max_speed_hz = sspi->min_speed;
+	if(spi->max_speed_hz > sspi->max_speed)
+		spi->max_speed_hz = sspi->max_speed;
 
 	/* Round-off max_speed_hz */
 	psr = smi->spiclck_getrate(smi) / spi->max_speed_hz / 2 - 1;
@@ -828,12 +825,13 @@ static int s3c_spi_setup(struct spi_device *spi)
 	}
 
 	if (spi->mode & ~MODEBITS) {
-		dev_dbg(&spi->dev, "setup: unsupported mode bits %x\n",	spi->mode & ~MODEBITS);
+		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",	spi->mode & ~MODEBITS);
 		return -EINVAL;
 	}
 
-	if(!(spi->mode & SPI_SLAVE) && (spd->cs_level == CS_FLOAT)){
-	   spd->cs_config(spd->cs_pin, spd->cs_mode, (spi->mode & SPI_CS_HIGH) ? CS_LOW : CS_HIGH);
+	if(!(spi->mode & SPI_SLAVE)){
+	   if(spd->cs_level == CS_FLOAT)
+	      spd->cs_config(spd->cs_pin, spd->cs_mode, (spi->mode & SPI_CS_HIGH) ? CS_LOW : CS_HIGH);
 	   disable_cs(sspi, spi);
 	}
 
@@ -1067,6 +1065,7 @@ static int s3c_spi_suspend(struct platform_device *pdev, pm_message_t state)
 
 	/* Disable the clock */
 	smi->spiclck_dis(smi);
+	sspi->cur_speed = 0; /* Output Clock is stopped */
 
 	/* Set GPIOs in least power consuming state */
 	S3C_UNSETGPIOPULL(sspi);
