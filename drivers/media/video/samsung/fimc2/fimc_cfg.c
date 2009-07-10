@@ -38,77 +38,82 @@ int s3c_fimc_mapping_rot(struct fimc_control *ctrl, int degree)
 	return 0;
 }
 
-int s3c_fimc_check_out_buf(struct s3c_rp_control *ctrl, unsigned int num)
+int s3c_fimc_check_out_buf(struct fimc_control *ctrl, unsigned int num)
 {
 	int 		ret = 0;
-	unsigned int	y_buf_size, cbcr_buf_size, rgb_buf_size, total_size = 0;
+	unsigned int	y_size, cbcr_size, rgb_size, total_size = 0;
+	unsigned int	pixelformat = ctrl->out->pix.pixelformat;
 
-	if (ctrl->v4l2.video_out_fmt.pixelformat == V4L2_PIX_FMT_YUV420) {
-		y_buf_size	= PAGE_ALIGN(S3C_RP_YUV_SRC_MAX_WIDTH * S3C_RP_YUV_SRC_MAX_HEIGHT);
-		cbcr_buf_size	= PAGE_ALIGN((S3C_RP_YUV_SRC_MAX_WIDTH * S3C_RP_YUV_SRC_MAX_HEIGHT)>>2);
-		total_size	= (y_buf_size + (cbcr_buf_size<<1)) * num;
-	} else if (ctrl->v4l2.video_out_fmt.pixelformat == V4L2_PIX_FMT_RGB32) {
-		rgb_buf_size	= PAGE_ALIGN(ctrl->fimd.h_res * ctrl->fimd.v_res * 4);
-		total_size	= rgb_buf_size * num;
+	if (pixelformat == V4L2_PIX_FMT_YUV420) {
+		y_size	= FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT;
+		cbcr_size	= (y_size>>2);
+		total_size	= PAGE_ALIGN(y_size + (cbcr_size<<1)) * num;
+	} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
+		rgb_size	= PAGE_ALIGN(ctrl->fimd.h_res * ctrl->fimd.v_res * 4);
+		total_size	= rgb_size * num;
+	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
+		rgb_size	= PAGE_ALIGN(ctrl->fimd.h_res * ctrl->fimd.v_res * 2);
+		total_size	= rgb_size * num;
+
 	} else {
-		rp_err(ctrl->log_level, "[%s : %d]Invalid input\n", __FUNCTION__, __LINE__);
+		fimc_err(ctrl->log, "[%s]Invalid input(%d)\n", __FUNCTION__, num);
 		ret = -1;
 	}
 
-	if (total_size > RP_RESERVED_MEM_SIZE)
+	if (total_size > FIMC_RESERVED_MEM_SIZE)
 		ret = -1;
 
 	return ret;
 }
 
-int s3c_fimc_init_out_buf(struct s3c_rp_control *ctrl)
+int s3c_fimc_init_out_buf(struct fimc_control *ctrl)
 {
-	unsigned int ycbcr_buf_size, y_buf_size, cb_buf_size, rgb_buf_size;
+	unsigned int ycbcr_size, y_size, cb_size, rgb_size;
 	unsigned int i;
-
+#if 0
 	ctrl->buf_info.reserved_mem_start = RP_RESERVED_MEM_ADDR_PHY;
 
 	if (ctrl->v4l2.video_out_fmt.pixelformat == V4L2_PIX_FMT_YUV420) {	/* 720 x 576 YUV420 */
-		y_buf_size	= PAGE_ALIGN(S3C_RP_YUV_SRC_MAX_WIDTH * S3C_RP_YUV_SRC_MAX_HEIGHT);
-		cb_buf_size	= PAGE_ALIGN((S3C_RP_YUV_SRC_MAX_WIDTH * S3C_RP_YUV_SRC_MAX_HEIGHT)>>2);
-		ycbcr_buf_size	= y_buf_size + cb_buf_size *2;		
+		y_size	= PAGE_ALIGN(FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT);
+		cb_size	= PAGE_ALIGN((FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT)>>2);
+		ycbcr_size	= y_size + cb_size *2;		
 
-		for (i = 0; i < S3C_RP_BUFF_NUM; i++) {
+		for (i = 0; i < FIMC_BUFF_NUM; i++) {
 			/* Initialize User Buffer */		
-			ctrl->user_buf[i].buf_addr.phys_y	= ctrl->buf_info.reserved_mem_start	+ ycbcr_buf_size * i;
-			ctrl->user_buf[i].buf_addr.phys_cb	= ctrl->user_buf[i].buf_addr.phys_y	+ y_buf_size;
-			ctrl->user_buf[i].buf_addr.phys_cr	= ctrl->user_buf[i].buf_addr.phys_cb	+ cb_buf_size;
+			ctrl->user_buf[i].buf_addr.phys_y	= ctrl->buf_info.reserved_mem_start	+ ycbcr_size * i;
+			ctrl->user_buf[i].buf_addr.phys_cb	= ctrl->user_buf[i].buf_addr.phys_y	+ y_size;
+			ctrl->user_buf[i].buf_addr.phys_cr	= ctrl->user_buf[i].buf_addr.phys_cb	+ cb_size;
 			ctrl->user_buf[i].buf_state		= BUF_DONE;
 			ctrl->user_buf[i].buf_flag		= 0x0;
-			ctrl->user_buf[i].buf_length		= ycbcr_buf_size;
+			ctrl->user_buf[i].buf_length		= ycbcr_size;
 
 			/* Initialize Driver Buffer which means the rotator output buffer */
-			ctrl->driver_buf[i].buf_addr.phys_y	= ctrl->buf_info.reserved_mem_start 	+ ycbcr_buf_size * S3C_RP_BUFF_NUM + ycbcr_buf_size * i;
-			ctrl->driver_buf[i].buf_addr.phys_cb	= ctrl->driver_buf[i].buf_addr.phys_y	+ y_buf_size;
-			ctrl->driver_buf[i].buf_addr.phys_cr	= ctrl->driver_buf[i].buf_addr.phys_cb	+ cb_buf_size;
+			ctrl->driver_buf[i].buf_addr.phys_y	= ctrl->buf_info.reserved_mem_start 	+ ycbcr_size * FIMC_BUFF_NUM + ycbcr_size * i;
+			ctrl->driver_buf[i].buf_addr.phys_cb	= ctrl->driver_buf[i].buf_addr.phys_y	+ y_size;
+			ctrl->driver_buf[i].buf_addr.phys_cr	= ctrl->driver_buf[i].buf_addr.phys_cb	+ cb_size;
 			ctrl->driver_buf[i].buf_state		= BUF_DONE;
 			ctrl->driver_buf[i].buf_flag		= 0x0;
-			ctrl->driver_buf[i].buf_length		= ycbcr_buf_size;
+			ctrl->driver_buf[i].buf_length		= ycbcr_size;
 
 			ctrl->incoming_queue[i]			= -1;
 			ctrl->inside_queue[i]			= -1;
 			ctrl->outgoing_queue[i]			= -1;
 		}
 	} else {
-		rgb_buf_size = PAGE_ALIGN((ctrl->fimd.h_res * ctrl->fimd.v_res)<<2);
+		rgb_size = PAGE_ALIGN((ctrl->fimd.h_res * ctrl->fimd.v_res)<<2);
 
-		for (i = 0; i < S3C_RP_BUFF_NUM; i++) {
+		for (i = 0; i < FIMC_BUFF_NUM; i++) {
 			/* Initialize User Buffer */
-			ctrl->user_buf[i].buf_addr.phys_rgb	= ctrl->buf_info.reserved_mem_start	+ rgb_buf_size * i;
+			ctrl->user_buf[i].buf_addr.phys_rgb	= ctrl->buf_info.reserved_mem_start	+ rgb_size * i;
 			ctrl->user_buf[i].buf_state		= BUF_DONE;
 			ctrl->user_buf[i].buf_flag		= 0x0;
-			ctrl->user_buf[i].buf_length		= rgb_buf_size;
+			ctrl->user_buf[i].buf_length		= rgb_size;
 
 			/* Initialize Driver Buffer which means the rotator output buffer */
-			ctrl->driver_buf[i].buf_addr.phys_rgb	= ctrl->buf_info.reserved_mem_start	+ rgb_buf_size * S3C_RP_BUFF_NUM + rgb_buf_size * i;
+			ctrl->driver_buf[i].buf_addr.phys_rgb	= ctrl->buf_info.reserved_mem_start	+ rgb_size * FIMC_BUFF_NUM + rgb_size * i;
 			ctrl->driver_buf[i].buf_state		= BUF_DONE;
 			ctrl->driver_buf[i].buf_flag		= 0x0;
-			ctrl->driver_buf[i].buf_length		= rgb_buf_size;
+			ctrl->driver_buf[i].buf_length		= rgb_size;
 
 			ctrl->incoming_queue[i]			= -1;
 			ctrl->inside_queue[i]			= -1;
@@ -117,14 +122,15 @@ int s3c_fimc_init_out_buf(struct s3c_rp_control *ctrl)
 	}
 
 	ctrl->buf_info.requested	= FALSE;
-
+#endif
 	return 0;
 }
 
-int s3c_fimc_attach_in_queue(struct s3c_rp_control *ctrl, unsigned int index)
+#if 0
+int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, unsigned int index)
 {
 	unsigned long		spin_flags;
-	int			swap_queue[S3C_RP_BUFF_NUM];
+	int			swap_queue[FIMC_BUFF_NUM];
 	int			i;
 
 	fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, index);
@@ -132,7 +138,7 @@ int s3c_fimc_attach_in_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	spin_lock_irqsave(&ctrl->spin.lock_in, spin_flags);
 
 	/* Backup original queue */
-	for (i = 0; i < S3C_RP_BUFF_NUM; i++) {
+	for (i = 0; i < FIMC_BUFF_NUM; i++) {
 		swap_queue[i] = ctrl->incoming_queue[i];
 	}
 
@@ -142,7 +148,7 @@ int s3c_fimc_attach_in_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	ctrl->user_buf[index].buf_flag	= V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_QUEUED;
 
 	/* Shift the origonal queue */
-	for (i = 1; i < S3C_RP_BUFF_NUM; i++) {
+	for (i = 1; i < FIMC_BUFF_NUM; i++) {
 		ctrl->incoming_queue[i] = swap_queue[i-1];
 	}
 
@@ -151,7 +157,7 @@ int s3c_fimc_attach_in_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	return 0;
 }
 
-int s3c_fimc_detach_in_queue(struct s3c_rp_control *ctrl, int *index)
+int s3c_fimc_detach_in_queue(struct FIMC_control *ctrl, int *index)
 {
 	unsigned long		spin_flags;
 	int			i, ret = 0;
@@ -159,7 +165,7 @@ int s3c_fimc_detach_in_queue(struct s3c_rp_control *ctrl, int *index)
 	spin_lock_irqsave(&ctrl->spin.lock_in, spin_flags);
 
 	/* Find last valid index in incoming queue. */
-	for (i = (S3C_RP_BUFF_NUM-1); i >= 0; i--) {
+	for (i = (FIMC_BUFF_NUM-1); i >= 0; i--) {
 		if (ctrl->incoming_queue[i] != -1) {
 			*index					= ctrl->incoming_queue[i];
 			ctrl->incoming_queue[i]			= -1;
@@ -180,10 +186,10 @@ int s3c_fimc_detach_in_queue(struct s3c_rp_control *ctrl, int *index)
 	return ret;
 }
 
-int s3c_fimc_attach_out_queue(struct s3c_rp_control *ctrl, unsigned int index)
+int s3c_fimc_attach_out_queue(struct FIMC_control *ctrl, unsigned int index)
 {
 	unsigned long		spin_flags;
-	int			swap_queue[S3C_RP_BUFF_NUM];
+	int			swap_queue[FIMC_BUFF_NUM];
 	int			i;
 
 	fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, index);
@@ -191,7 +197,7 @@ int s3c_fimc_attach_out_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	spin_lock_irqsave(&ctrl->spin.lock_out, spin_flags);
 
 	/* Backup original queue */
-	for (i = 0; i < S3C_RP_BUFF_NUM; i++) {
+	for (i = 0; i < FIMC_BUFF_NUM; i++) {
 		swap_queue[i] = ctrl->outgoing_queue[i];
 	}
 
@@ -201,7 +207,7 @@ int s3c_fimc_attach_out_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	ctrl->user_buf[index].buf_flag	= V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_DONE;
 
 	/* Shift the origonal queue */
-	for (i = 1; i < S3C_RP_BUFF_NUM; i++) {
+	for (i = 1; i < FIMC_BUFF_NUM; i++) {
 		ctrl->outgoing_queue[i] = swap_queue[i-1];
 	}
 
@@ -210,7 +216,7 @@ int s3c_fimc_attach_out_queue(struct s3c_rp_control *ctrl, unsigned int index)
 	return 0;
 }
 
-int s3c_fimc_detach_out_queue(struct s3c_rp_control *ctrl, int *index)
+int s3c_fimc_detach_out_queue(struct FIMC_control *ctrl, int *index)
 {
 	unsigned long		spin_flags;
 	int			i, ret = 0;
@@ -218,7 +224,7 @@ int s3c_fimc_detach_out_queue(struct s3c_rp_control *ctrl, int *index)
 	spin_lock_irqsave(&ctrl->spin.lock_out, spin_flags);
 
 	/* Find last valid index in outgoing queue. */
-	for (i = (S3C_RP_BUFF_NUM-1); i >= 0; i--) {
+	for (i = (FIMC_BUFF_NUM-1); i >= 0; i--) {
 		if (ctrl->outgoing_queue[i] != -1) {
 			*index					= ctrl->outgoing_queue[i];
 			ctrl->outgoing_queue[i]			= -1;
@@ -239,4 +245,4 @@ int s3c_fimc_detach_out_queue(struct s3c_rp_control *ctrl, int *index)
 	
 	return ret;
 }
-
+#endif

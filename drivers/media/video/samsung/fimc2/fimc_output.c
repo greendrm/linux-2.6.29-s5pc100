@@ -25,8 +25,8 @@ int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 
 	fimc_info(ctrl->log, "[%s] called\n", __FUNCTION__);
-#if 0
-	if (ctrl->stream_status != FIMC_STREAMOFF) {
+
+	if (ctrl->status != FIMC_STREAMOFF) {
 		fimc_err(ctrl->log, "FIMC is running.\n");
 		return -EBUSY;
 	}
@@ -45,8 +45,8 @@ int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 	/* control user input */
 	if (b->count > S3C_FIMC_OUT_BUFF_NUM) {
 		fimc_warn(ctrl->log, "The buffer count is modified by driver \
-				from %d to %d.\n", b->count, S3C_FIMC_OUT_BUFF_NUM);
-		b->count = S3C_FIMC_OUT_BUFF_NUM;
+				from %d to %d.\n", b->count, FIMC_OUT_BUFF_NUM);
+		b->count = FIMC_OUT_BUFF_NUM;
 	} 
 
 	/* Initialize all buffers */
@@ -63,19 +63,45 @@ int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 	}
 
 	if (b->count != 0) {	/* allocate buffers */
-		ctrl->buf_info.requested = TRUE;
+		ctrl->out->is_requested = TRUE;
 		
 		for(i = 0; i < b->count; i++)
-			ctrl->out_buf[i].buf_state = BUF_DQUEUED;
+			ctrl->out->buf[i].state = ;
+			out_buf[i].buf_state = VIDEOBUF_IDLE;
 	} else {
 		/* fall through */
 		/* All buffers are initialized.  */
 	}
 
-	ctrl->buf_info.num = b->count;
-#endif
+	ctrl->out->buf_num = b->count;
+
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int s3c_fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 {
