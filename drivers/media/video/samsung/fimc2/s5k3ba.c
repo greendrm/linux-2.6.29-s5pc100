@@ -20,7 +20,7 @@
 #include <linux/init.h>
 #include <asm/io.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 #include "s5k3ba.h"
 
 #define S5K3BA_I2C_ADDR		0x5a

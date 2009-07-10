@@ -18,7 +18,7 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 int s3c_fimc_check_out_buf(struct s3c_rp_control *ctrl, unsigned int num)
 {

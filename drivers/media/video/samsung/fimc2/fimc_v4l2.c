@@ -18,7 +18,7 @@
 #include <linux/videodev2.h>
 #include <media/v4l2-ioctl.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 static int s3c_fimc_querycap(struct file *filp, void *fh,
 					struct v4l2_capability *cap)
