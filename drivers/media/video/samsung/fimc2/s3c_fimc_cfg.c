@@ -20,6 +20,24 @@
 
 #include "s3c_fimc.h"
 
+int s3c_fimc_mapping_rot(struct fimc_control *ctrl, int degree)
+{
+	switch (degree) {
+	case 0:		/* fall through */
+	case 90:	/* fall through */
+	case 180:	/* fall through */
+	case 270:
+		ctrl->out.rotate = degree;
+		break;
+
+	default:
+		fimc_err(ctrl->log, "Invalid rotate value : %d.", degree);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int s3c_fimc_check_out_buf(struct s3c_rp_control *ctrl, unsigned int num)
 {
 	int 		ret = 0;

@@ -123,6 +123,24 @@ int s3c_fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 	return 0;
 }
 
+int s3c_fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
+{
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	int ret = -1;
+
+	switch (c->id) {
+	case V4L2_CID_ROTATION:
+		ret = s3c_fimc_mapping_rot(ctrl, c->value);
+		break;
+
+	default:
+		fimc_err(ctrl->log, "Invalid control id: %d\n", c->id);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
 int s3c_fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
 #if 0

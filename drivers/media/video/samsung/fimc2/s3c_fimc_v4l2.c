@@ -103,22 +103,16 @@ static int s3c_fimc_s_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 
 	fimc_info(ctrl->log, "[%s] called. CID = %d, Value = %d\n", \
 		__FUNCTION__, c->id, c->value);
-#if 0
-	switch (c->id) {
-	case V4L2_CID_ROTATION:
-		ret = s3c_fimc_rot_set_degree(ctrl, c->value);
-		if (ret < 0) {
-			fimc_err(ctrl->log, "V4L2_CID_ROTATION is failed.\n");
-			ret = -EINVAL;
-		}
 
-		break;
-
-	default:
-		fimc_err(ctrl->log, "invalid control id: %d\n", c->id);
-		ret = -EINVAL;
+	if (ctrl->cap != NULL) {
+		ret = s3c_fimc_s_ctrl_capture(fh, c);
+	} else if(ctrl->out != NULL) {
+		ret = s3c_fimc_s_ctrl_output(fh, c);
+	} else {
+		fimc_err(ctrl->log, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
 	}
-#endif
+
 	return ret;
 }
 
