@@ -226,6 +226,7 @@ struct fimc_scaler {
  * E X T E R N S
  *
 */
+extern struct video_device fimc_video_device[];
 extern struct s3c_platform_fimc *to_fimc_plat(struct device *dev);
 extern inline struct fimc_control *get_fimc(int id);
 

@@ -88,6 +88,8 @@ struct s3c_platform_camera {
 struct s3c_platform_fimc {
 	const char			srclk_name[16];		/* source of interface clk name */
 	const char			sysclk_name[16];	/* interface clk name */
+	u32				clockrate;		/* clockrate for interface clk */
+
 	const char			mclk_name[16];		/* mclk name */
 	
 	enum fimc_cam_index		default_cam;		/* index of default cam */

@@ -35,6 +35,7 @@
 #include <asm/memory.h>
 #include <plat/clock.h>
 #include <plat/media.h>
+#include <plat/fimc2.h>
 
 #include "fimc.h"
 
@@ -49,7 +50,7 @@ struct s3c_platform_fimc *to_fimc_plat(struct device *dev)
 
 inline struct fimc_control *get_fimc(int id)
 {
-	return fimc->ctrl[id];
+	return &fimc->ctrl[id];
 }
 
 void fimc_register_camera(struct s3c_platform_camera *cam)
@@ -60,12 +61,12 @@ void fimc_register_camera(struct s3c_platform_camera *cam)
 	clk_set_rate(fimc->mclk, cam->mclk_ratio);
 	clk_enable(fimc->mclk);
 
-	fimc_reset_camera();
+//	fimc_reset_camera();
 }
 
-void fimc_unregister_camera(struct fimc_camera *cam)
+void fimc_unregister_camera(struct s3c_platform_camera *cam)
 {
-	struct fimc_control ctrl;
+	struct fimc_control *ctrl;
 	int i;
 
 	for (i = 0; i < FIMC_DEVICES; i++) {
@@ -83,8 +84,8 @@ void fimc_set_active_camera(struct fimc_control *ctrl, int id)
 
 	dev_info(ctrl->dev, "requested id: %d\n", id);
 	
-	if (ctrl->cam && id < FIMC_TPID)
-		fimc_select_camera(ctrl);
+//	if (ctrl->cam && id < FIMC_TPID)
+//		fimc_select_camera(ctrl);
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -107,9 +108,9 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	ctrl->dev = &pdev->dev;
 	ctrl->vd = &fimc_video_device[id];
 	ctrl->vd->minor = id;
-	ctrl->mem.base = s3c_get_media_memory(S3C_MDEV_FIMC, id);
-	ctrl->mem.len = s3c_get_media_memsize(S3C_MDEV_FIMC, id);
-	ctrl->mem.current = ctrl->mem.base;
+	ctrl->mem.base = s3c_get_media_memory(S3C_MDEV_FIMC);
+	ctrl->mem.len = s3c_get_media_memsize(S3C_MDEV_FIMC);
+	ctrl->mem.curr = ctrl->mem.base;
 	ctrl->status = FIMC_STREAMOFF;
 
 	sprintf(ctrl->name, "%s%d", FIMC_NAME, id);
@@ -118,8 +119,8 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	atomic_set(&ctrl->in_use, 0);
 	mutex_init(&ctrl->lock);
 	mutex_init(&ctrl->v4l2_lock);
-	spin_lock_init(&ctrl->spin.lock_in);
-	spin_lock_init(&ctrl->spin.lock_out);
+	spin_lock_init(&ctrl->lock_in);
+	spin_lock_init(&ctrl->lock_out);
 	init_waitqueue_head(&ctrl->wq);
 
 	/* get resource for io memory */
@@ -149,7 +150,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
 		dev_err(ctrl->dev, "request_irq failed\n");
 
-	fimc_reset(ctrl);
+//	fimc_reset(ctrl);
 
 	return ctrl;
 }
@@ -157,7 +158,6 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 static int fimc_unregister_controller(struct platform_device *pdev)
 {
 	struct fimc_control *ctrl;
-	struct s3c_platform_fimc *pdata;
 	int id = pdev->id;
 
 	ctrl = get_fimc(id);
@@ -288,7 +288,7 @@ static int fimc_open(struct file *filp)
 		dev_err(ctrl->dev, "s_config subdev api not supported\n");
 
 	/* Apply things to interface register */
-	fimc_reset(ctrl);
+//	fimc_reset(ctrl);
 	filp->private_data = ctrl;
 
 	mutex_unlock(&ctrl->lock);
@@ -304,7 +304,6 @@ static int fimc_release(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	int minor;
 
 	ctrl = (struct fimc_control *) filp->private_data;
 	pdata = to_fimc_plat(ctrl->dev);
@@ -345,17 +344,17 @@ static void fimc_vdev_release(struct video_device *vdev)
 struct video_device fimc_video_device[FIMC_DEVICES] = {
 	[0] = {
 		.fops = &fimc_fops,
-		.ioctl_ops = &fimc_v4l2_ops,
+//		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 	[1] = {
 		.fops = &fimc_fops,
-		.ioctl_ops = &fimc_v4l2_ops,
+//		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 	[2] = {
 		.fops = &fimc_fops,
-		.ioctl_ops = &fimc_v4l2_ops,
+//		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 };
@@ -373,12 +372,12 @@ static int fimc_init_global(struct platform_device *pdev)
 	/* mclk */
 	fimc->mclk = clk_get(&pdev->dev, pdata->mclk_name);
 	if (IS_ERR(fimc->mclk)) {
-		err("failed to get mclk source\n");
+		dev_err(&pdev->dev, "failed to get mclk source\n");
 		return -EINVAL;
 	}
 
 	/* Registering external camera modules. re-arrange order to be sure */
-	for (i = 0; i < S3C_FIMC_MAX_CAMS; i++) {
+	for (i = 0; i < FIMC_MAXCAMS; i++) {
 		if (!pdata->camera[i])
 			break;
 
@@ -436,7 +435,7 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		 * try v4l2_subdev_call with s_config core to initialize after
 		 * giving power source
 		 */
-		sd = v4l2_i2c_new_subdev_board(ctrl->v4l2_dev, i2c_adap, \
+		sd = v4l2_i2c_new_subdev_board(&ctrl->v4l2_dev, i2c_adap, \
 				name, i2c_info, &addr);
 		if (!sd) {
 			dev_err(&pdev->dev, \
@@ -508,7 +507,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	clk_enable(ctrl->clock);
 
 	/* V4L2 device-subdev registration */
-	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev[ctrl->id]);
+	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
 	if (ret) {
 		dev_err(&pdev->dev, "v4l2 device register failed\n");
 		goto err_clk_io;
@@ -522,18 +521,19 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* v4l2 subdev configuration */
 	ret = fimc_configure_subdev(pdev, ctrl->id);
 	if (ret) {
-		dev_err(ctrl->dev, "subdev[%d] registering failed\n", \
+		dev_err(&pdev->dev, "subdev[%d] registering failed\n", \
 			ctrl->id);
 	}
 
 	/* video device register */
 	ret = video_register_device(ctrl->vd, VFL_TYPE_GRABBER, ctrl->id);
 	if (ret) {
-		err("cannot register video driver\n");
+		dev_err(&pdev->dev, "cannot register video driver\n");
 		goto err_video;
 	}
 
-	info("controller %d registered successfully\n", ctrl->id);
+	dev_info(&pdev->dev, "controller %d registered successfully\n", \
+		ctrl->id);
 
 	return 0;
 
