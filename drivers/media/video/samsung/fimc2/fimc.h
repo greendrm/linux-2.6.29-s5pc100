@@ -234,6 +234,8 @@ struct fimc_scaler {
  * E X T E R N S
  *
 */
+extern struct s3c_platform_fimc *to_fimc_plat(struct device *dev);
+extern inline struct fimc_control *get_fimc(int id);
 extern int fimc_mapping_rot(struct fimc_control *ctrl, int degree);
 extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
 extern int fimc_init_out_buf(struct fimc_control *ctrl);
