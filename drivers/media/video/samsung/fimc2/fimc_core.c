@@ -110,7 +110,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
 	struct resource *res;
-	int id = pdev->id;
+	int id = pdev->id, irq;
 
 	pdata = to_fimc_plat(&pdev->dev);
 
@@ -119,6 +119,10 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	ctrl->dev = &pdev->dev;
 	ctrl->vd = &fimc_video_device[id];
 	ctrl->vd->minor = id;
+	ctrl->mem.base = s3c_get_media_memory(S3C_MDEV_FIMC, id);
+	ctrl->mem.len = s3c_get_media_memsize(S3C_MDEV_FIMC, id);
+	ctrl->mem.current = ctrl->mem.base;
+	ctrl->status = FIMC_STREAMOFF;
 
 	sprintf(ctrl->name, "%s%d", FIMC_NAME, id);
 	strcpy(ctrl->vd->name, ctrl->name);
@@ -133,37 +137,29 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	/* get resource for io memory */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
-		err("failed to get io memory region\n");
+		dev_err(ctrl->dev, "failed to get io memory region\n");
 		return NULL;
 	}
 
-	if (!pdata->shared_io) {
-		/* request mem region */
-		res = request_mem_region(res->start, res->end - res->start + 1, pdev->name);
-		if (!res) {
-			err("failed to request io memory region\n");
-			return NULL;
-		}
-
-		/* ioremap for register block */
-		ctrl->regs = ioremap(res->start, res->end - res->start + 1);
-	} else {
-		while (i >= 0 && ctrl->regs == NULL) {
-			ctrl->regs = fimc.ctrl[i].regs;
-			i--;
-		}
+	/* request mem region */
+	res = request_mem_region(res->start, res->end - \
+					res->start + 1, pdev->name);
+	if (!res) {
+		dev_err(ctrl->dev, "failed to request io memory region\n");
+		return NULL;
 	}
 
+	/* ioremap for register block */
+	ctrl->regs = ioremap(res->start, res->end - res->start + 1);
 	if (!ctrl->regs) {
-		err("failed to remap io region\n");
+		dev_err(ctrl->dev, "failed to remap io region\n");
 		return NULL;
 	}
 
 	/* irq */
-	ctrl->irq = platform_get_irq(pdev, 0);
-
-	if (request_irq(ctrl->irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
-		err("request_irq failed\n");
+	irq = platform_get_irq(pdev, 0);
+	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
+		dev_err(ctrl->dev, "request_irq failed\n");
 
 	fimc_reset(ctrl);
 
@@ -434,33 +430,31 @@ struct video_device fimc_video_device[FIMC_DEVICES] = {
 
 static int fimc_init_global(struct platform_device *pdev)
 {
-	struct platform_fimc *pdata;
+	struct s3c_platform_fimc *pdata;
 	int i;
+
+	if (fimc->initialized)
+		return 0;
 
 	pdata = to_fimc_plat(&pdev->dev);
 
-	/* camera clock */
-	fimc.cam_clock = clk_get(&pdev->dev, "sclk_cam");
-	if (IS_ERR(fimc.cam_clock)) {
-		err("failed to get camera clock source\n");
+	/* mclk */
+	fimc->mclk = clk_get(&pdev->dev, pdata->mclk_name);
+	if (IS_ERR(fimc->mclk)) {
+		err("failed to get mclk source\n");
 		return -EINVAL;
 	}
 
-	fimc.dma_start = get_media_memory(S3C_MDEV_FIMC);
-	fimc.dma_total = get_media_memsize(S3C_MDEV_FIMC);
-	fimc.dma_current = fimc.dma_start;
-	
 	/* Registering external camera modules. re-arrange order to be sure */
 	for (i = 0; i < S3C_FIMC_MAX_CAMS; i++) {
 		if (!pdata->camera[i])
 			break;
+
 		/* Assign camera device to fimc */
-		fimc.camera[pdata->camera[i]->id] = pdata->camera[i];
+		fimc->camera[pdata->camera[i]->id] = pdata->camera[i];
 	}
 
-	/* test pattern */
-	/* TODO: make it as subdev? */
-	fimc.camera[test_pattern.id] = &test_pattern;
+	fimc->initialized = 1;
 
 	return 0;
 }
@@ -471,34 +465,36 @@ static int fimc_init_global(struct platform_device *pdev)
  */
 static int fimc_configure_subdev(struct platform_device *pdev, int id)
 {
-	struct platform_fimc *pdata;
+	struct s3c_platform_fimc *pdata;
 	struct i2c_adapter *i2c_adap;
 	struct i2c_board_info *i2c_info;
 	struct v4l2_subdev *sd;
+	struct fimc_control *ctrl;
 	unsigned short addr;
 	char *name;
 
 	pdata = to_fimc_plat(&pdev->dev);
+	ctrl = get_fimc(id);
 
 	/* Subdev registration */
 	if (pdata->camera[id]) {
 		i2c_adap = i2c_get_adapter(pdata->camera[id]->i2c_busnum);
 		if (!i2c_adap) {
-			dev_info(&pdev->dev, "%s:subdev i2c_adapter missing-skip registration\n",
-					__FUNCTION__);
+			dev_info(&pdev->dev, "subdev i2c_adapter " \
+					"missing-skip registration\n");
 		}
 
 		i2c_info = pdata->camera[id]->info;
 		name = pdata->camera[id]->info->type;
 		if (!name) {
-			dev_info(&pdev->dev, "%s:subdev i2c dirver name missing-skip registration\n",
-					__FUNCTION__);
+			dev_info(&pdev->dev, "subdev i2c driver name " \
+					"missing-skip registration\n");
 		}
 
 		addr = pdata->camera[id]->info->addr;
 		if (!addr) {
-			dev_info(&pdev->dev, "%s:subdev i2c address missing-skip registration\n",
-					__FUNCTION__);
+			dev_info(&pdev->dev, "subdev i2c address " \
+					"missing-skip registration\n");
 		}
 
 		/* NOTE: first time subdev being registered,
@@ -508,16 +504,12 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		 * try v4l2_subdev_call with s_config core to initialize after
 		 * giving power source
 		 */
-#if 1
-		sd = v4l2_i2c_new_subdev_board(&fimc.v4l2_dev[id], i2c_adap,
+
+		sd = v4l2_i2c_new_subdev_board(ctrl->v4l2_dev, i2c_adap, \
 				name, i2c_info, &addr);
-#else
-		sd = v4l2_i2c_new_subdev_board(&fimc.ctrl[id].v4l2_dev, i2c_adap,
-				name, i2c_info, &addr);
-#endif
 		if (!sd) {
-			dev_err(&pdev->dev, "%s:v4l2 subdev board registering failed\n",
-					__FUNCTION__);
+			dev_err(&pdev->dev, \
+				"v4l2 subdev board registering failed\n");
 		}
 
 		/* Assign probed subdev pointer to fimc */
@@ -541,13 +533,13 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 
 	fimc = kzalloc(sizeof(*fimc), GFP_KERNEL);
 	if (!fimc) {
-		dev_err(pdev->dev, "not enough memory\n");
+		dev_err(&pdev->dev, "not enough memory\n");
 		goto err_fimc;
 	}
 
 	ctrl = fimc_register_controller(pdev);
 	if (!ctrl) {
-		err("cannot register fimc controller\n");
+		dev_err(&pdev->dev, "cannot register fimc controller\n");
 		goto err_fimc;
 	}
 
@@ -558,14 +550,14 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* fimc source clock */
 	srclk = clk_get(&pdev->dev, pdata->srclk_name);
 	if (IS_ERR(srclk)) {
-		err("failed to get source clock of fimc\n");
+		dev_err(&pdev->dev, "failed to get source clock of fimc\n");
 		goto err_clk_io;
 	}
 
 	/* fimc clock */
-	ctrl->clock = clk_get(&pdev->dev, pdata->clk_name);
+	ctrl->clock = clk_get(&pdev->dev, pdata->sysclk_name);
 	if (IS_ERR(ctrl->clock)) {
-		err("failed to get fimc clock source\n");
+		dev_err(&pdev->dev, "failed to get fimc clock source\n");
 		goto err_clk_io;
 	}
 
@@ -573,39 +565,32 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	if (ctrl->clock->set_parent)
 		ctrl->clock->set_parent(ctrl->clock, srclk);
 
-	/* set clockrate for FIMC interface block */
+	/* set clockrate for fimc interface block */
 	if (ctrl->clock->set_rate) {
 		ctrl->clock->set_rate(ctrl->clock, pdata->clockrate);
-		/* FIXME: dev_info */
-		printk(KERN_INFO " FIMC set clock rate to %d\n", pdata->clockrate);
+		dev_info(&pdev->dev, "fimc set clock rate to %d\n", \
+				pdata->clockrate);
 	}
 
-	/* FIXME: is it really necessary to enable clock here? */
 	clk_enable(ctrl->clock);
 
 	/* V4L2 device-subdev registration */
-	//ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
-	ret = v4l2_device_register(&pdev->dev, &fimc.v4l2_dev[ctrl->id]);
+	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev[ctrl->id]);
 	if (ret) {
-		dev_err(ctrl->dev, "%s:v4l2 device register failed\n", __FUNCTION__);
-		return ret;
+		dev_err(&pdev->dev, "v4l2 device register failed\n");
+		goto err_clk_io;
 	}
-	/* assigning v4l2 device to controller */
-	ctrl->v4l2_dev = fimc.v4l2_dev[ctrl->id];
 
 	/* things to initialize once */
-	/* FIXME: In case of not using fimc0, what happens? */
-	if (ctrl->id == 0) {
-		ret = fimc_init_global(pdev);
-		if (ret)
-			goto err_global;
-	}
+	ret = fimc_init_global(pdev);
+	if (ret)
+		goto err_global;
 
 	/* v4l2 subdev configuration */
 	ret = fimc_configure_subdev(pdev, ctrl->id);
 	if (ret) {
-		dev_err(ctrl->dev, "%s:subdev[%d] registering failed\n",
-				__FUNCTION__, ctrl->id);
+		dev_err(ctrl->dev, "subdev[%d] registering failed\n", \
+			ctrl->id);
 	}
 
 	/* video device register */

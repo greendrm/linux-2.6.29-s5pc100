@@ -30,6 +30,7 @@
 
 #define FIMC_DEVICES		3
 #define FIMC_SUBDEVS		3
+#define FIMC_MAXCAMS		4
 #define FIMC_PHYBUFS		4
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
@@ -70,8 +71,9 @@ enum fimc_fimd_state {
 
 /* for reserved memory */
 struct fimc_meminfo {
-	dma_addr_t	base;	/* buffer base */
-	size_t		len;	/* buffer length */
+	dma_addr_t	base;		/* buffer base */
+	size_t		len;		/* total length */
+	dma_addr_t	current;	/* current addr */
 };
 
 /* for capture device */
@@ -138,6 +140,7 @@ struct fimc_control {
 	atomic_t			in_use;
 	void __iomem			*regs;		/* register i/o */
 	struct clk			*clock;		/* interface clock */
+	struct fimc_meminfo		mem;		/* for reserved mem */
 
 	/* kernel helpers */
 	struct mutex			lock;		/* controller lock */
@@ -150,7 +153,7 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
-	struct v4l2_subdev		sd;
+	struct v4l2_subdev		*sd;
 	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
@@ -163,10 +166,11 @@ struct fimc_control {
 
 /* global */
 struct fimc_global {
-	struct fimc_control 	ctrl[FIMC_DEVICES];
-	struct v4l2_device	v4l2_dev[FIMC_DEVICES];
-	struct v4l2_subdev	*sd[FIMC_SUBDEVS];
-	struct fimc_meminfo	mem[FIMC_DEVICES];
+	struct fimc_control 		ctrl[FIMC_DEVICES];
+	struct s3c_platform_camera	*camera[FIMC_MAXCAMS];
+	struct v4l2_subdev		*sd[FIMC_SUBDEVS];
+	struct clk			*mclk;
+	int				initialized;
 };
 
 /* scaler abstraction: local use recommended */
