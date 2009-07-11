@@ -32,47 +32,11 @@
 #define FIMC_SUBDEVS		3
 #define FIMC_PHYBUFS		4
 #define FIMC_OUTBUFS		3
-#define FIMC_FBS		5
 #define FIMC_INQ_BUFS		3
 #define FIMC_OUTQ_BUFS		3
 
-
-/*
- * D E B U G  M A C R O E S
- *
-*/
-#define FIMC_LOG_DEFAULT       	FIMC_LOG_WARN
-
-#define FIMC_DEBUG(level, fmt, ...) \
-	do { \
-		if (level <= FIMC_LOG_DEBUG) \
-			printk(KERN_DEBUG FIMC_NAME ": " fmt, ##__VA_ARGS__); \
-	} while (0)
-
-#define FIMC_INFO(level, fmt, ...) \
-	do { \
-		if (level <= FIMC_LOG_INFO) \
-			printk(KERN_INFO FIMC_NAME ": " fmt, ##__VA_ARGS__); \
-	} while (0)
-
-#define FIMC_WARN(level, fmt, ...) \
-	do { \
-		if (level <= FIMC_LOG_WARN) \
-			printk(KERN_WARNING FIMC_NAME ": " fmt, ##__VA_ARGS__); \
-	} while (0)
-
-
-#define FIMC_ERROR(level, fmt, ...) \
-	do { \
-		if (level <= FIMC_LOG_ERR) \
-			printk(KERN_ERR FIMC_NAME ": " fmt, ##__VA_ARGS__); \
-	} while (0)
-
-#define fimc_dbg(level, fmt, ...)	FIMC_DEBUG(level, fmt, ##__VA_ARGS__)
-#define fimc_info(level, fmt, ...)	FIMC_INFO(level, fmt, ##__VA_ARGS__)
-#define fimc_warn(level, fmt, ...)	FIMC_WARN(level, fmt, ##__VA_ARGS__)
-#define fimc_err(level, fmt, ...)	FIMC_ERROR(level, fmt, ##__VA_ARGS__)
-
+#define FIMC_SRC_MAX_W		1920
+#define FIMC_SRC_MAX_H		1080
 
 /*
  * E N U M E R A T I O N S
@@ -87,14 +51,6 @@ enum fimc_status {
 	FIMC_OFF_SLEEP,
 	FIMC_READY_RESUME,
 };
-
-enum fimc_log_level {
-	FIMC_LOG_DEBUG	= 0x1,	/* Queue status */
-	FIMC_LOG_INFO	= 0x3,	/* V4L2 API */
-	FIMC_LOG_WARN	= 0x7,	/* Warning conditions */
-	FIMC_LOG_ERR	= 0xF,	/* Error conditions */
-};
-
 
 enum fimc_fifo_state {
 	FIFO_CLOSE,
@@ -114,10 +70,8 @@ enum fimc_fimd_state {
 
 /* for reserved memory */
 struct fimc_meminfo {
-	dma_addr_t	cap_base;	/* capture device buffer base */
-	size_t		cap_len;	/* capture device buffer length */
-	dma_addr_t	out_base;	/* output device buffer base */
-	size_t		out_len;	/* output device buffer length */
+	dma_addr_t	base;	/* buffer base */
+	size_t		len;	/* buffer length */
 };
 
 /* for capture device */
@@ -133,8 +87,9 @@ struct fimc_capinfo {
 
 /* for output/overlay device */
 struct fimc_buf_idx {
-	int			index;
-	struct fimc_buf_idx	*next;
+	int	prev;
+	int	active;
+	int	next;
 };
 
 struct fimc_buf_set {
@@ -147,6 +102,7 @@ struct fimc_buf_set {
 
 struct fimc_outinfo {
 	struct v4l2_crop 	crop;
+	struct v4l2_pix_format	pix;
 	struct v4l2_window	win;
 	struct v4l2_framebuffer	fbuf;
 	u32			buf_num;
@@ -162,11 +118,13 @@ struct fimc_outinfo {
 };
 
 struct s3cfb_window;
+struct s3cfb_lcd;
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
 	struct fb_var_screeninfo	*var;
 	struct s3cfb_window		*win;
+	struct s3cfb_lcd		*lcd;
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
@@ -197,11 +155,10 @@ struct fimc_control {
 
 	/* fimc specific */
 	struct s3c_platform_camera	*cam;		/* activated camera */
-	struct fimc_fbinfo		*fb[FIMC_FBS];	/* fimd info */
+	struct fimc_fbinfo		*fb;		/* fimd info */
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
 	enum fimc_status		status;
-	enum fimc_log_level		log;
 };
 
 /* global */
@@ -209,7 +166,7 @@ struct fimc_global {
 	struct fimc_control 	ctrl[FIMC_DEVICES];
 	struct v4l2_device	v4l2_dev[FIMC_DEVICES];
 	struct v4l2_subdev	*sd[FIMC_SUBDEVS];
-	struct fimc_meminfo	*mem;
+	struct fimc_meminfo	mem[FIMC_DEVICES];
 };
 
 /* scaler abstraction: local use recommended */

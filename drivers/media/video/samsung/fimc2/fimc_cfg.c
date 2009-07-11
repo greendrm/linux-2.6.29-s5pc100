@@ -31,32 +31,33 @@ int s3c_fimc_mapping_rot(struct fimc_control *ctrl, int degree)
 		break;
 
 	default:
-		fimc_err(ctrl->log, "Invalid rotate value : %d.", degree);
+		dev_err(ctrl->dev, "Invalid rotate value : %d.", degree);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-int s3c_fimc_check_out_buf(struct fimc_control *ctrl, unsigned int num)
+int s3c_fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 {
-	int 		ret = 0;
-	unsigned int	y_size, cbcr_size, rgb_size, total_size = 0;
-	unsigned int	pixelformat = ctrl->out->pix.pixelformat;
+	struct s3cfb_lcd lcd =ctrl->fb;
+	u32	pixelformat = ctrl->out->pix.pixelformat;
+	u32	y_size, cbcr_size, rgb_size, total_size = 0;
+	int 	ret = 0;
 
 	if (pixelformat == V4L2_PIX_FMT_YUV420) {
-		y_size	= FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT;
+		y_size	= FIMC_SRC_MAX_W * FIMC_SRC_MAX_H;
 		cbcr_size	= (y_size>>2);
 		total_size	= PAGE_ALIGN(y_size + (cbcr_size<<1)) * num;
 	} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
-		rgb_size	= PAGE_ALIGN(ctrl->fimd.h_res * ctrl->fimd.v_res * 4);
+		rgb_size	= PAGE_ALIGN(lcd->width * lcd->height * 4);
 		total_size	= rgb_size * num;
 	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
-		rgb_size	= PAGE_ALIGN(ctrl->fimd.h_res * ctrl->fimd.v_res * 2);
+		rgb_size	= PAGE_ALIGN(lcd->width * lcd->height * 2);
 		total_size	= rgb_size * num;
 
 	} else {
-		fimc_err(ctrl->log, "[%s]Invalid input(%d)\n", __FUNCTION__, num);
+		dev_err(ctrl->dev, "[%s]Invalid input(%d)\n", __FUNCTION__, num);
 		ret = -1;
 	}
 
@@ -68,14 +69,14 @@ int s3c_fimc_check_out_buf(struct fimc_control *ctrl, unsigned int num)
 
 int s3c_fimc_init_out_buf(struct fimc_control *ctrl)
 {
-	unsigned int ycbcr_size, y_size, cb_size, rgb_size;
-	unsigned int i;
+	u32 ycbcr_size, y_size, cb_size, rgb_size;
+	u32 i;
 #if 0
 	ctrl->buf_info.reserved_mem_start = RP_RESERVED_MEM_ADDR_PHY;
 
 	if (ctrl->v4l2.video_out_fmt.pixelformat == V4L2_PIX_FMT_YUV420) {	/* 720 x 576 YUV420 */
-		y_size	= PAGE_ALIGN(FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT);
-		cb_size	= PAGE_ALIGN((FIMC_YUV_SRC_MAX_WIDTH * FIMC_YUV_SRC_MAX_HEIGHT)>>2);
+		y_size	= PAGE_ALIGN(FIMC_SRC_MAX_W * FIMC_SRC_MAX_H);
+		cb_size	= PAGE_ALIGN((FIMC_SRC_MAX_W * FIMC_SRC_MAX_H)>>2);
 		ycbcr_size	= y_size + cb_size *2;		
 
 		for (i = 0; i < FIMC_BUFF_NUM; i++) {
@@ -100,7 +101,7 @@ int s3c_fimc_init_out_buf(struct fimc_control *ctrl)
 			ctrl->outgoing_queue[i]			= -1;
 		}
 	} else {
-		rgb_size = PAGE_ALIGN((ctrl->fimd.h_res * ctrl->fimd.v_res)<<2);
+		rgb_size = PAGE_ALIGN((lcd->width * lcd->height)<<2);
 
 		for (i = 0; i < FIMC_BUFF_NUM; i++) {
 			/* Initialize User Buffer */
@@ -127,7 +128,7 @@ int s3c_fimc_init_out_buf(struct fimc_control *ctrl)
 }
 
 #if 0
-int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, unsigned int index)
+int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, u32 index)
 {
 	unsigned long		spin_flags;
 	int			swap_queue[FIMC_BUFF_NUM];
@@ -186,7 +187,7 @@ int s3c_fimc_detach_in_queue(struct FIMC_control *ctrl, int *index)
 	return ret;
 }
 
-int s3c_fimc_attach_out_queue(struct FIMC_control *ctrl, unsigned int index)
+int s3c_fimc_attach_out_queue(struct FIMC_control *ctrl, u32 index)
 {
 	unsigned long		spin_flags;
 	int			swap_queue[FIMC_BUFF_NUM];
