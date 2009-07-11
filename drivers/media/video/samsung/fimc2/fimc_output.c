@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/s3c_fimc_output.c
+/* linux/drivers/media/video/samsung/fimc_output.c
  *
  * V4L2 Output device support file for Samsung Camera Interface (FIMC) driver
  *
@@ -14,15 +14,18 @@
 #include <linux/bootmem.h>
 #include <linux/string.h>
 #include <linux/platform_device.h>
+#include <media/videobuf-core.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
 #include "fimc.h"
 
-int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
+int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	u32 i;
+	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -37,40 +40,38 @@ int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 		return -EINVAL;
 	}
 
-	if (ctrl->buf_info.requested == TRUE && b->count != 0 ) {
+	if (ctrl->out->is_requested == 1 && b->count != 0 ) {
 		dev_err(ctrl->dev, "Buffers were already requested.\n");
 		return -EBUSY;
 	}
 
 	/* control user input */
-	if (b->count > S3C_FIMC_OUT_BUFF_NUM) {
+	if (b->count > FIMC_OUTBUFS) {
 		dev_warn(ctrl->dev, "The buffer count is modified by driver \
-				from %d to %d.\n", b->count, FIMC_OUT_BUFF_NUM);
-		b->count = FIMC_OUT_BUFF_NUM;
+				from %d to %d.\n", b->count, FIMC_OUTBUFS);
+		b->count = FIMC_OUTBUFS;
 	} 
 
 	/* Initialize all buffers */
-	ret = s3c_fimc_check_out_buf(ctrl, b->count);
+	ret = fimc_check_out_buf(ctrl, b->count);
 	if (ret) {
 		dev_err(ctrl->dev, "Reserved memory is not sufficient.\n");
 		return -EINVAL;
 	}
 	
-	ret = s3c_fimc_init_out_buf(ctrl);
+	ret = fimc_init_out_buf(ctrl);
 	if (ret) {
 		dev_err(ctrl->dev, "Cannot initialize the buffers\n");
 		return -EINVAL;
 	}
 
 	if (b->count != 0) {	/* allocate buffers */
-		ctrl->out->is_requested = TRUE;
+		ctrl->out->is_requested = 1;
 		
 		for(i = 0; i < b->count; i++)
-			ctrl->out->buf[i].state = ;
-			out_buf[i].buf_state = VIDEOBUF_IDLE;
+			ctrl->out->buf[i].state = VIDEOBUF_IDLE;
 	} else {
-		/* fall through */
-		/* All buffers are initialized.  */
+		/* Fall through : All buffers are initialized.  */
 	}
 
 	ctrl->out->buf_num = b->count;
@@ -80,30 +81,7 @@ int s3c_fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int s3c_fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
+int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -134,11 +112,13 @@ int s3c_fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	return ret;
 }
 
-int s3c_fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
+int fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
-		c->value = ctrl->out.rotate;
+		c->value = ctrl->out->rotate;
 		break;
 
 	default:
@@ -149,14 +129,14 @@ int s3c_fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 	return 0;
 }
 
-int s3c_fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
+int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
-		ret = s3c_fimc_mapping_rot(ctrl, c->value);
+		ret = fimc_mapping_rot(ctrl, c->value);
 		break;
 
 	default:
@@ -167,11 +147,12 @@ int s3c_fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 	return ret;
 }
 
-int s3c_fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
+int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
-#if 0
+
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
+#if 0
 	unsigned int max_width = 0, max_height = 0;
 	unsigned int pixelformat = ctrl->v4l2.video_out_fmt.pixelformat;
 	unsigned int is_rot = 0;
@@ -229,7 +210,7 @@ int s3c_fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	return ret;
 }
 
-int s3c_fimc_s_crop_output(struct file *filp, void *fh, struct v4l2_crop *a)
+int fimc_s_crop_output(struct file *filp, void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -239,7 +220,7 @@ int s3c_fimc_s_crop_output(struct file *filp, void *fh, struct v4l2_crop *a)
 	return ret;
 }
 
-int s3c_fimc_streamon_output(struct file *filp, void *fh, enum v4l2_buf_type i)
+int fimc_streamon_output(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -249,7 +230,7 @@ int s3c_fimc_streamon_output(struct file *filp, void *fh, enum v4l2_buf_type i)
 	return ret;
 }
 
-int s3c_fimc_streamoff_output(struct file *filp, void *fh, enum v4l2_buf_type i)
+int fimc_streamoff_output(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -259,7 +240,7 @@ int s3c_fimc_streamoff_output(struct file *filp, void *fh, enum v4l2_buf_type i)
 	return ret;
 }
 
-int s3c_fimc_qbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
+int fimc_qbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -269,7 +250,7 @@ int s3c_fimc_qbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
 	return ret;
 }
 
-int s3c_fimc_dqbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
+int fimc_dqbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -279,7 +260,7 @@ int s3c_fimc_dqbuf_output(struct file *filp, void *fh, struct v4l2_buffer *b)
 	return ret;
 }
 
-static int s3c_fimc_g_fmt_vid_out(struct file *filp, void *fh, 
+static int fimc_g_fmt_vid_out(struct file *filp, void *fh, 
 						struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -290,7 +271,7 @@ static int s3c_fimc_g_fmt_vid_out(struct file *filp, void *fh,
 	return ret;
 }
 
-static int s3c_fimc_s_fmt_vid_out(struct file *filp, void *fh, 
+static int fimc_s_fmt_vid_out(struct file *filp, void *fh, 
 						struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -301,7 +282,7 @@ static int s3c_fimc_s_fmt_vid_out(struct file *filp, void *fh,
 	return ret;
 }
 
-static int s3c_fimc_try_fmt_vid_out(struct file *filp, void *fh, 
+static int fimc_try_fmt_vid_out(struct file *filp, void *fh, 
 						struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -313,7 +294,7 @@ static int s3c_fimc_try_fmt_vid_out(struct file *filp, void *fh,
 }
 
 
-static int s3c_fimc_g_fbuf(struct file *filp, void *fh,
+static int fimc_g_fbuf(struct file *filp, void *fh,
 					struct v4l2_framebuffer *fb)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -324,7 +305,7 @@ static int s3c_fimc_g_fbuf(struct file *filp, void *fh,
 	return ret;
 }
 
-static int s3c_fimc_s_fbuf(struct file *filp, void *fh,
+static int fimc_s_fbuf(struct file *filp, void *fh,
 					struct v4l2_framebuffer *fb)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;

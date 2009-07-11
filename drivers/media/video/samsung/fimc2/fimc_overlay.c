@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/s3c_fimc_cfg.c
+/* linux/drivers/media/video/samsung/fimc_cfg.c
  *
  * V4L2 Overlay device support file for Samsung Camera Interface (FIMC) driver
  *
@@ -20,7 +20,7 @@
 
 #include "fimc.h"
 
-static int s3c_fimc_try_fmt_overlay(struct file *filp, void *fh,
+static int fimc_try_fmt_overlay(struct file *filp, void *fh,
 					  struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -31,7 +31,7 @@ static int s3c_fimc_try_fmt_overlay(struct file *filp, void *fh,
 	return ret;
 }
 
-static int s3c_fimc_g_fmt_vid_overlay(struct file *file, void *fh,
+static int fimc_g_fmt_vid_overlay(struct file *file, void *fh,
 					struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -42,7 +42,7 @@ static int s3c_fimc_g_fmt_vid_overlay(struct file *file, void *fh,
 	return ret;
 }
 
-static int s3c_fimc_s_fmt_vid_overlay(struct file *file, void *fh,
+static int fimc_s_fmt_vid_overlay(struct file *file, void *fh,
 					struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;

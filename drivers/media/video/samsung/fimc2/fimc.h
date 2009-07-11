@@ -40,6 +40,14 @@
 #define FIMC_SRC_MAX_H		1080
 
 /*
+ * V 4 L 2   F I M C   E X T E N S I O N S
+ *
+*/
+
+/* CID extensions */
+#define V4L2_CID_ROTATION		(V4L2_CID_PRIVATE_BASE + 0)
+
+/*
  * E N U M E R A T I O N S
  *
 */
@@ -158,9 +166,10 @@ struct fimc_control {
 
 	/* fimc specific */
 	struct s3c_platform_camera	*cam;		/* activated camera */
-	struct fimc_fbinfo		*fb;		/* fimd info */
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
+	struct fimc_fbinfo		fb;		/* fimd info */
+
 	enum fimc_status		status;
 };
 
