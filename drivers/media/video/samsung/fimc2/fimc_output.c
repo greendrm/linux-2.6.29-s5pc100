@@ -50,7 +50,7 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 		dev_warn(ctrl->dev, "The buffer count is modified by driver \
 				from %d to %d.\n", b->count, FIMC_OUTBUFS);
 		b->count = FIMC_OUTBUFS;
-	} 
+	}
 
 	/* Initialize all buffers */
 	ret = fimc_check_out_buf(ctrl, b->count);
@@ -87,34 +87,40 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
-#if 0
-	if (ctrl->stream_status != FIMC_STREAMOFF) {
+
+	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
 		return -EBUSY;
 	}
 
-	if (b->memory != V4L2_MEMORY_MMAP ) {
-		rp_err(ctrl->log, "V4L2_MEMORY_MMAP is only supported.\n");
+	/* To do : V4L2_MEMORY_USERPTR */
+	if (b->memory != V4L2_MEMORY_MMAP) {
+		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
 		return -EINVAL;
 	}
 
-	if (b->index > ctrl->buf_info.num ) {
-		rp_err(ctrl->log, "The index is out of bounds. \
+	if (b->index > ctrl->out->buf_num ) {
+		dev_err(ctrl->log, "The index is out of bounds. \
 			You requested %d buffers. But you set the index as %d.\n",
-			ctrl->buf_info.num, b->index);
+			ctrl->out->buf_num, b->index);
 		return -EINVAL;
 	}
-	
-	b->flags	= ctrl->out_buf[b->index].buf_flag;
+
+	b->flags	= ctrl->out->buf[b->index].flags;
 	b->m.offset	= b->index * PAGE_SIZE;
- 	b->length	= ctrl->out_buf[b->index].buf_length;
-#endif
+ 	b->length	= ctrl->out->buf[b->index].length;
+
 	return ret;
 }
 
 int fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
 
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
@@ -134,6 +140,11 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
+
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
 		ret = fimc_mapping_rot(ctrl, c->value);
@@ -152,61 +163,60 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
-#if 0
-	unsigned int max_width = 0, max_height = 0;
-	unsigned int pixelformat = ctrl->v4l2.video_out_fmt.pixelformat;
-	unsigned int is_rot = 0;
-	unsigned int rot_degree = ctrl->s_ctrl.rot.degree;
+	u32 pixelformat = ctrl->out->pix.pixelformat;
+	u32 rot_degree = ctrl->out->rotate;
+	u32 is_rot = 0, max_width = 0, max_height = 0;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	if (ctrl->stream_status != FIMC_STREAMOFF) {
+	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
 		return -EBUSY;
 	}
 
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		max_width	= S3C_FIMC_YUV_SRC_MAX_WIDTH;
-		max_height	= S3C_FIMC_YUV_SRC_MAX_HEIGHT;
+		max_width	= FIMC_SRC_MAX_W;
+		max_height	= FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if ((rot_degree == ROT_90) || (rot_degree == ROT_270))
+		if ((rot_degree == 90) || (rot_degree == 270))
 			is_rot = 1;
 
 		if (is_rot == 1) {	/* Landscape */
-			max_width	= ctrl->fimd.v_res;
-			max_height	= ctrl->fimd.h_res;
+			max_width	= ctrl->fb.lcd->height;
+			max_height	= ctrl->fb.lcd->width;
 		} else {		/* Portrait */
-			max_width	= ctrl->fimd.h_res;
-			max_height	= ctrl->fimd.v_res;
+			max_width	= ctrl->fb.lcd->width;
+			max_height	= ctrl->fb.lcd->height;
 		}
 	} else {
 		dev_err(ctrl->dev, "V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_RGB32 \
-				and V4L2_PIX_FMT_RGB565 are only supported..\n");
+				and V4L2_PIX_FMT_RGB565 are only supported.\n");
 		return -EINVAL;
 	}
 
 	/* crop bounds */
-	ctrl->v4l2.crop_bounds.left	= 0;
-	ctrl->v4l2.crop_bounds.top	= 0;
-	ctrl->v4l2.crop_bounds.width	= max_width;
-	ctrl->v4l2.crop_bounds.height	= max_height;
+	ctrl->cropcap.bounds.left
+	ctrl->cropcap.bounds.left	= 0;
+	ctrl->cropcap.bounds.top	= 0;
+	ctrl->cropcap.bounds.width	= max_width;
+	ctrl->cropcap.bounds.height	= max_height;
 
 	/* crop default values */
-	ctrl->v4l2.crop_defrect.left	= 0;
-	ctrl->v4l2.crop_defrect.top	= 0;
-	ctrl->v4l2.crop_defrect.width	= max_width;
-	ctrl->v4l2.crop_defrect.height	= max_height;
+	ctrl->cropcap.defrect.left	= 0;
+	ctrl->cropcap.defrect.top	= 0;
+	ctrl->cropcap.defrect.width	= max_width;
+	ctrl->cropcap.defrect.height	= max_height;
 
 	/* crop pixel aspec values */
 	/* To Do : Have to modify but I don't know the meaning. */
-	ctrl->v4l2.pixelaspect.numerator	= 5;
-	ctrl->v4l2.pixelaspect.denominator	= 3;
+	ctrl->cropcap.pixelaspect.numerator	= 5;
+	ctrl->cropcap.pixelaspect.denominator	= 3;
 
-	a->bounds	= ctrl->v4l2.crop_bounds;
-	a->defrect	= ctrl->v4l2.crop_defrect;
-	a->pixelaspect	= ctrl->v4l2.pixelaspect;
-#endif
+	a->bounds	= ctrl->cropcap.bounds;
+	a->defrect	= ctrl->cropcap.defrect;
+	a->pixelaspect	= ctrl->cropcap.pixelaspect;
+
 	return ret;
 }
 
