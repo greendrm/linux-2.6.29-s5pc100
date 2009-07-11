@@ -52,11 +52,19 @@ static const unsigned int voltage_table[11] = {
 /* frequency voltage matching table */
 static const unsigned int frequency_match[][3] = {
 /* frequency, Mathced VDD ARM voltage , Matched VDD INT*/
+#if 0
 	{L0, VOUT_1_30, VOUT_1_30},
 	{L1, VOUT_1_20, VOUT_1_20},
 	{L2, VOUT_1_10, VOUT_1_20},
 	{L3, VOUT_1_05, VOUT_1_20},
 	{L4, VOUT_1_05, VOUT_1_20},
+#else		
+	{L0, VOUT_1_35, VOUT_1_25},
+	{L1, VOUT_1_20, VOUT_1_20},
+	{L2, VOUT_1_20, VOUT_1_20},
+	{L3, VOUT_1_05, VOUT_1_20},
+	{L4, VOUT_1_00, VOUT_1_00},	//83/66
+#endif		
 };
 
 /* LTC3714 Setting Routine */

@@ -209,6 +209,13 @@ static struct clk init_clocks_disable[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d10_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D10_USBOTG,
+	}, {
+		.name		= "sclk_cam",
+		.id		= 0,
+		.parent		= &clk_dout_mpll2,
+		.enable		= s5pc1xx_sclk1_ctrl,
+		.ctrlbit	= S5P_CLKGATE_SCLK1_CAM,
+		.set_rate	= s5pc1xx_setrate_sclk_cam,
 	},
 };
 

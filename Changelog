@@ -879,7 +879,40 @@ v2.6.29.4-r3d4: Kukjin Kim
 	Modified files:
 		M	arch/arm/plat-s3c/dma-pl330.c
 
-v2.6.29.4-r3d5: Jaeryul Oh
+v2.6.29.4-r3d5: Jae-Cheol Lee
+	- Bug fixed on IDLE bit definition for SMDKC100
+	- Modified DVFS driver for SMDKC100
+
+	Modified FIles:
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc1xx/ltc3714.c
+		M	arch/arm/plat-s5pc1xx/s5pc1xx-cpufreq.c
+
+v2.6.29.4-r3d6:Sewoon Park
+	- Add mach type for S5P6442
+
+		M       arch/arm/tools/mach-types
+
+v2.6.29.4-r3d7: Thomas Abraham
+	- Add support for 4KB Page NAND device in NAND driver for c100.
+	  Add support for 8-Bit ECC for 4KB Page NAND device (SLC/MLC).
+	
+	Modified Files:
+		M	arch/arm/plat-s3c/include/plat/regs-nand.h
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c
+		M	fs/jffs2/scan.c
+		M	include/linux/mtd/nand.h
+		M	include/mtd/mtd-abi.h
+
+v2.6.29.4-r3d8: Thomas Abraham
+	- Removing debug statements used for testing in NAND driver
+
+	Modified Files:
+		M	drivers/mtd/nand/nand_base.c
+		M	drivers/mtd/nand/s3c_nand.c
+
+v2.6.29.4-r3d9: Jaeryul Oh
 	- Added MFC driver on SMDKC110
 
 	Modified Files :
@@ -906,5 +939,4 @@ v2.6.29.4-r3d5: Jaeryul Oh
 	A       drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
 	A       drivers/media/video/samsung/mfc50/s3c_mfc_common.h
 	A drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.h
-
 
