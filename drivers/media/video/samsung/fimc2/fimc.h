@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/s3c_fimc.h
+/* linux/drivers/media/video/samsung/fimc.h
  *
  * Header file for Samsung Camera Interface (FIMC) driver
  *
@@ -28,52 +28,51 @@
 
 #define FIMC_NAME		"s3c-fimc"
 
-#define FIMC_OUT_BUFF_NUM	3
+#define FIMC_DEVICES		3
+#define FIMC_SUBDEVS		3
+#define FIMC_PHYBUFS		4
+#define FIMC_OUTBUFS		3
+#define FIMC_FBS		5
+#define FIMC_INQ_BUFS		3
+#define FIMC_OUTQ_BUFS		3
 
-#define FIMC0_RESERVED_MEM_ADDR_PHY		(u32) s3c_get_media_memory(S3C_MDEV_FIMC0)
-#define FIMC0_RESERVED_MEM_SIZE			(u32) s3c_get_media_memsize(S3C_MDEV_FIMC0)
 
-#define FIMC1_RESERVED_MEM_ADDR_PHY		(u32) s3c_get_media_memory(S3C_MDEV_FIMC1)
-#define FIMC1_RESERVED_MEM_SIZE			(u32) s3c_get_media_memsize(S3C_MDEV_FIMC1)
-
-#define FIMC2_RESERVED_MEM_ADDR_PHY		(u32) s3c_get_media_memory(S3C_MDEV_FIMC2)
-#define FIMC2_RESERVED_MEM_SIZE			(u32) s3c_get_media_memsize(S3C_MDEV_FIMC2)
-
-#define FIMC_YUV_SRC_MAX_WIDTH			1920
-#define FIMC_YUV_SRC_MAX_HEIGHT			1080
-
-/* debug macro */
-#define FIMC_LOG_DEFAULT       			FIMC_LOG_WARN
+/*
+ * D E B U G  M A C R O E S
+ *
+*/
+#define FIMC_LOG_DEFAULT       	FIMC_LOG_WARN
 
 #define FIMC_DEBUG(level, fmt, ...) \
 	do { \
 		if (level <= FIMC_LOG_DEBUG) \
-			printk(KERN_DEBUG FIMC2_NAME ": " fmt, ##__VA_ARGS__); \
-	} while(0)
+			printk(KERN_DEBUG FIMC_NAME ": " fmt, ##__VA_ARGS__); \
+	} while (0)
 
 #define FIMC_INFO(level, fmt, ...) \
 	do { \
 		if (level <= FIMC_LOG_INFO) \
-			printk(KERN_INFO FIMC2_NAME ": " fmt, ##__VA_ARGS__); \
+			printk(KERN_INFO FIMC_NAME ": " fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define FIMC_WARN(level, fmt, ...) \
 	do { \
 		if (level <= FIMC_LOG_WARN) \
-			printk(KERN_WARNING FIMC2_NAME ": " fmt, ##__VA_ARGS__); \
+			printk(KERN_WARNING FIMC_NAME ": " fmt, ##__VA_ARGS__); \
 	} while (0)
 
 
 #define FIMC_ERROR(level, fmt, ...) \
 	do { \
 		if (level <= FIMC_LOG_ERR) \
-			printk(KERN_ERR FIMC2_NAME ": " fmt, ##__VA_ARGS__); \
+			printk(KERN_ERR FIMC_NAME ": " fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define fimc_dbg(level, fmt, ...)	FIMC_DEBUG(level, fmt, ##__VA_ARGS__)
 #define fimc_info(level, fmt, ...)	FIMC_INFO(level, fmt, ##__VA_ARGS__)
 #define fimc_warn(level, fmt, ...)	FIMC_WARN(level, fmt, ##__VA_ARGS__)
 #define fimc_err(level, fmt, ...)	FIMC_ERROR(level, fmt, ##__VA_ARGS__)
+
 
 /*
  * E N U M E R A T I O N S
@@ -107,12 +106,6 @@ enum fimc_fimd_state {
 	FIMD_ON,
 };
 
-enum fimc_flip_t {
-	FLIP_ORIGINAL	= 0x0,
-	FLIP_X_AXIS	= 0x1,
-	FLIP_Y_AXIS	= 0x2,
-	FLIP_XY_AXIS	= 0x3,
-};
 
 /*
  * S T R U C T U R E S
@@ -129,11 +122,13 @@ struct fimc_meminfo {
 
 /* for capture device */
 struct fimc_capinfo {
-	struct v4l2_pix_format	fmt;
-	dma_addr_t		base[4];	/* phys. addr of pingpong */
 	struct v4l2_crop	crop;
-	enum fimc_flip_t	flip;
-	int			rotate;		/* rotation: 90, 180, 270 */
+	struct v4l2_pix_format	fmt;
+	dma_addr_t		base[FIMC_PHYBUFS];
+
+	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
+	u32			flip;
+	u32			rotate;
 };
 
 /* for output/overlay device */
@@ -157,11 +152,13 @@ struct fimc_outinfo {
 	u32			buf_num;
 	u32			is_requested;
 	struct fimc_buf_idx	idx;
-	struct fimc_buf_set	buf[3];
-	u32			in_queue[3];
-	u32			out_queue[3];
-	enum fimc_flip_t	flip;
-	int			rotate;
+	struct fimc_buf_set	buf[FIMC_OUTBUFS];
+	u32			in_queue[FIMC_INQ_BUFS];
+	u32			out_queue[FIMC_OUTQ_BUFS];
+
+	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
+	u32			flip;
+	u32			rotate;
 };
 
 struct s3cfb_window;
@@ -200,7 +197,7 @@ struct fimc_control {
 
 	/* fimc specific */
 	struct s3c_platform_camera	*cam;		/* activated camera */
-	struct fimc_fbinfo		*fb[5];		/* fimd info */
+	struct fimc_fbinfo		*fb[FIMC_FBS];	/* fimd info */
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
 	enum fimc_status		status;
@@ -209,9 +206,9 @@ struct fimc_control {
 
 /* global */
 struct fimc_global {
-	struct fimc_control 	ctrl[3];
-	struct v4l2_device	v4l2_dev[3];
-	struct v4l2_subdev	*sd[3];
+	struct fimc_control 	ctrl[FIMC_DEVICES];
+	struct v4l2_device	v4l2_dev[FIMC_DEVICES];
+	struct v4l2_subdev	*sd[FIMC_SUBDEVS];
 	struct fimc_meminfo	*mem;
 };
 
@@ -232,6 +229,7 @@ struct fimc_scaler {
 	u32 real_height;
 };
 
+
 /*
  * E X T E R N S
  *
@@ -240,5 +238,5 @@ extern int fimc_mapping_rot(struct fimc_control *ctrl, int degree);
 extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
 extern int fimc_init_out_buf(struct fimc_control *ctrl);
 
-#endif /* _FIMC2_H */
+#endif /* _FIMC_H */
 
