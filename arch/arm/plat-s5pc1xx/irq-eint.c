@@ -29,6 +29,52 @@
 
 #include <mach/gpio.h>
 
+#define S5PC1XX_GPIOREG(x)		(S5PC1XX_VA_GPIO + (x))
+
+#define S5PC1XX_EINT0CON		S5PC1XX_GPIOREG(0xE00)			/* EINT0  ~ EINT7  */
+#define S5PC1XX_EINT1CON		S5PC1XX_GPIOREG(0xE04)			/* EINT8  ~ EINT15 */
+#define S5PC1XX_EINT2CON		S5PC1XX_GPIOREG(0xE08)			/* EINT16 ~ EINT23 */
+#define S5PC1XX_EINT3CON		S5PC1XX_GPIOREG(0xE0C)			/* EINT24 ~ EINT31 */
+#define S5PC1XX_EINTCON(x)		(S5PC1XX_EINT0CON + ((x) * 0x4))	/* EINT0  ~ EINT31 */
+
+#define S5PC1XX_EINT0FLTCON0		S5PC1XX_GPIOREG(0xE80)			/* EINT0  ~ EINT3  */
+#define S5PC1XX_EINT0FLTCON1		S5PC1XX_GPIOREG(0xE84)			
+#define S5PC1XX_EINT1FLTCON0		S5PC1XX_GPIOREG(0xE88)			/* EINT8 ~  EINT11 */
+#define S5PC1XX_EINT1FLTCON1		S5PC1XX_GPIOREG(0xE8C)
+#define S5PC1XX_EINT2FLTCON0		S5PC1XX_GPIOREG(0xE90)
+#define S5PC1XX_EINT2FLTCON1		S5PC1XX_GPIOREG(0xE94)
+#define S5PC1XX_EINT3FLTCON0		S5PC1XX_GPIOREG(0xE98)
+#define S5PC1XX_EINT3FLTCON1		S5PC1XX_GPIOREG(0xE9C)
+#define S5PC1XX_EINTFLTCON(x)		(S5PC1XX_EINT0FLTCON0 + ((x) * 0x4))	/* EINT0  ~ EINT31 */
+
+#define S5PC1XX_EINT0MASK		S5PC1XX_GPIOREG(0xF00)			/* EINT0 ~  EINT7  */
+#define S5PC1XX_EINT1MASK		S5PC1XX_GPIOREG(0xF04)			/* EINT8 ~  EINT15 */
+#define S5PC1XX_EINT2MASK		S5PC1XX_GPIOREG(0xF08)			/* EINT16 ~ EINT23 */
+#define S5PC1XX_EINT3MASK		S5PC1XX_GPIOREG(0xF0C)			/* EINT24 ~ EINT31 */
+#define S5PC1XX_EINTMASK(x)		(S5PC1XX_EINT0MASK + ((x) * 0x4))	/* EINT0 ~  EINT31 */
+
+#define S5PC1XX_EINT0PEND		S5PC1XX_GPIOREG(0xF40)			/* EINT0 ~  EINT7  */
+#define S5PC1XX_EINT1PEND		S5PC1XX_GPIOREG(0xF44)			/* EINT8 ~  EINT15 */
+#define S5PC1XX_EINT2PEND		S5PC1XX_GPIOREG(0xF48)			/* EINT16 ~ EINT23 */
+#define S5PC1XX_EINT3PEND		S5PC1XX_GPIOREG(0xF4C)			/* EINT24 ~ EINT31 */
+#define S5PC1XX_EINTPEND(x)		(S5PC1XX_EINT0PEND + ((x) * 0x4))	/* EINT0 ~  EINT31 */
+
+#define eint_offset(irq)		((irq) < IRQ_EINT16_31 ? ((irq) - IRQ_EINT0) :  \
+					((irq - S3C_IRQ_EINT_BASE) + IRQ_EINT16_31 - IRQ_EINT0))
+					
+#define eint_irq_to_bit(irq)		(1 << (eint_offset(irq) & 0x7))
+
+#define eint_conf_reg(irq)		((eint_offset(irq)) >> 3)
+#define eint_filt_reg(irq)		((eint_offset(irq)) >> 2)
+#define eint_mask_reg(irq)		((eint_offset(irq)) >> 3)
+#define eint_pend_reg(irq)		((eint_offset(irq)) >> 3)
+
+#define S5PC1XX_EINT_LOWLEV		(0x00)
+#define S5PC1XX_EINT_HILEV		(0x01)
+#define S5PC1XX_EINT_FALLEDGE		(0x02)
+#define S5PC1XX_EINT_RISEEDGE		(0x03)
+#define S5PC1XX_EINT_BOTHEDGE		(0x04)
+
 static inline void s3c_irq_eint_mask(unsigned int irq)
 {
 	u32 mask;
@@ -72,23 +118,23 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 		break;
 
 	case IRQ_TYPE_EDGE_RISING:
-		newvalue = S3C2410_EXTINT_RISEEDGE;
+		newvalue = S5PC1XX_EINT_RISEEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_FALLING:
-		newvalue = S3C2410_EXTINT_FALLEDGE;
+		newvalue = S5PC1XX_EINT_FALLEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_BOTH:
-		newvalue = S3C2410_EXTINT_BOTHEDGE;
+		newvalue = S5PC1XX_EINT_BOTHEDGE;
 		break;
 
 	case IRQ_TYPE_LEVEL_LOW:
-		newvalue = S3C2410_EXTINT_LOWLEV;
+		newvalue = S5PC1XX_EINT_LOWLEV;
 		break;
 
 	case IRQ_TYPE_LEVEL_HIGH:
-		newvalue = S3C2410_EXTINT_HILEV;
+		newvalue = S5PC1XX_EINT_HILEV;
 		break;
 
 	default:
@@ -140,7 +186,6 @@ static inline void s3c_irq_demux_eint(unsigned int start, unsigned int end)
 	unsigned int irq;
 
 	status &= ~mask;
-	status >>= start;
 	status &= (1 << (end - start + 1)) - 1;
 
 	for (irq = IRQ_EINT(start); irq <= IRQ_EINT(end); irq++) {
@@ -164,7 +209,7 @@ static void s3c_irq_vic_eint_mask(unsigned int irq)
 	
 	s3c_irq_eint_mask(irq);
 	
-	irq &= 31;
+	irq &= 15;
 	writel(1 << irq, base + VIC_INT_ENABLE_CLEAR);
 }
 
@@ -174,13 +219,16 @@ static void s3c_irq_vic_eint_unmask(unsigned int irq)
 	
 	s3c_irq_eint_unmask(irq);
 	
-	irq &= 31;
+	irq &= 15;
 	writel(1 << irq, base + VIC_INT_ENABLE);
 }
 
 static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 {
-	__raw_writel(eint_irq_to_bit(irq), S5PC1XX_EINTPEND(eint_pend_reg(irq)));
+	void __iomem *reg;
+	
+	reg = eint_irq_to_bit(irq);
+	__raw_writel(reg, S5PC1XX_EINTPEND(eint_pend_reg(irq)));
 }
 
 static void s3c_irq_vic_eint_maskack(unsigned int irq)
@@ -205,6 +253,8 @@ int __init s5pc1xx_init_irq_eint(void)
 
 	for (irq = IRQ_EINT0; irq <= IRQ_EINT15; irq++) {
 		set_irq_chip(irq, &s3c_irq_vic_eint);
+		set_irq_handler(irq, handle_level_irq);
+		set_irq_flags(irq, IRQF_VALID);
 	}
 
 	for (irq = IRQ_EINT(16); irq <= IRQ_EINT(31); irq++) {
