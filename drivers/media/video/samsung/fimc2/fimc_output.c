@@ -160,12 +160,11 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 
 int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
-
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 	u32 pixelformat = ctrl->out->pix.pixelformat;
 	u32 rot_degree = ctrl->out->rotate;
-	u32 is_rot = 0, max_width = 0, max_height = 0;
+	u32 max_w = 0, max_h = 0;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -175,19 +174,16 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	}
 
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		max_width	= FIMC_SRC_MAX_W;
-		max_height	= FIMC_SRC_MAX_H;
+		max_w	= FIMC_SRC_MAX_W;
+		max_h	= FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if ((rot_degree == 90) || (rot_degree == 270))
-			is_rot = 1;
-
-		if (is_rot == 1) {	/* Landscape */
-			max_width	= ctrl->fb.lcd->height;
-			max_height	= ctrl->fb.lcd->width;
-		} else {		/* Portrait */
-			max_width	= ctrl->fb.lcd->width;
-			max_height	= ctrl->fb.lcd->height;
+		if ((rot_degree == 90) || (rot_degree == 270)) {	/* Landscape */
+			max_w	= ctrl->fb.lcd->height;
+			max_h	= ctrl->fb.lcd->width;
+		} else {						/* Portrait */
+			max_w	= ctrl->fb.lcd->width;
+			max_h	= ctrl->fb.lcd->height;
 		}
 	} else {
 		dev_err(ctrl->dev, "V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_RGB32 \
@@ -198,14 +194,14 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	/* crop bounds */
 	ctrl->cropcap.bounds.left	= 0;
 	ctrl->cropcap.bounds.top	= 0;
-	ctrl->cropcap.bounds.width	= max_width;
-	ctrl->cropcap.bounds.height	= max_height;
+	ctrl->cropcap.bounds.width	= max_w;
+	ctrl->cropcap.bounds.height	= max_h;
 
 	/* crop default values */
 	ctrl->cropcap.defrect.left	= 0;
 	ctrl->cropcap.defrect.top	= 0;
-	ctrl->cropcap.defrect.width	= max_width;
-	ctrl->cropcap.defrect.height	= max_height;
+	ctrl->cropcap.defrect.width	= max_w;
+	ctrl->cropcap.defrect.height	= max_h;
 
 	/* crop pixel aspec values */
 	/* To Do : Have to modify but I don't know the meaning. */
@@ -218,6 +214,8 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 
 	return ret;
 }
+
+
 
 int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 {
