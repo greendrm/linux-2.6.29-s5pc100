@@ -100,7 +100,7 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	}
 
 	if (b->index > ctrl->out->buf_num ) {
-		dev_err(ctrl->log, "The index is out of bounds. \
+		dev_err(ctrl->dev, "The index is out of bounds. \
 			You requested %d buffers. But you set the index as %d.\n",
 			ctrl->out->buf_num, b->index);
 		return -EINVAL;
@@ -196,7 +196,6 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	}
 
 	/* crop bounds */
-	ctrl->cropcap.bounds.left
 	ctrl->cropcap.bounds.left	= 0;
 	ctrl->cropcap.bounds.top	= 0;
 	ctrl->cropcap.bounds.width	= max_width;
