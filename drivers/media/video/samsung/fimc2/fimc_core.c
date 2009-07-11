@@ -54,53 +54,41 @@ inline struct fimc_control *get_fimc(int id)
 
 void fimc_register_camera(struct s3c_platform_camera *cam)
 {
-	fimc.camera[cam->id] = cam;
+	fimc->camera[cam->id] = cam;
 
-	clk_disable(fimc.cam_clock);
-	clk_set_rate(fimc.cam_clock, cam->clockrate);
-	clk_enable(fimc.cam_clock);
+	clk_disable(fimc->mclk);
+	clk_set_rate(fimc->mclk, cam->mclk_ratio);
+	clk_enable(fimc->mclk);
 
 	fimc_reset_camera();
 }
 
 void fimc_unregister_camera(struct fimc_camera *cam)
 {
-	int i = 0;
+	struct fimc_control ctrl;
+	int i;
 
-	for (i = 0; i < S3C_FIMC_MAX_CTRLS; i++) {
-		if (fimc.ctrl[i].in_cam == cam)
-			fimc.ctrl[i].in_cam = NULL;
+	for (i = 0; i < FIMC_DEVICES; i++) {
+		ctrl = get_fimc(i);
+		if (ctrl->cam == cam)
+			ctrl->cam = NULL;
 	}
 
-	fimc.camera[cam->id] = NULL;
+	fimc->camera[cam->id] = NULL;
 }
 
 void fimc_set_active_camera(struct fimc_control *ctrl, int id)
 {
-	ctrl->in_cam = fimc.camera[id];
+	ctrl->cam = fimc->camera[id];
 
-	dev_info(ctrl->dev, "%s:requested id=%d\n",__FUNCTION__, id);
+	dev_info(ctrl->dev, "requested id: %d\n", id);
 	
-	if (ctrl->in_cam && id < S3C_FIMC_TPID)
+	if (ctrl->cam && id < FIMC_TPID)
 		fimc_select_camera(ctrl);
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
-	struct fimc_control *ctrl = (struct fimc_control *) dev_id;
-
-	fimc_clear_irq(ctrl);
-	fimc_check_fifo(ctrl);
-
-	if (IS_CAPTURE(ctrl)) {
-		dev_dbg(ctrl->dev, "irq is in capture state\n");
-
-		if (fimc_frame_handler(ctrl) == S3C_FIMC_FRAME_SKIP)
-			return IRQ_HANDLED;
-
-		wake_up_interruptible(&ctrl->waitq);
-	}
-
 	return IRQ_HANDLED;
 }
 
@@ -169,18 +157,11 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 static int fimc_unregister_controller(struct platform_device *pdev)
 {
 	struct fimc_control *ctrl;
-	struct platform_fimc *pdata;
+	struct s3c_platform_fimc *pdata;
 	int id = pdev->id;
 
-	ctrl = &fimc.ctrl[id];
-
-	fimc_free_output_memory(&ctrl->out_frame);
-
-	pdata = to_fimc_plat(ctrl->dev);
-
-	if (!pdata->shared_io)
-		iounmap(ctrl->regs);
-
+	ctrl = get_fimc(id);
+	iounmap(ctrl->regs);
 	memset(ctrl, 0, sizeof(*ctrl));
 
 	return 0;
@@ -188,70 +169,18 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 
 static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 {
-	struct fimc_control *ctrl = filp->private_data;
-	struct fimc_out_frame *frame = &ctrl->out_frame;
-
-	u32 size = vma->vm_end - vma->vm_start;
-	u32 pfn, total_size = frame->buf_size;
-
-	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-	vma->vm_flags |= VM_RESERVED;
-
-	/* page frame number of the address for a source frame to be stored at. */
-	pfn = __phys_to_pfn(frame->addr[vma->vm_pgoff].phys_y);
-
-	if (size > total_size) {
-		err("the size of mapping is too big\n");
-		return -EINVAL;
-	}
-
-	if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
-		err("writable mapping must be shared\n");
-		return -EINVAL;
-	}
-
-	if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
-		err("mmap fail\n");
-		return -EINVAL;
-	}
-
 	return 0;
 }
 
 static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
-	struct fimc_control *ctrl = filp->private_data;
-	u32 mask = 0;
-
-	poll_wait(filp, &ctrl->waitq, wait);
-
-	if (IS_IRQ_HANDLING(ctrl))
-		mask = POLLIN | POLLRDNORM;
-
-	FSET_STOP(ctrl);
-
-	return mask;
+	return 0;
 }
 
 static
 ssize_t fimc_read(struct file *filp, char *buf, size_t count, loff_t *pos)
 {
-	struct fimc_control *ctrl = filp->private_data;
-	size_t end;
-
-	if (IS_CAPTURE(ctrl)) {
-		if (wait_event_interruptible(ctrl->waitq, IS_IRQ_HANDLING(ctrl)))
-				return -ERESTARTSYS;
-
-		FSET_STOP(ctrl);
-	}
-
-	end = min_t(size_t, ctrl->out_frame.buf_size, count);
-
-	if (copy_to_user(buf, fimc_get_current_frame(ctrl), end))
-		return -EFAULT;
-
-	return end;
+	return 0;
 }
 
 static
@@ -266,17 +195,22 @@ ssize_t fimc_write(struct file *filp, const char *b, size_t c, loff_t *offset)
  * Openening device node is to open FIMC device
  * and after opening device, VIDIOC_S_INPUT is necessary
  * to make a choise between input camera devices
- * 	before VIDIOC_S_INPUT : pdata->camera is used
- * 	after VIDIOC_S_INPUT : fimc.camera is used
+ * 	before VIDIOC_S_INPUT: pdata->camera is used
+ * 	after VIDIOC_S_INPUT: fimc->camera is used
  */
 static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
-	struct platform_fimc *pdata;
+	struct s3c_platform_fimc *pdata;
 	int minor, ret;
 
 	minor = video_devdata(filp)->minor;
-	ctrl = &fimc.ctrl[minor];
+
+	/* TODO: remove get fimc with minor
+	 * how to get the proper fimc controller?
+	*/
+	ctrl = get_fimc(minor);
+
 	pdata = to_fimc_plat(ctrl->dev);
 
 	/* TODO: condition check for multiple open with same external camera
@@ -287,8 +221,8 @@ static int fimc_open(struct file *filp)
 	 * NOTE: scaler only feature should be implemented seperately
 	 * 	so, no external camera no device node for camera
 	 */
-	if (!fimc.camera[pdata->default_cam]) {
-		dev_err(ctrl->dev, "No external camera device\n");
+	if (!fimc->camera[pdata->default_cam]) {
+		dev_err(ctrl->dev, "no external camera device\n");
 		return -ENODEV;
 	}
 
@@ -298,8 +232,9 @@ static int fimc_open(struct file *filp)
 	 * because of the default camera issue
 	 * Don't forget to give proper power after VIDIOC_S_INPUT called
 	 */
-	if (!fimc.camera[pdata->default_cam]->cam_power) {
-		dev_err(ctrl->dev, "No way to control camera[%d]'s power\n", ctrl->id);
+	if (!fimc->camera[pdata->default_cam]->cam_power) {
+		dev_err(ctrl->dev, "no way to control camera[%d]'s power\n", \
+			ctrl->id);
 		return -ENODEV;
 	}
 
@@ -321,16 +256,15 @@ static int fimc_open(struct file *filp)
 	 * FIXME: default camera policy is necessary
 	 * by now, default external camera id follows controller's id
 	 */
-	clk_set_rate(fimc.cam_clock, fimc.camera[pdata->default_cam]->clockrate);
-
-	clk_enable(fimc.cam_clock);
+	clk_set_rate(fimc->mclk, fimc->camera[pdata->default_cam]->mclk_ratio);
+	clk_enable(fimc->mclk);
 
 	/* FIXME: Giving power */
-	fimc.camera[pdata->default_cam]->cam_power(1);
+	fimc->camera[pdata->default_cam]->cam_power(1);
 
 	/*
 	 * Default camera attach
-	 * According to ctrl->in_cam (ctrl->id?)
+	 * According to ctrl->cam (ctrl->id?)
 	 * In this phase we don't know what user choose using
 	 * VIDIOC_S_INPUT so just attach default camera here
 	 * FIXME: This is just to be safe
@@ -338,7 +272,7 @@ static int fimc_open(struct file *filp)
 	 * through VIDIOC_S_INPUT
 	 */
 	fimc_set_active_camera(ctrl, pdata->default_cam);
-#if 1
+
 	/*
 	 * Now Configuring external camera module(subdev)
 	 * For now, we have "default camera" concept so,
@@ -346,14 +280,13 @@ static int fimc_open(struct file *filp)
 	 *
 	 * int (*s_config)(struct v4l2_subdev *sd, int irq, void *platform_data);
 	 */
-	ret = v4l2_subdev_call(ctrl->in_cam->sd, core, s_config,
-			ctrl->in_cam->info->irq,
-			ctrl->in_cam->info->platform_data);
+	ret = v4l2_subdev_call(ctrl->cam->sd, core, s_config,
+			ctrl->cam->info->irq,
+			ctrl->cam->info->platform_data);
 
 	if (ret == -ENOIOCTLCMD)
-		dev_err(ctrl->dev, "%s:s_config subdev api not supported\n",
-				__FUNCTION__);
-#endif
+		dev_err(ctrl->dev, "s_config subdev api not supported\n");
+
 	/* Apply things to interface register */
 	fimc_reset(ctrl);
 	filp->private_data = ctrl;
@@ -370,11 +303,10 @@ resource_busy:
 static int fimc_release(struct file *filp)
 {
 	struct fimc_control *ctrl;
-	struct platform_fimc *pdata;
+	struct s3c_platform_fimc *pdata;
 	int minor;
 
-	minor = video_devdata(filp)->minor;
-	ctrl = &fimc.ctrl[minor];
+	ctrl = (struct fimc_control *) filp->private_data;
 	pdata = to_fimc_plat(ctrl->dev);
 
 	mutex_lock(&ctrl->lock);
@@ -383,14 +315,14 @@ static int fimc_release(struct file *filp)
 	filp->private_data = NULL;
 
 	/* Shutdown the MCLK */
-	clk_disable(fimc.cam_clock);
+	clk_disable(fimc->mclk);
 
 	/* FIXME: turning off actual working camera */
-	fimc.camera[ctrl->in_cam->id]->cam_power(0);
+	fimc->camera[ctrl->cam->id]->cam_power(0);
 
 	mutex_unlock(&ctrl->lock);
 	
-	printk(KERN_INFO "%s:successfully released\n", __FUNCTION__);
+	printk(KERN_INFO "successfully released\n");
 	return 0;
 }
 
@@ -504,7 +436,6 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		 * try v4l2_subdev_call with s_config core to initialize after
 		 * giving power source
 		 */
-
 		sd = v4l2_i2c_new_subdev_board(ctrl->v4l2_dev, i2c_adap, \
 				name, i2c_info, &addr);
 		if (!sd) {
@@ -513,14 +444,16 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		}
 
 		/* Assign probed subdev pointer to fimc */
-		fimc.sd[pdata->camera[id]->id] = sd;
+		fimc->sd[pdata->camera[id]->id] = sd;
 
 		/* Assign camera device to fimc */
-		fimc.camera[pdata->camera[id]->id] = pdata->camera[id];
+		fimc->camera[pdata->camera[id]->id] = pdata->camera[id];
 
 		/* Assign subdev to proper camera device pointer */
-		fimc.camera[pdata->camera[id]->id]->sd = fimc.sd[pdata->camera[id]->id];
+		fimc->camera[pdata->camera[id]->id]->sd = \
+					fimc->sd[pdata->camera[id]->id];
 	}
+
 	return 0;
 }
 
@@ -602,13 +535,10 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 
 	info("controller %d registered successfully\n", ctrl->id);
 
-	/* FIXME: workaround for prior clk_en */
-	/*clk_disable(ctrl->clock);*/
-
 	return 0;
 
 err_video:
-	clk_put(fimc.cam_clock);
+	clk_put(fimc->mclk);
 
 err_global:
 	clk_disable(ctrl->clock);
@@ -625,6 +555,7 @@ err_fimc:
 static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
+	kfree(fimc);
 
 	return 0;
 }
@@ -645,7 +576,7 @@ static struct platform_driver fimc_driver = {
 	.suspend	= fimc_suspend,
 	.resume		= fimc_resume,
 	.driver		= {
-		.name	= "s3c-fimc",
+		.name	= FIMC_NAME,
 		.owner	= THIS_MODULE,
 	},
 };

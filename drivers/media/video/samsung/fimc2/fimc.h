@@ -35,6 +35,7 @@
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
 #define FIMC_OUTQ_BUFS		3
+#define FIMC_TPID		3
 
 #define FIMC_SRC_MAX_W		1920
 #define FIMC_SRC_MAX_H		1080
@@ -153,7 +154,6 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
-	struct v4l2_subdev		*sd;
 	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
