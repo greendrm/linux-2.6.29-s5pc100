@@ -878,3 +878,33 @@ v2.6.29.4-r3d4: Kukjin Kim
 
 	Modified files:
 		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-r3d5: Jaeryul Oh
+	- Added MFC driver on SMDKC110
+
+	Modified Files :
+	M       arch/arm/mach-s5pc110/mach-smdkc110.c
+	M       arch/arm/plat-s5pc11x/include/plat/regs-mfc.h
+	M       drivers/media/video/samsung/Kconfig
+	M       drivers/media/video/samsung/Makefile
+
+	Added Files:
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_fw.c
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_memory.c
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_common.c
+	A       drivers/media/video/samsung/mfc50/s3c-mfc.c
+	A drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.c
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_fw.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_errorno.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_intr.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_logmsg.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_types.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_memory.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+	A       drivers/media/video/samsung/mfc50/s3c_mfc_common.h
+	A drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.h
+
+

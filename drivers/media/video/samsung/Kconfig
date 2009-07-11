@@ -21,9 +21,9 @@ endif
 #source "drivers/media/video/samsung/tv/Kconfig"
 #endif
 
-#if CPU_S5PC110
-#source "drivers/media/video/samsung/mfc50/Kconfig"
-#endif
+if CPU_S5PC110
+source "drivers/media/video/samsung/mfc50/Kconfig"
+endif
 #
 #source "drivers/media/video/samsung/rotator/Kconfig"
 #source "drivers/media/video/samsung/g2d/Kconfig"
