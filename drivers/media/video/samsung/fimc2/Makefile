@@ -1,4 +1,4 @@
-obj-$(CONFIG_VIDEO_FIMC2)	+= fimc_v4l2.o fimc_capture.o fimc_output.o fimc_overlay.o fimc_cfg.o
+obj-$(CONFIG_VIDEO_FIMC2)	+= fimc_core.o 
 obj-$(CONFIG_VIDEO_FIMC_MIPI)	+= csis.o
 obj-$(CONFIG_ARCH_S5PC1XX)	+= fimc4x_regs.o
 obj-$(CONFIG_S5K3BA)		+= s5k3ba.o
