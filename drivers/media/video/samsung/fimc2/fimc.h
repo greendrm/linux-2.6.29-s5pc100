@@ -129,8 +129,29 @@ struct fimc_outinfo {
 	u32			rotate;
 };
 
-struct s3cfb_window;
-struct s3cfb_lcd;
+/* To do : remove s3cfb_window, s3cfb_lcd structures ---------------------- */
+struct s3cfb_window {
+	int			id;
+	int			enabled;
+	atomic_t		in_use;
+	int			x;
+	int			y;
+	int			local_channel;
+	int			dma_burst;
+	unsigned int		pseudo_pal[16];
+	int			(*suspend_fifo)(void);
+	int			(*resume_fifo)(void);
+};
+
+struct s3cfb_lcd {
+	int	width;
+	int	height;
+	int	bpp;
+	int	freq;
+
+	void 	(*init_ldi)(void);
+};
+/* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
@@ -207,6 +228,42 @@ struct fimc_scaler {
 */
 extern struct s3c_platform_fimc *to_fimc_plat(struct device *dev);
 extern inline struct fimc_control *get_fimc(int id);
+
+/* capture device */
+extern int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b);
+extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
+extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
+extern int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c);
+extern int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a);
+extern int fimc_s_crop_capture(void *fh, struct v4l2_crop *a);
+extern int fimc_streamon_capture(void *fh);
+extern int fimc_streamoff_capture(void *fh);
+extern int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b);
+extern int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b);
+
+/* output device */
+extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
+extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);
+extern int fimc_g_ctrl_output(void *fh, struct v4l2_control *c);
+extern int fimc_s_ctrl_output(void *fh, struct v4l2_control *c);
+extern int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a);
+extern int fimc_s_crop_output(void *fh, struct v4l2_crop *a);
+extern int fimc_streamon_output(void *fh);
+extern int fimc_streamoff_output(void *fh);
+extern int fimc_qbuf_output(void *fh, struct v4l2_buffer *b);
+extern int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b);
+extern int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f);
+extern int fimc_s_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f);
+extern int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f);
+extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
+extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
+
+/* overlay device */
+extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
+extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
+extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
+
+/* Configuration */
 extern int fimc_mapping_rot(struct fimc_control *ctrl, int degree);
 extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
 extern int fimc_init_out_buf(struct fimc_control *ctrl);

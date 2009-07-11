@@ -20,3 +20,53 @@
 
 #include "fimc.h"
 
+int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
+{
+	return 0;
+}
+
+int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
+{
+	return 0;
+}
+
+int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
+{
+	return 0;
+}
+
+int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
+{
+	return 0;
+}
+
+int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a)
+{
+	return 0;
+}
+
+int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
+{
+	return 0;
+}
+
+int fimc_streamon_capture(void *fh)
+{
+	return 0;
+}
+
+int fimc_streamoff_capture(void *fh)
+{
+	return 0;
+}
+
+int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
+{
+	return 0;
+}
+
+int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
+{
+	return 0;
+}
+

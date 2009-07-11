@@ -32,7 +32,7 @@ static int fimc_querycap(struct file *filp, void *fh,
 	sprintf(cap->bus_info, "FIMC AHB-bus");
 
 	cap->version = 0;
-	cap->capabilities = (V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_VIDEO_OUTPUT \
+	cap->capabilities = (V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_VIDEO_OUTPUT | \
 				V4L2_CAP_VIDEO_OVERLAY | V4L2_CAP_STREAMING);
 
 	return 0;
@@ -206,9 +206,9 @@ static int fimc_qbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		ret = fimc_qbuf_capture(fh);
+		ret = fimc_qbuf_capture(fh, b);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
-		ret = fimc_qbuf_output(fh);
+		ret = fimc_qbuf_output(fh, b);
 	} else {
 		dev_err(ctrl->dev, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
@@ -226,9 +226,9 @@ static int fimc_dqbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		ret = fimc_dqbuf_capture(fh);
+		ret = fimc_dqbuf_capture(fh, b);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {
-		ret = fimc_dqbuf_output(fh);
+		ret = fimc_dqbuf_output(fh, b);
 	} else {
 		dev_err(ctrl->dev, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
 			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
@@ -250,7 +250,7 @@ const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_streamoff		= fimc_streamoff,
 	.vidioc_qbuf			= fimc_qbuf,
 	.vidioc_dqbuf			= fimc_dqbuf,
-
+#if 0
 	.vidioc_enum_fmt_vid_cap	= fimc_enum_fmt_vid_cap,
 	.vidioc_g_fmt_vid_cap		= fimc_g_fmt_vid_cap,
 	.vidioc_s_fmt_vid_cap		= fimc_s_fmt_vid_cap,
@@ -262,7 +262,7 @@ const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_enum_input		= fimc_enum_input,
 	.vidioc_enum_output		= fimc_enum_output,
 	.vidioc_s_parm			= fimc_s_parm,
-
+#endif
 	.vidioc_g_fmt_vid_out		= fimc_g_fmt_vid_out,
 	.vidioc_s_fmt_vid_out		= fimc_s_fmt_vid_out,
 	.vidioc_try_fmt_vid_out		= fimc_try_fmt_vid_out,

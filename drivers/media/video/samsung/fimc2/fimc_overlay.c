@@ -20,8 +20,7 @@
 
 #include "fimc.h"
 
-static int fimc_try_fmt_overlay(struct file *filp, void *fh,
-					  struct v4l2_format *f)
+int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -31,8 +30,7 @@ static int fimc_try_fmt_overlay(struct file *filp, void *fh,
 	return ret;
 }
 
-static int fimc_g_fmt_vid_overlay(struct file *file, void *fh,
-					struct v4l2_format *f)
+int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
@@ -42,8 +40,7 @@ static int fimc_g_fmt_vid_overlay(struct file *file, void *fh,
 	return ret;
 }
 
-static int fimc_s_fmt_vid_overlay(struct file *file, void *fh,
-					struct v4l2_format *f)
+int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;

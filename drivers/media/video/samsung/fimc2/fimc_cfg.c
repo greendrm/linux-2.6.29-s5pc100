@@ -14,6 +14,7 @@
 #include <linux/bootmem.h>
 #include <linux/string.h>
 #include <linux/platform_device.h>
+#include <linux/mm.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <plat/media.h>
@@ -40,7 +41,7 @@ int fimc_mapping_rot(struct fimc_control *ctrl, int degree)
 
 int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 {
-	struct s3cfb_lcd *lcd = &ctrl->fb;
+	struct s3cfb_lcd *lcd = ctrl->fb.lcd;
 	u32	pixfmt = ctrl->out->pix.pixelformat;
 	u32	y_size, cbcr_size, rgb_size, total_size = 0;
 	int 	ret = 0;
@@ -57,7 +58,8 @@ int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 		total_size	= rgb_size * num;
 
 	} else {
-		dev_err(ctrl->dev, "[%s]Invalid input(%d)\n", __FUNCTION__, num);
+		dev_err(ctrl->dev, "[%s] Invalid buff num : %d\n", 
+				__FUNCTION__, num);
 		ret = -1;
 	}
 
@@ -85,7 +87,7 @@ static void fimc_set_out_addr(struct fimc_control *ctrl, u32 buf_size)
 
 int fimc_init_out_buf(struct fimc_control *ctrl)
 {
-	struct s3cfb_lcd *lcd = &ctrl->fb;
+	struct s3cfb_lcd *lcd = ctrl->fb.lcd;
 	u32 pixfmt = ctrl->out->pix.pixelformat;
 	u32 total_size, y_size, cb_size;
 
@@ -98,7 +100,8 @@ int fimc_init_out_buf(struct fimc_control *ctrl)
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
 		total_size	= PAGE_ALIGN((lcd->width * lcd->height)<<1);
 	} else {
-		dev_err(ctrl->dev, "[%s]Invalid input(%d)\n", __FUNCTION__, pixfmt);
+		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixfmt);
 		return -EINVAL;
 	}
 
