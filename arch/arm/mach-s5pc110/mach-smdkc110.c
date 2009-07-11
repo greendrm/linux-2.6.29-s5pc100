@@ -211,6 +211,7 @@ struct map_desc smdkc110_iodesc[] = {};
 static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_fb,
 	&s3c_device_smc911x,
+	&s3c_device_mfc,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -308,14 +309,19 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 					struct meminfo *mi)
 {
 	mi->bank[0].start = 0x20000000;
+#ifdef CONFIG_VIDEO_MFC50
+        mi->bank[0].size = 80 * SZ_1M;
+#else
 	mi->bank[0].size = 128 * SZ_1M;
+#endif
 	mi->bank[0].node = 0;
 
-	mi->bank[1].start = 0x30000000;
+	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 128 * SZ_1M;
 	mi->bank[1].node = 1;
 
 	mi->nr_banks = 2;
+
 }
 
 MACHINE_START(SMDKC110, "SMDKC110")
