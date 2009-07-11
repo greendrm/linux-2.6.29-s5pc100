@@ -22,6 +22,7 @@
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
+#include <media/videobuf-core.h>
 #include <plat/media.h>
 #include <plat/fimc.h>
 #endif
@@ -82,7 +83,7 @@ enum fimc_fimd_state {
 struct fimc_meminfo {
 	dma_addr_t	base;		/* buffer base */
 	size_t		len;		/* total length */
-	dma_addr_t	current;	/* current addr */
+	dma_addr_t	curr;		/* current addr */
 };
 
 /* for capture device */

@@ -23,6 +23,8 @@
 static int fimc_querycap(struct file *filp, void *fh,
 					struct v4l2_capability *cap)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	strcpy(cap->driver, "Samsung FIMC Driver");

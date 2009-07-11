@@ -3,28 +3,24 @@ comment "FIMC2 configurations"
 endif
 
 config VIDEO_FIMC2
-	bool "Samsung Camera Interface (FIMC2) driver"
-	depends on VIDEO_SAMSUNG && (ARCH_S3C64XX || ARCH_S5PC1XX)
+	bool "Samsung Camera Interface (FIMC2) driver - temporary"
+	depends on VIDEO_SAMSUNG && ARCH_S5PC1XX
 	default n
 	---help---
-	  This is a video4linux driver for Samsung FIMC2 device.
+	  This is a video4linux driver for Samsung FIMC device.
 
-config VIDEO_FIMC2_DISABLE_DEPRECATED
-	bool "Disable DEPRECATED features"
-	depends on VIDEO_FIMC2
-
-config VIDEO_FIMC2_MIPI
-	bool "FIMC2 works with MIPI-CSI2 (Rx)"
+config VIDEO_FIMC_MIPI
+	bool "FIMC works with MIPI-CSI2 (Rx)"
 	depends on VIDEO_FIMC2 && ARCH_S5PC1XX
 
 source "drivers/media/video/samsung/fimc2/Kconfig-camera"
 
-config VIDEO_FIMC2_CAM_CH
+config VIDEO_FIMC_CAM_CH
 	int "External Camera channel (0=A, 1=B)"
 	depends on VIDEO_FIMC2
 	default "0"
 
-config VIDEO_FIMC2_CAM_RESET
+config VIDEO_FIMC_CAM_RESET
 	int "Reset Type (0=low, 1=high)"
 	depends on VIDEO_FIMC2
 	default "0"
