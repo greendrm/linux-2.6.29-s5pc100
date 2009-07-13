@@ -58,7 +58,7 @@ void fimc_register_camera(struct s3c_platform_camera *cam)
 	fimc->camera[cam->id] = cam;
 
 	clk_disable(fimc->mclk);
-	clk_set_rate(fimc->mclk, cam->mclk_ratio);
+	clk_set_rate(fimc->mclk, cam->clk_rate);
 	clk_enable(fimc->mclk);
 
 //	fimc_reset_camera();
@@ -256,7 +256,7 @@ static int fimc_open(struct file *filp)
 	 * FIXME: default camera policy is necessary
 	 * by now, default external camera id follows controller's id
 	 */
-	clk_set_rate(fimc->mclk, fimc->camera[pdata->default_cam]->mclk_ratio);
+	clk_set_rate(fimc->mclk, fimc->camera[pdata->default_cam]->clk_rate);
 	clk_enable(fimc->mclk);
 
 	/* FIXME: Giving power */
@@ -487,7 +487,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* fimc clock */
-	ctrl->clock = clk_get(&pdev->dev, pdata->sysclk_name);
+	ctrl->clock = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(ctrl->clock)) {
 		dev_err(&pdev->dev, "failed to get fimc clock source\n");
 		goto err_clk_io;
@@ -499,9 +499,9 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 
 	/* set clockrate for fimc interface block */
 	if (ctrl->clock->set_rate) {
-		ctrl->clock->set_rate(ctrl->clock, pdata->clockrate);
+		ctrl->clock->set_rate(ctrl->clock, pdata->clk_rate);
 		dev_info(&pdev->dev, "fimc set clock rate to %d\n", \
-				pdata->clockrate);
+				pdata->clk_rate);
 	}
 
 	clk_enable(ctrl->clock);

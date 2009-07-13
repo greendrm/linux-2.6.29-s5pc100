@@ -513,20 +513,20 @@ static void __init smdkc100_machine_init(void)
 	spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
 
 	/* fimc */
+#if defined(CONFIG_VIDEO_FIMC) || defined(CONFIG_VIDEO_FIMC2) // jsgood: temp
 	s3c_fimc0_set_platdata(NULL);
 	s3c_fimc1_set_platdata(NULL);
 	s3c_fimc2_set_platdata(NULL);
+//	s3c_fimc_reset_camera();
+
+#ifdef CONFIG_VIDEO_FIMC_MIPI
+	s3c_csis_set_platdata(NULL);
+#endif
+#endif
 
 	/* fb */
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(&fb_data);
-#endif
-
-	/* mipi-csi2 */
-	s3c_csis_set_platdata(NULL);
-
-#ifdef CONFIG_VIDEO_FIMC
-	s3c_fimc_reset_camera();
 #endif
 	
 	/* Setting up the HS-MMC clock for 44.5MHz using doutMpll */

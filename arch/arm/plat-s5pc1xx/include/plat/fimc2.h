@@ -15,6 +15,8 @@
 #ifndef _ARCH_FIMC_H
 #define _ARCH_FIMC_H
 
+#include <linux/videodev2.h>
+
 struct platform_device;
 
 /* For exnternal camera device */
@@ -66,7 +68,7 @@ struct s3c_platform_camera {
 	struct i2c_board_info		*info;
 	struct v4l2_subdev		*sd;
 
-	u32				mclk_ratio;	/* mclk ratio */
+	u32				clk_rate;	/* mclk ratio */
 	int				line_length;	/* max length */
 	int				width;		/* default resol */
 	int				height;		/* default resol */
@@ -86,9 +88,9 @@ struct s3c_platform_camera {
 
 /* For camera interface driver */
 struct s3c_platform_fimc {
-	const char			srclk_name[16];		/* source of interface clk name */
-	const char			sysclk_name[16];	/* interface clk name */
-	u32				clockrate;		/* clockrate for interface clk */
+	const char			srclk_name[16];		/* source of interface clock name */
+	const char			clk_name[16];		/* interface clock name */
+	u32				clk_rate;		/* clockrate for interface clock */
 
 	const char			mclk_name[16];		/* mclk name */
 	

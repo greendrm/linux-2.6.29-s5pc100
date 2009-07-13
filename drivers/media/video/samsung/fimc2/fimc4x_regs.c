@@ -18,7 +18,7 @@
 #include <plat/regs-gpio.h>
 #include <plat/gpio-bank-h3.h>
 #include <plat/regs-fimc.h>
-#include <plat/fimc.h>
+#include <plat/fimc2.h>
 
 #include "fimc.h"
 
@@ -68,7 +68,7 @@ void fimc_reset(struct fimc_control *ctrl)
 	writel(cfg, ctrl->regs + S3C_CIGCTRL);
 
 	/* in case of ITU656, CISRCFMT[31] should be 0 */
-	if ((ctrl->cap != NULL) && (ctrl->cam.fmt == ITU_656_YCBCR422_8BIT)) {
+	if ((ctrl->cap != NULL) && (ctrl->cam->fmt == ITU_656_YCBCR422_8BIT)) {
 		cfg = readl(ctrl->regs + S3C_CISRCFMT);
 		cfg &= ~S3C_CISRCFMT_ITU601_8BIT;
 		writel(cfg, ctrl->regs + S3C_CISRCFMT);
