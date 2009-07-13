@@ -201,15 +201,15 @@ static struct sleep_save gpio_save[] = {
 /* this lot should be really saved by the IRQ code */
 /* VICXADDRESSXX initilaization to be needed */
 static struct sleep_save irq_save[] = {
-	SAVE_ITEM(S5PC100_VIC0INTSELECT),
-	SAVE_ITEM(S5PC100_VIC1INTSELECT),
-	SAVE_ITEM(S5PC100_VIC2INTSELECT),
-	SAVE_ITEM(S5PC100_VIC0INTENABLE),
-	SAVE_ITEM(S5PC100_VIC1INTENABLE),
-	SAVE_ITEM(S5PC100_VIC2INTENABLE),
-	SAVE_ITEM(S5PC100_VIC0SOFTINT),
-	SAVE_ITEM(S5PC100_VIC1SOFTINT),
-	SAVE_ITEM(S5PC100_VIC2SOFTINT),
+	SAVE_ITEM(S5PC100_VIC0REG(VIC_INT_SELECT)),
+	SAVE_ITEM(S5PC100_VIC1REG(VIC_INT_SELECT)),
+	SAVE_ITEM(S5PC100_VIC2REG(VIC_INT_SELECT)),
+	SAVE_ITEM(S5PC100_VIC0REG(VIC_INT_ENABLE)),
+	SAVE_ITEM(S5PC100_VIC1REG(VIC_INT_ENABLE)),
+	SAVE_ITEM(S5PC100_VIC2REG(VIC_INT_ENABLE)),
+	SAVE_ITEM(S5PC100_VIC0REG(VIC_INT_SOFT)),
+	SAVE_ITEM(S5PC100_VIC1REG(VIC_INT_SOFT)),
+	SAVE_ITEM(S5PC100_VIC2REG(VIC_INT_SOFT)),
 };
 
 static struct sleep_save eint_save[] = {
@@ -472,12 +472,12 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	flush_cache_all();
 
 	/* send the cpu to sleep... */
-	__raw_writel(0xffffffff, S5PC100_VIC0INTENCLEAR);
-	__raw_writel(0xffffffff, S5PC100_VIC1INTENCLEAR);
-	__raw_writel(0xffffffff, S5PC100_VIC2INTENCLEAR);
-	__raw_writel(0xffffffff, S5PC100_VIC0SOFTINTCLEAR);
-	__raw_writel(0xffffffff, S5PC100_VIC1SOFTINTCLEAR);
-	__raw_writel(0xffffffff, S5PC100_VIC2SOFTINTCLEAR);
+	__raw_writel(0xffffffff, S5PC100_VIC0REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC100_VIC1REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC100_VIC2REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC100_VIC0REG(VIC_INT_SOFT_CLEAR));
+	__raw_writel(0xffffffff, S5PC100_VIC1REG(VIC_INT_SOFT_CLEAR));
+	__raw_writel(0xffffffff, S5PC100_VIC2REG(VIC_INT_SOFT_CLEAR));
 
 	/* Mask all wake up source */
 	tmp = __raw_readl(S5P_PWR_CFG);
