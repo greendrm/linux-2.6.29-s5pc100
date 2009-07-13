@@ -28,6 +28,8 @@
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
+#include <linux/videodev2.h>
+#include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -44,7 +46,7 @@
 #include <plat/regs-serial.h>
 #include <plat/regs-rtc.h>
 #include <plat/iic.h>
-#include <plat/fimc.h>
+#include <plat/fimc2.h>
 #include <plat/fb.h>
 #include <plat/csis.h>
 
@@ -422,6 +424,62 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
+/* External camera module setting */
+static struct s5k6aa_platform_data s5k6aa = {
+	.default_width = 640,
+	.default_height = 480,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 24000000,
+	.is_mipi = 1,
+};
+
+static struct i2c_board_info  __initdata camera_info[] = {
+	{
+		I2C_BOARD_INFO("s5k6aa", 0x78),
+		.platform_data = &s5k6aa,
+	},
+};
+
+/* Camera interface setting */
+static struct s3c_platform_camera camera_c = {
+	.id		= CAMERA_CSI_C,		/* FIXME */
+	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
+	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 1,
+	.info		= &camera_info[0],
+	.pixelformat	= V4L2_PIX_FMT_YUYV,
+	.clk_rate	= 24000000,		/* 24MHz */
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 640,
+	.height		= 480,
+	.window		= {	/* FIXME: scaler */
+		.left	= 0,
+		.top	= 0,
+		.width	= 640,
+		.height	= 480,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized = 0,
+};
+
+/* Interface setting */
+static struct s3c_platform_fimc fimc_plat = {
+	.srclk_name	= "dout_mpll",
+	.clk_name	= "sclk_fimc",
+	.clk_rate	= 133000000,
+	.mclk_name	= "sclk_cam",
+	.default_cam	= CAMERA_CSI_C,
+	.camera[0]	= &camera_c,
+};
+
 #if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
         .pwm_id         = 0,
@@ -513,15 +571,13 @@ static void __init smdkc100_machine_init(void)
 	spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
 
 	/* fimc */
-#if defined(CONFIG_VIDEO_FIMC) || defined(CONFIG_VIDEO_FIMC2) // jsgood: temp
-	s3c_fimc0_set_platdata(NULL);
-	s3c_fimc1_set_platdata(NULL);
-	s3c_fimc2_set_platdata(NULL);
-//	s3c_fimc_reset_camera();
-
-#ifdef CONFIG_VIDEO_FIMC_MIPI
+	s3c_fimc0_set_platdata(&fimc_plat);
+	s3c_fimc1_set_platdata(&fimc_plat);
+	s3c_fimc2_set_platdata(&fimc_plat);
 	s3c_csis_set_platdata(NULL);
-#endif
+
+#if defined(CONFIG_VIDEO_FIMC) || defined(CONFIG_VIDEO_FIMC2) // jsgood: temp
+	fimc_reset_camera();
 #endif
 
 	/* fb */

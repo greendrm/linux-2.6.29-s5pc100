@@ -364,9 +364,6 @@ static int fimc_init_global(struct platform_device *pdev)
 	struct s3c_platform_fimc *pdata;
 	int i;
 
-	if (fimc_dev->initialized)
-		return 0;
-
 	pdata = to_fimc_plat(&pdev->dev);
 
 	/* mclk */
@@ -463,10 +460,12 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	struct clk *srclk;
 	int ret;
 
-	fimc_dev = kzalloc(sizeof(*fimc_dev), GFP_KERNEL);
 	if (!fimc_dev) {
-		dev_err(&pdev->dev, "not enough memory\n");
-		goto err_fimc;
+		fimc_dev = kzalloc(sizeof(*fimc_dev), GFP_KERNEL);
+		if (!fimc_dev) {
+			dev_err(&pdev->dev, "not enough memory\n");
+			goto err_fimc;
+		}
 	}
 
 	ctrl = fimc_register_controller(pdev);
@@ -514,9 +513,11 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* things to initialize once */
-	ret = fimc_init_global(pdev);
-	if (ret)
-		goto err_global;
+	if (!fimc_dev->initialized) {
+		ret = fimc_init_global(pdev);
+		if (ret)
+			goto err_global;
+	}
 
 	/* v4l2 subdev configuration */
 	ret = fimc_configure_subdev(pdev, ctrl->id);

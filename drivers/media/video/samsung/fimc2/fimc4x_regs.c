@@ -128,6 +128,52 @@ void fimc_select_camera(struct fimc_control *ctrl)
 		dev_err(ctrl->dev, "invalid camera bus type selected\n");
 }
 
+void fimc_reset_camera(void)
+{
+	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
+	u32 cfg;
+
+#if (CONFIG_VIDEO_FIMC_CAM_RESET == 1)
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#else
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#endif
+
+#if (CONFIG_VIDEO_FIMC_CAM_CH == 1)
+	cfg = readl(S5PC1XX_GPH3CON);
+	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
+	cfg |= S5PC1XX_GPH3_OUTPUT(6);
+	writel(cfg, S5PC1XX_GPH3CON);
+
+	cfg = readl(S5PC1XX_GPH3DAT);
+	cfg &= ~(0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(200);
+
+	cfg |= (0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(2000);
+#endif
+
+	iounmap(regs);
+}
+
 #if 0
 int fimc_set_src_format(struct fimc_control *ctrl)
 {
