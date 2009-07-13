@@ -29,6 +29,7 @@
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
 #include <linux/videodev2.h>
+#include <media/s5k4ba_platform.h>
 #include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
@@ -425,6 +426,14 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 };
 
 /* External camera module setting */
+static struct s5k4ba_platform_data s5k4ba = {
+	.default_width = 800,
+	.default_height = 600,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 44000000,
+	.is_mipi = 0,
+};
+
 static struct s5k6aa_platform_data s5k6aa = {
 	.default_width = 640,
 	.default_height = 480,
@@ -435,26 +444,59 @@ static struct s5k6aa_platform_data s5k6aa = {
 
 static struct i2c_board_info  __initdata camera_info[] = {
 	{
+		I2C_BOARD_INFO("s5k4ba", 0x5a),
+		.platform_data = &s5k4ba,
+	},
+	{
 		I2C_BOARD_INFO("s5k6aa", 0x78),
 		.platform_data = &s5k6aa,
 	},
 };
 
 /* Camera interface setting */
+static struct s3c_platform_camera camera_a = {
+	.id		= CAMERA_PAR_A,		/* FIXME */
+	.type		= CAM_TYPE_ITU,	/* 1.3M MIPI */
+	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &camera_info[0],
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.clk_rate	= 44000000,		/* 44MHz */
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 800,
+	.height		= 600,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 800,
+		.height	= 600,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized = 0,
+};
+
 static struct s3c_platform_camera camera_c = {
 	.id		= CAMERA_CSI_C,		/* FIXME */
 	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 1,
-	.info		= &camera_info[0],
+	.info		= &camera_info[1],
 	.pixelformat	= V4L2_PIX_FMT_YUYV,
 	.clk_rate	= 24000000,		/* 24MHz */
 	.line_length	= 1280,			/* 1280*1024 */
 	/* default resol for preview kind of thing */
 	.width		= 640,
 	.height		= 480,
-	.window		= {	/* FIXME: scaler */
+	.window		= {
 		.left	= 0,
 		.top	= 0,
 		.width	= 640,
@@ -477,7 +519,11 @@ static struct s3c_platform_fimc fimc_plat = {
 	.clk_rate	= 133000000,
 	.mclk_name	= "sclk_cam",
 	.default_cam	= CAMERA_CSI_C,
-	.camera[0]	= &camera_c,
+
+	.camera		= { 
+		&camera_a, 
+		&camera_c,
+	}
 };
 
 #if defined(CONFIG_HAVE_PWM)
@@ -581,12 +627,10 @@ static void __init smdkc100_machine_init(void)
 #endif
 
 	/* fb */
-#ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(&fb_data);
-#endif
 	
 	/* Setting up the HS-MMC clock for 44.5MHz using doutMpll */
-	writel((readl(S5P_CLK_DIV3) & ~(0xfff << 0) | 0x222), S5P_CLK_DIV3);
+	writel(((readl(S5P_CLK_DIV3) & ~(0xfff << 0)) | 0x222), S5P_CLK_DIV3);
 
 	platform_add_devices(smdkc100_devices, ARRAY_SIZE(smdkc100_devices));
 
