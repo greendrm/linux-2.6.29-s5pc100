@@ -111,8 +111,7 @@ void fimc_select_camera(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
 	} else
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
-			__FUNCTION__);
+		dev_err(ctrl->dev, "invalid camera bus type selected\n");
 
 	writel(cfg, ctrl->regs + S3C_CIGCTRL);
 
@@ -126,8 +125,7 @@ void fimc_select_camera(struct fimc_control *ctrl)
 		cfg |= ctrl->cam->fmt;
 		writel(cfg, ctrl->regs + S3C_CSIIMGFMT);
 	} else
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
-			__FUNCTION__);
+		dev_err(ctrl->dev, "invalid camera bus type selected\n");
 }
 
 #if 0
