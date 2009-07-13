@@ -217,6 +217,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	u32 pixelformat = ctrl->out->pix.pixelformat;
 	u32 max_w = 0, max_h = 0;	
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
@@ -232,8 +233,7 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 
-
-	if (ctrl->out->pix.pixelformat == V4L2_PIX_FMT_NV12) {
+	if (pixelformat == V4L2_PIX_FMT_NV12) {
 		max_w	= FIMC_SRC_MAX_W;
 		max_h	= FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
@@ -248,31 +248,31 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 	}
 
 	if ((a->c.width > max_w) || (a->c.height > max_h)) {
-		fimc_err(ctrl->dev, "The crop rect width and height must be \
+		dev_err(ctrl->dev, "The crop rect width and height must be \
 				smaller than %d and %d.\n", max_w, max_h);
 		return -EINVAL;
 	}
 
 	/* Check arguments : left and top */
 	if ((a->c.left < 0) || (a->c.top < 0)) {
-		fimc_err(ctrl->dev, "The crop rect left and top must be \
+		dev_err(ctrl->dev, "The crop rect left and top must be \
 				bigger than zero.\n");
 		return -EINVAL;
 	}
 	
 	if ((a->c.left > max_w) || (a->c.top > max_h)) {
-		fimc_err(ctrl->dev, "The crop rect left and top must be \
+		dev_err(ctrl->dev, "The crop rect left and top must be \
 				smaller than %d, %d.\n", max_w, max_h);
 		return -EINVAL;
 	}
 
 	if ((a->c.left + a->c.width) > max_w) {
-		fimc_err(ctrl->dev, "The crop rect must be in bound rect.\n");
+		dev_err(ctrl->dev, "The crop rect must be in bound rect.\n");
 		return -EINVAL;
 	}
 	
 	if ((a->c.top + a->c.height) > max_h) {
-		fimc_err(ctrl->dev, "The crop rect must be in bound rect.\n");
+		dev_err(ctrl->dev, "The crop rect must be in bound rect.\n");
 		return -EINVAL;
 	}
 
@@ -290,6 +290,21 @@ int fimc_streamon_output(void *fh)
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	ret = fimc_check_param(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "fimc_check_param failed.\n");
+		return -1;
+	}
+
+	ctrl->status = FIMC_READY_ON;
+
+	ret = fimc_set_param(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "fimc_set_param failed.\n");
+		return -1;
+	}
+
 
 	return ret;
 }

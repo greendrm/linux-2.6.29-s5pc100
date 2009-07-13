@@ -268,6 +268,26 @@ extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_forma
 extern int fimc_mapping_rot(struct fimc_control *ctrl, int degree);
 extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
 extern int fimc_init_out_buf(struct fimc_control *ctrl);
+extern int fimc_check_param(struct fimc_control *ctrl);
+extern int fimc_set_param(struct fimc_control *ctrl);
+
+/* Register access file */
+extern void fimc_clear_irq(struct fimc_control *ctrl);
+extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
+extern void fimc_reset(struct fimc_control *ctrl);
+extern int fimc_set_src_format(struct fimc_control *ctrl);
+extern int fimc_set_dst_format(struct fimc_control *ctrl);
+extern int fimc_set_src_path(struct fimc_control *ctrl);
+extern int fimc_set_dst_path(struct fimc_control *ctrl);
+extern int fimc_set_src_addr(struct fimc_control *ctrl);
+extern int fimc_set_dst_addr(struct fimc_control *ctrl);
+extern int fimc_set_src_crop(struct fimc_control *ctrl);
+extern int fimc_set_dst_crop(struct fimc_control *ctrl);
+extern int fimc_set_scaler(struct fimc_control *ctrl);
+extern int fimc_set_inupt_rotate(struct fimc_control *ctrl);
+extern int fimc_set_output_rotate(struct fimc_control *ctrl);
+extern int fimc_start_scaler(struct fimc_control *ctrl);
+extern int fimc_stop_scaler(struct fimc_control *ctrl);
 
 #endif /* _FIMC_H */
 

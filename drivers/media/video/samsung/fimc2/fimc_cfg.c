@@ -32,7 +32,7 @@ int fimc_mapping_rot(struct fimc_control *ctrl, int degree)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "Invalid rotate value : %d.", degree);
+		dev_err(ctrl->dev, "Invalid rotate value : %d.\n", degree);
 		return -EINVAL;
 	}
 
@@ -60,11 +60,11 @@ int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 	} else {
 		dev_err(ctrl->dev, "[%s] Invalid buff num : %d\n", 
 				__FUNCTION__, num);
-		ret = -1;
+		ret = -EINVAL;
 	}
 
 	if (total_size > ctrl->mem.len)
-		ret = -1;
+		ret = -EINVAL;
 
 	return ret;
 }
@@ -111,6 +111,70 @@ int fimc_init_out_buf(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_check_param(struct fimc_control *ctrl)
+{
+	struct v4l2_rect src_rect, dst_rect, fimd_rect;
+	int	ret = 0;
+
+	if((ctrl->out->rotate != 90) && (ctrl->out->rotate != 270)) {
+		src_rect.width		= ctrl->out->pix.width;
+		src_rect.height		= ctrl->out->pix.height; 
+		fimd_rect.width		= ctrl->fb.lcd->width;
+		fimd_rect.height	= ctrl->fb.lcd->height;
+	} else {	/* Landscape mode */
+		src_rect.width		= ctrl->out->pix.height;
+		src_rect.height		= ctrl->out->pix.width;
+		fimd_rect.width		= ctrl->fb.lcd->height;
+		fimd_rect.height	= ctrl->fb.lcd->width;
+	}
+
+	/* In case of OVERLAY device */
+	dst_rect.width	= ctrl->out->win.w.width;
+	dst_rect.height	= ctrl->out->win.w.height;
+	dst_rect.top	= ctrl->out->win.w.top;
+	dst_rect.left	= ctrl->out->win.w.left;
+	
+	/* To do : OUTPUT device */
+
+
+	if ((dst_rect.left + dst_rect.width) > fimd_rect.width) {
+		dev_err(ctrl->dev, "Horizontal position setting is failed.\n");
+		dev_err(ctrl->dev, "\tleft = %d, width = %d, lcd width = %d, \n", 
+			dst_rect.left, dst_rect.width, fimd_rect.width);
+		ret = -EINVAL;
+	} else if ((dst_rect.top + dst_rect.height) > fimd_rect.height) {
+		dev_err(ctrl->dev, "Vertical position setting is failed.\n");
+		dev_err(ctrl->dev, "\ttop = %d, height = %d, lcd height = %d, \n", 
+			dst_rect.top, dst_rect.height, fimd_rect.height);		
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+int fimc_set_param(struct fimc_control *ctrl)
+{
+	int	ret = 0;
+#if 0
+	fimc_set_envid(ctrl, FALSE);
+
+	ret = fimc_set_pixelformat(ctrl);
+	if (ret < 0) {
+		rp_err(ctrl->log_level, "Cannot set the post processor pixelformat.\n");
+		return -1;
+	}
+
+	ret = fimc_set_scaler(ctrl);
+	if (ret < 0) {
+		rp_err(ctrl->log_level, "Cannot set the post processor scaler.\n");
+		return -1;
+	}
+
+	fimc_set_int_enable(ctrl, TRUE);
+#endif
+	return 0;
+}
+
 #if 0
 int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, u32 index)
 {
@@ -118,7 +182,7 @@ int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, u32 index)
 	int			swap_queue[FIMC_OUTBUFS];
 	int			i;
 
-	fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, index);
+	fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
 
 	spin_lock_irqsave(&ctrl->spin.lock_in, spin_flags);
 
@@ -162,9 +226,9 @@ int s3c_fimc_detach_in_queue(struct FIMC_control *ctrl, int *index)
 
 	/* incoming queue is empty. */
 	if (i < 0)
-		ret = -1;
+		ret = -EINVAL;
 	else
-		fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, *index);
+		fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
 
 	spin_unlock_irqrestore(&ctrl->spin.lock_in, spin_flags);
 	
@@ -177,7 +241,7 @@ int s3c_fimc_attach_out_queue(struct FIMC_control *ctrl, u32 index)
 	int			swap_queue[FIMC_OUTBUFS];
 	int			i;
 
-	fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, index);
+	fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
 
 	spin_lock_irqsave(&ctrl->spin.lock_out, spin_flags);
 
@@ -221,9 +285,9 @@ int s3c_fimc_detach_out_queue(struct FIMC_control *ctrl, int *index)
 
 	/* outgoing queue is empty. */
 	if (i < 0)
-		ret = -1;
+		ret = -EINVAL;
 	else
-		fimc_dbg(ctrl->log_level, "[%s] index = %d\n", __FUNCTION__, *index);
+		fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
 		
 
 	spin_unlock_irqrestore(&ctrl->spin.lock_out, spin_flags);
