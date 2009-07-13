@@ -373,18 +373,6 @@ static void tl2796_gpio_setup(void)
 {
 	gpio_request(S5PC1XX_GPH1(7), "MLCD_RST");
 	gpio_request(S5PC1XX_GPJ1(3), "MLCD_ON");
-
-	/* set gpio pin for DISPLAY_CS to HIGH */
-	gpio_request(S5PC1XX_GPK3(5), "DISPLAY_CS");
-	gpio_direction_output(S5PC1XX_GPK3(5), 1);
-
-	/* set gpio pin for DISPLAY_CLK to HIGH */
-	gpio_request(S5PC1XX_GPK3(6), "DISPLAY_CLK");
-	gpio_direction_output(S5PC1XX_GPK3(6), 1);
-
-	/* set gpio pin for DISPLAY_SI to HIGH */
-	gpio_request(S5PC1XX_GPK3(7), "DISPLAY_SI");
-	gpio_direction_output(S5PC1XX_GPK3(7), 1);
 }
 
 /* Configure GPIO pins for RGB Interface */
