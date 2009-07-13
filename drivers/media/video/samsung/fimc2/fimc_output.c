@@ -215,8 +215,6 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	return ret;
 }
 
-
-
 int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
