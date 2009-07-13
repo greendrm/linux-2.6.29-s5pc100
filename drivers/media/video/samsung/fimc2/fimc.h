@@ -230,6 +230,9 @@ extern struct video_device fimc_video_device[];
 extern struct s3c_platform_fimc *to_fimc_plat(struct device *dev);
 extern inline struct fimc_control *get_fimc(int id);
 
+/* camera */
+extern void fimc_select_camera(struct fimc_control *ctrl);
+
 /* capture device */
 extern int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);

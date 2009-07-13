@@ -75,6 +75,61 @@ void fimc_reset(struct fimc_control *ctrl)
 	}
 }
 
+/*
+ * 1. Configure camera input we are to use:
+ * for now we use cam->id to identify camera A and B
+ * but need to be changed to go with VIDIOC_S_INPUT
+ * - Parallel interface : camera A (SELCAM_ITU_A & SELCAM_ITU)
+ *   			camera B (SELCAM_ITU_B & SELCAM_ITU)
+ *   			test pattern (TESTPATTERN_*)
+ * - Serial interface : camera C (SELCAM_MIPI)
+ *   			test pattern (TESTPATTERN_*)
+ * 2. Configure input camera's format:
+ * 	S3C_CISRCFMT for ITU & S3C_CSIIMGFMT 
+ */
+void fimc_select_camera(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK);
+
+	if (ctrl->cam->id == 0)
+		cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
+	else
+		cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
+
+	/* Interface selection */
+	/* FIXME: Check whether SELCAM_ITU_A or B is necessary when we use MIPI */
+	/* TODO: Input source selection is necessary */
+	if (ctrl->cam->type == CAM_TYPE_MIPI)
+		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
+	else if (ctrl->cam->type == CAM_TYPE_ITU) {
+		if (ctrl->cam->id == 0)
+			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
+		else
+			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
+		/* switch to ITU interface */
+		cfg |= S3C_CIGCTRL_SELCAM_ITU;
+	} else
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+			__FUNCTION__);
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	/* configure input source format */
+	if (ctrl->cam->type == CAM_TYPE_ITU) {
+		cfg = readl(ctrl->regs + S3C_CISRCFMT);
+		cfg |= ctrl->cam->fmt;
+		writel(cfg, ctrl->regs + S3C_CISRCFMT);
+	} else if (ctrl->cam->type == CAM_TYPE_MIPI) {
+		cfg = readl(ctrl->regs + S3C_CSIIMGFMT);
+		cfg |= ctrl->cam->fmt;
+		writel(cfg, ctrl->regs + S3C_CSIIMGFMT);
+	} else
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+			__FUNCTION__);
+}
+
 #if 0
 int fimc_set_src_format(struct fimc_control *ctrl)
 {
