@@ -41,6 +41,11 @@
 #include <plat/gpio-bank-k1.h>
 #include <plat/gpio-bank-k2.h>
 #include <plat/gpio-bank-k3.h>
+#include <plat/gpio-bank-l0.h>
+#include <plat/gpio-bank-l1.h>
+#include <plat/gpio-bank-l2.h>
+#include <plat/gpio-bank-l3.h>
+#include <plat/gpio-bank-l4.h>
 
 #include <mach/map.h>
 
@@ -73,14 +78,14 @@
 #define S5PC1XX_GPK1_BASE	(S5PC1XX_VA_GPIO + 0x02C0)
 #define S5PC1XX_GPK2_BASE	(S5PC1XX_VA_GPIO + 0x02E0)
 #define S5PC1XX_GPK3_BASE	(S5PC1XX_VA_GPIO + 0x0300)
-#define S5PC1XX_MP00_BASE	(S5PC1XX_VA_GPIO + 0x0320)
-#define S5PC1XX_MP01_BASE	(S5PC1XX_VA_GPIO + 0x0340)
-#define S5PC1XX_MP02_BASE	(S5PC1XX_VA_GPIO + 0x0360)
-#define S5PC1XX_MP03_BASE	(S5PC1XX_VA_GPIO + 0x0380)
-#define S5PC1XX_MP04_BASE	(S5PC1XX_VA_GPIO + 0x03A0)
+#define S5PC1XX_GPL0_BASE	(S5PC1XX_VA_GPIO + 0x0320)
+#define S5PC1XX_GPL1_BASE	(S5PC1XX_VA_GPIO + 0x0340)
+#define S5PC1XX_GPL2_BASE	(S5PC1XX_VA_GPIO + 0x0360)
+#define S5PC1XX_GPL3_BASE	(S5PC1XX_VA_GPIO + 0x0380)
+#define S5PC1XX_GPL4_BASE	(S5PC1XX_VA_GPIO + 0x03A0)
+#define S5PC1XX_EINT_BASE	(S5PC1XX_VA_GPIO + 0x0E00)
 
 #define S5PC1XX_UHOST	(S5PC1XX_VA_GPIO + 0x0B68)
 #define S5PC1XX_PDNEN	(S5PC1XX_VA_GPIO + 0x0F80)
 
 #endif /* __ASM_PLAT_S5PC1XX_REGS_GPIO_H */
-

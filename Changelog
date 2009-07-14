@@ -952,3 +952,45 @@ v2.6.29.4-r3d10: Kukjin Kim
 		M	arch/arm/plat-s5pc1xx/pm.c
 		M	arch/arm/plat-s5pc11x/pm.c
 
+v2.6.29.4-r3d11: Kukjin Kim
+	- Added Port Group GPLx and deleted related to MPx
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/include/mach/gpio.h
+		M	arch/arm/plat-s5pc1xx/gpiolib.c
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-gpio.h
+
+	Added Files:
+		A	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-l0.h
+		A	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-l1.h
+		A	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-l2.h
+		A	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-l3.h
+		A	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-l4.h
+
+	Deleted Files:
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp00.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp01.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp02.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp03.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp04.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp05.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp06.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp07.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp10.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp11.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp12.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp13.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp14.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp15.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp16.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp17.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp18.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp20.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp21.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp22.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp23.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp24.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp25.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp26.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp27.h
+		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp28.h
