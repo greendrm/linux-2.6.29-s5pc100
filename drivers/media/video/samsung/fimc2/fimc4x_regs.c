@@ -189,19 +189,15 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 	/* Color format setting */
 	if (pixfmt == V4L2_PIX_FMT_NV12) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT)	| \
-				(0x3<<S3C_MSCTRL_2PLANE_SHIFT)	| \
-				S3C_MSCTRL_C_INT_IN_2PLANE 	| \
-				S3C_MSCTRL_INFORMAT_RGB);
-		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_YCBCR420);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_2PLANE_SHIFT_MASK \
+			| S3C_MSCTRL_C_INT_IN_2PLANE | S3C_MSCTRL_INFORMAT_RGB);
+		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | S3C_MSCTRL_C_INT_IN_2PLANE \
+			| S3C_MSCTRL_INFORMAT_YCBCR420);
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
 	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_RGB);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
+				| S3C_MSCTRL_INFORMAT_RGB);
 		cfg |= (S3C_MSCTRL_INFORMAT_RGB | (0x4<<S3C_MSCTRL_BURST_CNT));
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
 	
@@ -213,9 +209,8 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 		writel(cfg, ctrl->regs + S3C_CISCCTRL);
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_RGB);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
+				| S3C_MSCTRL_INFORMAT_RGB);
 		cfg |= (S3C_MSCTRL_INFORMAT_RGB | \
 				(0x4<<S3C_MSCTRL_BURST_CNT));
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -234,17 +229,55 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 
 	return 0;
 }
-#if 0
+
 int fimc_set_dst_format(struct fimc_control *ctrl)
 {
-	u32 cfg = 0;
-	int ret = 0;
+	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
+	u32 pixfmt = ctrl->out->pix.pixelformat;
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	/* Color format setting */
+	if (pixfmt == V4L2_PIX_FMT_NV12) {
+		cfg &= ~S3C_CITRGFMT_OUTFORMAT_RGB;
+		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR420;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+
+		cfg = readl(ctrl->regs + S3C_CIOCTRL);
+		cfg &= ~S3C_CIOCTRL_ORDER2P_MASK;
+		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
+		writel(cfg, ctrl->regs + S3C_CIOCTRL);
+
+		/* To do : Check output path whether it is DMA out. */
+
+	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
+		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
+		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB565);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixfmt);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
+#if 0
 int fimc_set_in_rot(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
