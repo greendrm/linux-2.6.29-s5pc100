@@ -275,6 +275,11 @@ extern int fimc_init_out_buf(struct fimc_control *ctrl);
 extern int fimc_check_param(struct fimc_control *ctrl);
 extern int fimc_set_param(struct fimc_control *ctrl);
 
+extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
+extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
+extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
+extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
+
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);
 extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
