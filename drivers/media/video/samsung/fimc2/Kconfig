@@ -13,8 +13,6 @@ config VIDEO_FIMC_MIPI
 	bool "FIMC works with MIPI-CSI2 (Rx)"
 	depends on VIDEO_FIMC2 && ARCH_S5PC1XX
 
-source "drivers/media/video/samsung/fimc2/Kconfig-camera"
-
 config VIDEO_FIMC_CAM_CH
 	int "External Camera channel (0=A, 1=B)"
 	depends on VIDEO_FIMC2
