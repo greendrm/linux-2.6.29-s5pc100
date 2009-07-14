@@ -175,51 +175,51 @@ int fimc_set_param(struct fimc_control *ctrl)
 	return 0;
 }
 
-#if 0
-int s3c_fimc_attach_in_queue(struct FIMC_control *ctrl, u32 index)
+
+int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index)
 {
 	unsigned long		spin_flags;
 	int			swap_queue[FIMC_OUTBUFS];
 	int			i;
 
-	fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
+	dev_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
 
-	spin_lock_irqsave(&ctrl->spin.lock_in, spin_flags);
+	spin_lock_irqsave(&ctrl->lock_in, spin_flags);
 
 	/* Backup original queue */
 	for (i = 0; i < FIMC_OUTBUFS; i++) {
-		swap_queue[i] = ctrl->incoming_queue[i];
+		swap_queue[i] = ctrl->out->in_queue[i];
 	}
 
 	/* Attach new index */
-	ctrl->incoming_queue[0]		= index;
-	ctrl->out->buf[index].buf_state	= BUF_QUEUED;
-	ctrl->out->buf[index].buf_flag	= V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_QUEUED;
+	ctrl->out->in_queue[0] = index;
+	ctrl->out->buf[index].state = VIDEOBUF_QUEUED;
+	ctrl->out->buf[index].flags = V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_QUEUED;
 
 	/* Shift the origonal queue */
 	for (i = 1; i < FIMC_OUTBUFS; i++) {
-		ctrl->incoming_queue[i] = swap_queue[i-1];
+		ctrl->out->in_queue[i] = swap_queue[i-1];
 	}
 
-	spin_unlock_irqrestore(&ctrl->spin.lock_in, spin_flags);
+	spin_unlock_irqrestore(&ctrl->lock_in, spin_flags);
 	
 	return 0;
 }
 
-int s3c_fimc_detach_in_queue(struct FIMC_control *ctrl, int *index)
+int fimc_detach_in_queue(struct fimc_control *ctrl, int *index)
 {
 	unsigned long		spin_flags;
 	int			i, ret = 0;
 
-	spin_lock_irqsave(&ctrl->spin.lock_in, spin_flags);
+	spin_lock_irqsave(&ctrl->lock_in, spin_flags);
 
 	/* Find last valid index in incoming queue. */
 	for (i = (FIMC_OUTBUFS-1); i >= 0; i--) {
-		if (ctrl->incoming_queue[i] != -1) {
-			*index					= ctrl->incoming_queue[i];
-			ctrl->incoming_queue[i]			= -1;
-			ctrl->out->buf[*index].buf_state	= BUF_RUNNING;
-			ctrl->out->buf[*index].buf_flag		= V4L2_BUF_FLAG_MAPPED;
+		if (ctrl->out->in_queue[i] != -1) {
+			*index = ctrl->out->in_queue[i];
+			ctrl->out->in_queue[i] = -1;
+			ctrl->out->buf[*index].state = VIDEOBUF_ACTIVE;
+			ctrl->out->buf[*index].flags = V4L2_BUF_FLAG_MAPPED;
 			break;
 		}
 	}
@@ -228,70 +228,73 @@ int s3c_fimc_detach_in_queue(struct FIMC_control *ctrl, int *index)
 	if (i < 0)
 		ret = -EINVAL;
 	else
-		fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
+		dev_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
 
-	spin_unlock_irqrestore(&ctrl->spin.lock_in, spin_flags);
+	spin_unlock_irqrestore(&ctrl->lock_in, spin_flags);
 	
 	return ret;
 }
 
-int s3c_fimc_attach_out_queue(struct FIMC_control *ctrl, u32 index)
+int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index)
 {
 	unsigned long		spin_flags;
 	int			swap_queue[FIMC_OUTBUFS];
 	int			i;
 
-	fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
+	dev_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, index);
 
-	spin_lock_irqsave(&ctrl->spin.lock_out, spin_flags);
+	spin_lock_irqsave(&ctrl->lock_out, spin_flags);
 
 	/* Backup original queue */
 	for (i = 0; i < FIMC_OUTBUFS; i++) {
-		swap_queue[i] = ctrl->outgoing_queue[i];
+		swap_queue[i] = ctrl->out->out_queue[i];
 	}
 
 	/* Attach new index */
-	ctrl->outgoing_queue[0]		= index;
-	ctrl->out->buf[index].buf_state	= BUF_DONE;
-	ctrl->out->buf[index].buf_flag	= V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_DONE;
+	ctrl->out->out_queue[0]	= index;
+	ctrl->out->buf[index].state = VIDEOBUF_DONE;
+	ctrl->out->buf[index].flags = V4L2_BUF_FLAG_MAPPED | V4L2_BUF_FLAG_DONE;
 
 	/* Shift the origonal queue */
 	for (i = 1; i < FIMC_OUTBUFS; i++) {
-		ctrl->outgoing_queue[i] = swap_queue[i-1];
+		ctrl->out->out_queue[i] = swap_queue[i-1];
 	}
 
-	spin_unlock_irqrestore(&ctrl->spin.lock_out, spin_flags);
+	spin_unlock_irqrestore(&ctrl->lock_out, spin_flags);
 
 	return 0;
 }
 
-int s3c_fimc_detach_out_queue(struct FIMC_control *ctrl, int *index)
+int fimc_detach_out_queue(struct fimc_control *ctrl, int *index)
 {
 	unsigned long		spin_flags;
 	int			i, ret = 0;
 
-	spin_lock_irqsave(&ctrl->spin.lock_out, spin_flags);
+	spin_lock_irqsave(&ctrl->lock_out, spin_flags);
 
 	/* Find last valid index in outgoing queue. */
 	for (i = (FIMC_OUTBUFS-1); i >= 0; i--) {
-		if (ctrl->outgoing_queue[i] != -1) {
-			*index					= ctrl->outgoing_queue[i];
-			ctrl->outgoing_queue[i]			= -1;
-			ctrl->out->buf[*index].buf_state	= BUF_DQUEUED;
-			ctrl->out->buf[*index].buf_flag		= V4L2_BUF_FLAG_MAPPED;
+		if (ctrl->out->out_queue[i] != -1) {
+			*index = ctrl->out->out_queue[i];
+			ctrl->out->out_queue[i] = -1;
+			ctrl->out->buf[*index].state = VIDEOBUF_IDLE;
+			ctrl->out->buf[*index].flags = V4L2_BUF_FLAG_MAPPED;
 			break;
 		}
 	}
 
 	/* outgoing queue is empty. */
-	if (i < 0)
+	if (i < 0) {
 		ret = -EINVAL;
-	else
-		fimc_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
+		dev_dbg(ctrl->dev, "[%s] outgoing queue : %d, %d, %d\n", 
+			__FUNCTION__, ctrl->out->out_queue[0], 
+			ctrl->out->out_queue[1], ctrl->out->out_queue[2]);
+	} else
+		dev_dbg(ctrl->dev, "[%s] index = %d\n", __FUNCTION__, *index);
 		
 
-	spin_unlock_irqrestore(&ctrl->spin.lock_out, spin_flags);
+	spin_unlock_irqrestore(&ctrl->lock_out, spin_flags);
 	
 	return ret;
 }
-#endif
+

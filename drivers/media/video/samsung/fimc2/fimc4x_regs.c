@@ -174,17 +174,67 @@ void fimc_reset_camera(void)
 	iounmap(regs);
 }
 
-#if 0
+
 int fimc_set_src_format(struct fimc_control *ctrl)
 {
-	u32 cfg = 0;
-	int ret = 0;
+	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
+	u32 pixfmt = ctrl->out->pix.pixelformat;
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
-}
+	/* Set CSCR2Y & CSCY2R */
+	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
+	writel(cfg, ctrl->regs + S3C_CISCCTRL);
 
+	/* Color format setting */
+	if (pixfmt == V4L2_PIX_FMT_NV12) {
+		cfg = readl(ctrl->regs + S3C_MSCTRL);
+		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT)	| \
+				(0x3<<S3C_MSCTRL_2PLANE_SHIFT)	| \
+				S3C_MSCTRL_C_INT_IN_2PLANE 	| \
+				S3C_MSCTRL_INFORMAT_RGB);
+		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | \
+				S3C_MSCTRL_C_INT_IN_2PLANE | \
+				S3C_MSCTRL_INFORMAT_YCBCR420);
+		writel(cfg, ctrl->regs + S3C_MSCTRL);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
+		cfg = readl(ctrl->regs + S3C_MSCTRL);
+		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
+				S3C_MSCTRL_C_INT_IN_2PLANE | \
+				S3C_MSCTRL_INFORMAT_RGB);
+		cfg |= (S3C_MSCTRL_INFORMAT_RGB | (0x4<<S3C_MSCTRL_BURST_CNT));
+		writel(cfg, ctrl->regs + S3C_MSCTRL);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_INRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_INRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_INRGB_FMT_RGB888 | \
+				S3C_CISCCTRL_EXTRGB_EXTENSION);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
+		cfg = readl(ctrl->regs + S3C_MSCTRL);
+		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
+				S3C_MSCTRL_C_INT_IN_2PLANE | \
+				S3C_MSCTRL_INFORMAT_RGB);
+		cfg |= (S3C_MSCTRL_INFORMAT_RGB | \
+				(0x4<<S3C_MSCTRL_BURST_CNT));
+		writel(cfg, ctrl->regs + S3C_MSCTRL);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_INRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_INRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_INRGB_FMT_RGB565 | \
+				S3C_CISCCTRL_EXTRGB_EXTENSION);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixfmt);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#if 0
 int fimc_set_dst_format(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
@@ -195,7 +245,26 @@ int fimc_set_dst_format(struct fimc_control *ctrl)
 	return ret;
 }
 
-#if 0
+int fimc_set_in_rot(struct fimc_control *ctrl)
+{
+	u32 cfg = 0;
+	int ret = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	return ret;
+}
+
+int fimc_set_out_rot(struct fimc_control *ctrl)
+{
+	u32 cfg = 0;
+	int ret = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	return ret;
+}
+
 int fimc_set_src_path(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;

@@ -270,6 +270,7 @@
 #define S3C_CIREAL_ISIZE_ADDR_CH_DISABLE	(1 << 30)
 
 /* Input DMA control register */
+#define S3C_MSCTRL_BURST_CNT			(24)
 #define S3C_MSCTRL_2PLANE_SHIFT			(16)
 #define S3C_MSCTRL_C_INT_IN_3PLANE		(0 << 15)
 #define S3C_MSCTRL_C_INT_IN_2PLANE		(1 << 15)
