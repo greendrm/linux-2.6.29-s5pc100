@@ -75,7 +75,7 @@ void fimc_reset(struct fimc_control *ctrl)
 	}
 }
 
-#if 0
+
 int fimc_set_src_format(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
@@ -96,6 +96,7 @@ int fimc_set_dst_format(struct fimc_control *ctrl)
 	return ret;
 }
 
+#if 0
 int fimc_set_src_path(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
