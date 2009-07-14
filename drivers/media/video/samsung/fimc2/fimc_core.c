@@ -39,7 +39,7 @@
 
 #include "fimc.h"
 
-static struct fimc_global *fimc;
+static struct fimc_global *fimc_dev;
 
 struct s3c_platform_fimc *to_fimc_plat(struct device *dev)
 {
@@ -50,16 +50,16 @@ struct s3c_platform_fimc *to_fimc_plat(struct device *dev)
 
 inline struct fimc_control *get_fimc(int id)
 {
-	return &fimc->ctrl[id];
+	return &fimc_dev->ctrl[id];
 }
 
 void fimc_register_camera(struct s3c_platform_camera *cam)
 {
-	fimc->camera[cam->id] = cam;
+	fimc_dev->camera[cam->id] = cam;
 
-	clk_disable(fimc->mclk);
-	clk_set_rate(fimc->mclk, cam->clk_rate);
-	clk_enable(fimc->mclk);
+	clk_disable(fimc_dev->mclk);
+	clk_set_rate(fimc_dev->mclk, cam->clk_rate);
+	clk_enable(fimc_dev->mclk);
 
 //	fimc_reset_camera();
 }
@@ -75,17 +75,17 @@ void fimc_unregister_camera(struct s3c_platform_camera *cam)
 			ctrl->cam = NULL;
 	}
 
-	fimc->camera[cam->id] = NULL;
+	fimc_dev->camera[cam->id] = NULL;
 }
 
 void fimc_set_active_camera(struct fimc_control *ctrl, int id)
 {
-	ctrl->cam = fimc->camera[id];
+	ctrl->cam = fimc_dev->camera[id];
 
 	dev_info(ctrl->dev, "requested id: %d\n", id);
 	
-//	if (ctrl->cam && id < FIMC_TPID)
-//		fimc_select_camera(ctrl);
+	if (ctrl->cam && id < FIMC_TPID)
+		fimc_select_camera(ctrl);
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -150,7 +150,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
 		dev_err(ctrl->dev, "request_irq failed\n");
 
-//	fimc_reset(ctrl);
+	fimc_reset(ctrl);
 
 	return ctrl;
 }
@@ -221,7 +221,7 @@ static int fimc_open(struct file *filp)
 	 * NOTE: scaler only feature should be implemented seperately
 	 * 	so, no external camera no device node for camera
 	 */
-	if (!fimc->camera[pdata->default_cam]) {
+	if (!fimc_dev->camera[pdata->default_cam]) {
 		dev_err(ctrl->dev, "no external camera device\n");
 		return -ENODEV;
 	}
@@ -232,7 +232,7 @@ static int fimc_open(struct file *filp)
 	 * because of the default camera issue
 	 * Don't forget to give proper power after VIDIOC_S_INPUT called
 	 */
-	if (!fimc->camera[pdata->default_cam]->cam_power) {
+	if (!fimc_dev->camera[pdata->default_cam]->cam_power) {
 		dev_err(ctrl->dev, "no way to control camera[%d]'s power\n", \
 			ctrl->id);
 		return -ENODEV;
@@ -256,11 +256,11 @@ static int fimc_open(struct file *filp)
 	 * FIXME: default camera policy is necessary
 	 * by now, default external camera id follows controller's id
 	 */
-	clk_set_rate(fimc->mclk, fimc->camera[pdata->default_cam]->clk_rate);
-	clk_enable(fimc->mclk);
+	clk_set_rate(fimc_dev->mclk, fimc_dev->camera[pdata->default_cam]->clk_rate);
+	clk_enable(fimc_dev->mclk);
 
 	/* FIXME: Giving power */
-	fimc->camera[pdata->default_cam]->cam_power(1);
+	fimc_dev->camera[pdata->default_cam]->cam_power(1);
 
 	/*
 	 * Default camera attach
@@ -288,7 +288,7 @@ static int fimc_open(struct file *filp)
 		dev_err(ctrl->dev, "s_config subdev api not supported\n");
 
 	/* Apply things to interface register */
-//	fimc_reset(ctrl);
+	fimc_reset(ctrl);
 	filp->private_data = ctrl;
 
 	mutex_unlock(&ctrl->lock);
@@ -314,10 +314,10 @@ static int fimc_release(struct file *filp)
 	filp->private_data = NULL;
 
 	/* Shutdown the MCLK */
-	clk_disable(fimc->mclk);
+	clk_disable(fimc_dev->mclk);
 
 	/* FIXME: turning off actual working camera */
-	fimc->camera[ctrl->cam->id]->cam_power(0);
+	fimc_dev->camera[ctrl->cam->id]->cam_power(0);
 
 	mutex_unlock(&ctrl->lock);
 	
@@ -364,14 +364,11 @@ static int fimc_init_global(struct platform_device *pdev)
 	struct s3c_platform_fimc *pdata;
 	int i;
 
-	if (fimc->initialized)
-		return 0;
-
 	pdata = to_fimc_plat(&pdev->dev);
 
 	/* mclk */
-	fimc->mclk = clk_get(&pdev->dev, pdata->mclk_name);
-	if (IS_ERR(fimc->mclk)) {
+	fimc_dev->mclk = clk_get(&pdev->dev, pdata->mclk_name);
+	if (IS_ERR(fimc_dev->mclk)) {
 		dev_err(&pdev->dev, "failed to get mclk source\n");
 		return -EINVAL;
 	}
@@ -382,10 +379,10 @@ static int fimc_init_global(struct platform_device *pdev)
 			break;
 
 		/* Assign camera device to fimc */
-		fimc->camera[pdata->camera[i]->id] = pdata->camera[i];
+		fimc_dev->camera[pdata->camera[i]->id] = pdata->camera[i];
 	}
 
-	fimc->initialized = 1;
+	fimc_dev->initialized = 1;
 
 	return 0;
 }
@@ -443,14 +440,14 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		}
 
 		/* Assign probed subdev pointer to fimc */
-		fimc->sd[pdata->camera[id]->id] = sd;
+		fimc_dev->sd[pdata->camera[id]->id] = sd;
 
 		/* Assign camera device to fimc */
-		fimc->camera[pdata->camera[id]->id] = pdata->camera[id];
+		fimc_dev->camera[pdata->camera[id]->id] = pdata->camera[id];
 
 		/* Assign subdev to proper camera device pointer */
-		fimc->camera[pdata->camera[id]->id]->sd = \
-					fimc->sd[pdata->camera[id]->id];
+		fimc_dev->camera[pdata->camera[id]->id]->sd = \
+					fimc_dev->sd[pdata->camera[id]->id];
 	}
 
 	return 0;
@@ -463,10 +460,12 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	struct clk *srclk;
 	int ret;
 
-	fimc = kzalloc(sizeof(*fimc), GFP_KERNEL);
-	if (!fimc) {
-		dev_err(&pdev->dev, "not enough memory\n");
-		goto err_fimc;
+	if (!fimc_dev) {
+		fimc_dev = kzalloc(sizeof(*fimc_dev), GFP_KERNEL);
+		if (!fimc_dev) {
+			dev_err(&pdev->dev, "not enough memory\n");
+			goto err_fimc;
+		}
 	}
 
 	ctrl = fimc_register_controller(pdev);
@@ -514,9 +513,11 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* things to initialize once */
-	ret = fimc_init_global(pdev);
-	if (ret)
-		goto err_global;
+	if (!fimc_dev->initialized) {
+		ret = fimc_init_global(pdev);
+		if (ret)
+			goto err_global;
+	}
 
 	/* v4l2 subdev configuration */
 	ret = fimc_configure_subdev(pdev, ctrl->id);
@@ -538,7 +539,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	return 0;
 
 err_video:
-	clk_put(fimc->mclk);
+	clk_put(fimc_dev->mclk);
 
 err_global:
 	clk_disable(ctrl->clock);
@@ -555,7 +556,7 @@ err_fimc:
 static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
-	kfree(fimc);
+	kfree(fimc_dev);
 
 	return 0;
 }

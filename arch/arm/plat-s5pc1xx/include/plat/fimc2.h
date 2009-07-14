@@ -109,7 +109,7 @@ extern void s3c_fimc0_cfg_gpio(struct platform_device *dev);
 extern void s3c_fimc1_cfg_gpio(struct platform_device *dev);
 extern void s3c_fimc2_cfg_gpio(struct platform_device *dev);
 
-extern void s3c_fimc_reset_camera(void);
+extern void fimc_reset_camera(void);
 
 #endif /* _ARCH_FIMC_H */
 

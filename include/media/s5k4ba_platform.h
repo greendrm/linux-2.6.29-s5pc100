@@ -1,10 +1,9 @@
 /*
- * Driver for S5K6AA (SXGA camera) from Samsung Electronics
+ * Driver for S5K4BA (UXGA camera) from Samsung Electronics
  * 
- * 1/6" 1.3Mp CMOS Image Sensor SoC with an Embedded Image Processor
- * supporting MIPI CSI-2
+ * 1/4" 2.0Mp CMOS Image Sensor SoC with an Embedded Image Processor
  *
- * Copyright (C) 2009, Dongsoo Nathaniel Kim<dongsoo45.kim@samsung.com>
+ * Copyright (C) 2009, Jinsung Yang <jsgood.yang@samsung.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,7 +11,7 @@
  * (at your option) any later version.
  */
 
-struct s5k6aa_platform_data {
+struct s5k4ba_platform_data {
 	unsigned int default_width;
 	unsigned int default_height;
 	unsigned int pixelformat;
