@@ -129,6 +129,8 @@ endif
     plat-$(CONFIG_PLAT_S5PC1XX)	   := s5pc1xx s3c
  machine-$(CONFIG_ARCH_S5PC11X)    := s5pc110
     plat-$(CONFIG_PLAT_S5PC11X)    := s5pc11x s3c
+ machine-$(CONFIG_ARCH_S5P64XX)    := s5p6442
+    plat-$(CONFIG_PLAT_S5P64XX)    := s5p64xx s3c
  machine-$(CONFIG_ARCH_LH7A40X)	   := lh7a40x
  machine-$(CONFIG_ARCH_VERSATILE)  := versatile
  machine-$(CONFIG_ARCH_IMX)	   := imx

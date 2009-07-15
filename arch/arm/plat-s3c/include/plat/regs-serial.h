@@ -32,7 +32,7 @@
 #ifndef __ASM_ARM_REGS_SERIAL_H
 #define __ASM_ARM_REGS_SERIAL_H
 
-#if defined(CONFIG_PLAT_S3C64XX) || defined(CONFIG_PLAT_S5PC1XX) 
+#if defined(CONFIG_PLAT_S3C64XX) || defined(CONFIG_PLAT_S5PC1XX) || defined(CONFIG_PLAT_S5P64XX) 
 #define S3C24XX_VA_UART0      (S3C_VA_UART)
 #define S3C24XX_VA_UART1      (S3C_VA_UART + 0x400)
 #define S3C24XX_VA_UART2      (S3C_VA_UART + 0x800)
@@ -125,7 +125,7 @@
 				   S3C2410_UCON_TXIRQMODE | \
 				   S3C2410_UCON_RXIRQMODE | \
 				   S3C2410_UCON_RXFIFO_TOI)
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 #define S3C2410_UFCON_FIFOMODE	  (1<<0)
 #define S3C2410_UFCON_TXTRIG0	  (0<<8)
 #define S3C2410_UFCON_RXTRIG8	  (1<<4)
@@ -181,7 +181,7 @@
 #define S3C2412_UMCON_AFC_16	(6<<5)
 #define S3C2412_UMCON_AFC_8	(7<<5)
 
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 #define S3C2410_UFSTAT_TXFULL	  (1<<24)
 #define S3C2410_UFSTAT_RXFULL	  (1<<8)
 #define S3C2410_UFSTAT_TXMASK	  (255<<16)
@@ -275,7 +275,7 @@
 
 #define S3C64XX_ULCON_DEFAULT	S3C64XX_ULCON_WORD_8BIT
 
-#if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5P6440)|| defined(CONFIG_CPU_S5PC100) 
+#if defined(CONFIG_CPU_S3C6400) || defined(CONFIG_CPU_S3C6410) || defined(CONFIG_CPU_S5PC100) 
 #define S3C_ULCON         (0x00)
 #define S3C_UCON          (0x04)
 #define S3C_UFCON         (0x08)
@@ -384,7 +384,7 @@
 #define S3C_UMSTAT_CTS            (1<<0)
 #define S3C_UMSTAT_DeltaCTS       (1<<2)
 
-#elif defined(CONFIG_CPU_S5PC110)
+#elif defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 #define S3C_ULCON         	(0x00)
 #define S3C_UCON          	(0x04)
 #define S3C_UFCON         	(0x08)
@@ -526,7 +526,7 @@ struct s3c2410_uartcfg {
 	unsigned char	   hwport;	 /* hardware port number */
 	unsigned char	   unused;
 	unsigned short	   flags;
-#if !defined(CONFIG_CPU_S3C6400) && !defined(CONFIG_CPU_S3C6410) && !defined(CONFIG_CPU_S5PC100) && !defined(CONFIG_CPU_S5PC110)
+#if !defined(CONFIG_CPU_S3C6400) && !defined(CONFIG_CPU_S3C6410) && !defined(CONFIG_CPU_S5PC100) && !defined(CONFIG_CPU_S5PC110) && !defined(CONFIG_CPU_S5P6442)
         upf_t              uart_flags;   /* default uart flags */
 #else
         unsigned long	   uart_flags;      /* default uart flags */

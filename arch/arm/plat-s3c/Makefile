@@ -19,8 +19,10 @@ endif
 
 ifndef CONFIG_ARCH_S5PC1XX
 ifndef CONFIG_ARCH_S5PC11X
+ifndef CONFIG_ARCH_S5P64XX
 obj-y				+= time.o
 endif 
+endif
 endif
 obj-y				+= clock.o
 obj-y				+= pwm-clock.o

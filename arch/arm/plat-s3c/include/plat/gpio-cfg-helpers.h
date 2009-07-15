@@ -112,6 +112,9 @@ extern int s3c_gpio_setcfg_s5pc1xx(struct s3c_gpio_chip *chip,
 extern int s3c_gpio_setcfg_s5pc11x(struct s3c_gpio_chip *chip,
 					unsigned int off, unsigned int cfg);
 
+extern int s3c_gpio_setcfg_s5p64xx(struct s3c_gpio_chip *chip,
+					unsigned int off, unsigned int cfg);
+
 /* Pull-{up,down} resistor controls.
  *
  * S3C2410,S3C2440,S3C24A0 = Pull-UP,

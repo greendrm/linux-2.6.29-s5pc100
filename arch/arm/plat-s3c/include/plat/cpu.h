@@ -20,6 +20,8 @@
 #define IODESC_ENT(x) { (unsigned long)S5PC1XX_VA_##x, __phys_to_pfn(S5PC1XX_PA_##x), S5PC1XX_SZ_##x, MT_DEVICE }
 #elif defined(CONFIG_ARCH_S5PC11X)
 #define IODESC_ENT(x) { (unsigned long)S5PC11X_VA_##x, __phys_to_pfn(S5PC11X_PA_##x), S5PC11X_SZ_##x, MT_DEVICE }
+#elif defined(CONFIG_ARCH_S5P64XX)
+#define IODESC_ENT(x) { (unsigned long)S5P64XX_VA_##x, __phys_to_pfn(S5P64XX_PA_##x), S5P64XX_SZ_##x, MT_DEVICE }
 #else
 #error IODESC_ENT(x) macro should be defined!
 #endif
@@ -58,6 +60,7 @@ extern void s3c64xx_init_irq(u32 vic0, u32 vic1);
 
 extern void s3c24xx_init_io(struct map_desc *mach_desc, int size);
 extern void s3c64xx_init_io(struct map_desc *mach_desc, int size);
+extern void s5p64xx_init_io(struct map_desc *mach_desc, int size);
 extern void s5pc1xx_init_io(struct map_desc *mach_desc, int size);
 extern void s5pc11x_init_io(struct map_desc *mach_desc, int size);
 
@@ -68,6 +71,8 @@ extern void s3c24xx_init_clocks(int xtal);
 extern void s3c24xx_init_uartdevs(char *name,
 				  struct s3c24xx_uart_resources *res,
 				  struct s3c2410_uartcfg *cfg, int no);
+extern void s5p64xx_init_irq(u32 vic0, u32 vic1, u32 vic2, u32 vic3);
+
 extern void s5pc1xx_init_irq(u32 vic0, u32 vic1, u32 vic2, u32 vic3);
 extern void s5pc11x_init_irq(u32 vic0, u32 vic1, u32 vic2, u32 vic3);
 
@@ -85,5 +90,6 @@ extern struct sysdev_class s3c2440_sysclass;
 extern struct sysdev_class s3c2442_sysclass;
 extern struct sysdev_class s3c2443_sysclass;
 
+extern struct sysdev_class s5p6442_sysclass;
 extern struct sysdev_class s5pc100_sysclass;
 extern struct sysdev_class s5pc110_sysclass;
