@@ -200,6 +200,28 @@ int s3c_gpio_setcfg_s5pc11x(struct s3c_gpio_chip *chip,
 #endif /* CONFIG_PLAT_S5PC1XX */
 #endif /* CONFIG_S3C_GPIO_CFG_S5PC1XX */
 
+#ifdef CONFIG_S3C_GPIO_CFG_S5P64XX
+int s3c_gpio_setcfg_s5p64xx(struct s3c_gpio_chip *chip,
+				 unsigned int off, unsigned int cfg)
+{
+	void __iomem *reg = chip->base;
+	unsigned int shift = (off & 7) * 4;
+	u32 con;
+
+	if (s3c_gpio_is_cfg_special(cfg)) {
+		cfg &= 0xf;
+		cfg <<= shift;
+	}
+
+	con = __raw_readl(reg);
+	con &= ~(0xf << shift);
+	con |= cfg;
+	__raw_writel(con, reg);
+
+	return 0;
+}
+#endif	/* CONFIG_S3C_GPIO_CFG_S5P64XX */
+
 #ifdef CONFIG_S3C_GPIO_PULL_UPDOWN
 int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
 			    unsigned int off, s3c_gpio_pull_t pull)
@@ -238,10 +260,6 @@ int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
 	if(((baseaddr & 0xFFF) == 0x0E0) /* If it is GPH */
 		|| ((baseaddr & 0xFFF) == 0x800) /* If it is GPK */
 		|| ((baseaddr & 0xFFF) == 0x810)) /* If it is GPL */
-	   reg += 0x4;
-#elif defined CONFIG_CPU_S5P6440
-	if(((baseaddr & 0xFFF) == 0x0E0) /* If it is GPH */
-		|| ((baseaddr & 0xFFF) == 0x290)) /* If it is GPR */
 	   reg += 0x4;
 #elif defined CONFIG_CPU_S5PC100
 #endif

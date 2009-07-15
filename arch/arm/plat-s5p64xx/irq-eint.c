@@ -1,0 +1,193 @@
+/* arch/arm/plat-s5p64xx/irq-eint.c
+ *
+ * Copyright 2008 Openmoko, Inc.
+ * Copyright 2008 Simtec Electronics
+ *      Ben Dooks <ben@simtec.co.uk>
+ *      http://armlinux.simtec.co.uk/
+ *
+ * S5P64XX - Interrupt handling for IRQ_EINT(x)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include <linux/kernel.h>
+#include <linux/interrupt.h>
+#include <linux/irq.h>
+#include <linux/io.h>
+
+#include <asm/hardware/vic.h>
+
+#include <plat/regs-irqtype.h>
+
+#include <mach/map.h>
+#include <plat/cpu.h>
+
+#include <mach/gpio.h>
+#include <mach/regs-irq.h>
+//#include <plat/regs-gpio.h>
+
+#include <plat/gpio-cfg.h>
+
+static inline void s3c_irq_eint_mask(unsigned int irq)
+{
+	u32 mask;
+	
+	mask = __raw_readl(S5P64XX_EINTMASK(eint_mask_reg(irq)));
+	mask |= eint_irq_to_bit(irq);
+	__raw_writel(mask, S5P64XX_EINTMASK(eint_mask_reg(irq)));
+	
+}
+
+static void s3c_irq_eint_unmask(unsigned int irq)
+{
+	u32 mask;
+	
+	mask = __raw_readl(S5P64XX_EINTMASK(eint_mask_reg(irq)));
+	mask &= ~(eint_irq_to_bit(irq));
+	__raw_writel(mask, S5P64XX_EINTMASK(eint_mask_reg(irq)));
+}
+
+static inline void s3c_irq_eint_ack(unsigned int irq)
+{
+	__raw_writel(eint_irq_to_bit(irq), S5P64XX_EINTPEND(eint_pend_reg(irq)));
+}
+
+static void s3c_irq_eint_maskack(unsigned int irq)
+{
+	/* compiler should in-line these */
+	s3c_irq_eint_mask(irq);
+	s3c_irq_eint_ack(irq);
+}
+
+static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
+{
+	int offs = eint_offset(irq);
+	int shift, con_offs;
+	u32 ctrl, mask;
+	u32 newvalue = 0;
+	void __iomem *reg;
+
+	if (offs > 31)
+		return -EINVAL;
+	else if (offs >= 0 && offs < 8) {
+		reg = S5P64XX_EINT0CON;
+		con_offs = offs - 0;
+	} else if (offs >= 8 && offs < 16) {
+		reg = S5P64XX_EINT1CON;
+		con_offs = offs - 8;
+	} else if (offs >= 16 && offs < 24) {
+		reg = S5P64XX_EINT2CON;
+		con_offs = offs - 16;
+	} else {
+		reg = S5P64XX_EINT3CON;
+		con_offs = offs - 24;
+	}
+	switch (type) {
+	case IRQ_TYPE_NONE:
+		printk(KERN_WARNING "No edge setting!\n");
+		break;
+
+	case IRQ_TYPE_EDGE_RISING:
+		newvalue = S5P_EXTINT_RISEEDGE;
+		break;
+
+	case IRQ_TYPE_EDGE_FALLING:
+		newvalue = S5P_EXTINT_FALLEDGE;
+		break;
+
+	case IRQ_TYPE_EDGE_BOTH:
+		newvalue = S5P_EXTINT_BOTHEDGE;
+		break;
+
+	case IRQ_TYPE_LEVEL_LOW:
+		newvalue = S5P_EXTINT_LOWLEV;
+		break;
+
+	case IRQ_TYPE_LEVEL_HIGH:
+		newvalue = S5P_EXTINT_HILEV;
+		break;
+
+	default:
+		printk(KERN_ERR "No such irq type %d", type);
+		return -1;
+	}
+
+	shift = (offs & 0x7) * 4;
+	mask = 0x7 << shift;
+
+	ctrl = __raw_readl(S5P64XX_EINTCON(eint_conf_reg(irq)));
+	ctrl &= ~mask;
+	ctrl |= newvalue << shift;
+	__raw_writel(ctrl, S5P64XX_EINTCON(eint_conf_reg(irq)));
+
+	if((0 <= offs) && (offs < 8))
+		s3c_gpio_cfgpin(S5P64XX_GPH0(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((8 <= offs) && (offs < 16))
+		s3c_gpio_cfgpin(S5P64XX_GPH1(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((16 <= offs) && (offs < 24))
+		s3c_gpio_cfgpin(S5P64XX_GPH2(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((24 <= offs) && (offs < 32))
+		s3c_gpio_cfgpin(S5P64XX_GPH3(offs&0x7), 0x2<<((offs&0x7)*4));
+	else
+		printk(KERN_ERR "No such irq number %d", offs);
+
+	return 0;
+}
+
+static struct irq_chip s3c_irq_eint = {
+	.name		= "s3c-eint",
+	.mask		= s3c_irq_eint_mask,
+	.unmask		= s3c_irq_eint_unmask,
+	.mask_ack	= s3c_irq_eint_maskack,
+	.ack		= s3c_irq_eint_ack,
+	.set_type	= s3c_irq_eint_set_type,
+};
+
+/* s3c_irq_demux_eint
+ *
+ * This function demuxes the IRQ from the group0 external interrupts,
+ * from IRQ_EINT(0) to IRQ_EINT(15). It is designed to be inlined into
+ * the specific handlers s3c_irq_demux_eintX_Y.
+ */
+static inline void s3c_irq_demux_eint(unsigned int start, unsigned int end)
+{
+	u32 status = __raw_readl(S5P64XX_EINT0PEND);
+	u32 mask = __raw_readl(S5P64XX_EINT0MASK);
+	unsigned int irq;
+
+	status &= ~mask;
+	status >>= start;
+	status &= (1 << (end - start + 1)) - 1;
+
+	for (irq = IRQ_EINT(start); irq <= IRQ_EINT(end); irq++) {
+		if (status & 1)
+			generic_handle_irq(irq);
+
+		status >>= 1;
+	}
+}
+
+static void s3c_irq_demux_eint16_31(unsigned int irq, struct irq_desc *desc)
+{
+	s3c_irq_demux_eint(0, 3);
+}
+
+
+int __init s5p64xx_init_irq_eint(void)
+{
+	int irq;
+
+	for (irq = IRQ_EINT(0); irq <= IRQ_EINT(15); irq++) {
+		set_irq_chip(irq, &s3c_irq_eint);
+		set_irq_handler(irq, handle_level_irq);
+		set_irq_flags(irq, IRQF_VALID);
+	}
+
+	set_irq_chained_handler(IRQ_EINT16_31, s3c_irq_demux_eint16_31);
+
+	return 0;
+}
+
+arch_initcall(s5p64xx_init_irq_eint);

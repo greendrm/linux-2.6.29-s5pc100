@@ -15,8 +15,8 @@
 #define XTAL_FREQ	12000000
 
 #define S5P_PLL_MDIV_MASK	((1 << (25-16+1)) - 1)
-#define S5P_PLL_PDIV_MASK		((1 << (13-8+1)) - 1)
-#define S5P_PLL_SDIV_MASK		((1 << (2-0+1)) - 1)
+#define S5P_PLL_PDIV_MASK	((1 << (13-8+1)) - 1)
+#define S5P_PLL_SDIV_MASK	((1 << (2-0+1)) - 1)
 #define S5P_PLL_MDIV_SHIFT	(16)
 #define S5P_PLL_PDIV_SHIFT	(8)
 #define S5P_PLL_SDIV_SHIFT	(0)
@@ -26,8 +26,15 @@
 #define APLL_VAL_1664	(1<<31)|(417<<16)|(3<<8)|(0)
 #define APLL_VAL_1332	(1<<31)|(444<<16)|(4<<8)|(0)
 
+enum s5pc11x_base_pll_t{
+	S5PC11X_PLL_APLL,
+	S5PC11X_PLL_MPLL,
+	S5PC11X_PLL_EPLL,
+	S5PC11X_PLL_VPLL,
+};
+
 static inline unsigned long s5pc11x_get_pll(unsigned long baseclk,
-					    u32 pllcon)
+					    u32 pllcon, enum s5pc11x_base_pll_t base_pll_type)
 {
 	u32 mdiv, pdiv, sdiv;
 	u64 fvco = baseclk;
@@ -37,7 +44,19 @@ static inline unsigned long s5pc11x_get_pll(unsigned long baseclk,
 	sdiv = (pllcon >> S5P_PLL_SDIV_SHIFT) & S5P_PLL_SDIV_MASK;
 
 	fvco *= mdiv ;
-	do_div(fvco, (pdiv << sdiv));
+
+	switch(base_pll_type){
+	case S5PC11X_PLL_APLL:
+#if 1		/* temporary for FPGAC110 */
+		do_div(fvco, (pdiv << sdiv));
+#else
+		do_div(fvco, (pdiv << (sdiv-1)));
+#endif
+		break;
+	default:
+		do_div(fvco, (pdiv << sdiv));
+		break;
+	}
 
 	return (unsigned long)fvco;
 	

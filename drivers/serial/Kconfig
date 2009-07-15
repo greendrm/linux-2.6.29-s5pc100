@@ -535,7 +535,7 @@ config SERIAL_S3C6400
 
 config SERIAL_S5PC100
 	tristate "Samsung S5PC100 Serial port support"
-	depends on SERIAL_SAMSUNG && (CPU_S5PC100 || CPU_S5PC110)
+	depends on SERIAL_SAMSUNG && (CPU_S5PC100 || CPU_S5PC110 || CPU_S5P6442)
 	default y
 	help
 	  Serial port support for the Samsung S5PC100 SoCs

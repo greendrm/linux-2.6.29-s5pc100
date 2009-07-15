@@ -994,3 +994,37 @@ v2.6.29.4-r3d11: Kukjin Kim
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp26.h
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp27.h
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp28.h
+
+v2.6.29.4-r3d12: Jongpill Lee
+	- Bug fixed on CMU for S5PC110
+
+	Modified files:
+		M       arch/arm/plat-s5pc11x/include/plat/pll.h
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+
+v2.6.29.4-r3d13: Jae-Cheol Lee
+	- Starting S5P6442 development from FPGA
+
+	Modified Files:
+		M	arch/arm/Kconfig
+		M	arch/arm/Makefile
+		M	arch/arm/mm/Kconfig
+		M	arch/arm/plat-s3c/Kconfig
+		M	arch/arm/plat-s3c/Makefile
+		M	arch/arm/plat-s3c/clock.c
+		M	arch/arm/plat-s3c/gpio-config.c
+		M	arch/arm/plat-s3c/include/mach/s3c-dma.h
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s3c/include/plat/cpu.h
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s3c/include/plat/gpio-cfg-helpers.h
+		M	arch/arm/plat-s3c/include/plat/regs-irqtype.h
+		M	arch/arm/plat-s3c/include/plat/regs-serial.h
+		M	arch/arm/plat-s3c/include/plat/sdhci.h
+		M	drivers/serial/Kconfig
+		M	drivers/video/samsung/Kconfig
+	
+	Added Directories:
+		A	arch/arm/plat-s5p64xx
+		A	arch/arm/mach-s5p6442
+	
