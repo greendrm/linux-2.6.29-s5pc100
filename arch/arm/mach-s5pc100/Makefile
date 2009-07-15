@@ -28,3 +28,7 @@ obj-$(CONFIG_MACH_UNIVERSAL)	+= mach-universal.o
 # LEDs support
 led-$(CONFIG_MACH_SMDKC100)     += leds-s5pc100.o
 obj-$(CONFIG_LEDS)              += $(led-y)
+
+# Button EINT suppoty
+obj-$(CONFIG_MACH_SMDKC100)	+= s5pc100-button.o
+

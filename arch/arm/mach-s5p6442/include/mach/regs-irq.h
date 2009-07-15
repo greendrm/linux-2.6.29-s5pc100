@@ -20,6 +20,7 @@
 /* interrupt controller */
 #define S3C_VIC0REG(x)          ((x) + S3C_VA_VIC0)
 #define S3C_VIC1REG(x)          ((x) + S3C_VA_VIC1)
+#define S3C_VIC2REG(x)          ((x) + S3C_VA_VIC2)
 
 #define S5P64XX_VIC0IRQSTATUS       S3C_VIC0REG(0x000)
 #define S5P64XX_VIC1IRQSTATUS       S3C_VIC1REG(0x000)
@@ -100,7 +101,7 @@
 #define S5P64XX_EINTPEND(x)			(S5P64XX_EINT0PEND+((x)*0x4))	/* EINT0 ~  EINT31  */
 
 #define eint_offset(irq)			((irq) < IRQ_EINT16_31 ? ((irq)-IRQ_EINT0) :  \
-						((irq-S3C_IRQ_EINT_BASE)+IRQ_EINT16_31-IRQ_EINT0))
+						(irq-S3C_IRQ_EINT_BASE))
 					
 #define eint_irq_to_bit(irq)			(1 << (eint_offset(irq) & 0x7))
 

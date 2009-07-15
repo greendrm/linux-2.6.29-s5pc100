@@ -64,26 +64,10 @@ static void s3c_irq_eint_maskack(unsigned int irq)
 static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 {
 	int offs = eint_offset(irq);
-	int shift, con_offs;
+	int shift;
 	u32 ctrl, mask;
 	u32 newvalue = 0;
-	void __iomem *reg;
 
-	if (offs > 31)
-		return -EINVAL;
-	else if (offs >= 0 && offs < 8) {
-		reg = S5P64XX_EINT0CON;
-		con_offs = offs - 0;
-	} else if (offs >= 8 && offs < 16) {
-		reg = S5P64XX_EINT1CON;
-		con_offs = offs - 8;
-	} else if (offs >= 16 && offs < 24) {
-		reg = S5P64XX_EINT2CON;
-		con_offs = offs - 16;
-	} else {
-		reg = S5P64XX_EINT3CON;
-		con_offs = offs - 24;
-	}
 	switch (type) {
 	case IRQ_TYPE_NONE:
 		printk(KERN_WARNING "No edge setting!\n");
@@ -122,6 +106,7 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	ctrl |= newvalue << shift;
 	__raw_writel(ctrl, S5P64XX_EINTCON(eint_conf_reg(irq)));
 
+#if 0
 	if((0 <= offs) && (offs < 8))
 		s3c_gpio_cfgpin(S5P64XX_GPH0(offs&0x7), 0x2<<((offs&0x7)*4));
 	else if((8 <= offs) && (offs < 16))
@@ -132,7 +117,7 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 		s3c_gpio_cfgpin(S5P64XX_GPH3(offs&0x7), 0x2<<((offs&0x7)*4));
 	else
 		printk(KERN_ERR "No such irq number %d", offs);
-
+#endif
 	return 0;
 }
 
@@ -153,8 +138,8 @@ static struct irq_chip s3c_irq_eint = {
  */
 static inline void s3c_irq_demux_eint(unsigned int start, unsigned int end)
 {
-	u32 status = __raw_readl(S5P64XX_EINT0PEND);
-	u32 mask = __raw_readl(S5P64XX_EINT0MASK);
+	u32 status = __raw_readl(S5P64XX_EINTPEND((start >> 3)));
+	u32 mask = __raw_readl(S5P64XX_EINTPEND((start >> 3)));
 	unsigned int irq;
 
 	status &= ~mask;
@@ -171,15 +156,66 @@ static inline void s3c_irq_demux_eint(unsigned int start, unsigned int end)
 
 static void s3c_irq_demux_eint16_31(unsigned int irq, struct irq_desc *desc)
 {
-	s3c_irq_demux_eint(0, 3);
+	s3c_irq_demux_eint(16, 23);
+	s3c_irq_demux_eint(24, 31);
 }
+
+/*---------------------------- EINT0 ~ EINT15 -------------------------------------*/
+static void s3c_irq_vic_eint_mask(unsigned int irq)
+{
+	void __iomem *base = get_irq_chip_data(irq);
+	
+	s3c_irq_eint_mask(irq);
+	
+	irq &= 31;
+	writel(1 << irq, base + VIC_INT_ENABLE_CLEAR);
+}
+
+
+static void s3c_irq_vic_eint_unmask(unsigned int irq)
+{
+	void __iomem *base = get_irq_chip_data(irq);
+	
+	s3c_irq_eint_unmask(irq);
+	
+	irq &= 31;
+	writel(1 << irq, base + VIC_INT_ENABLE);
+}
+
+
+static inline void s3c_irq_vic_eint_ack(unsigned int irq)
+{
+	__raw_writel(eint_irq_to_bit(irq), S5P64XX_EINTPEND(eint_pend_reg(irq)));
+}
+
+
+static void s3c_irq_vic_eint_maskack(unsigned int irq)
+{
+	/* compiler should in-line these */
+	s3c_irq_vic_eint_mask(irq);
+	s3c_irq_vic_eint_ack(irq);
+}
+
+
+static struct irq_chip s3c_irq_vic_eint = {
+	.name	= "s3c_vic_eint",
+	.mask	= s3c_irq_vic_eint_mask,
+	.unmask	= s3c_irq_vic_eint_unmask,
+	.mask_ack = s3c_irq_vic_eint_maskack,
+	.ack = s3c_irq_vic_eint_ack,
+	.set_type = s3c_irq_eint_set_type,
+};
 
 
 int __init s5p64xx_init_irq_eint(void)
 {
 	int irq;
 
-	for (irq = IRQ_EINT(0); irq <= IRQ_EINT(15); irq++) {
+	for (irq = IRQ_EINT0; irq <= IRQ_EINT15; irq++) {
+		set_irq_chip(irq, &s3c_irq_vic_eint);
+	}
+
+	for (irq = IRQ_EINT(16); irq <= IRQ_EINT(31); irq++) {
 		set_irq_chip(irq, &s3c_irq_eint);
 		set_irq_handler(irq, handle_level_irq);
 		set_irq_flags(irq, IRQF_VALID);

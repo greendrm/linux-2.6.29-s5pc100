@@ -13,10 +13,6 @@ obj-				:=
 
 obj-y				+= init.o
 
-ifdef CONFIG_ARCH_S5PC1XX
-obj-y				+= s3c-button.o
-endif
-
 ifndef CONFIG_ARCH_S5PC1XX
 ifndef CONFIG_ARCH_S5PC11X
 ifndef CONFIG_ARCH_S5P64XX

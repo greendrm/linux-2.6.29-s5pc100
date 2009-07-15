@@ -66,6 +66,7 @@ struct s5k4ba_state {
 	struct v4l2_fract timeperframe;
 	struct s5k4ba_userset userset;
 	int freq;	/* MCLK in KHz */
+	int is_mipi;
 	int isize;
 	int ver;
 	int fps;
@@ -107,8 +108,9 @@ again:
 
 	/* abnormal case: retry 5 times */
 	if (retry < 5) {
-		dev_err(&client->dev, "%s:address:0x%02x%02x, value:0x%02x%02x\n",
-				__func__, reg[0], reg[1], reg[2], reg[3]);
+		dev_err(&client->dev, "%s: address: 0x%02x%02x, " \
+			"value: 0x%02x%02x\n", __FUNCTION__, \
+			reg[0], reg[1], reg[2], reg[3]);
 		retry++;
 		goto again;
 	}
@@ -116,42 +118,35 @@ again:
 	return err;
 }
 
-/*
- * Register configuration sets are served
- * Special purpose register address:
- * 	REG_DELAY: delay for specified ms
- * 	REG_CMD: address followed by special purpose commands
- * 		VAL_END: end of register set
- */
-static int s5k4ba_write_regs(struct v4l2_subdev *sd,
-					const unsigned char *reglist)
+static int s5k4ba_i2c_write(struct v4l2_subdev *sd, unsigned char i2c_data[],
+				unsigned char length)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct s5k4ba_regset_type *regset = (struct s5k4ba_regset_type *)reglist;
-	struct s5k4ba_reg *reg = (struct s5k4ba_reg *)regset->regset;
-	int i, err = 0;
+	unsigned char buf[length], i;
+	struct i2c_msg msg = {client->addr, 0, length, buf};
 
-	for (i = 0; i< regset->len; i++) {
-		/* TODO: need burst mode in case of 0x0F12 is comming with address */
-		if (reg->addr == REG_DELAY) {
-			/* delay command (in ms) */
-			mdelay(reg->val);
-			dev_dbg(&client->dev, "%s:delay for %dms\n", __func__, reg->val);
-		} else {
-			/* or programme register */
-			err = s5k4ba_write(sd, reg->addr, reg->val);
-			dev_dbg(&client->dev, "%s:0x%04x,0x%04x programmed\n", __func__,
-					reg->addr, reg->val);
-		}
+	for (i = 0; i<length; i++) {
+		buf[i] = i2c_data[i];
+	}
+	return i2c_transfer(client->adapter, &msg, 1) == 1 ? 0 : -EIO;
+}
 
-		if (err < 0) {
-			dev_dbg(&client->dev, "%s:failed on 0x%04x,0x%04x\n", __func__,
-					reg->addr, reg->val);
-			return err;
-		}
+static int s5k4ba_write_regs(struct v4l2_subdev *sd, unsigned char regs[], 
+				int size)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int i, err;
+
+	for (i = 0; i < size; i++) {
+		if (i == 4)
+			mdelay(5);
+		err = s5k4ba_i2c_write(sd, &regs[i], sizeof(regs[i]));
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", \
+			__FUNCTION__);
 	}
 
-	return 0;
+	return 0;	/* FIXME */
 }
 
 static const char *s5k4ba_querymenu_wb_preset[] = {
@@ -284,7 +279,8 @@ static int s5k4ba_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
 
 	for (i = 0; i < ARRAY_SIZE(s5k4ba_controls); i++) {
 		if (s5k4ba_controls[i].id == qc->id) {
-			memcpy(qc, &s5k4ba_controls[i], sizeof(struct v4l2_queryctrl));
+			memcpy(qc, &s5k4ba_controls[i], \
+				sizeof(struct v4l2_queryctrl));
 			return 0;
 		}
 	}
@@ -318,55 +314,57 @@ static int s5k4ba_s_crystal_freq(struct v4l2_subdev *sd, u32 freq, u32 flags)
 
 static int s5k4ba_g_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k4ba_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
-static int s5k4ba_enum_framesizes(struct v4l2_subdev *sd, struct v4l2_frmsizeenum *fsize)
+static int s5k4ba_enum_framesizes(struct v4l2_subdev *sd, \
+					struct v4l2_frmsizeenum *fsize)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
-static int s5k4ba_enum_frameintervals(struct v4l2_subdev *sd, struct v4l2_frmivalenum *fival)
+static int s5k4ba_enum_frameintervals(struct v4l2_subdev *sd, 
+					struct v4l2_frmivalenum *fival)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k4ba_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmtdesc)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k4ba_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k4ba_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k4ba_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
@@ -412,7 +410,7 @@ static int s5k4ba_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		err = 0;
 		break;
 	default:
-		dev_err(&client->dev, "%s: no such ctrl\n", __func__);
+		dev_err(&client->dev, "%s: no such ctrl\n", __FUNCTION__);
 		break;
 	}
 	
@@ -429,39 +427,42 @@ static int s5k4ba_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
-		dev_dbg(&client->dev, "%s:V4L2_CID_EXPOSURE\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_EXPOSURE\n", ___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_ev_bias[ctrl->value]);
 		break;
 	case V4L2_CID_AUTO_WHITE_BALANCE:
-		dev_dbg(&client->dev, "%s:V4L2_CID_AUTO_WHITE_BALANCE\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_AUTO_WHITE_BALANCE\n", \
+			___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_awb_enable[ctrl->value]);
 		break;
 	case V4L2_CID_WHITE_BALANCE_PRESET:
-		dev_dbg(&client->dev, "%s:V4L2_CID_WHITE_BALANCE_PRESET\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_PRESET\n", \
+			___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_wb_preset[ctrl->value]);
 		break;
 	case V4L2_CID_WHITE_BALANCE_TEMPERATURE:
-		dev_dbg(&client->dev, "%s:V4L2_CID_WHITE_BALANCE_TEMPERATURE\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_TEMPERATURE\n", \
+			___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_wb_temperature[ctrl->value]);
 		break;
 	case V4L2_CID_COLORFX:
-		dev_dbg(&client->dev, "%s:V4L2_CID_COLORFX\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_COLORFX\n", ___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_color_effect[ctrl->value]);
 		break;
 	case V4L2_CID_CONTRAST:
-		dev_dbg(&client->dev, "%s:V4L2_CID_CONTRAST\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_CONTRAST\n", ___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_contrast_bias[ctrl->value]);
 		break;
 	case V4L2_CID_SATURATION:
-		dev_dbg(&client->dev, "%s:V4L2_CID_SATURATION\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SATURATION\n", ___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_saturation_bias[ctrl->value]);
 		break;
 	case V4L2_CID_SHARPNESS:
-		dev_dbg(&client->dev, "%s:V4L2_CID_SHARPNESS\n", __func__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SHARPNESS\n", ___FUNCTION__);
 		err = s5k4ba_write_regs(sd, s5k4ba_regs_sharpness_bias[ctrl->value]);
 		break;
 	default:
-		dev_err(&client->dev, "%s: no such control\n", __func__);
+		dev_err(&client->dev, "%s: no such control\n", ___FUNCTION__);
 		break;
 	}
 
@@ -471,80 +472,52 @@ static int s5k4ba_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		return 0;
 
 out:
-	dev_dbg(&client->dev, "%s:vidioc_s_ctrl failed\n", __func__);
+	dev_dbg(&client->dev, "%s: vidioc_s_ctrl failed\n", ___FUNCTION__);
 	return err;
 #else
 	return 0;
 #endif
 }
 
+static int s5k4ba_init(struct v4l2_subdev *sd, u32 val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int err = -EINVAL;
+
+	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
+
+	err = s5k4ba_write_regs(sd, (unsigned char *)s5k4ba_init_reg, \
+				S5K4BA_INIT_REGS);
+	if (err < 0) {
+		v4l_err(client, "%s: camera initialization failed\n", \
+			__FUNCTION__);
+		return -EIO;	/* FIXME */
+	}
+
+	return 0;
+}
+
+/*
+ * s_config subdev ops
+ * With camera device, we need to re-initialize every single opening time therefor,
+ * it is not necessary to be initialized on probe time. except for version checking
+ * NOTE: version checking is optional
+ */
 static int s5k4ba_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct s5k4ba_state *state = to_state(sd);
-	struct s5k4ba_userset userset = state->userset;
-	int err = -EINVAL;
-
-	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
-#if 0
-	err = s5k4ba_write_regs(sd, s5k4ba_init);
-	if (err < 0)
-		return -EIO;	/* FIXME */
-#endif
-	return 0;
-}
-
-static const struct v4l2_subdev_core_ops s5k4ba_core_ops = {
-	.s_config = s5k4ba_s_config,	/* initializing API */
-	.queryctrl = s5k4ba_queryctrl,
-	.querymenu = s5k4ba_querymenu,
-	.g_ctrl = s5k4ba_g_ctrl,
-	.s_ctrl = s5k4ba_s_ctrl,
-};
-
-static const struct v4l2_subdev_video_ops s5k4ba_video_ops = {
-	.s_crystal_freq = s5k4ba_s_crystal_freq,
-	.g_fmt = s5k4ba_g_fmt,
-	.s_fmt = s5k4ba_s_fmt,
-	.s_crystal_freq = s5k4ba_s_crystal_freq,
-	.enum_framesizes = s5k4ba_enum_framesizes,
-	.enum_frameintervals = s5k4ba_enum_frameintervals,
-	.enum_fmt = s5k4ba_enum_fmt,
-	.try_fmt = s5k4ba_try_fmt,
-	.g_parm = s5k4ba_g_parm,
-	.s_parm = s5k4ba_s_parm,
-};
-
-static const struct v4l2_subdev_ops s5k4ba_ops = {
-	.core = &s5k4ba_core_ops,
-	.video = &s5k4ba_video_ops,
-};
-
-static int s5k4ba_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
-{
-	struct s5k4ba_state *state;
-	struct v4l2_subdev *sd;
 	struct s5k4ba_platform_data *pdata;
 
-	state = kzalloc(sizeof(struct s5k4ba_state), GFP_KERNEL);
-	if (state == NULL)
-		return -ENOMEM;
+	dev_info(&client->dev, "fetching platform data\n");
 
-	printk(KERN_INFO "##################S5K4BA#############\n");
 	pdata = client->dev.platform_data;
-#if 1
+
 	if (!pdata) {
-		dev_err(&client->dev, "No platform data?\n");
+		dev_err(&client->dev, "%s: no platform data\n", __FUNCTION__);
 		return -ENODEV;
 	}
-#endif
-	sd = &state->sd;
-	strcpy(sd->name, S5K4BA_DRIVER_NAME);
 
-	/* Registering subdev */
-	v4l2_i2c_subdev_init(sd, client, &s5k4ba_ops);
-#if 1
 	/*
 	 * Assign default format and resolution
 	 * Use configured default information in platform data
@@ -561,7 +534,69 @@ static int s5k4ba_probe(struct i2c_client *client,
 		state->pix.pixelformat = DEFAULT_FMT;
 	else
 		state->pix.pixelformat = pdata->pixelformat;
-#endif	
+
+	if (!pdata->freq)
+		state->freq = 24000000;	/* 24MHz default */
+	else
+		state->freq = pdata->freq;
+
+	if (!pdata->is_mipi) {
+		state->is_mipi = 0;
+		dev_info(&client->dev, "parallel mode\n");
+	} else
+		state->is_mipi = pdata->is_mipi;
+
+	return 0;
+}
+
+static const struct v4l2_subdev_core_ops s5k4ba_core_ops = {
+	.init = s5k4ba_init,	/* initializing API */
+	.s_config = s5k4ba_s_config,	/* Fetch platform data */
+	.queryctrl = s5k4ba_queryctrl,
+	.querymenu = s5k4ba_querymenu,
+	.g_ctrl = s5k4ba_g_ctrl,
+	.s_ctrl = s5k4ba_s_ctrl,
+};
+
+static const struct v4l2_subdev_video_ops s5k4ba_video_ops = {
+	.s_crystal_freq = s5k4ba_s_crystal_freq,
+	.g_fmt = s5k4ba_g_fmt,
+	.s_fmt = s5k4ba_s_fmt,
+	.enum_framesizes = s5k4ba_enum_framesizes,
+	.enum_frameintervals = s5k4ba_enum_frameintervals,
+	.enum_fmt = s5k4ba_enum_fmt,
+	.try_fmt = s5k4ba_try_fmt,
+	.g_parm = s5k4ba_g_parm,
+	.s_parm = s5k4ba_s_parm,
+};
+
+static const struct v4l2_subdev_ops s5k4ba_ops = {
+	.core = &s5k4ba_core_ops,
+	.video = &s5k4ba_video_ops,
+};
+
+/*
+ * s5k4ba_probe
+ * Fetching platform data is being done with s_config subdev call.
+ * In probe routine, we just register subdev device
+ */
+static int s5k4ba_probe(struct i2c_client *client,
+			 const struct i2c_device_id *id)
+{
+	struct s5k4ba_state *state;
+	struct v4l2_subdev *sd;
+
+	state = kzalloc(sizeof(struct s5k4ba_state), GFP_KERNEL);
+	if (state == NULL)
+		return -ENOMEM;
+
+	sd = &state->sd;
+	strcpy(sd->name, S5K4BA_DRIVER_NAME);
+
+	/* Registering subdev */
+	v4l2_i2c_subdev_init(sd, client, &s5k4ba_ops);
+
+	dev_info(&client->dev, "s5k4ba has been probed\n");
 	return 0;
 }
 

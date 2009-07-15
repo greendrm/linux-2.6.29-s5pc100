@@ -36,7 +36,7 @@
 #include <plat/clock.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 static struct s3c_fimc_camera test_pattern = {
 	.id 		= S3C_FIMC_TPID,
@@ -371,22 +371,21 @@ static int s3c_fimc_open(struct file *filp)
 	 * through VIDIOC_S_INPUT
 	 */
 	s3c_fimc_set_active_camera(ctrl, pdata->default_cam);
-#if 1
+
 	/*
 	 * Now Configuring external camera module(subdev)
 	 * For now, we have "default camera" concept so,
 	 * we directly access to the index of default camera's subdev
 	 *
-	 * int (*s_config)(struct v4l2_subdev *sd, int irq, void *platform_data);
+	 * int (*init)(struct v4l2_subdev *sd, u32 val);
+	 * TODO: get val from platform data to work with special occasion
 	 */
-	ret = v4l2_subdev_call(ctrl->in_cam->sd, core, s_config,
-			ctrl->in_cam->info->irq,
-			ctrl->in_cam->info->platform_data);
+	ret = v4l2_subdev_call(ctrl->in_cam->sd, core, init, 0);
 
 	if (ret == -ENOIOCTLCMD)
 		dev_err(ctrl->dev, "%s:s_config subdev api not supported\n",
 				__FUNCTION__);
-#endif
+
 	/* Apply things to interface register */
 	s3c_fimc_reset(ctrl);
 	filp->private_data = ctrl;
@@ -517,33 +516,36 @@ static int s3c_fimc_configure_subdev(struct platform_device *pdev, int id)
 					__FUNCTION__);
 		}
 
-		i2c_info = pdata->camera[id]->info;
-		name = pdata->camera[id]->info->type;
+		i2c_info = pdata->camera[id]->info;	/* fetch I2C board info */
+		if (!i2c_info) {
+			dev_err(&pdev->dev, "%s:subdev i2c board info missing\n",
+					__FUNCTION__);
+			return -ENODEV;
+		}
+
+		name = i2c_info->type;
 		if (!name) {
 			dev_info(&pdev->dev, "%s:subdev i2c dirver name missing-skip registration\n",
 					__FUNCTION__);
+			return -ENODEV;
 		}
 
-		addr = pdata->camera[id]->info->addr;
+		addr = i2c_info->addr;
 		if (!addr) {
 			dev_info(&pdev->dev, "%s:subdev i2c address missing-skip registration\n",
 					__FUNCTION__);
+			return -ENODEV;
 		}
 
-		/* NOTE: first time subdev being registered,
+		/*
+		 * NOTE: first time subdev being registered,
 		 * s_config is called and try to initialize subdev device
 		 * but in this point, we are not giving MCLK and power to subdev
-		 * so nothing happens.
-		 * try v4l2_subdev_call with s_config core to initialize after
-		 * giving power source
+		 * so nothing happens but pass platform data through
 		 */
-#if 1
-		sd = v4l2_i2c_new_subdev_board(&s3c_fimc.v4l2_dev[id], i2c_adap,
-				name, i2c_info, &addr);
-#else
 		sd = v4l2_i2c_new_subdev_board(&s3c_fimc.ctrl[id].v4l2_dev, i2c_adap,
 				name, i2c_info, &addr);
-#endif
+
 		if (!sd) {
 			dev_err(&pdev->dev, "%s:v4l2 subdev board registering failed\n",
 					__FUNCTION__);
@@ -560,7 +562,45 @@ static int s3c_fimc_configure_subdev(struct platform_device *pdev, int id)
 	}
 	return 0;
 }
+#if 0
+/*
+ * fimc_v4l2_configure
+ * Constructs v4l2 input device information on device opening
+ * What we need to run a driver:
+ * 	v4l2_input devices
+ * 	v4l2_fmtdesc formats
+ * NOTE: about order of index, default camera takes the first 
+ * camera index 0, and the others takes next
+ * TODO: move this routine to probing time. (optimizing)
+ */
+static int  fimc_v4l2_configure(struct s3c_fimc_control *ctrl)
+{
+	struct s3c_platform_fimc *pdata;
+	struct s3c_fimc_camera *cam;
+	struct v4l2_input input[S3C_FIMC_MAX_CAMS - 1];	/* FIXME: don't use macro */
+	int i, ret;
+	int index = 1;	/* 0 is reserved for default camrea */
 
+	pdata = to_fimc_plat(ctrl->dev);
+
+	/* default camera always takes first index */
+	input[0] = s3c_fimc.camera[pdata->default_cam];	
+
+	for (i = 0; i < S3C_FIMC_MAX_CAMS; i++) {
+		/* Pass empty camera */
+		if (!s3c_fimc.camera[i])
+			continue;
+
+		/* default camera already assigned */
+		if (i == pdata->default_cam)
+			continue;
+
+		input[index] = s3c_fimc.camera[i]
+	}
+
+	return ret;
+}
+#endif
 static int __devinit s3c_fimc_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;
@@ -607,14 +647,14 @@ static int __devinit s3c_fimc_probe(struct platform_device *pdev)
 	clk_enable(ctrl->clock);
 
 	/* V4L2 device-subdev registration */
-	//ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
-	ret = v4l2_device_register(&pdev->dev, &s3c_fimc.v4l2_dev[ctrl->id]);
+	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
+
 	if (ret) {
 		dev_err(ctrl->dev, "%s:v4l2 device register failed\n", __FUNCTION__);
 		return ret;
 	}
 	/* assigning v4l2 device to controller */
-	ctrl->v4l2_dev = s3c_fimc.v4l2_dev[ctrl->id];
+	s3c_fimc.v4l2_dev[ctrl->id] = &ctrl->v4l2_dev;
 
 	/* things to initialize once */
 	/* FIXME: In case of not using fimc0, what happens? */
