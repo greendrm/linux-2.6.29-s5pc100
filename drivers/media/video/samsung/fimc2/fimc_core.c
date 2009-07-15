@@ -192,55 +192,14 @@ ssize_t fimc_write(struct file *filp, const char *b, size_t c, loff_t *offset)
 	return 0;
 }
 
-/*
- * ctrl->id means FIMC[id]
- * camera->id means camera A/B/C
- * Openening device node is to open FIMC device
- * and after opening device, VIDIOC_S_INPUT is necessary
- * to make a choise between input camera devices
- * 	before VIDIOC_S_INPUT: pdata->camera is used
- * 	after VIDIOC_S_INPUT: fimc->camera is used
- */
 static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	int minor, ret;
+	int ret;
 
-	minor = video_devdata(filp)->minor;
-
-	/* TODO: remove get fimc with minor
-	 * how to get the proper fimc controller?
-	*/
-	ctrl = get_fimc(minor);
-
+	ctrl = video_get_drvdata(video_devdata(filp));
 	pdata = to_fimc_plat(ctrl->dev);
-
-	/* TODO: condition check for multiple open with same external camera
-	 * TODO: condition check for multiple open with same controller
-	 */
-	/*
-	 * Check for external camera device
-	 * NOTE: scaler only feature should be implemented seperately
-	 * 	so, no external camera no device node for camera
-	 */
-	if (!fimc_dev->camera[pdata->default_cam]) {
-		dev_err(ctrl->dev, "%s: no external camera device\n", \
-			__FUNCTION__);
-		return -ENODEV;
-	}
-
-	/*
-	 * Check for device power control
-	 * For now we just check according to fimc number
-	 * because of the default camera issue
-	 * Don't forget to give proper power after VIDIOC_S_INPUT called
-	 */
-	if (!fimc_dev->camera[pdata->default_cam]->cam_power) {
-		dev_err(ctrl->dev, "%s: no way to control camera[%d]'s power\n", \
-			__FUNCTION__, ctrl->id);
-		return -ENODEV;
-	}
 
 	mutex_lock(&ctrl->lock);
 
@@ -250,46 +209,6 @@ static int fimc_open(struct file *filp)
 	} else {
 		atomic_inc(&ctrl->in_use);
 	}
-
-	/*
-	 * Giving MCLK to camera
-	 * clk_enable(camera clock)
-	 * clk_set_rate(camera clock, expecting sensor clock)
-	 */
-	/*
-	 * FIXME: default camera policy is necessary
-	 * by now, default external camera id follows controller's id
-	 */
-	clk_set_rate(fimc_dev->mclk, fimc_dev->camera[pdata->default_cam]->clk_rate);
-	clk_enable(fimc_dev->mclk);
-
-	/* FIXME: Giving power */
-	fimc_dev->camera[pdata->default_cam]->cam_power(1);
-
-	/*
-	 * Default camera attach
-	 * According to ctrl->cam (ctrl->id?)
-	 * In this phase we don't know what user choose using
-	 * VIDIOC_S_INPUT so just attach default camera here
-	 * FIXME: This is just to be safe
-	 * proper camera selection should be made 
-	 * through VIDIOC_S_INPUT
-	 */
-	fimc_set_active_camera(ctrl, pdata->default_cam);
-
-	/*
-	 * Now Configuring external camera module(subdev)
-	 * For now, we have "default camera" concept so,
-	 * we directly access to the index of default camera's subdev
-	 *
-	 * int (*init)(struct v4l2_subdev *sd, u32 val);
-	 * TODO: get val from platform data to work with special occasion
-	 */
-	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
-
-	if (ret == -ENOIOCTLCMD)
-		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n", \
-			__FUNCTION__);
 
 	/* Apply things to interface register */
 	fimc_reset(ctrl);
@@ -321,7 +240,8 @@ static int fimc_release(struct file *filp)
 	clk_disable(fimc_dev->mclk);
 
 	/* FIXME: turning off actual working camera */
-	fimc_dev->camera[ctrl->cam->id]->cam_power(0);
+	if (ctrl->cam && fimc_dev->camera[ctrl->cam->id]->cam_power)
+		fimc_dev->camera[ctrl->cam->id]->cam_power(0);
 
 	mutex_unlock(&ctrl->lock);
 	
@@ -551,6 +471,8 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 			__FUNCTION__);
 		goto err_video;
 	}
+
+	video_set_drvdata(ctrl->vd, ctrl);
 
 	dev_info(&pdev->dev, "controller %d registered successfully\n", \
 		ctrl->id);
