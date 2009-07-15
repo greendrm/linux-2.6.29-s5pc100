@@ -77,8 +77,8 @@
 #define S3C_CIWDOFST2_WINHOROFST2(x)		((x) << 16)
 #define S3C_CIWDOFST2_WINVEROFST2(x)		((x) << 0)
 
-#define S3C_CITRGFMT_TARGETHSIZE(x)		((x) << 16)
-#define S3C_CITRGFMT_TARGETVSIZE(x)		((x) << 0)
+#define S3C_CITRGFMT_TARGETHSIZE(x)		(((x) & 0x1fff) << 16)
+#define S3C_CITRGFMT_TARGETVSIZE(x)		(((x) & 0x1fff) << 0)
 
 #define S3C_CISCPRERATIO_SHFACTOR(x)		((x) << 28)
 #define S3C_CISCPRERATIO_PREHORRATIO(x)		((x) << 16)
@@ -127,6 +127,8 @@
 #define S3C_ORGOSIZE_VERTICAL(x)		((x) << 16)
 #define S3C_ORGOSIZE_HORIZONTAL(x)		((x) << 0)
 
+#define S3C_CIEXTEN_TARGETH_EXT(x)		(((x) & 0x2000) << 26)
+#define S3C_CIEXTEN_TARGETV_EXT(x)		(((x) & 0x2000) << 24)
 
 /*************************************************************************
  * Bit definition part
@@ -196,6 +198,8 @@
 #define S3C_CITRGFMT_FLIP_180			(3 << 14)
 #define S3C_CITRGFMT_FLIP_MASK			(3 << 14)
 #define S3C_CITRGFMT_OUTROT90_CLOCKWISE		(1 << 13)
+#define S3C_CITRGFMT_TARGETV_MASK		(0x1fff << 0)
+#define S3C_CITRGFMT_TARGETH_MASK		(0x1fff << 16)
 
 /* Output DMA control register */
 #define S3C_CIOCTRL_ORDER2P_SHIFT		(24)
@@ -330,5 +334,9 @@
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_8		(3 << 4)
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_16		(4 << 4)
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_32		(5 << 4)
+
+/* Gathering Extension register */
+#define S3C_CIEXTEN_TARGETH_EXT_MASK		(1 << 26)
+#define S3C_CIEXTEN_TARGETV_EXT_MASK		(1 << 24)
 
 #endif /* _REGS_FIMC_H */
