@@ -73,6 +73,24 @@ enum fimc_fimd_state {
 	FIMD_ON,
 };
 
+enum fimc_rot_flip {
+	FIMC_0_NFLIP	= 0x00,
+	FIMC_0_XFLIP	= 0x01,
+	FIMC_0_YFLIP	= 0x02,
+	FIMC_0_XYFLIP	= 0x03,
+	FIMC_90_NFLIP	= 0x10,
+	FIMC_90_XFLIP	= 0x11,
+	FIMC_90_YFLIP	= 0x12,
+	FIMC_90_XYFLIP	= 0x13,
+	FIMC_180_NFLIP	= 0x03,
+	FIMC_180_XFLIP	= 0x02,
+	FIMC_180_YFLIP	= 0x01,
+	FIMC_180_XYFLIP	= 0x00,
+	FIMC_270_NFLIP	= 0x13,
+	FIMC_270_XFLIP	= 0x12,
+	FIMC_270_YFLIP	= 0x11,
+	FIMC_270_XYFLIP	= 0x10,
+};
 
 /*
  * S T R U C T U R E S
@@ -284,8 +302,9 @@ extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
 extern void fimc_clear_irq(struct fimc_control *ctrl);
 extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
 extern void fimc_reset(struct fimc_control *ctrl);
-extern int fimc_set_src_format(struct fimc_control *ctrl);
-extern int fimc_set_dst_format(struct fimc_control *ctrl);
+extern int fimc_set_format(struct fimc_control *ctrl);
+extern int fimc_set_rot(struct fimc_control *ctrl);
+
 extern int fimc_set_src_path(struct fimc_control *ctrl);
 extern int fimc_set_dst_path(struct fimc_control *ctrl);
 extern int fimc_set_src_addr(struct fimc_control *ctrl);
@@ -293,8 +312,6 @@ extern int fimc_set_dst_addr(struct fimc_control *ctrl);
 extern int fimc_set_src_crop(struct fimc_control *ctrl);
 extern int fimc_set_dst_crop(struct fimc_control *ctrl);
 extern int fimc_set_scaler(struct fimc_control *ctrl);
-extern int fimc_set_inupt_rotate(struct fimc_control *ctrl);
-extern int fimc_set_output_rotate(struct fimc_control *ctrl);
 extern int fimc_start_scaler(struct fimc_control *ctrl);
 extern int fimc_stop_scaler(struct fimc_control *ctrl);
 
