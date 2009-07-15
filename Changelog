@@ -1027,4 +1027,18 @@ v2.6.29.4-r3d13: Jae-Cheol Lee
 	Added Directories:
 		A	arch/arm/plat-s5p64xx
 		A	arch/arm/mach-s5p6442
+
+v2.6.29.4-r3d14: Jae-Cheol Lee
+	- Bug fixed on EINT for S5P6442
+	- Add button driver for S5P6442
+	- Moved button driver from plat-s3c to mach directory
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/Makefile
+		M	arch/arm/mach-s5p6442/button-smdk6442.c
+		M	arch/arm/mach-s5p6442/include/mach/regs-irq.h
+		M	arch/arm/mach-s5pc100/Makefile
+		M	arch/arm/plat-s3c/Makefile
+		M	arch/arm/plat-s5p64xx/include/plat/irqs.h
+		M	arch/arm/plat-s5p64xx/irq-eint.c
 	
