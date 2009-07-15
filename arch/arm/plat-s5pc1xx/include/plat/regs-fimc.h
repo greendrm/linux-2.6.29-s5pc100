@@ -271,7 +271,9 @@
 
 /* Input DMA control register */
 #define S3C_MSCTRL_BURST_CNT			(24)
+#define S3C_MSCTRL_BURST_CNT_MASK		(0xf << 24)
 #define S3C_MSCTRL_2PLANE_SHIFT			(16)
+#define S3C_MSCTRL_2PLANE_SHIFT_MASK		(0x3 << 16)
 #define S3C_MSCTRL_C_INT_IN_3PLANE		(0 << 15)
 #define S3C_MSCTRL_C_INT_IN_2PLANE		(1 << 15)
 #define S3C_MSCTRL_FLIP_SHIFT			(13)
@@ -279,6 +281,7 @@
 #define S3C_MSCTRL_FLIP_X_MIRROR		(1 << 13)
 #define S3C_MSCTRL_FLIP_Y_MIRROR		(2 << 13)
 #define S3C_MSCTRL_FLIP_180			(3 << 13)
+#define S3C_MSCTRL_FLIP_MASK			(3 << 13)
 #define S3C_MSCTRL_ORDER422_CRYCBY		(0 << 4)
 #define S3C_MSCTRL_ORDER422_YCRYCB		(1 << 4)
 #define S3C_MSCTRL_ORDER422_CBYCRY		(2 << 4)

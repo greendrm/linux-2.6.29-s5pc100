@@ -175,13 +175,12 @@ void fimc_reset_camera(void)
 }
 
 
-int fimc_set_src_format(struct fimc_control *ctrl)
+static int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
-	u32 pixfmt = ctrl->out->pix.pixelformat;
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
+	
 	/* Set CSCR2Y & CSCY2R */
 	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
@@ -189,19 +188,15 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 	/* Color format setting */
 	if (pixfmt == V4L2_PIX_FMT_NV12) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT)	| \
-				(0x3<<S3C_MSCTRL_2PLANE_SHIFT)	| \
-				S3C_MSCTRL_C_INT_IN_2PLANE 	| \
-				S3C_MSCTRL_INFORMAT_RGB);
-		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_YCBCR420);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_2PLANE_SHIFT_MASK \
+			| S3C_MSCTRL_C_INT_IN_2PLANE | S3C_MSCTRL_INFORMAT_RGB);
+		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | S3C_MSCTRL_C_INT_IN_2PLANE \
+			| S3C_MSCTRL_INFORMAT_YCBCR420);
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
 	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_RGB);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
+				| S3C_MSCTRL_INFORMAT_RGB);
 		cfg |= (S3C_MSCTRL_INFORMAT_RGB | (0x4<<S3C_MSCTRL_BURST_CNT));
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
 	
@@ -213,9 +208,8 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 		writel(cfg, ctrl->regs + S3C_CISCCTRL);
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
 		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~((0xF<<S3C_MSCTRL_BURST_CNT) | \
-				S3C_MSCTRL_C_INT_IN_2PLANE | \
-				S3C_MSCTRL_INFORMAT_RGB);
+		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
+				| S3C_MSCTRL_INFORMAT_RGB);
 		cfg |= (S3C_MSCTRL_INFORMAT_RGB | \
 				(0x4<<S3C_MSCTRL_BURST_CNT));
 		writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -234,37 +228,205 @@ int fimc_set_src_format(struct fimc_control *ctrl)
 
 	return 0;
 }
+
+static int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	/* Color format setting */
+	if (pixfmt == V4L2_PIX_FMT_NV12) {
+		cfg &= ~S3C_CITRGFMT_OUTFORMAT_RGB;
+		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR420;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+
+		cfg = readl(ctrl->regs + S3C_CIOCTRL);
+		cfg &= ~S3C_CIOCTRL_ORDER2P_MASK;
+		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
+		writel(cfg, ctrl->regs + S3C_CIOCTRL);
+
+		/* To do : Check output path whether it is DMA out. */
+
+	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
+		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
+		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
+		writel(cfg, ctrl->regs + S3C_CITRGFMT);
+	
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
+				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
+		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB565);
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixfmt);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int fimc_set_format(struct fimc_control *ctrl)
+{
+	u32 pixfmt = 0;
+	int ret = -1;	
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out != NULL) {
+		pixfmt = ctrl->out->pix.pixelformat;		
+
+		ret = fimc_set_src_format(ctrl, pixfmt);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail : fimc_set_src_format()\n");
+			return -EINVAL;
+		}
+
+		if (ctrl->out->fbuf.base != NULL)
+			pixfmt = ctrl->out->fbuf.fmt.pixelformat;
+		else /* FIFO mode */
+			pixfmt = V4L2_PIX_FMT_RGB32;
+
+		ret = fimc_set_dst_format(ctrl, pixfmt);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail : fimc_set_dst_format()\n");
+			return -EINVAL;
+		}
+	} else if (ctrl->cap != NULL) {
+		pixfmt = ctrl->cap->fmt.pixelformat;
+		/* To do : Capture device. */
+
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+
+	return 0;
+}
+
+static int fimc_mapping_rot_flip(u32 rot, u32 flip)
+{
+	u32 ret = 0;
+
+	if (rot == 0) {
+		if(flip && V4L2_CID_HFLIP)
+			ret |= 0x1;
+		if(flip && V4L2_CID_VFLIP)
+			ret |= 0x2;
+	} else if (rot == 90) {
+		if(flip && V4L2_CID_HFLIP)
+			ret |= 0x1;
+		if(flip && V4L2_CID_VFLIP)
+			ret |= 0x2;
+	} else if (rot == 180) {
+		ret = 0x3;
+		if(flip && V4L2_CID_HFLIP)
+			ret &= ~0x1;
+		if(flip && V4L2_CID_VFLIP)
+			ret &= ~0x2;
+	} else if (rot == 270) {
+		ret = 0x13;
+		if(flip && V4L2_CID_HFLIP)
+			ret &= ~0x1;
+		if(flip && V4L2_CID_VFLIP)
+			ret &= ~0x2;
+	}
+
+	return ret;
+}
+
+static int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
+{
+	int rot_flip = 0;
+	u32 cfg_r = 0, cfg_f = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called.\n", __FUNCTION__);
+
+	cfg_r = readl(ctrl->regs + S3C_CITRGFMT);
+	cfg_f = readl(ctrl->regs + S3C_MSCTRL);
+
+	cfg_r &= ~S3C_CITRGFMT_INROT90_CLOCKWISE;
+	cfg_f &= ~S3C_MSCTRL_FLIP_MASK;	
+
+	rot_flip = fimc_mapping_rot_flip(rot, flip);
+
+	if (rot_flip && 0x10)
+		cfg_r |= S3C_CITRGFMT_INROT90_CLOCKWISE;
+
+	if(rot_flip && V4L2_CID_HFLIP)
+		cfg_f |= S3C_MSCTRL_FLIP_X_MIRROR;
+
+	if(rot_flip && V4L2_CID_VFLIP)
+		cfg_f |= S3C_MSCTRL_FLIP_Y_MIRROR;
+
+	writel(cfg_r, ctrl->regs + S3C_CITRGFMT);
+	writel(cfg_f, ctrl->regs + S3C_MSCTRL);	
+
+	return 0;
+}
+
+static int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
+{
+	u32 cfg = 0;
+	int rot_flip = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called.\n", __FUNCTION__);
+
+	cfg = readl(ctrl->regs + S3C_CITRGFMT);
+
+	cfg &= ~(S3C_CITRGFMT_OUTROT90_CLOCKWISE | S3C_CITRGFMT_FLIP_MASK);
+
+	rot_flip = fimc_mapping_rot_flip(rot, flip);
+
+	if (rot_flip && 0x10)
+		cfg |= S3C_CITRGFMT_OUTROT90_CLOCKWISE;
+
+	if(rot_flip && V4L2_CID_HFLIP)
+		cfg |= S3C_CITRGFMT_FLIP_X_MIRROR;
+
+	if(rot_flip && V4L2_CID_VFLIP)
+		cfg |= S3C_CITRGFMT_FLIP_Y_MIRROR;
+
+	writel(cfg, ctrl->regs + S3C_CITRGFMT);
+
+	return 0;
+}
+
+int fimc_set_rot(struct fimc_control *ctrl)
+{
+	u32 rot	= 0, flip = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out != NULL) {
+		rot = ctrl->out->rotate;
+		flip =  ctrl->out->flip;
+
+		if (ctrl->out->fbuf.base != NULL) {
+			fimc_set_in_rot(ctrl, rot, flip);
+		} else { /* FIFO mode */
+			fimc_set_out_rot(ctrl, rot, flip);		
+		}
+	} else if (ctrl->cap != NULL) {
+		/* To do */
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #if 0
-int fimc_set_dst_format(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-int fimc_set_in_rot(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-int fimc_set_out_rot(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
 int fimc_set_src_path(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
