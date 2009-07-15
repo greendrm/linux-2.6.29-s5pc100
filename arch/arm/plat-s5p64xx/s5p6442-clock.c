@@ -535,9 +535,10 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 
 	printk(KERN_DEBUG "%s: xtal is %ld\n", __func__, xtal);
 
-	epll = s5p6442_get_epll(xtal);
-	mpll = s5p6442_get_pll(xtal, __raw_readl(S5P_MPLL_CON));
-	apll = s5p6442_get_pll(xtal, __raw_readl(S5P_APLL_CON));
+	apll = s5p64xx_get_pll(xtal, __raw_readl(S5P_APLL_CON), S5P64XX_PLL_APLL);
+	mpll = s5p64xx_get_pll(xtal, __raw_readl(S5P_MPLL_CON), S5P64XX_PLL_MPLL);
+	epll = s5p64xx_get_pll(xtal, __raw_readl(S5P_EPLL_CON), S5P64XX_PLL_EPLL);
+
 
 	printk(KERN_INFO "S5P64XX: PLL settings, A=%ld.%ldMHz, M=%ld.%ldMHz," \
 							" E=%ld.%ldMHz\n",
@@ -545,7 +546,7 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 
 	fclk = apll / GET_DIV(clkdiv0, S5P_CLKDIV0_APLL);
 
-#if 0
+#if 0	// FPGA6442
 	mux_stat1 = __raw_readl(S5P_CLK_MUX_STAT1);
 	mux_stat0 = __raw_readl(S5P_CLK_MUX_STAT0);
 
@@ -610,6 +611,10 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	clk_pd0.rate = pclkd0;
 	clk_hd1.rate = hclkd1;
 	clk_pd1.rate = pclkd1;
+	
+	/* For backward compatibility */
+	clk_h.rate = hclkd1;
+	clk_p.rate = pclkd1;
 #else
 	clk_fout_mpll.rate = xtal;
 	clk_fout_epll.rate = xtal;

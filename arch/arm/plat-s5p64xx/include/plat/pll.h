@@ -14,61 +14,49 @@
 
 #define XTAL_FREQ	16000000
 
-#define S5P6442_PLL_MDIV_MASK	((1 << (25-16+1)) - 1)
-#define S5P6442_PLL_PDIV_MASK	((1 << (13-8+1)) - 1)
-#define S5P6442_PLL_SDIV_MASK	((1 << (2-0+1)) - 1)
-#define S5P6442_PLL_MDIV_SHIFT	(16)
-#define S5P6442_PLL_PDIV_SHIFT	(8)
-#define S5P6442_PLL_SDIV_SHIFT	(0)
+#define S5P64XX_PLL_MDIV_MASK	((1 << (25-16+1)) - 1)
+#define S5P64XX_EPLL_MDIV_MASK	((1 << (24-16+1)) - 1)
+#define S5P64XX_PLL_PDIV_MASK	((1 << (13-8+1)) - 1)
+#define S5P64XX_PLL_SDIV_MASK	((1 << (2-0+1)) - 1)
+#define S5P64XX_PLL_MDIV_SHIFT	(16)
+#define S5P64XX_PLL_PDIV_SHIFT	(8)
+#define S5P64XX_PLL_SDIV_SHIFT	(0)
 
 #include <asm/div64.h>
 
-static inline unsigned long s5p6442_get_pll(unsigned long baseclk,
-					    u32 pllcon)
+enum s5p64xx_base_pll_t{
+	S5P64XX_PLL_APLL,
+	S5P64XX_PLL_MPLL,
+	S5P64XX_PLL_EPLL,
+	S5P64XX_PLL_VPLL,
+};
+
+static inline unsigned long s5p64xx_get_pll(unsigned long baseclk,
+					    u32 pllcon, enum s5p64xx_base_pll_t base_pll_type)
 {
 	u32 mdiv, pdiv, sdiv;
 	u64 fvco = baseclk;
 
-	mdiv = (pllcon >> S5P6442_PLL_MDIV_SHIFT) & S5P6442_PLL_MDIV_MASK;
-	pdiv = (pllcon >> S5P6442_PLL_PDIV_SHIFT) & S5P6442_PLL_PDIV_MASK;
-	sdiv = (pllcon >> S5P6442_PLL_SDIV_SHIFT) & S5P6442_PLL_SDIV_MASK;
+	if((base_pll_type == S5P64XX_PLL_EPLL) || (base_pll_type == S5P64XX_PLL_VPLL))
+		mdiv = (pllcon >> S5P64XX_PLL_MDIV_SHIFT) & S5P64XX_EPLL_MDIV_MASK;
+	else
+		mdiv = (pllcon >> S5P64XX_PLL_MDIV_SHIFT) & S5P64XX_PLL_MDIV_MASK;
+	
+	pdiv = (pllcon >> S5P64XX_PLL_PDIV_SHIFT) & S5P64XX_PLL_PDIV_MASK;
+	sdiv = (pllcon >> S5P64XX_PLL_SDIV_SHIFT) & S5P64XX_PLL_SDIV_MASK;
 
 	fvco *= mdiv;
-	do_div(fvco, (pdiv << sdiv));
+
+	switch(base_pll_type){
+	case S5P64XX_PLL_APLL:
+		do_div(fvco, (pdiv << (sdiv-1)));
+		break;
+	default:
+		do_div(fvco, (pdiv << sdiv));
+		break;
+	}
 
 	return (unsigned long)fvco;
+	
 }
 
-#define S5P6442_EPLL_MDIV_MASK	((1 << (23-16+1)) - 1)
-#define S5P6442_EPLL_PDIV_MASK	((1 << (13-8+1)) - 1)
-#define S5P6442_EPLL_SDIV_MASK	((1 << (2-0+1)) - 1)
-#define S5P6442_EPLL_MDIV_SHIFT	(16)
-#define S5P6442_EPLL_PDIV_SHIFT	(8)
-#define S5P6442_EPLL_SDIV_SHIFT	(0)
-#define S5P6442_EPLL_KDIV_MASK  (0xffff)
-
-static inline unsigned long s5p6442_get_epll(unsigned long baseclk)
-{
-	unsigned long result;
-	u32 epll0 = __raw_readl(S5P_EPLL_CON);
-	u32 mdiv, pdiv, sdiv;
-	u64 tmp;
-
-	mdiv = (epll0 >> S5P6442_EPLL_MDIV_SHIFT) & S5P6442_EPLL_MDIV_MASK;
-	pdiv = (epll0 >> S5P6442_EPLL_PDIV_SHIFT) & S5P6442_EPLL_PDIV_MASK;
-	sdiv = (epll0 >> S5P6442_EPLL_SDIV_SHIFT) & S5P6442_EPLL_SDIV_MASK;
-
-	/* We need to multiple baseclk by mdiv (the integer part) and kdiv
-	 * which is in 2^16ths, so shift mdiv up (does not overflow) and
-	 * add kdiv before multiplying. The use of tmp is to avoid any
-	 * overflows before shifting bac down into result when multipling
-	 * by the mdiv and kdiv pair.
-	 */
-
-	tmp = baseclk;
-	tmp *= (mdiv << 16);
-	do_div(tmp, (pdiv << sdiv));
-	result = tmp >> 16;
-
-	return result;
-}
