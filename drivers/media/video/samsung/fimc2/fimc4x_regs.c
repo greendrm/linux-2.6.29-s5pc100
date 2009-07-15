@@ -179,8 +179,6 @@ static int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-	
 	/* Set CSCR2Y & CSCY2R */
 	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
@@ -226,14 +224,14 @@ static int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 		return -EINVAL;
 	}
 
+	/* To do : Interlace setting in CISCCTRL. */
+
 	return 0;
 }
 
 static int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	/* Color format setting */
 	if (pixfmt == V4L2_PIX_FMT_NV12) {
@@ -278,7 +276,8 @@ static int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
 int fimc_set_format(struct fimc_control *ctrl)
 {
 	u32 pixfmt = 0;
-	int ret = -1;	
+	int ret = -1;
+
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	if (ctrl->out != NULL) {
@@ -347,12 +346,8 @@ static int fimc_mapping_rot_flip(u32 rot, u32 flip)
 static int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 {
 	int rot_flip = 0;
-	u32 cfg_r = 0, cfg_f = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called.\n", __FUNCTION__);
-
-	cfg_r = readl(ctrl->regs + S3C_CITRGFMT);
-	cfg_f = readl(ctrl->regs + S3C_MSCTRL);
+	u32 cfg_r = readl(ctrl->regs + S3C_CITRGFMT);
+	u32 cfg_f = readl(ctrl->regs + S3C_MSCTRL);
 
 	cfg_r &= ~S3C_CITRGFMT_INROT90_CLOCKWISE;
 	cfg_f &= ~S3C_MSCTRL_FLIP_MASK;	
@@ -376,12 +371,8 @@ static int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 
 static int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 {
-	u32 cfg = 0;
 	int rot_flip = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called.\n", __FUNCTION__);
-
-	cfg = readl(ctrl->regs + S3C_CITRGFMT);
+	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
 
 	cfg &= ~(S3C_CITRGFMT_OUTROT90_CLOCKWISE | S3C_CITRGFMT_FLIP_MASK);
 
@@ -426,27 +417,106 @@ int fimc_set_rot(struct fimc_control *ctrl)
 	return 0;
 }
 
+static void fimc_set_autoload(struct fimc_control *ctrl, u32 autoload)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIREAL_ISIZE);
+	cfg &= ~S3C_CIREAL_ISIZE_AUTOLOAD_ENABLE;
+
+	if (autoload == FIMC_ONE_SHOT) {
+		/* Fall through */
+	} else if (autoload == FIMC_AUTO_LOAD) {
+		cfg |= S3C_CIREAL_ISIZE_AUTOLOAD_ENABLE;
+	}
+
+	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
+}
+
+static int fimc_set_src_path(struct fimc_control *ctrl, u32 path)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+	cfg &= ~S3C_MSCTRL_INPUT_MASK;
+
+	if (path == FIMC_SRC_MSDMA) {
+		cfg |= S3C_MSCTRL_INPUT_MEMORY;
+	} else if (path == FIMC_SRC_CAM) {
+		cfg |= S3C_MSCTRL_INPUT_EXTCAM;
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	writel(cfg, ctrl->regs + S3C_MSCTRL);
+
+	return 0;
+}
+
+static int fimc_set_dst_path(struct fimc_control *ctrl, u32 path)
+{
+	u32 autoload = 0;
+	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
+	cfg &= ~S3C_CISCCTRL_LCDPATHEN_FIFO;
+
+	if (path == FIMC_DST_DMA) {
+		autoload = FIMC_ONE_SHOT;
+		fimc_set_autoload(ctrl, autoload);
+	} else if (path == FIMC_DST_FIMD) {
+		cfg |= S3C_CISCCTRL_LCDPATHEN_FIFO;
+
+		autoload = FIMC_AUTO_LOAD;		
+		fimc_set_autoload(ctrl, autoload);
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	writel(cfg, ctrl->regs + S3C_CISCCTRL);
+
+	return 0;
+}
+
+int fimc_set_path(struct fimc_control *ctrl)
+{
+	int ret = 0;
+	u32 inpath = 0, outpath = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out != NULL) {
+		inpath	= FIMC_SRC_MSDMA;
+
+		if (ctrl->out->fbuf.base != NULL) {
+			outpath =  FIMC_DST_DMA;
+		} else { /* FIFO mode */
+			outpath =  FIMC_DST_FIMD;
+		}
+		
+		ret = fimc_set_src_path(ctrl, inpath);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail : fimc_set_src_path()\n");
+			return -EINVAL;
+		}
+
+		ret = fimc_set_dst_path(ctrl, outpath);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail : fimc_set_dst_path()\n");
+			return -EINVAL;
+		}
+
+	} else if (ctrl->cap != NULL) {
+		/* To do */
+		inpath	= FIMC_SRC_CAM;
+		outpath =  FIMC_DST_DMA;
+		fimc_set_src_path(ctrl, inpath);
+		fimc_set_dst_path(ctrl, outpath);
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #if 0
-int fimc_set_src_path(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-int fimc_set_dst_path(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
 int fimc_set_src_addr(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
@@ -504,26 +574,6 @@ int fimc_set_dst_crop(struct fimc_control *ctrl)
 }
 
 int fimc_set_scaler(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-int fimc_set_inupt_rotate(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-	int ret = 0;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-int fimc_set_output_rotate(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
 	int ret = 0;

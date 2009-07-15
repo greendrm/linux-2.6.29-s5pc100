@@ -80,7 +80,7 @@ enum s5k4ba_control {
 /*
  * User tuned register setting values
  */
-static const struct s5k4ba_reg s5k4ba_init[] = {
+static const struct s5k4ba_reg s5k4ba_init_reg[] = {
 	{0xfc,0x07},
 	{0x66,0x01},    /* Watch Dog Time On */
 	{0xfc,0x00},
@@ -1112,6 +1112,8 @@ static const struct s5k4ba_reg s5k4ba_init[] = {
 	{0xc1,0x70},
 	{0xFF,0xFF}	/* REGISTER END */
 };
+
+#define S5K4BA_INIT_REGS	(sizeof(s5k4ba_init_reg) / sizeof(s5k4ba_init_reg[0]))
 
 /*
  * EV bias
