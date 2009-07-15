@@ -994,3 +994,10 @@ v2.6.29.4-r3d11: Kukjin Kim
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp26.h
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp27.h
 		D	arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp28.h
+
+v2.6.29.4-r3d12: Jongpill Lee
+	- Bug fixed on CMU for S5PC110
+
+	Modified files:
+		M       arch/arm/plat-s5pc11x/include/plat/pll.h
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
