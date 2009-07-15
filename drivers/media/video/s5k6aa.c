@@ -67,6 +67,7 @@ struct s5k6aa_state {
 	struct v4l2_fract timeperframe;
 	struct s5k6aa_userset userset;
 	int freq;	/* MCLK in KHz */
+	int is_mipi;
 	int isize;
 	int ver;
 	int fps;
@@ -110,7 +111,7 @@ again:
 
 	/* abnormal case: retry 5 times */
 	if (retry < 5) {
-		dev_err(&client->dev, "%s:address:0x%02x%02x, value:0x%02x%02x\n",
+		dev_err(&client->dev, "%saddress:0x%02x%02x, value:0x%02x%02x\n",
 				__func__, reg[0], reg[1], reg[2], reg[3]);
 		retry++;
 		goto again;
@@ -119,109 +120,34 @@ again:
 	return err;
 }
 
-#if 0
-static int s5k6aa_write_regs(struct v4l2_subdev *sd,
-					const unsigned char *reglist)
+static int s5k6aa_i2c_write(struct v4l2_subdev *sd, unsigned char i2c_data[],
+		unsigned char length)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct s5k6aa_regset_type *regset = (struct s5k6aa_regset_type *)reglist;
-	struct s5k6aa_reg *reg = (struct s5k6aa_reg *)regset->regset;
-	int i, err = 0;
+	unsigned char buf[length], i;
+	struct i2c_msg msg = {client->addr, 0, length, buf};
 
-	int i, ret = -ENODEV;
-	u16 val =0x0000;
-
-	DECLARE_WAIT_QUEUE_HEAD(i2c_timeout);
-
-	PRINTFUNC;
-	for (i = 0; i < num; i++, regs++) {
-		/*udelay(10);*/
-		if ((*regs >> 16) == 0xCCCC) {	
-			printk("delay.. 100 msec.\n"); /* debug */
-			mdelay(100);
-			continue;
-		}
-
-		if ((*regs >> 16) == 0xAAAA) {
-			val = s5k6aa_read(client, 0x0F12);
-				//if(val=="4CA4")	
-			   printk("sensor read, ret[%04X]\n",val );
-			
-			}
-		/*Nomalize Bright delay*/
-		if ((*regs >> 16) == 0xBBBB) {
-			val = s5k6aa_read(client, 0x0F12);
-			if( val <= 20 ){
-				mdelay(800);
-				printk("Low light delay [%02X]\n",val );
-				}
-			else if( 20 < val && val <=40){
-				mdelay(400);
-				printk("Middle light delay [%02X]\n",val );
-				}
-			else if(  val >=40){
-				mdelay(200);
-				printk("Normal light delay [%02X]\n",val );	
-			   	}			
-			}
-
-		ret = s5k6aa_write( client, *regs >> 16, *regs & 0xffff);
-		
-		if (ret) {	/* 1 more */
-			sleep_on_timeout(&i2c_timeout, 2);
-			ret = s5k6aa_write( client, *regs >> 16, *regs & 0xffff);
-			if (ret) {	/* 1 more */
-				sleep_on_timeout(&i2c_timeout, 1);
-				ret = s5k6aa_write( client, *regs >>16, *regs & 0xffff);
-			}
-		}
-
-		if (ret) {
-			break;
-		}
-
+	for (i = 0; i<length; i++) {
+		buf[i] = i2c_data[i];
 	}
-	return ret;
+	return i2c_transfer(client->adapter, &msg, 1) == 1 ? 0 : -EIO;
 }
-#else
-/*
- * Register configuration sets are served
- * Special purpose register address:
- * 	REG_DELAY: delay for specified ms
- * 	REG_CMD: address followed by special purpose commands
- * 		VAL_END: end of register set
- */
-static int s5k6aa_write_regs(struct v4l2_subdev *sd,
-					const unsigned char *reglist)
+
+static int s5k6aa_write_regs(struct v4l2_subdev *sd, unsigned char regs[], int size)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct s5k6aa_regset_type *regset = (struct s5k6aa_regset_type *)reglist;
-	struct s5k6aa_reg *reg = (struct s5k6aa_reg *)regset->regset;
-	int i, err = 0;
+	int i, err;
 
-	for (i = 0; i< regset->len; i++) {
-		/* TODO: need burst mode in case of 0x0F12 is comming with address */
-		if (reg->addr == REG_DELAY) {
-			/* delay command (in ms) */
-			mdelay(reg->val);
-			dev_dbg(&client->dev, "%s:delay for %dms\n", __func__, reg->val);
-		} else {
-			/* or programme register */
-			err = s5k6aa_write(sd, reg->addr, reg->val);
-			dev_dbg(&client->dev, "%s:0x%04x,0x%04x programmed\n", __func__,
-					reg->addr, reg->val);
-		}
-
-		if (err < 0) {
-			dev_dbg(&client->dev, "%s:failed on 0x%04x,0x%04x\n", __func__,
-					reg->addr, reg->val);
-			return err;
-		}
+	for (i = 0; i < size; i++) {
+		if (i == 4)
+			mdelay(5);
+		err = s5k6aa_i2c_write(sd, &regs[i], sizeof(regs[i]));
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", __FUNCTION__);
 	}
 
-	return 0;
+	return 0;	/* FIXME */
 }
-#endif
 
 static const char *s5k6aa_querymenu_wb_preset[] = {
 	"WB Tungsten", "WB Fluorescent", "WB sunny", "WB cloudy", NULL
@@ -378,7 +304,7 @@ static int s5k6aa_querymenu(struct v4l2_subdev *sd, struct v4l2_querymenu *qm)
  * 	freq : in Hz
  * 	flag : not supported for now
  */
-static int s5k6aa_s_crystal_freq(struct v4l2_subdev *sd, int  freq, int flags)
+static int s5k6aa_s_crystal_freq(struct v4l2_subdev *sd, u32  freq, u32 flags)
 {
 	int err = -EINVAL;
 
@@ -387,55 +313,55 @@ static int s5k6aa_s_crystal_freq(struct v4l2_subdev *sd, int  freq, int flags)
 
 static int s5k6aa_g_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 static int s5k6aa_enum_framesizes(struct v4l2_subdev *sd, struct v4l2_frmsizeenum *fsize)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_enum_frameintervals(struct v4l2_subdev *sd, struct v4l2_frmivalenum *fival)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmtdesc)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
 
 static int s5k6aa_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
-	int err = -EINVAL;
+	int err = 0;
 
 	return err;
 }
@@ -547,73 +473,43 @@ out:
 #endif
 }
 
+static int s5k6aa_init(struct v4l2_subdev *sd, u32 val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int err = -EINVAL;
+
+	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
+
+	err = s5k6aa_write_regs(sd, (unsigned char *)s5k6aa_init_reg, S5K6AA_INIT_REGS);
+	if (err < 0) {
+		v4l_err(client, "%s: camera initialization failed\n", __FUNCTION__);
+		return -EIO;	/* FIXME */
+	}
+
+	return 0;
+}
+
+/*
+ * s_config subdev ops
+ * With camera device, we need to re-initialize every single opening time therefor,
+ * it is not necessary to be initialized on probe time. except for version checking
+ * NOTE: version checking is optional
+ */
 static int s5k6aa_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct s5k6aa_state *state = to_state(sd);
-	struct s5k6aa_userset userset = state->userset;
-	int err = -EINVAL;
-
-	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
-#if 0
-	err = s5k6aa_write_regs(sd, s5k6aa_init);
-	if (err < 0)
-		return -EIO;	/* FIXME */
-#endif
-	return 0;
-}
-
-static const struct v4l2_subdev_core_ops s5k6aa_core_ops = {
-	.s_config = s5k6aa_s_config,	/* initializing API */
-	.queryctrl = s5k6aa_queryctrl,
-	.querymenu = s5k6aa_querymenu,
-	.g_ctrl = s5k6aa_g_ctrl,
-	.s_ctrl = s5k6aa_s_ctrl,
-};
-
-static const struct v4l2_subdev_video_ops s5k6aa_video_ops = {
-	.s_crystal_freq = s5k6aa_s_crystal_freq,
-	.g_fmt = s5k6aa_g_fmt,
-	.s_fmt = s5k6aa_s_fmt,
-	.s_crystal_freq = s5k6aa_s_crystal_freq,
-	.enum_framesizes = s5k6aa_enum_framesizes,
-	.enum_frameintervals = s5k6aa_enum_frameintervals,
-	.enum_fmt = s5k6aa_enum_fmt,
-	.try_fmt = s5k6aa_try_fmt,
-	.g_parm = s5k6aa_g_parm,
-	.s_parm = s5k6aa_s_parm,
-};
-
-static const struct v4l2_subdev_ops s5k6aa_ops = {
-	.core = &s5k6aa_core_ops,
-	.video = &s5k6aa_video_ops,
-};
-
-static int s5k6aa_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
-{
-	struct s5k6aa_state *state;
-	struct v4l2_subdev *sd;
 	struct s5k6aa_platform_data *pdata;
 
-	state = kzalloc(sizeof(struct s5k6aa_state), GFP_KERNEL);
-	if (state == NULL)
-		return -ENOMEM;
+	dev_info(&client->dev, "%s: fetching platform data\n", __FUNCTION__);
 
-	printk(KERN_INFO "##################S5K6AA#############\n");
 	pdata = client->dev.platform_data;
-#if 1
+
 	if (!pdata) {
 		dev_err(&client->dev, "No platform data?\n");
 		return -ENODEV;
 	}
-#endif
-	sd = &state->sd;
-	strcpy(sd->name, S5K6AA_DRIVER_NAME);
 
-	/* Registering subdev */
-	v4l2_i2c_subdev_init(sd, client, &s5k6aa_ops);
-#if 1
 	/*
 	 * Assign default format and resolution
 	 * Use configured default information in platform data
@@ -630,7 +526,70 @@ static int s5k6aa_probe(struct i2c_client *client,
 		state->pix.pixelformat = DEFAULT_FMT;
 	else
 		state->pix.pixelformat = pdata->pixelformat;
-#endif	
+
+	if (!pdata->freq)
+		state->freq = 24000000;	/* 24MHz default */
+	else
+		state->freq = pdata->freq;
+
+	if (!pdata->is_mipi) {
+		state->is_mipi = 0;
+		dev_info(&client->dev, "%s:no mipi select=>parallel mode\n",
+				__FUNCTION__);
+	} else
+		state->is_mipi = pdata->is_mipi;
+
+	return 0;
+}
+
+static const struct v4l2_subdev_core_ops s5k6aa_core_ops = {
+	.init = s5k6aa_init,	/* initializing API */
+	.s_config = s5k6aa_s_config,	/* Fetch platform data */
+	.queryctrl = s5k6aa_queryctrl,
+	.querymenu = s5k6aa_querymenu,
+	.g_ctrl = s5k6aa_g_ctrl,
+	.s_ctrl = s5k6aa_s_ctrl,
+};
+
+static const struct v4l2_subdev_video_ops s5k6aa_video_ops = {
+	.s_crystal_freq = s5k6aa_s_crystal_freq,
+	.g_fmt = s5k6aa_g_fmt,
+	.s_fmt = s5k6aa_s_fmt,
+	.enum_framesizes = s5k6aa_enum_framesizes,
+	.enum_frameintervals = s5k6aa_enum_frameintervals,
+	.enum_fmt = s5k6aa_enum_fmt,
+	.try_fmt = s5k6aa_try_fmt,
+	.g_parm = s5k6aa_g_parm,
+	.s_parm = s5k6aa_s_parm,
+};
+
+static const struct v4l2_subdev_ops s5k6aa_ops = {
+	.core = &s5k6aa_core_ops,
+	.video = &s5k6aa_video_ops,
+};
+
+/*
+ * s5k6aa_probe
+ * Fetching platform data is being done with s_config subdev call.
+ * In probe routine, we just register subdev device
+ */
+static int s5k6aa_probe(struct i2c_client *client,
+			 const struct i2c_device_id *id)
+{
+	struct s5k6aa_state *state;
+	struct v4l2_subdev *sd;
+
+	state = kzalloc(sizeof(struct s5k6aa_state), GFP_KERNEL);
+	if (state == NULL)
+		return -ENOMEM;
+
+	sd = &state->sd;
+	strcpy(sd->name, S5K6AA_DRIVER_NAME);
+
+	/* Registering subdev */
+	v4l2_i2c_subdev_init(sd, client, &s5k6aa_ops);
+
+	dev_info(&client->dev, "%s: s5k6aa has been probed\n", __FUNCTION__);
 	return 0;
 }
 

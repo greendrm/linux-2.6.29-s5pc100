@@ -258,21 +258,7 @@ struct s3c_fimc_frame_addr {
 	u8			*virt_cb;
 	u8			*virt_cr;
 };
-#if 0
-/*
- * struct s3c_fimc_window_offset
- * @h1:	left side offset of source
- * @h2: right side offset of source
- * @v1: upper side offset of source
- * @v2: lower side offset of source
-*/
-struct s3c_fimc_window_offset {
-	int	h1;
-	int	h2;
-	int	v1;
-	int	v2;
-};
-#endif
+
 /*
  * struct s3c_fimc_dma_offset
  * @y_h:	y value horizontal offset
@@ -291,21 +277,7 @@ struct s3c_fimc_dma_offset {
 	int	cr_h;
 	int	cr_v;
 };
-#if 0
-/*
- * struct s3c_fimc_polarity
- * @pclk:	1 if PCLK polarity is inverse
- * @vsync:	1 if VSYNC polarity is inverse
- * @href:	1 if HREF polarity is inverse
- * @hsync:	1 if HSYNC polarity is inverse
-*/
-struct s3c_fimc_polarity {
-	u32	pclk;
-	u32	vsync;
-	u32	href;
-	u32	hsync;
-};
-#endif 
+
 /*
  * struct s3c_fimc_effect
  * @type:	effect type
@@ -502,7 +474,7 @@ struct s3c_fimc_config {
 	struct s3c_fimc_camera	*camera[S3C_FIMC_MAX_CAMS];
 
 	/* for subdev */
-	struct v4l2_device	v4l2_dev[S3C_FIMC_MAX_CTRLS];
+	struct v4l2_device	*v4l2_dev[S3C_FIMC_MAX_CTRLS];
 	struct v4l2_subdev	*sd[S3C_FIMC_MAX_CAMS];
 
 	struct clk		*cam_clock;

@@ -278,11 +278,10 @@ static int fimc_open(struct file *filp)
 	 * For now, we have "default camera" concept so,
 	 * we directly access to the index of default camera's subdev
 	 *
-	 * int (*s_config)(struct v4l2_subdev *sd, int irq, void *platform_data);
+	 * int (*init)(struct v4l2_subdev *sd, u32 val);
+	 * TODO: get val from platform data to work with special occasion
 	 */
-	ret = v4l2_subdev_call(ctrl->cam->sd, core, s_config,
-			ctrl->cam->info->irq,
-			ctrl->cam->info->platform_data);
+	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
 
 	if (ret == -ENOIOCTLCMD)
 		dev_err(ctrl->dev, "s_config subdev api not supported\n");
@@ -413,24 +412,30 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 		}
 
 		i2c_info = pdata->camera[id]->info;
-		name = pdata->camera[id]->info->type;
-		if (!name) {
-			dev_info(&pdev->dev, "subdev i2c driver name " \
-					"missing-skip registration\n");
+		if (!i2c_info) {
+			dev_err(&pdev->dev, "subdev i2c board info missing\n");
+			return -ENODEV;
 		}
 
-		addr = pdata->camera[id]->info->addr;
+		name = i2c_info->type;
+		if (!name) {
+			dev_info(&pdev->dev, "subdev i2c dirver name " \
+					"missing-skip registration\n");
+			return -ENODEV;
+		}
+
+		addr = i2c_info->addr;
 		if (!addr) {
 			dev_info(&pdev->dev, "subdev i2c address " \
 					"missing-skip registration\n");
+			return -ENODEV;
 		}
 
-		/* NOTE: first time subdev being registered,
+		/*
+		 * NOTE: first time subdev being registered,
 		 * s_config is called and try to initialize subdev device
 		 * but in this point, we are not giving MCLK and power to subdev
-		 * so nothing happens.
-		 * try v4l2_subdev_call with s_config core to initialize after
-		 * giving power source
+		 * so nothing happens but pass platform data through
 		 */
 		sd = v4l2_i2c_new_subdev_board(&ctrl->v4l2_dev, i2c_adap, \
 				name, i2c_info, &addr);
