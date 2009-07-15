@@ -161,7 +161,7 @@
 #define IRQ_SSS_HASH 	S5P64XX_IRQ_VIC2(28)
 //#define IRQ_Reserved 	S5P64XX_IRQ_VIC2(29)
 //#define IRQ_Reserved 	S5P64XX_IRQ_VIC2(30)
-//#define IRQ_Reserved 	S5P64XX_IRQ_VIC2(31)
+#define IRQ_VIC_END 	S5P64XX_IRQ_VIC2(31)	// Just define end of IRQ
 #define IRQ_VIC2_UNUSED	(0x1<<9)|(0x3<<12)|(0x1<<18)|(0x1<<22)|(0x1<<26)|(0x7<<29)
 
 /* Backward compatibility */
@@ -230,7 +230,7 @@
 
 #else
 
-#define S3C_IRQ_EINT_BASE	IRQ_SSS_HASH + 1
+#define S3C_IRQ_EINT_BASE	(IRQ_VIC_END + 1)
 
 #define S3C_EINT(x)		((x) + S3C_IRQ_EINT_BASE)
 #define IRQ_EINT(x)		S3C_EINT(x)

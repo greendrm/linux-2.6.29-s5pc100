@@ -454,7 +454,7 @@ static struct i2c_board_info  __initdata camera_info[] = {
 };
 
 /* Camera interface setting */
-static struct s3c_platform_camera camera_a = {
+static struct s3c_platform_camera camera_a __initdata = {
 	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
@@ -483,7 +483,7 @@ static struct s3c_platform_camera camera_a = {
 	.initialized = 0,
 };
 
-static struct s3c_platform_camera camera_c = {
+static struct s3c_platform_camera camera_c __initdata = {
 	.id		= CAMERA_CSI_C,		/* FIXME */
 	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
@@ -513,7 +513,7 @@ static struct s3c_platform_camera camera_c = {
 };
 
 /* Interface setting */
-static struct s3c_platform_fimc fimc_plat = {
+static struct s3c_platform_fimc fimc_plat __initdata = {
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 133000000,
