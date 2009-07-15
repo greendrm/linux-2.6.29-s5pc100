@@ -786,7 +786,7 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 
 	printk(KERN_INFO "S5PC110: ARMCLK=%ld, HCLK200=%ld, HCLK166=%ld, HCLK133=%ld, PCLK100=%ld, PCLK83=%ld, PCLK66=%ld\n",
 	       armclk, hclk200, hclk166, hclk133, pclk100, pclk83, pclk66);
-#if 1	/* temporary for FPGAC110 */
+#if 0	/* temporary for FPGAC110 */
 	clk_fout_apll.rate = xtal;
 	clk_fout_mpll.rate = xtal;
 	clk_fout_epll.rate = xtal;
