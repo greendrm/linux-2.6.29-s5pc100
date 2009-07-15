@@ -92,6 +92,21 @@ enum fimc_rot_flip {
 	FIMC_270_XYFLIP	= 0x10,
 };
 
+enum fimc_input {
+	FIMC_SRC_CAM,
+	FIMC_SRC_MSDMA,
+};
+
+enum fimc_output {
+	FIMC_DST_DMA,
+	FIMC_DST_FIMD,
+};
+
+enum fimc_autoload {
+	FIMC_AUTO_LOAD,
+	FIMC_ONE_SHOT,
+};
+
 /*
  * S T R U C T U R E S
  *
@@ -304,9 +319,7 @@ extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
 extern void fimc_reset(struct fimc_control *ctrl);
 extern int fimc_set_format(struct fimc_control *ctrl);
 extern int fimc_set_rot(struct fimc_control *ctrl);
-
-extern int fimc_set_src_path(struct fimc_control *ctrl);
-extern int fimc_set_dst_path(struct fimc_control *ctrl);
+extern int fimc_set_path(struct fimc_control *ctrl);
 extern int fimc_set_src_addr(struct fimc_control *ctrl);
 extern int fimc_set_dst_addr(struct fimc_control *ctrl);
 extern int fimc_set_src_crop(struct fimc_control *ctrl);
