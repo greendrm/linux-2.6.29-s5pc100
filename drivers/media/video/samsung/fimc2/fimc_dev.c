@@ -37,17 +37,7 @@
 
 #include "fimc.h"
 
-static struct fimc_global *fimc_dev;
-
-inline struct fimc_global *get_fimc_dev(void)
-{
-	return fimc_dev;
-}
-
-inline struct fimc_control *get_fimc_ctrl(int id)
-{
-	return &fimc_dev->ctrl[id];
-}
+struct fimc_global *fimc_dev;
 
 void fimc_register_camera(struct s3c_platform_camera *cam)
 {
