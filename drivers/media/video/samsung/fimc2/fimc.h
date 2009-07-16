@@ -256,6 +256,7 @@ struct fimc_scaler {
 	u32 main_vratio;
 	u32 real_width;
 	u32 real_height;
+	u32 shfactor;
 };
 
 
@@ -316,20 +317,35 @@ extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
 extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
 
+extern int fimc_mapping_rot_flip(u32 rot, u32 flip);
+extern int fimc_set_scaler(struct fimc_control *ctrl);
+extern int fimc_set_src_crop(struct fimc_control *ctrl);
+extern int fimc_set_dst_crop(struct fimc_control *ctrl);
+extern int fimc_set_rot(struct fimc_control *ctrl);
+extern int fimc_set_path(struct fimc_control *ctrl);
+extern int fimc_set_format(struct fimc_control *ctrl);
+
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);
 extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
 extern void fimc_reset(struct fimc_control *ctrl);
-extern int fimc_set_format(struct fimc_control *ctrl);
-extern int fimc_set_rot(struct fimc_control *ctrl);
-extern int fimc_set_path(struct fimc_control *ctrl);
 extern int fimc_set_src_addr(struct fimc_control *ctrl);
 extern int fimc_set_dst_addr(struct fimc_control *ctrl);
-extern int fimc_set_src_crop(struct fimc_control *ctrl);
-extern int fimc_set_dst_crop(struct fimc_control *ctrl);
-extern int fimc_set_scaler(struct fimc_control *ctrl);
 extern int fimc_start_scaler(struct fimc_control *ctrl);
 extern int fimc_stop_scaler(struct fimc_control *ctrl);
+
+extern void fimc_set_prescaler(struct fimc_control *ctrl, struct fimc_scaler *sc);
+extern void fimc_set_mainscaler(struct fimc_control *ctrl, struct fimc_scaler *sc);
+extern int fimc_set_src_dma_offset(struct fimc_control *ctrl);
+extern void fimc_set_src_dma_size(struct fimc_control *ctrl);
+extern void fimc_set_dst_dma_offset(struct fimc_control *ctrl);
+extern void fimc_set_dst_dma_size(struct fimc_control *ctrl);
+extern int fimc_set_src_path(struct fimc_control *ctrl, u32 path);
+extern int fimc_set_dst_path(struct fimc_control *ctrl, u32 path);
+extern int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt);
+extern int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt);
 
 #endif /* _FIMC_H */
 
