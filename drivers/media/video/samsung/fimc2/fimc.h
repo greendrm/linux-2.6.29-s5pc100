@@ -42,8 +42,6 @@
 #define FIMC_SRC_MAX_W		1920
 #define FIMC_SRC_MAX_H		1080
 
-#define to_fimc_plat(d) 	to_platform_device(d)->dev.platform_data
-
 
 /*
  * V 4 L 2   F I M C   E X T E N S I O N S
@@ -264,9 +262,10 @@ struct fimc_scaler {
  * E X T E R N S
  *
 */
+extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
-extern struct fimc_global *get_fimc_dev(void);
-extern struct fimc_control *get_fimc_ctrl(int id);
+//extern struct fimc_global *get_fimc_dev(void);
+//extern struct fimc_control *get_fimc_ctrl(int id);
 
 /* camera */
 extern void fimc_select_camera(struct fimc_control *ctrl);
@@ -346,6 +345,23 @@ extern int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt);
 extern int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt);
+
+
+/*
+ * D R I V E R  H E L P E R S
+ *
+*/
+#define to_fimc_plat(d)	to_platform_device(d)->dev.platform_data
+
+static inline struct fimc_global *get_fimc_dev(void)
+{
+	return fimc_dev;
+}
+
+static inline struct fimc_control *get_fimc_ctrl(int id)
+{
+	return &fimc_dev->ctrl[id];
+}
 
 #endif /* _FIMC_H */
 
