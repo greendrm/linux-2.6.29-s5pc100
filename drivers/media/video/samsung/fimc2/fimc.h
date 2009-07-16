@@ -264,8 +264,6 @@ struct fimc_scaler {
 */
 extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
-//extern struct fimc_global *get_fimc_dev(void);
-//extern struct fimc_control *get_fimc_ctrl(int id);
 
 /* camera */
 extern void fimc_select_camera(struct fimc_control *ctrl);
