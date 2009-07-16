@@ -180,7 +180,6 @@ static inline void s3c_irq_demux_eint(unsigned int start, unsigned int end)
 	unsigned int irq;
 
 	status &= ~mask;
-	status >>= start;
 	status &= (1 << (end - start + 1)) - 1;
 
 	for (irq = IRQ_EINT(start); irq <= IRQ_EINT(end); irq++) {
