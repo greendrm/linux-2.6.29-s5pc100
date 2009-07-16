@@ -51,6 +51,7 @@
 /* CID extensions */
 #define V4L2_CID_ROTATION		(V4L2_CID_PRIVATE_BASE + 0)
 
+
 /*
  * E N U M E R A T I O N S
  *
@@ -108,6 +109,7 @@ enum fimc_autoload {
 	FIMC_AUTO_LOAD,
 	FIMC_ONE_SHOT,
 };
+
 
 /*
  * S T R U C T U R E S
