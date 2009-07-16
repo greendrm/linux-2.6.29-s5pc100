@@ -39,12 +39,12 @@
 
 static struct fimc_global *fimc_dev;
 
-struct fimc_global *get_fimc_dev(void)
+inline struct fimc_global *get_fimc_dev(void)
 {
 	return fimc_dev;
 }
 
-struct fimc_control *get_fimc_ctrl(int id)
+inline struct fimc_control *get_fimc_ctrl(int id)
 {
 	return &fimc_dev->ctrl[id];
 }
