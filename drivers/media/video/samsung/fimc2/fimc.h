@@ -19,6 +19,7 @@
 #include <linux/i2c.h>
 #include <linux/fb.h>
 #include <linux/videodev2.h>
+#include <linux/platform_device.h>
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
@@ -217,6 +218,7 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
+	struct v4l2_subdev		*sd;		/* active subdev */
 	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
@@ -232,7 +234,6 @@ struct fimc_control {
 struct fimc_global {
 	struct fimc_control 		ctrl[FIMC_DEVICES];
 	struct s3c_platform_camera	*camera[FIMC_MAXCAMS];
-	struct v4l2_device		v4l2_dev[FIMC_DEVICES];
 	struct v4l2_subdev		*sd[FIMC_SUBDEVS];
 	struct clk			*mclk;
 	int				initialized;
@@ -255,14 +256,26 @@ struct fimc_scaler {
 	u32 real_height;
 };
 
+static struct fimc_global *fimc_dev;
+
+#define to_fimc_plat(d) to_platform_device(d)->dev.platform_data
+
+static inline struct fimc_global *get_fimc_dev(void)
+{
+	return fimc_dev;
+}
+
+static inline struct fimc_control *get_fimc_ctrl(int id)
+{
+	return &fimc_dev->ctrl[id];
+}
+
 
 /*
  * E X T E R N S
  *
 */
 extern struct video_device fimc_video_device[];
-extern struct s3c_platform_fimc *to_fimc_plat(struct device *dev);
-extern inline struct fimc_control *get_fimc(int id);
 
 /* camera */
 extern void fimc_select_camera(struct fimc_control *ctrl);

@@ -154,8 +154,9 @@ int fimc_check_param(struct fimc_control *ctrl)
 
 int fimc_set_param(struct fimc_control *ctrl)
 {
-	int	ret = 0;
 #if 0
+	int	ret = 0;
+
 	fimc_set_envid(ctrl, FALSE);
 
 	ret = fimc_set_pixelformat(ctrl);
