@@ -36,7 +36,7 @@
 #include <plat/clock.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 static struct s3c_fimc_camera test_pattern = {
 	.id 		= S3C_FIMC_TPID,
@@ -562,7 +562,45 @@ static int s3c_fimc_configure_subdev(struct platform_device *pdev, int id)
 	}
 	return 0;
 }
+#if 0
+/*
+ * fimc_v4l2_configure
+ * Constructs v4l2 input device information on device opening
+ * What we need to run a driver:
+ * 	v4l2_input devices
+ * 	v4l2_fmtdesc formats
+ * NOTE: about order of index, default camera takes the first 
+ * camera index 0, and the others takes next
+ * TODO: move this routine to probing time. (optimizing)
+ */
+static int  fimc_v4l2_configure(struct s3c_fimc_control *ctrl)
+{
+	struct s3c_platform_fimc *pdata;
+	struct s3c_fimc_camera *cam;
+	struct v4l2_input input[S3C_FIMC_MAX_CAMS - 1];	/* FIXME: don't use macro */
+	int i, ret;
+	int index = 1;	/* 0 is reserved for default camrea */
 
+	pdata = to_fimc_plat(ctrl->dev);
+
+	/* default camera always takes first index */
+	input[0] = s3c_fimc.camera[pdata->default_cam];	
+
+	for (i = 0; i < S3C_FIMC_MAX_CAMS; i++) {
+		/* Pass empty camera */
+		if (!s3c_fimc.camera[i])
+			continue;
+
+		/* default camera already assigned */
+		if (i == pdata->default_cam)
+			continue;
+
+		input[index] = s3c_fimc.camera[i]
+	}
+
+	return ret;
+}
+#endif
 static int __devinit s3c_fimc_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;

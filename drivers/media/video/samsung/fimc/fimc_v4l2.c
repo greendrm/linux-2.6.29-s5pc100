@@ -24,7 +24,7 @@
 #include <linux/videodev2_samsung.h>
 #endif
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 /* subdev handling macro */
 #define subdev_call(ctrl, o, f, args...) \
@@ -619,17 +619,19 @@ static int s3c_fimc_v4l2_s_input(struct file *filp, void *fh,
 		return -EINVAL;
 
 	mutex_lock(&ctrl->v4l2_lock);
+#if 0
 	ctrl->v4l2.input = &s3c_fimc_input_types[i];
 
 	if (s3c_fimc_input_types[i].type == V4L2_INPUT_TYPE_CAMERA)
 		ctrl->in_type = PATH_IN_ITU_CAMERA;
 	else
 		ctrl->in_type = PATH_IN_DMA;
+#endif
 	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
 }
-
+#if 0
 static int s3c_fimc_v4l2_g_output(struct file *filp, void *fh,
 					unsigned int *i)
 {
@@ -661,7 +663,7 @@ static int s3c_fimc_v4l2_s_output(struct file *filp, void *fh,
 
 	return 0;
 }
-
+#endif
 static int s3c_fimc_v4l2_enum_input(struct file *filp, void *fh,
 					struct v4l2_input *i)
 {
@@ -676,7 +678,7 @@ static int s3c_fimc_v4l2_enum_input(struct file *filp, void *fh,
 
 	return 0;
 }
-
+#if 0
 static int s3c_fimc_v4l2_enum_output(struct file *filp, void *fh,
 					struct v4l2_output *o)
 {
@@ -691,7 +693,7 @@ static int s3c_fimc_v4l2_enum_output(struct file *filp, void *fh,
 
 	return 0;
 }
-
+#endif
 static int s3c_fimc_v4l2_reqbufs(struct file *filp, void *fh,
 					struct v4l2_requestbuffers *b)
 {
@@ -895,10 +897,12 @@ const struct v4l2_ioctl_ops s3c_fimc_v4l2_ops = {
 	.vidioc_streamoff		= s3c_fimc_v4l2_streamoff,
 	.vidioc_g_input			= s3c_fimc_v4l2_g_input,
 	.vidioc_s_input			= s3c_fimc_v4l2_s_input,
+#if 0
 	.vidioc_g_output		= s3c_fimc_v4l2_g_output,
 	.vidioc_s_output		= s3c_fimc_v4l2_s_output,
-	.vidioc_enum_input		= s3c_fimc_v4l2_enum_input,
 	.vidioc_enum_output		= s3c_fimc_v4l2_enum_output,
+#endif
+	.vidioc_enum_input		= s3c_fimc_v4l2_enum_input,
 	.vidioc_reqbufs			= s3c_fimc_v4l2_reqbufs,
 	.vidioc_querybuf		= s3c_fimc_v4l2_querybuf,
 	.vidioc_qbuf			= s3c_fimc_v4l2_qbuf,
