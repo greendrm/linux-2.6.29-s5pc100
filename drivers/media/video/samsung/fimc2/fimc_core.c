@@ -29,7 +29,6 @@
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <media/v4l2-device.h>
-
 #include <asm/io.h>
 #include <asm/memory.h>
 #include <plat/clock.h>
