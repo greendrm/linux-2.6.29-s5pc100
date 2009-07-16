@@ -511,24 +511,24 @@ void fimc_set_dst_dma_size(struct fimc_control *ctrl)
 	writel(cfg, ctrl->regs + S3C_CIEXTEN);
 }
 
-void fimc_set_prescaler(struct fimc_control *ctrl, struct fimc_scaler *sc)
+void fimc_set_prescaler(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
 
-	cfg |= S3C_CISCPRERATIO_SHFACTOR(sc->shfactor);
-	cfg |= S3C_CISCPRERATIO_PREHORRATIO(sc->pre_hratio);
-	cfg |= S3C_CISCPRERATIO_PREVERRATIO(sc->pre_vratio);
+	cfg |= S3C_CISCPRERATIO_SHFACTOR(ctrl->sc.shfactor);
+	cfg |= S3C_CISCPRERATIO_PREHORRATIO(ctrl->sc.pre_hratio);
+	cfg |= S3C_CISCPRERATIO_PREVERRATIO(ctrl->sc.pre_vratio);
 
 	writel(cfg, ctrl->regs + S3C_CISCPRERATIO);
 
 	cfg = 0;
-	cfg |= S3C_CISCPREDST_PREDSTWIDTH(sc->pre_dst_width);
-	cfg |= S3C_CISCPREDST_PREDSTHEIGHT(sc->pre_dst_height);
+	cfg |= S3C_CISCPREDST_PREDSTWIDTH(ctrl->sc.pre_dst_width);
+	cfg |= S3C_CISCPREDST_PREDSTHEIGHT(ctrl->sc.pre_dst_height);
 
 	writel(cfg, ctrl->regs + S3C_CISCPREDST);
 }
 
-void fimc_set_mainscaler(struct fimc_control *ctrl, struct fimc_scaler *sc)
+void fimc_set_mainscaler(struct fimc_control *ctrl)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
 
@@ -536,60 +536,123 @@ void fimc_set_mainscaler(struct fimc_control *ctrl, struct fimc_scaler *sc)
 		S3C_CISCCTRL_SCALEUP_H | S3C_CISCCTRL_SCALEUP_V | \
 		S3C_CISCCTRL_MAIN_V_RATIO_MASK | S3C_CISCCTRL_MAIN_H_RATIO_MASK);
 
-	if (sc->bypass)
+	if (ctrl->sc.bypass)
 		cfg |= S3C_CISCCTRL_SCALERBYPASS;
 
-	if (sc->scaleup_h)
+	if (ctrl->sc.scaleup_h)
 		cfg |= S3C_CISCCTRL_SCALEUP_H;
 
-	if (sc->scaleup_v)
+	if (ctrl->sc.scaleup_v)
 		cfg |= S3C_CISCCTRL_SCALEUP_V;
 
-	cfg |= S3C_CISCCTRL_MAINHORRATIO(sc->main_hratio);
-	cfg |= S3C_CISCCTRL_MAINVERRATIO(sc->main_vratio);
+	cfg |= S3C_CISCCTRL_MAINHORRATIO(ctrl->sc.main_hratio);
+	cfg |= S3C_CISCCTRL_MAINVERRATIO(ctrl->sc.main_vratio);
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
 }
 
-
-#if 0
-int fimc_set_src_addr(struct fimc_control *ctrl)
+void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base)
 {
+	struct v4l2_rect rect;
+	dma_addr_t phys_cbcr = 0;
 	u32 cfg = 0;
-	int ret = 0;
+	u32 pixfmt = ctrl->out->pix.pixelformat;
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	cfg = readl(ctrl->regs + S3C_CIREAL_ISIZE);
+	cfg |= S3C_CIREAL_ISIZE_ADDR_CH_DISABLE;
+	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
+
+	if (pixfmt == V4L2_PIX_FMT_NV12) {
+		rect.width = ctrl->out->pix.width;
+		rect.height = ctrl->out->pix.height;
+		phys_cbcr = base + (rect.width * rect.height);
+		writel(base, ctrl->regs + S3C_CIIYSA0);
+		writel(phys_cbcr, ctrl->regs + S3C_CIICBSA0);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
+		writel(base, ctrl->regs + S3C_CIIYSA0);
+	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
+		writel(base, ctrl->regs + S3C_CIIYSA0);
+	}
+
+	cfg &= ~S3C_CIREAL_ISIZE_ADDR_CH_DISABLE;
+	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
 }
 
-int fimc_set_dst_addr(struct fimc_control *ctrl)
+void fimc_set_dst_addr(struct fimc_control *ctrl, dma_addr_t base, u32 idx)
 {
-	u32 cfg = 0;
-	int ret = 0;
+	struct v4l2_rect rect;
+	dma_addr_t phys_cbcr = 0;
+	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	if (pixfmt == V4L2_PIX_FMT_NV12) {
+		rect.width = ctrl->out->fbuf.fmt.width;
+		rect.height = ctrl->out->fbuf.fmt.height;
+		phys_cbcr = base + (rect.width * rect.height);
+		writel(base, ctrl->regs + S3C_CIOYSA(idx));
+		writel(phys_cbcr, ctrl->regs + S3C_CIOCBSA(idx));
+	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
+		writel(base, ctrl->regs + S3C_CIOYSA(idx));
+	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
+		writel(base, ctrl->regs + S3C_CIOYSA(idx));
+	}
+
 }
 
-int fimc_start_scaler(struct fimc_control *ctrl)
+void fimc_start_scaler(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
-	int ret = 0;
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
+	if (!ctrl->sc.bypass) {
+		cfg = readl(ctrl->regs + S3C_CISCCTRL);
+		cfg |= S3C_CISCCTRL_SCALERSTART;
+		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	}
 }
 
-int fimc_stop_scaler(struct fimc_control *ctrl)
+void fimc_stop_scaler(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
+
+	cfg &= ~S3C_CISCCTRL_SCALERSTART;
+	writel(cfg, ctrl->regs + S3C_CISCCTRL);
+}
+
+void fimc_enable_capture(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
-	int ret = 0;
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
+	cfg = readl(ctrl->regs + S3C_CIIMGCPT);
+	cfg |= S3C_CIIMGCPT_IMGCPTEN;
+	if (!ctrl->sc.bypass)
+		cfg |= S3C_CIIMGCPT_IMGCPTEN_SC;
+	writel(cfg, ctrl->regs + S3C_CIIMGCPT);
 }
-#endif
+
+void fimc_disable_capture(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIIMGCPT);
+
+	cfg &= ~(S3C_CIIMGCPT_IMGCPTEN | S3C_CIIMGCPT_IMGCPTEN_SC);
+	writel(cfg, ctrl->regs + S3C_CIIMGCPT);
+}
+
+void fimc_enable_input_dma(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+
+	cfg |= S3C_MSCTRL_ENVID;
+	writel(cfg, ctrl->regs + S3C_MSCTRL);
+}
+
+void fimc_disable_input_dma(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+
+	cfg &= ~S3C_MSCTRL_ENVID;
+	writel(cfg, ctrl->regs + S3C_MSCTRL);
+}
+

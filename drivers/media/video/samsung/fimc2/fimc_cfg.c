@@ -358,7 +358,6 @@ static int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift)
 
 int fimc_set_scaler(struct fimc_control *ctrl)
 {
-	struct fimc_scaler sc;
 	struct v4l2_rect src, dst;
 	u32 rot = 0, flip = 0, is_rotate = 0;
 	int ret = 0;
@@ -404,35 +403,35 @@ int fimc_set_scaler(struct fimc_control *ctrl)
 	}
 
 	ret = fimc_get_scaler_factor(src.width, dst.width, \
-			&sc.pre_hratio, &sc.hfactor);
+			&ctrl->sc.pre_hratio, &ctrl->sc.hfactor);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "Fail : fimc_get_scaler_factor(width).\n");
 		return -EINVAL;
 	}
 
 	ret = fimc_get_scaler_factor(src.height, dst.height, \
-			&sc.pre_vratio, &sc.vfactor);
+			&ctrl->sc.pre_vratio, &ctrl->sc.vfactor);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "Fail : fimc_get_scaler_factor(height).\n");
 		return -EINVAL;
 	}
 
-	sc.pre_dst_width = src.width / sc.pre_hratio;
-	sc.main_hratio = (src.width << 8) / (dst.width<<sc.hfactor);
+	ctrl->sc.pre_dst_width = src.width / ctrl->sc.pre_hratio;
+	ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
 
-	sc.pre_dst_height = src.height / sc.pre_vratio;
-	sc.main_vratio = (src.height << 8) / (dst.height<<sc.vfactor);
+	ctrl->sc.pre_dst_height = src.height / ctrl->sc.pre_vratio;
+	ctrl->sc.main_vratio = (src.height << 8) / (dst.height<<ctrl->sc.vfactor);
 
 	if ((src.width == dst.width) && (src.height == dst.height))
-		sc.bypass = 1;
+		ctrl->sc.bypass = 1;
 
-	sc.scaleup_h = (src.width >= dst.width) ? 1 : 0;
-	sc.scaleup_v = (src.height >= dst.height) ? 1 : 0;
+	ctrl->sc.scaleup_h = (src.width >= dst.width) ? 1 : 0;
+	ctrl->sc.scaleup_v = (src.height >= dst.height) ? 1 : 0;
 
-	sc.shfactor = 10 - (sc.hfactor + sc.vfactor);
+	ctrl->sc.shfactor = 10 - (ctrl->sc.hfactor + ctrl->sc.vfactor);
 
-	fimc_set_prescaler(ctrl, &sc);
-	fimc_set_mainscaler(ctrl, &sc);
+	fimc_set_prescaler(ctrl);
+	fimc_set_mainscaler(ctrl);
 
 	return 0;
 }
@@ -588,3 +587,40 @@ int fimc_set_format(struct fimc_control *ctrl)
 
 	return 0;
 }
+
+int fimc_start_camif(struct fimc_control *ctrl)
+{
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out != NULL) {
+		fimc_start_scaler(ctrl);
+		fimc_enable_capture(ctrl);
+		fimc_enable_input_dma(ctrl);
+	} else if (ctrl->cap != NULL) {
+
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int fimc_stop_camif(struct fimc_control *ctrl)
+{
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out != NULL) {
+		fimc_disable_input_dma(ctrl);		
+		fimc_stop_scaler(ctrl);
+		fimc_disable_capture(ctrl);
+	} else if (ctrl->cap != NULL) {
+
+	} else {
+		dev_err(ctrl->dev, "[%s]Invalid case.\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+

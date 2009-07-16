@@ -201,6 +201,24 @@ struct fimc_fbinfo {
 	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, int sleep);
 };
 
+/* scaler abstraction: local use recommended */
+struct fimc_scaler {
+	u32 bypass;
+	u32 hfactor;
+	u32 vfactor;
+	u32 pre_hratio;
+	u32 pre_vratio;
+	u32 pre_dst_width;
+	u32 pre_dst_height;
+	u32 scaleup_h;
+	u32 scaleup_v;
+	u32 main_hratio;
+	u32 main_vratio;
+	u32 real_width;
+	u32 real_height;
+	u32 shfactor;
+};
+
 /* fimc controller abstration */
 struct fimc_control {
 	int				id;		/* controller id */
@@ -229,6 +247,7 @@ struct fimc_control {
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
 	struct fimc_fbinfo		fb;		/* fimd info */
+	struct fimc_scaler		sc;		/* scaler info */
 
 	enum fimc_status		status;
 };
@@ -240,25 +259,6 @@ struct fimc_global {
 	struct clk			*mclk;
 	int				initialized;
 };
-
-/* scaler abstraction: local use recommended */
-struct fimc_scaler {
-	u32 bypass;
-	u32 hfactor;
-	u32 vfactor;
-	u32 pre_hratio;
-	u32 pre_vratio;
-	u32 pre_dst_width;
-	u32 pre_dst_height;
-	u32 scaleup_h;
-	u32 scaleup_v;
-	u32 main_hratio;
-	u32 main_vratio;
-	u32 real_width;
-	u32 real_height;
-	u32 shfactor;
-};
-
 
 /*
  * E X T E R N S
@@ -312,11 +312,6 @@ extern int fimc_init_out_buf(struct fimc_control *ctrl);
 extern int fimc_check_param(struct fimc_control *ctrl);
 extern int fimc_set_param(struct fimc_control *ctrl);
 
-extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
-extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
-extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
-extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
-
 extern int fimc_mapping_rot_flip(u32 rot, u32 flip);
 extern int fimc_set_scaler(struct fimc_control *ctrl);
 extern int fimc_set_src_crop(struct fimc_control *ctrl);
@@ -324,18 +319,22 @@ extern int fimc_set_dst_crop(struct fimc_control *ctrl);
 extern int fimc_set_rot(struct fimc_control *ctrl);
 extern int fimc_set_path(struct fimc_control *ctrl);
 extern int fimc_set_format(struct fimc_control *ctrl);
+extern int fimc_start_camif(struct fimc_control *ctrl);
+extern int fimc_stop_camif(struct fimc_control *ctrl);
+
+extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
+extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
+extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
+extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
 
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);
 extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
 extern void fimc_reset(struct fimc_control *ctrl);
-extern int fimc_set_src_addr(struct fimc_control *ctrl);
-extern int fimc_set_dst_addr(struct fimc_control *ctrl);
-extern int fimc_start_scaler(struct fimc_control *ctrl);
-extern int fimc_stop_scaler(struct fimc_control *ctrl);
-
-extern void fimc_set_prescaler(struct fimc_control *ctrl, struct fimc_scaler *sc);
-extern void fimc_set_mainscaler(struct fimc_control *ctrl, struct fimc_scaler *sc);
+extern void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
+extern void fimc_set_dst_addr(struct fimc_control *ctrl, dma_addr_t base, u32 idx);
+extern void fimc_set_prescaler(struct fimc_control *ctrl);
+extern void fimc_set_mainscaler(struct fimc_control *ctrl);
 extern int fimc_set_src_dma_offset(struct fimc_control *ctrl);
 extern void fimc_set_src_dma_size(struct fimc_control *ctrl);
 extern void fimc_set_dst_dma_offset(struct fimc_control *ctrl);
@@ -346,6 +345,13 @@ extern int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt);
 extern int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt);
+
+extern void fimc_start_scaler(struct fimc_control *ctrl);
+extern void fimc_enable_capture(struct fimc_control *ctrl);
+extern void fimc_enable_input_dma(struct fimc_control *ctrl);
+extern void fimc_stop_scaler(struct fimc_control *ctrl);
+extern void fimc_disable_capture(struct fimc_control *ctrl);
+extern void fimc_disable_input_dma(struct fimc_control *ctrl);
 
 #endif /* _FIMC_H */
 
