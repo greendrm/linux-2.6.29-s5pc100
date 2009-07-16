@@ -25,7 +25,7 @@
 #include <plat/regs-csis.h>
 #include <plat/csis.h>
 
-#include "s3c_csis.h"
+#include "csis.h"
 
 static struct s3c_csis_info *s3c_csis;
 

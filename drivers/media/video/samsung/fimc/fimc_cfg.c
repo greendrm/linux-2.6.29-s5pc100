@@ -18,7 +18,7 @@
 #include <asm/uaccess.h>
 #include <plat/media.h>
 
-#include "s3c_fimc.h"
+#include "fimc.h"
 
 #if (CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC > 0)
 static dma_addr_t s3c_fimc_get_dma_region(u32 bytes)

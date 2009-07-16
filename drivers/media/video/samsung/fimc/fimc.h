@@ -58,7 +58,7 @@
  * C O M M O N   D E F I N I T I O N S
  *
 */
-#define S3C_FIMC_NAME	"s3c-fimc"
+#define S3C_FIMC_NAME	"fimc"
 
 #define info(args...)	do { printk(KERN_INFO S3C_FIMC_NAME ": " args); } while (0)
 #define err(args...)	do { printk(KERN_ERR  S3C_FIMC_NAME ": " args); } while (0)
@@ -394,7 +394,7 @@ struct s3c_fimc_out_frame {
 struct s3c_fimc_v4l2 {
 	struct v4l2_fmtdesc	*fmtdesc;
 	struct v4l2_framebuffer	frmbuf;
-	struct v4l2_input	*input;
+	struct v4l2_input	input[S3C_FIMC_MAX_CAMS];	/* FIXME */
 	struct v4l2_output	*output;
 	struct v4l2_rect	crop_bounds;
 	struct v4l2_rect	crop_defrect;
