@@ -62,7 +62,7 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 	ret = fimc_init_out_buf(ctrl);
 	if (ret) {
 		dev_err(ctrl->dev, "Cannot initialize the buffers\n");
-		return -EINVAL;
+		return -ret;
 	}
 
 	if (b->count != 0) {	/* allocate buffers */
@@ -147,7 +147,7 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
-		ret = fimc_mapping_rot(ctrl, c->value);
+		ret = fimc_set_rot(ctrl, c->value);
 		break;
 
 	default:
@@ -294,7 +294,7 @@ int fimc_streamon_output(void *fh)
 	ret = fimc_check_param(ctrl);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "fimc_check_param failed.\n");
-		return -1;
+		return ret;
 	}
 
 	ctrl->status = FIMC_READY_ON;
@@ -302,9 +302,8 @@ int fimc_streamon_output(void *fh)
 	ret = fimc_set_param(ctrl);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "fimc_set_param failed.\n");
-		return -1;
+		return ret;
 	}
-
 
 	return ret;
 }
@@ -312,11 +311,44 @@ int fimc_streamon_output(void *fh)
 int fimc_streamoff_output(void *fh)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	u32 i = 0;
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	ctrl->status = FIMC_READY_OFF;
+
+	ret = fimc_stop_streaming(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "Fail : fimc_stop_streaming()\n");
+		return -EINVAL;
+	}
+
+	ret = fimc_init_in_queue(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "Fail : fimc_init_in_queue()\n");
+		return -EINVAL;
+	}
+
+	ret = fimc_init_out_queue(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "Fail : fimc_init_out_queue()\n");
+		return -EINVAL;
+	}
+
+	/* Make all buffers DQUEUED state. */
+	for(i = 0; i < FIMC_OUTBUFS; i++) {
+		ctrl->out->buf[i].state	=	VIDEOBUF_IDLE;
+		ctrl->out->buf[i].flags =	V4L2_BUF_FLAG_MAPPED;
+	}
+
+	ctrl->out->idx.prev	= -1;
+	ctrl->out->idx.active	= -1;
+	ctrl->out->idx.next	= -1;
+
+	ctrl->status		= FIMC_STREAMOFF;
+
+	return 0;
 }
 
 int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
@@ -325,6 +357,75 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (b->memory != V4L2_MEMORY_MMAP ) {
+		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
+		return -EINVAL;
+	}
+
+	if (b->index > ctrl->out->buf_num ) {
+		dev_err(ctrl->dev, "The index is out of bounds. \
+				You requested %d buffers. \
+				But you set the index as %d.\n", \
+				ctrl->out->buf_num, b->index);
+		return -EINVAL;
+	}
+
+	/* Check the buffer state if the state is VIDEOBUF_IDLE. */
+	
+	if (ctrl->out->buf[b->index].state != VIDEOBUF_IDLE) {
+		dev_err(ctrl->dev, "The index(%d) buffer must be \
+				dequeued state(%d).\n", b->index, \
+				ctrl->out->buf[b->index].state);
+		return -EINVAL;
+	}
+
+	/* Attach the buffer to the incoming queue. */
+	ret =  fimc_attach_in_queue(ctrl, b->index);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "Failed :  fimc_attach_in_queue.\n");
+		return -EINVAL;
+	}
+
+
+	if (ctrl->status == FIMC_READY_ON) {
+		ret =  fimc_detach_in_queue(ctrl, &index);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed : fimc_detach_in_queue.\n");
+			return -1;
+		}
+
+		fimc_set_src_addr(ctrl, dma_addr_t base);
+
+		if (ctrl->out->fbuf.base != 0) {
+			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 0);
+			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 1);
+			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 2);
+			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 3);
+		} else {
+			openfifo
+		}
+		
+		ret = fimc_start_camif(ctrl);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed : s3c_rp_pp_start().\n");
+			return -1;
+		}
+
+		ctrl->stream_status = FIMC_STREAMON;
+	} else if ((ctrl->rot.degree != ROT_0) && (ctrl->rot.status == ROT_IDLE)) {
+		ret =  fimc_detach_in_queue(ctrl, &index);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed :  s3c_rp_detach_in_queue.\n");
+			return -1;
+		}
+		
+		ret = s3c_rp_rot_run(ctrl, index);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed : s3c_rp_run_rot().\n");
+			return -1;
+		}
+	}
 
 	return ret;
 }
@@ -373,20 +474,42 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	fb->capability	= ctrl->out->fbuf.capability;
+	fb->flags	= ctrl->out->fbuf.flags;
+	fb->base	= ctrl->out->fbuf.base;
+
+	fb->fmt.width		= ctrl->out->fbuf.fmt.width;
+	fb->fmt.height		= ctrl->out->fbuf.fmt.height;
+	fb->fmt.pixelformat	= ctrl->out->fbuf.fmt.pixelformat;
+	fb->fmt.bytesperline	= ctrl->out->fbuf.fmt.bytesperline;
+	fb->fmt.sizeimage	= ctrl->out->fbuf.fmt.sizeimage;
+	fb->fmt.colorspace	= ctrl->out->fbuf.fmt.colorspace;
+	fb->fmt.priv		= ctrl->out->fbuf.fmt.priv;
+
+	return 0;
 }
 
 int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	return ret;
+	ctrl->out->fbuf.capability	= fb->capability;
+	ctrl->out->fbuf.flags		= fb->flags;
+	ctrl->out->fbuf.base		= fb->base;
+
+	ctrl->out->fbuf.fmt.width		= fb->fmt.width;
+	ctrl->out->fbuf.fmt.height		= fb->fmt.height;
+	ctrl->out->fbuf.fmt.pixelformat		= fb->fmt.pixelformat;
+	ctrl->out->fbuf.fmt.bytesperline	= fb->fmt.bytesperline;
+	ctrl->out->fbuf.fmt.sizeimage		= fb->fmt.sizeimage;
+	ctrl->out->fbuf.fmt.colorspace		= V4L2_COLORSPACE_SMPTE170M;
+	ctrl->out->fbuf.fmt.priv		= fb->fmt.priv;
+
+	return 0;
 }
 

@@ -21,7 +21,7 @@
 
 #include "fimc.h"
 
-int fimc_mapping_rot(struct fimc_control *ctrl, int degree)
+int fimc_set_rot(struct fimc_control *ctrl, int degree)
 {
 	switch (degree) {
 	case 0:		/* fall through */
@@ -154,25 +154,73 @@ int fimc_check_param(struct fimc_control *ctrl)
 
 int fimc_set_param(struct fimc_control *ctrl)
 {
-#if 0
-	int	ret = 0;
+	int ret = 0;
 
-	fimc_set_envid(ctrl, FALSE);
-
-	ret = fimc_set_pixelformat(ctrl);
-	if (ret < 0) {
-		rp_err(ctrl->log_level, "Cannot set the post processor pixelformat.\n");
-		return -1;
-	}
-
-	ret = fimc_set_scaler(ctrl);
-	if (ret < 0) {
-		rp_err(ctrl->log_level, "Cannot set the post processor scaler.\n");
-		return -1;
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
 	}
 
 	fimc_set_int_enable(ctrl, TRUE);
-#endif
+
+	ret = fimc_set_format(ctrl);
+	if (ret < 0)
+		return -EINVAL;
+
+	ret = fimc_set_path(ctrl);
+	if (ret < 0)
+		return -EINVAL;
+
+	ret = fimc_set_rot(ctrl);
+	if (ret < 0) {
+		return -EINVAL;
+
+	ret = fimc_set_src_crop(ctrl);
+	if (ret < 0) {
+		return -EINVAL;
+
+	ret = fimc_set_dst_crop(ctrl);
+	if (ret < 0) {
+		return -EINVAL;
+
+	ret = fimc_set_scaler(ctrl);
+	if (ret < 0) {
+		return -EINVAL;
+
+	return 0;
+}
+
+int fimc_init_in_queue(struct fimc_control *ctrl)
+{
+	unsigned long	spin_flags;
+	unsigned int	i;
+
+	spin_lock_irqsave(&ctrl->lock_in, spin_flags);
+
+	/* Init incoming queue */
+	for (i = 0; i < FIMC_OUTBUFS; i++) {
+		ctrl->out->in_queue[i] = -1;
+	}
+
+	spin_unlock_irqrestore(&ctrl->lock_in, spin_flags);
+	
+	return 0;
+}
+
+int fimc_init_out_queue(struct fimc_control *ctrl)
+{
+	unsigned long	spin_flags;
+	unsigned int	i;
+
+	spin_lock_irqsave(&ctrl->lock_out, spin_flags);
+
+	/* Init incoming queue */
+	for (i = 0; i < FIMC_OUTBUFS; i++) {
+		ctrl->out->out_queue[i] = -1;
+	}
+
+	spin_unlock_irqrestore(&ctrl->lock_out, spin_flags);
+	
 	return 0;
 }
 
@@ -623,4 +671,35 @@ int fimc_stop_camif(struct fimc_control *ctrl)
 
 	return 0;
 }
+
+static int fimc_stop_fifo(struct fimc_control *ctrl)
+{
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+
+	return 0;
+}
+
+int fimc_stop_streaming(struct fimc_control *ctrl)
+{
+	int ret = 0;
+
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->out->fbuf.base != 0) {	/* DMA OUT */
+		ret = wait_event_interruptible_timeout(ctrl->wq, \
+				(ctrl->status == FIMC_STREAMON_IDLE), \
+				FIMC_ONESHOT_TIMEOUT);
+		if (ret == 0) {
+			dev_err(ctrl->dev, "Fail : %s\n", __FUNCTION__);
+		}
+		
+		fimc_stop_camif(ctrl);
+	} else {				/* FIMD FIFO */
+		fimc_stop_fifo(ctrl);
+	}
+
+	return 0;
+}
+
 
