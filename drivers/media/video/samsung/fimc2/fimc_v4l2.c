@@ -17,6 +17,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/videodev2.h>
 #include <media/v4l2-ioctl.h>
+#include <plat/fimc2.h>
 
 #include "fimc.h"
 
@@ -34,6 +35,54 @@ static int fimc_querycap(struct file *filp, void *fh,
 	cap->version = 0;
 	cap->capabilities = (V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_VIDEO_OUTPUT | \
 				V4L2_CAP_VIDEO_OVERLAY | V4L2_CAP_STREAMING);
+
+	return 0;
+}
+
+static int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
+{
+	struct fimc_control *ctrl = file->private_data;
+	struct fimc_global *fimc = get_fimc_dev();
+	struct s3c_platform_camera *cam;
+
+	if (inp->index >= FIMC_MAXCAMS) {
+		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	cam = fimc->camera[inp->index];
+
+	strcpy(inp->name, cam->info->type);
+	inp->type = V4L2_INPUT_TYPE_CAMERA;
+
+	return 0;
+}
+
+static int fimc_g_input(struct file *file, void *fh, unsigned int *i)
+{
+	struct fimc_control *ctrl = file->private_data;
+	struct s3c_platform_camera *cam = ctrl->cam;
+
+	*i = (unsigned int) cam->id;
+
+	return 0;
+}
+
+static int fimc_s_input(struct file *file, void *fh, unsigned int i)
+{
+	struct fimc_control *ctrl = file->private_data;
+	struct fimc_global *fimc = get_fimc_dev();
+
+	if (i >= FIMC_MAXCAMS) {
+		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	ctrl->sd = fimc->camera[i]->sd;
+
+	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
 }
@@ -240,6 +289,9 @@ static int fimc_dqbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 
 const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_querycap		= fimc_querycap,
+	.vidioc_enum_input		= fimc_enum_input,
+	.vidioc_g_input			= fimc_g_input,
+	.vidioc_s_input			= fimc_s_input,
 	.vidioc_reqbufs			= fimc_reqbufs,
 	.vidioc_querybuf		= fimc_querybuf,
 	.vidioc_g_ctrl			= fimc_g_ctrl,

@@ -28,9 +28,7 @@
 #include <linux/irq.h>
 #include <linux/mm.h>
 #include <linux/interrupt.h>
-#include <linux/platform_device.h>
 #include <media/v4l2-device.h>
-
 #include <asm/io.h>
 #include <asm/memory.h>
 #include <plat/clock.h>
@@ -41,14 +39,12 @@
 
 static struct fimc_global *fimc_dev;
 
-struct s3c_platform_fimc *to_fimc_plat(struct device *dev)
+inline struct fimc_global *get_fimc_dev(void)
 {
-	struct platform_device *pdev = to_platform_device(dev);
-
-	return (struct s3c_platform_fimc *) pdev->dev.platform_data;
+	return fimc_dev;
 }
 
-inline struct fimc_control *get_fimc(int id)
+inline struct fimc_control *get_fimc_ctrl(int id)
 {
 	return &fimc_dev->ctrl[id];
 }
@@ -70,7 +66,7 @@ void fimc_unregister_camera(struct s3c_platform_camera *cam)
 	int i;
 
 	for (i = 0; i < FIMC_DEVICES; i++) {
-		ctrl = get_fimc(i);
+		ctrl = get_fimc_ctrl(i);
 		if (ctrl->cam == cam)
 			ctrl->cam = NULL;
 	}
@@ -103,7 +99,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 
 	pdata = to_fimc_plat(&pdev->dev);
 
-	ctrl = get_fimc(id);
+	ctrl = get_fimc_ctrl(id);
 	ctrl->id = id;
 	ctrl->dev = &pdev->dev;
 	ctrl->vd = &fimc_video_device[id];
@@ -163,7 +159,7 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 	struct fimc_control *ctrl;
 	int id = pdev->id;
 
-	ctrl = get_fimc(id);
+	ctrl = get_fimc_ctrl(id);
 	iounmap(ctrl->regs);
 	memset(ctrl, 0, sizeof(*ctrl));
 
@@ -327,7 +323,7 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 	char *name;
 
 	pdata = to_fimc_plat(&pdev->dev);
-	ctrl = get_fimc(id);
+	ctrl = get_fimc_ctrl(id);
 
 	/* Subdev registration */
 	if (pdata->camera[id]) {
@@ -372,15 +368,8 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 				__FUNCTION__);
 		}
 
-		/* Assign probed subdev pointer to fimc */
-		fimc_dev->sd[pdata->camera[id]->id] = sd;
-
 		/* Assign camera device to fimc */
 		fimc_dev->camera[pdata->camera[id]->id] = pdata->camera[id];
-
-		/* Assign subdev to proper camera device pointer */
-		fimc_dev->camera[pdata->camera[id]->id]->sd = \
-					fimc_dev->sd[pdata->camera[id]->id];
 	}
 
 	return 0;
