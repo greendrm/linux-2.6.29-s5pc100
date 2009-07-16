@@ -59,13 +59,15 @@ static void s5p6442_idle(void)
 
 	/* Ensure our idle mode is to go to idle */
 	/* Set WFI instruction to SLEEP mode */
-#if 0
+	
+#if 0	// FPGA6442
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= ~(0x3<<5);
 	tmp |= (0x1<<5);
 	__raw_writel(tmp, S5P_PWR_CFG);
-#endif
+#endif	
 	cpu_do_idle();
+
 }
 
 /* s5p6442_map_io
