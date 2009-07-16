@@ -234,7 +234,6 @@ struct fimc_control {
 struct fimc_global {
 	struct fimc_control 		ctrl[FIMC_DEVICES];
 	struct s3c_platform_camera	*camera[FIMC_MAXCAMS];
-	struct v4l2_subdev		*sd[FIMC_SUBDEVS];
 	struct clk			*mclk;
 	int				initialized;
 };

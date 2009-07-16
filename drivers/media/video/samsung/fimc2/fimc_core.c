@@ -359,15 +359,8 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 				__FUNCTION__);
 		}
 
-		/* Assign probed subdev pointer to fimc */
-		fimc_dev->sd[pdata->camera[id]->id] = sd;
-
 		/* Assign camera device to fimc */
 		fimc_dev->camera[pdata->camera[id]->id] = pdata->camera[id];
-
-		/* Assign subdev to proper camera device pointer */
-		fimc_dev->camera[pdata->camera[id]->id]->sd = \
-					fimc_dev->sd[pdata->camera[id]->id];
 	}
 
 	return 0;
