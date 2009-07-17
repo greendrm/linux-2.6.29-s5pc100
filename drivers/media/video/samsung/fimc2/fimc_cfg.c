@@ -21,7 +21,7 @@
 
 #include "fimc.h"
 
-int fimc_set_rot(struct fimc_control *ctrl, int degree)
+int fimc_set_rot_degree(struct fimc_control *ctrl, int degree)
 {
 	switch (degree) {
 	case 0:		/* fall through */
@@ -161,7 +161,7 @@ int fimc_set_param(struct fimc_control *ctrl)
 		return -EBUSY;
 	}
 
-	fimc_set_int_enable(ctrl, TRUE);
+	fimc_set_int_enable(ctrl, 1);
 
 	ret = fimc_set_format(ctrl);
 	if (ret < 0)
@@ -172,19 +172,19 @@ int fimc_set_param(struct fimc_control *ctrl)
 		return -EINVAL;
 
 	ret = fimc_set_rot(ctrl);
-	if (ret < 0) {
+	if (ret < 0)
 		return -EINVAL;
 
 	ret = fimc_set_src_crop(ctrl);
-	if (ret < 0) {
+	if (ret < 0)
 		return -EINVAL;
 
 	ret = fimc_set_dst_crop(ctrl);
-	if (ret < 0) {
+	if (ret < 0)
 		return -EINVAL;
 
 	ret = fimc_set_scaler(ctrl);
-	if (ret < 0) {
+	if (ret < 0)
 		return -EINVAL;
 
 	return 0;
@@ -701,5 +701,4 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 
 	return 0;
 }
-
 

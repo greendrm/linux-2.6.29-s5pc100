@@ -147,7 +147,7 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 
 	switch (c->id) {
 	case V4L2_CID_ROTATION:
-		ret = fimc_set_rot(ctrl, c->value);
+		ret = fimc_set_rot_degree(ctrl, c->value);
 		break;
 
 	default:
@@ -354,6 +354,8 @@ int fimc_streamoff_output(void *fh)
 int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	dma_addr_t base = 0;
+	unsigned int		index = 0;
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
@@ -395,15 +397,16 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 			return -1;
 		}
 
-		fimc_set_src_addr(ctrl, dma_addr_t base);
+		base = ctrl->out->buf[index].base;
+		fimc_set_src_addr(ctrl, base);
 
 		if (ctrl->out->fbuf.base != 0) {
-			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 0);
-			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 1);
-			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 2);
-			fimc_set_dst_addr(ctrl, ctrl->out->fbuf.base, 3);
+			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 0);
+			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 1);
+			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 2);
+			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 3);
 		} else {
-			openfifo
+			//openfifo
 		}
 		
 		ret = fimc_start_camif(ctrl);
@@ -411,7 +414,7 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 			dev_err(ctrl->dev, "Failed : s3c_rp_pp_start().\n");
 			return -1;
 		}
-
+#if 0
 		ctrl->stream_status = FIMC_STREAMON;
 	} else if ((ctrl->rot.degree != ROT_0) && (ctrl->rot.status == ROT_IDLE)) {
 		ret =  fimc_detach_in_queue(ctrl, &index);
@@ -425,6 +428,7 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 			dev_err(ctrl->dev, "Failed : s3c_rp_run_rot().\n");
 			return -1;
 		}
+#endif
 	}
 
 	return ret;

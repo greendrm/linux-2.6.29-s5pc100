@@ -307,7 +307,7 @@ extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_forma
 extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
 
 /* Configuration */
-extern int fimc_set_rot(struct fimc_control *ctrl, int degree);
+extern int fimc_set_rot_degree(struct fimc_control *ctrl, int degree);
 extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
 extern int fimc_init_out_buf(struct fimc_control *ctrl);
 extern int fimc_check_param(struct fimc_control *ctrl);
@@ -328,6 +328,9 @@ extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
 extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
+extern int fimc_init_in_queue(struct fimc_control *ctrl);
+extern int fimc_init_out_queue(struct fimc_control *ctrl);
+
 
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);
