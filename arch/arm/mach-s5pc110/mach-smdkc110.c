@@ -194,7 +194,7 @@ static int smdkc110_reset_lcd(struct platform_device *pdev)
 }
 
 static struct s3c_platform_fb fb_data __initdata = {
-	.hw_ver	= 0x50,
+	.hw_ver	= 0x60,
 	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
