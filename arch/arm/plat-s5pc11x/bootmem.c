@@ -66,8 +66,7 @@ static struct s3c_media_device media_devs[] = {
 		.id = S3C_MDEV_MFC,
 		.name = "mfc",
 		.node = 0,
-		//.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC0 * SZ_1K,
-		.memsize = 10240 * SZ_1K,
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC0 * SZ_1K,		
 		.paddr = 0,
 	},
 #endif
@@ -77,8 +76,7 @@ static struct s3c_media_device media_devs[] = {
 		.id = S3C_MDEV_MFC,
 		.name = "mfc",
 		.node = 1,
-		//.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC1 * SZ_1K,
-		.memsize = 20480 * SZ_1K,
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC1 * SZ_1K,		
 		.paddr = 0,
 	},
 #endif

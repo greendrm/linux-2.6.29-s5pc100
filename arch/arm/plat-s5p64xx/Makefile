@@ -42,5 +42,4 @@ obj-$(CONFIG_SPI_S5P6442)   += dev-spi.o
 
 # Device setup - FIMD
 obj-$(CONFIG_S5P64XX_DEV_FB)	  += dev-fb.o
-obj-$(CONFIG_S5P64XX_SETUP_FB)    += setup-fb.o
 
