@@ -266,7 +266,7 @@ static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
-	s3c24xx_init_clocks(16000000);
+	s3c24xx_init_clocks(10000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
 	s5pc11x_reserve_bootmem();
 }
@@ -309,11 +309,11 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 					struct meminfo *mi)
 {
 	mi->bank[0].start = 0x30000000;
-#ifdef CONFIG_VIDEO_MFC50
-	mi->bank[0].size = 80 * SZ_1M;
-#else
+//#ifdef CONFIG_VIDEO_MFC50
+//	mi->bank[0].size = 80 * SZ_1M;
+//#else
 	mi->bank[0].size = 128 * SZ_1M;
-#endif
+//#endif
 	mi->bank[0].node = 0;
 
 	mi->bank[1].start = 0x40000000;
