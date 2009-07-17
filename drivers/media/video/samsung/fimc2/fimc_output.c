@@ -24,7 +24,6 @@
 int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	u32 i;
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
@@ -52,34 +51,22 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 		b->count = FIMC_OUTBUFS;
 	}
 
-	/* Initialize all buffers */
+	/* Validation check & Initialize all buffers */
 	ret = fimc_check_out_buf(ctrl, b->count);
-	if (ret) {
-		dev_err(ctrl->dev, "Reserved memory is not sufficient.\n");
-		return -EINVAL;
-	}
+	if (ret)
+		return ret;
 	
 	ret = fimc_init_out_buf(ctrl);
-	if (ret) {
-		dev_err(ctrl->dev, "Cannot initialize the buffers\n");
-		return -ret;
-	}
+	if (ret)
+		return ret;
 
-	if (b->count != 0) {	/* allocate buffers */
+	if (b->count != 0)	/* allocate buffers */
 		ctrl->out->is_requested = 1;
-		
-		for(i = 0; i < b->count; i++)
-			ctrl->out->buf[i].state = VIDEOBUF_IDLE;
-	} else {
-		/* Fall through : All buffers are initialized.  */
-	}
 
 	ctrl->out->buf_num = b->count;
 
 	return 0;
 }
-
-
 
 int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 {
@@ -93,7 +80,6 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 		return -EBUSY;
 	}
 
-	/* To do : V4L2_MEMORY_USERPTR */
 	if (b->memory != V4L2_MEMORY_MMAP) {
 		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
 		return -EINVAL;
@@ -162,7 +148,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	u32 pixelformat = ctrl->out->pix.pixelformat;
-	u32 rot_degree = ctrl->out->rotate;
+	u32 is_rotate = 0;
 	u32 max_w = 0, max_h = 0;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
@@ -172,15 +158,16 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 		return -EBUSY;
 	}
 
+	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
 		max_w	= FIMC_SRC_MAX_W;
 		max_h	= FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if ((rot_degree == 90) || (rot_degree == 270)) {	/* Landscape */
+		if (is_rotate && 0x10) {		/* Landscape mode */
 			max_w	= ctrl->fb.lcd->height;
 			max_h	= ctrl->fb.lcd->width;
-		} else {						/* Portrait */
+		} else {				/* Portrait */
 			max_w	= ctrl->fb.lcd->width;
 			max_h	= ctrl->fb.lcd->height;
 		}
@@ -204,8 +191,8 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 
 	/* crop pixel aspec values */
 	/* To Do : Have to modify but I don't know the meaning. */
-	ctrl->cropcap.pixelaspect.numerator	= 5;
-	ctrl->cropcap.pixelaspect.denominator	= 3;
+	ctrl->cropcap.pixelaspect.numerator	= 16;
+	ctrl->cropcap.pixelaspect.denominator	= 9;
 
 	a->bounds	= ctrl->cropcap.bounds;
 	a->defrect	= ctrl->cropcap.defrect;
@@ -219,6 +206,7 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	u32 pixelformat = ctrl->out->pix.pixelformat;
 	u32 max_w = 0, max_h = 0;	
+	u32 is_rotate = 0;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -233,15 +221,16 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 
+	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
 		max_w	= FIMC_SRC_MAX_W;
 		max_h	= FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if ((ctrl->out->rotate == 90) || (ctrl->out->rotate == 270)) {
+		if (is_rotate && 0x10) {		/* Landscape mode */
 			max_w	= ctrl->fb.lcd->height;
 			max_h	= ctrl->fb.lcd->width;
-		} else {
+		} else {				/* Portrait */
 			max_w	= ctrl->fb.lcd->width;
 			max_h	= ctrl->fb.lcd->height;
 		}	
@@ -437,11 +426,33 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
+	int index = -1, ret = -1;
 
-	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+	ret = fimc_detach_out_queue(ctrl, &index);
+	if (ret < 0) {
+		ret = wait_event_interruptible_timeout(ctrl->wq, \
+			(ctrl->out->out_queue[0] != -1), FIMC_DQUEUE_TIMEOUT);
+		if (ret == 0) {
+			dev_err(ctrl->dev, "[0] out_queue is empty.\n");
+			return -EINVAL;
+		} else if (ret == -ERESTARTSYS) {
+			dev_err(ctrl->dev, "Signal is happened.\n");
+		} else {
+			/* Normal case */
+			ret = fimc_detach_out_queue(ctrl, &index);
+			if (ret < 0) {
+				dev_err(ctrl->dev, "[1] out_queue is empty.\n");
+				fimc_dump_context(ctrl);
+				return -EINVAL;
+			}
+		}
+	}
 
-	return ret;
+	b->index = index;
+
+	dev_info(ctrl->dev, "[%s] dqueued idx = %d\n", __FUNCTION__, b->index);
+
+	return 0;
 }
 
 int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
@@ -450,6 +461,62 @@ int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	f->fmt.pix = ctrl->out->pix;
+
+	return ret;
+}
+
+int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
+{
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	u32 format = f->fmt.pix.pixelformat;
+	int ret = 0;
+
+	dev_info(ctrl->dev, "[%s] called. width(%d), height(%d)\n", \
+			__FUNCTION__, f->fmt.pix.width, f->fmt.pix.height);
+
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
+
+	/* Check pixel format */
+	if ((format != V4L2_PIX_FMT_NV12) && (format != V4L2_PIX_FMT_RGB32) \
+		&& (format != V4L2_PIX_FMT_RGB565)) {
+		dev_warn(ctrl->dev, "Supported format : V4L2_PIX_FMT_NV12 and \
+				V4L2_PIX_FMT_RGB32 and V4L2_PIX_FMT_RGB565.\n");
+		dev_warn(ctrl->dev, "Changed format : V4L2_PIX_FMT_NV12.\n");
+		f->fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
+		ret = -EINVAL;
+	}
+
+	if (format == V4L2_PIX_FMT_NV12) {
+		if (f->fmt.pix.width > FIMC_SRC_MAX_W) {
+			dev_warn(ctrl->dev, "The width is changed %d -> %d.\n", \
+				f->fmt.pix.width, FIMC_SRC_MAX_W);
+			f->fmt.pix.width = FIMC_SRC_MAX_W;
+		}
+	} else if ((format == V4L2_PIX_FMT_RGB32) || (format == V4L2_PIX_FMT_RGB565)) {
+		/* fall through : We cannot check max size. */
+		/* Because rotation will be called after VIDIOC_S_FMT. */
+	}
+
+
+	/* Fill the return value. */
+	if (format == V4L2_PIX_FMT_NV12) {
+		f->fmt.pix.bytesperline	= (f->fmt.pix.width * 3)>>1;
+	} else if (format == V4L2_PIX_FMT_RGB32) {
+		f->fmt.pix.bytesperline	= f->fmt.pix.width<<2;
+	} else if (format == V4L2_PIX_FMT_RGB565) {
+		f->fmt.pix.bytesperline	= f->fmt.pix.width<<1;
+	} else {
+		/* dummy value*/
+		f->fmt.pix.bytesperline	= f->fmt.pix.width;
+	}
+
+	f->fmt.pix.sizeimage	= f->fmt.pix.bytesperline * f->fmt.pix.height;
+	f->fmt.pix.colorspace	= V4L2_COLORSPACE_SMPTE170M;
 
 	return ret;
 }
@@ -461,59 +528,18 @@ int fimc_s_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
+	/* Check stream status */
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
+
+	ret = fimc_try_fmt_vid_out(filp, fh, f);
+	if (ret < 0)
+		return ret;
+
+	ctrl->out->pix = f->fmt.pix;
+
 	return ret;
-}
-
-int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
-{
-	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
-
-	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	return ret;
-}
-
-
-int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
-{
-	struct fimc_control *ctrl = (struct fimc_control *) fh;
-
-	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	fb->capability	= ctrl->out->fbuf.capability;
-	fb->flags	= ctrl->out->fbuf.flags;
-	fb->base	= ctrl->out->fbuf.base;
-
-	fb->fmt.width		= ctrl->out->fbuf.fmt.width;
-	fb->fmt.height		= ctrl->out->fbuf.fmt.height;
-	fb->fmt.pixelformat	= ctrl->out->fbuf.fmt.pixelformat;
-	fb->fmt.bytesperline	= ctrl->out->fbuf.fmt.bytesperline;
-	fb->fmt.sizeimage	= ctrl->out->fbuf.fmt.sizeimage;
-	fb->fmt.colorspace	= ctrl->out->fbuf.fmt.colorspace;
-	fb->fmt.priv		= ctrl->out->fbuf.fmt.priv;
-
-	return 0;
-}
-
-int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
-{
-	struct fimc_control *ctrl = (struct fimc_control *) fh;
-
-	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	ctrl->out->fbuf.capability	= fb->capability;
-	ctrl->out->fbuf.flags		= fb->flags;
-	ctrl->out->fbuf.base		= fb->base;
-
-	ctrl->out->fbuf.fmt.width		= fb->fmt.width;
-	ctrl->out->fbuf.fmt.height		= fb->fmt.height;
-	ctrl->out->fbuf.fmt.pixelformat		= fb->fmt.pixelformat;
-	ctrl->out->fbuf.fmt.bytesperline	= fb->fmt.bytesperline;
-	ctrl->out->fbuf.fmt.sizeimage		= fb->fmt.sizeimage;
-	ctrl->out->fbuf.fmt.colorspace		= V4L2_COLORSPACE_SMPTE170M;
-	ctrl->out->fbuf.fmt.priv		= fb->fmt.priv;
-
-	return 0;
 }
 
