@@ -198,7 +198,8 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 	return 0;
 }
 
-int fimc_enum_fmt_vid_capture(struct file *file, void *fh, struct v4l2_fmtdesc *f)
+int fimc_enum_fmt_vid_capture(struct file *file, void *fh, 
+					struct v4l2_fmtdesc *f)
 {
 	struct fimc_control *ctrl = file->private_data;
 	int i = f->index;
