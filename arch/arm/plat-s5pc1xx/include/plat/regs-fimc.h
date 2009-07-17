@@ -231,6 +231,8 @@
 #define S3C_CISCCTRL_EXTRGB_NORMAL		(0 << 10)
 #define S3C_CISCCTRL_EXTRGB_EXTENSION		(1 << 10)
 #define S3C_CISCCTRL_ONE2ONE			(1 << 9)
+#define S3C_CISCCTRL_MAIN_V_RATIO_MASK		(0x1ff << 0)
+#define S3C_CISCCTRL_MAIN_H_RATIO_MASK		(0x1ff << 16)
 
 /* Status register */
 #define S3C_CISTATUS_OVFIY			(1 << 31)

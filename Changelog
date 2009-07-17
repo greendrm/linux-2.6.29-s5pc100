@@ -1041,4 +1041,12 @@ v2.6.29.4-r3d14: Jae-Cheol Lee
 		M	arch/arm/plat-s3c/Makefile
 		M	arch/arm/plat-s5p64xx/include/plat/irqs.h
 		M	arch/arm/plat-s5p64xx/irq-eint.c
-	
+
+v2.6.29.4-r3d15: Jinsung Yang
+	- Change system memory configurations for smdkc110 fpga
+
+	Modified files:
+		M	arch/arm/mach-s5pc110/include/mach/map.h
+		M	arch/arm/mach-s5pc110/include/mach/memory.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+
