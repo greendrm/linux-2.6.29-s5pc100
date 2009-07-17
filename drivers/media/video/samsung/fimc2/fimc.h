@@ -44,6 +44,9 @@
 
 #define FIMC_ONESHOT_TIMEOUT	200
 
+#define FORMAT_FLAGS_PACKED	0x1
+#define FORMAT_FLAGS_PLANAR	0x2
+
 /*
  * V 4 L 2   F I M C   E X T E N S I O N S
  *
@@ -241,7 +244,6 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
-	struct v4l2_subdev		*sd;		/* active subdev */
 	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
@@ -273,6 +275,13 @@ extern struct video_device fimc_video_device[];
 extern void fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
+extern int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp);
+extern int fimc_g_input(struct file *file, void *fh, unsigned int *i);
+extern int fimc_s_input(struct file *file, void *fh, unsigned int i);
+extern int fimc_enum_fmt_vid_capture(struct file *file, void *fh, struct v4l2_fmtdesc *f);
+extern int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f);
+extern int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f);
+extern int fimc_try_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f);
 extern int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
@@ -330,7 +339,6 @@ extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
 extern int fimc_init_in_queue(struct fimc_control *ctrl);
 extern int fimc_init_out_queue(struct fimc_control *ctrl);
-
 
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);

@@ -519,7 +519,6 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.clk_rate	= 133000000,
 	.mclk_name	= "sclk_cam",
 	.default_cam	= CAMERA_PAR_A,
-
 	.camera		= { 
 		&camera_a, 
 		&camera_c,

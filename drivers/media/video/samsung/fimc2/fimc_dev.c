@@ -229,6 +229,12 @@ static int fimc_release(struct file *filp)
 	if (ctrl->cam && fimc_dev->camera[ctrl->cam->id]->cam_power)
 		fimc_dev->camera[ctrl->cam->id]->cam_power(0);
 
+	if (ctrl->cap)
+		kfree(ctrl->cap);
+
+	if (ctrl->out)
+		kfree(ctrl->out);
+
 	mutex_unlock(&ctrl->lock);
 	
 	printk(KERN_INFO "successfully released\n");
@@ -360,6 +366,9 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 
 		/* Assign camera device to fimc */
 		fimc_dev->camera[pdata->camera[id]->id] = pdata->camera[id];
+
+		/* Assign subdev to proper camera device pointer */
+		fimc_dev->camera[pdata->camera[id]->id]->sd = sd;
 	}
 
 	return 0;
