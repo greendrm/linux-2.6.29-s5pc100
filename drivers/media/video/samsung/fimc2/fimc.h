@@ -265,6 +265,7 @@ struct fimc_global {
 	int				initialized;
 };
 
+
 /*
  * E X T E R N S
  *
@@ -367,6 +368,7 @@ extern void fimc_enable_input_dma(struct fimc_control *ctrl);
 extern void fimc_stop_scaler(struct fimc_control *ctrl);
 extern void fimc_disable_capture(struct fimc_control *ctrl);
 extern void fimc_disable_input_dma(struct fimc_control *ctrl);
+
 
 /*
  * D R I V E R  H E L P E R S
