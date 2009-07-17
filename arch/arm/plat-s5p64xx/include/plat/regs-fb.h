@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5p64XX/include/plat/regs-fb.h
+/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-fb.h
  *
  * Register definition file for Samsung Display Controller (FIMD) driver
  *
@@ -333,11 +333,13 @@
 #define S3C_VIDINTCON0_FIFOSEL_WIN1		(1 << 6)
 #define S3C_VIDINTCON0_FIFOSEL_WIN0		(1 << 5)
 #define S3C_VIDINTCON0_FIFOSEL_ALL		(0x73 << 5)
+#define S3C_VIDINTCON0_FIFOSEL_MASK		(0x73 << 5)
 #define S3C_VIDINTCON0_FIFOLEVEL_25		(0 << 2)
 #define S3C_VIDINTCON0_FIFOLEVEL_50		(1 << 2)
 #define S3C_VIDINTCON0_FIFOLEVEL_75		(2 << 2)
 #define S3C_VIDINTCON0_FIFOLEVEL_EMPTY 		(3 << 2)
 #define S3C_VIDINTCON0_FIFOLEVEL_FULL		(4 << 2)
+#define S3C_VIDINTCON0_FIFOLEVEL_MASK		(7 << 2)
 #define S3C_VIDINTCON0_INTFIFO_DISABLE		(0 << 1)
 #define S3C_VIDINTCON0_INTFIFO_ENABLE		(1 << 1)
 #define S3C_VIDINTCON0_INT_DISABLE		(0 << 0)

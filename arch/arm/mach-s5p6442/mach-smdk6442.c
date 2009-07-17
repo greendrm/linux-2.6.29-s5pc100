@@ -304,12 +304,96 @@ static struct s3c2410_uartcfg smdk6442_uartcfgs[] __initdata = {
 	},
 };
 
+#ifdef CONFIG_FB_S3C
+static void smdk6442_cfg_gpio(struct platform_device *pdev)
+{
+	void __iomem *syscon;
+	int i;
+
+	syscon = ioremap(S5P64XX_PA_SYSCON, SZ_128K);
+	writel(0x10, syscon + 0x7008);
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_setpull(S5P64XX_GPF0(i), S3C_GPIO_PULL_NONE);
+		s3c_gpio_cfgpin(S5P64XX_GPF0(i), S3C_GPIO_SFN(2));
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_setpull(S5P64XX_GPF1(i), S3C_GPIO_PULL_NONE);
+		s3c_gpio_cfgpin(S5P64XX_GPF1(i), S3C_GPIO_SFN(2));
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_setpull(S5P64XX_GPF2(i), S3C_GPIO_PULL_NONE);
+		s3c_gpio_cfgpin(S5P64XX_GPF2(i), S3C_GPIO_SFN(2));
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
+		s3c_gpio_cfgpin(S5P64XX_GPF3(i), S3C_GPIO_SFN(2));
+	}
+
+	iounmap(syscon);
+}
+
+static int smdk6442_backlight_on(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5P64XX_GPD0(1), "GPD0");
+	if (err) {
+		printk(KERN_ERR "failed to request GPD0 for "
+			"lcd backlight control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5P64XX_GPD0(1), 1);
+	gpio_free(S5P64XX_GPD0(1));
+
+	return 0;
+}
+
+static int smdk6442_reset_lcd(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5P64XX_GPH0(6), "GPH0");
+	if (err) {
+		printk(KERN_ERR "failed to request GPH0 for "
+			"lcd reset control\n");
+		return err;
+	}
+
+	s3c_gpio_setpull(S5P64XX_GPH0(6), S3C_GPIO_PULL_NONE);
+
+	gpio_direction_output(S5P64XX_GPH0(6), 0);
+	mdelay(100);
+
+	gpio_set_value(S5P64XX_GPH0(6), 1);
+	mdelay(10);
+
+	gpio_free(S5P64XX_GPH0(6));
+
+	return 0;
+}
+
+static struct s3c_platform_fb fb_data __initdata = {
+	.hw_ver	= 0x60,
+	.clk_name = "lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
+	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
+
+	.cfg_gpio = smdk6442_cfg_gpio,
+	.backlight_on = smdk6442_backlight_on,
+	.reset_lcd = smdk6442_reset_lcd,
+};
+#endif
+
 struct map_desc smdk6442_iodesc[] = {};
 
 static struct platform_device *smdk6442_devices[] __initdata = {
-#ifdef CONFIG_FB_S3C_V2
 	&s3c_device_fb,
-#endif
 	&s3c_device_wdt,
 	&s3c_device_rtc,
 	&s3c_device_i2c0,
@@ -431,10 +515,8 @@ static void __init smdk6442_machine_init(void)
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 
-/* fb */
-#ifdef CONFIG_FB_S3C_V2
-	s3cfb_set_platdata(NULL);
-#endif
+	/* fb */
+	s3cfb_set_platdata(&fb_data);
 
 	platform_add_devices(smdk6442_devices, ARRAY_SIZE(smdk6442_devices));
 
