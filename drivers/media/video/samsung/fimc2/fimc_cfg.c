@@ -58,18 +58,20 @@ int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 		total_size	= rgb_size * num;
 
 	} else {
-		dev_err(ctrl->dev, "[%s] Invalid buff num : %d\n", 
-				__FUNCTION__, num);
+		dev_err(ctrl->dev, "[%s] Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixfmt);
 		ret = -EINVAL;
 	}
 
-	if (total_size > ctrl->mem.len)
+	if (total_size > ctrl->mem.len) {
+		dev_err(ctrl->dev, "Reserved memory is not sufficient.\n");
 		ret = -EINVAL;
+	}
 
 	return ret;
 }
 
-static void fimc_set_out_addr(struct fimc_control *ctrl, u32 buf_size)
+static void fimc_set_buff_addr(struct fimc_control *ctrl, u32 buf_size)
 {
 	u32 base = ctrl->mem.base;	
 	u32 i;
@@ -105,7 +107,7 @@ int fimc_init_out_buf(struct fimc_control *ctrl)
 		return -EINVAL;
 	}
 
-	fimc_set_out_addr(ctrl, total_size);
+	fimc_set_buff_addr(ctrl, total_size);
 	ctrl->out->is_requested	= 0;
 
 	return 0;
@@ -700,5 +702,23 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 	}
 
 	return 0;
+}
+
+void fimc_dump_context(struct fimc_control *ctrl)
+{
+	u32 i = 0;
+
+	for (i = 0; i < FIMC_OUTBUFS; i++) {
+		dev_err(ctrl->dev, "in_queue[%d] : %d\n", i, \
+				ctrl->out->in_queue[i]);
+	}
+
+	for (i = 0; i < FIMC_OUTBUFS; i++) {
+		dev_err(ctrl->dev, "out_queue[%d] : %d\n", i, \
+				ctrl->out->out_queue[i]);
+	}
+	
+	dev_err(ctrl->dev, "state : prev = %d, active = %d, next = %d\n", \
+		ctrl->out->idx.prev, ctrl->out->idx.active, ctrl->out->idx.next);
 }
 
