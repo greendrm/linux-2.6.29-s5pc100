@@ -309,11 +309,7 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 					struct meminfo *mi)
 {
 	mi->bank[0].start = 0x30000000;
-//#ifdef CONFIG_VIDEO_MFC50
-//	mi->bank[0].size = 80 * SZ_1M;
-//#else
 	mi->bank[0].size = 128 * SZ_1M;
-//#endif
 	mi->bank[0].node = 0;
 
 	mi->bank[1].start = 0x40000000;
