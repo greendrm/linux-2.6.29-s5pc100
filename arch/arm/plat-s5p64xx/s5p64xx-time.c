@@ -181,7 +181,7 @@ static irqreturn_t s5p64xx_timer_interrupt(int irq, void *dev_id)
 }
 
 static struct irqaction s5p64xx_timer_irq = {
-	.name		= "S5PC11X System Timer",
+	.name		= "S5P64XX System Timer",
 	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
 	.handler	= s5p64xx_timer_interrupt,
 };
