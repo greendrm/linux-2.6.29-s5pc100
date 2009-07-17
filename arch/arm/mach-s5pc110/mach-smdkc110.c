@@ -268,7 +268,7 @@ static void __init smdkc110_map_io(void)
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
 	s3c24xx_init_clocks(16000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
-//	s5pc11x_reserve_bootmem();
+	s5pc11x_reserve_bootmem();
 }
 
 static void __init smdkc110_smc911x_set(void)
