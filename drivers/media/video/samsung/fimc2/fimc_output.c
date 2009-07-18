@@ -71,7 +71,6 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -96,7 +95,7 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	b->m.offset	= b->index * PAGE_SIZE;
  	b->length	= ctrl->out->buf[b->index].length;
 
-	return ret;
+	return 0;
 }
 
 int fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
@@ -282,7 +281,7 @@ int fimc_streamon_output(void *fh)
 
 	ret = fimc_check_param(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "fimc_check_param failed.\n");
+		dev_err(ctrl->dev, "Fail: fimc_check_param\n");
 		return ret;
 	}
 
@@ -290,7 +289,7 @@ int fimc_streamon_output(void *fh)
 
 	ret = fimc_set_param(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "fimc_set_param failed.\n");
+		dev_err(ctrl->dev, "Fail: fimc_set_param\n");
 		return ret;
 	}
 
@@ -309,19 +308,19 @@ int fimc_streamoff_output(void *fh)
 
 	ret = fimc_stop_streaming(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail : fimc_stop_streaming()\n");
+		dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
 		return -EINVAL;
 	}
 
 	ret = fimc_init_in_queue(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail : fimc_init_in_queue()\n");
+		dev_err(ctrl->dev, "Fail: fimc_init_in_queue\n");
 		return -EINVAL;
 	}
 
 	ret = fimc_init_out_queue(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail : fimc_init_out_queue()\n");
+		dev_err(ctrl->dev, "Fail: fimc_init_out_queue\n");
 		return -EINVAL;
 	}
 
@@ -340,14 +339,83 @@ int fimc_streamoff_output(void *fh)
 	return 0;
 }
 
+static int fimc_qbuf_output_dma(struct fimc_control *ctrl)
+{
+	dma_addr_t base = 0, dst_base = 0;
+	u32 index = 0;
+	int ret = -1;
+	
+	if ((ctrl->status == FIMC_READY_ON) || \
+				(ctrl->status == FIMC_STREAMON_IDLE)) {
+		ret =  fimc_detach_in_queue(ctrl, &index);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail: fimc_detach_in_queue\n");
+			return -1;
+		}
+
+		base = ctrl->out->buf[index].base;
+		fimc_set_src_addr(ctrl, base);
+
+		dst_base = (dma_addr_t)ctrl->out->fbuf.base;
+		fimc_set_dst_addr(ctrl, (dma_addr_t)dst_base, 0);
+		fimc_set_dst_addr(ctrl, (dma_addr_t)dst_base, 1);
+		fimc_set_dst_addr(ctrl, (dma_addr_t)dst_base, 2);
+		fimc_set_dst_addr(ctrl, (dma_addr_t)dst_base, 3);
+
+		ret = fimc_start_camif(ctrl);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail: fimc_start_camif\n");
+			return -1;
+		}
+
+		ctrl->out->idx.active = index;
+		ctrl->status = FIMC_STREAMON;
+	}
+
+	return 0;
+}
+
+static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
+{
+	dma_addr_t base = 0;
+	u32 index = 0;
+	int ret = -1;
+
+	if (ctrl->status == FIMC_READY_ON) {
+		ret =  fimc_detach_in_queue(ctrl, &index);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail: fimc_detach_in_queue\n");
+			return -EINVAL;
+		}
+
+		base = ctrl->out->buf[index].base;
+		fimc_set_src_addr(ctrl, base);
+
+		ret = fimc_start_fifo(ctrl);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Fail: fimc_start_fifo\n");
+			return -EINVAL;
+		}
+
+		ctrl->out->idx.active = index;
+		ctrl->status = FIMC_STREAMON;
+	}
+
+	return 0;	
+}
+
 int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	dma_addr_t base = 0;
-	unsigned int		index = 0;
-	int ret = -1;
+	dma_addr_t dst_base = 0;
+	int	ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
 
 	if (b->memory != V4L2_MEMORY_MMAP ) {
 		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
@@ -363,7 +431,6 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 	}
 
 	/* Check the buffer state if the state is VIDEOBUF_IDLE. */
-	
 	if (ctrl->out->buf[b->index].state != VIDEOBUF_IDLE) {
 		dev_err(ctrl->dev, "The index(%d) buffer must be \
 				dequeued state(%d).\n", b->index, \
@@ -374,51 +441,15 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 	/* Attach the buffer to the incoming queue. */
 	ret =  fimc_attach_in_queue(ctrl, b->index);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Failed :  fimc_attach_in_queue.\n");
+		dev_err(ctrl->dev, "Fail: fimc_attach_in_queue\n");
 		return -EINVAL;
 	}
 
-
-	if (ctrl->status == FIMC_READY_ON) {
-		ret =  fimc_detach_in_queue(ctrl, &index);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "Failed : fimc_detach_in_queue.\n");
-			return -1;
-		}
-
-		base = ctrl->out->buf[index].base;
-		fimc_set_src_addr(ctrl, base);
-
-		if (ctrl->out->fbuf.base != 0) {
-			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 0);
-			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 1);
-			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 2);
-			fimc_set_dst_addr(ctrl, (dma_addr_t)ctrl->out->fbuf.base, 3);
-		} else {
-			//openfifo
-		}
-		
-		ret = fimc_start_camif(ctrl);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "Failed : s3c_rp_pp_start().\n");
-			return -1;
-		}
-#if 0
-		ctrl->stream_status = FIMC_STREAMON;
-	} else if ((ctrl->rot.degree != ROT_0) && (ctrl->rot.status == ROT_IDLE)) {
-		ret =  fimc_detach_in_queue(ctrl, &index);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "Failed :  s3c_rp_detach_in_queue.\n");
-			return -1;
-		}
-		
-		ret = s3c_rp_rot_run(ctrl, index);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "Failed : s3c_rp_run_rot().\n");
-			return -1;
-		}
-#endif
-	}
+	dst_base = (dma_addr_t)ctrl->out->fbuf.base;
+	if (dst_base) 
+		ret = fimc_qbuf_output_dma(ctrl);
+	else 
+		ret = fimc_qbuf_output_fifo(ctrl);
 
 	return ret;
 }
@@ -436,7 +467,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 			dev_err(ctrl->dev, "[0] out_queue is empty.\n");
 			return -EINVAL;
 		} else if (ret == -ERESTARTSYS) {
-			dev_err(ctrl->dev, "Signal is happened.\n");
+			fimc_print_signal(ctrl);
 		} else {
 			/* Normal case */
 			ret = fimc_detach_out_queue(ctrl, &index);
@@ -452,7 +483,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 
 	dev_info(ctrl->dev, "[%s] dqueued idx = %d\n", __FUNCTION__, b->index);
 
-	return 0;
+	return ret;
 }
 
 int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
