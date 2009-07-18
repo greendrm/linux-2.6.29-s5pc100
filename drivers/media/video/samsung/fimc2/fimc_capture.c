@@ -133,9 +133,8 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 int fimc_g_input(struct file *file, void *fh, unsigned int *i)
 {
 	struct fimc_control *ctrl = fh;
-	struct s3c_platform_camera *cam = ctrl->cam;
 
-	*i = (unsigned int) cam->id;
+	*i = (unsigned int) ctrl->cam->id;
 
 	return 0;
 }
@@ -199,6 +198,7 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
 	int i;
 
 	/*
@@ -206,22 +206,22 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	 * released at the file close.
 	 * Anyone has better idea to do this?
 	*/
-	if (!ctrl->cap) {
-		ctrl->cap = kzalloc(sizeof(*ctrl->cap), GFP_KERNEL);
-		if (!ctrl->cap) {
+	if (!cap) {
+		cap = kzalloc(sizeof(*cap), GFP_KERNEL);
+		if (!cap) {
 			dev_err(ctrl->dev, "%s: no memory for " \
 				"capture device info\n", __FUNCTION__);
 			return -ENOMEM;
 		}
 
 		for (i = 0; i < FIMC_CAPBUFS; i++)
-			ctrl->cap->buf[i].state = VIDEOBUF_NEEDS_INIT;
+			cap->buf[i].state = VIDEOBUF_NEEDS_INIT;
 	}
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	memset(&ctrl->cap->fmt, 0, sizeof(ctrl->cap->fmt));
-	memcpy(&ctrl->cap->fmt, &f->fmt.pix, sizeof(ctrl->cap->fmt));
+	memset(&cap->fmt, 0, sizeof(cap->fmt));
+	memcpy(&cap->fmt, &f->fmt.pix, sizeof(cap->fmt));
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
@@ -256,13 +256,13 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	mutex_lock(&ctrl->v4l2_lock);
 
 	/* buffer count correction */
-	if (b->count > 2)
-		b->count = 4;
-	else if (b->count < 1)
-		b->count = 1;
+	if (b->count > 3)
+		b->count = 5;
+	else if (b->count < 2)
+		b->count = 2;
 
 	/* alloc buffers */
-	for (i = 0; i <= b->count; i++) {
+	for (i = 0; i < b->count; i++) {
 		cap->buf[i].base = fimc_dma_alloc(ctrl, cap->fmt.sizeimage);
 		if (!cap->buf[i].base) {
 			dev_err(ctrl->dev, "%s: no memory for " \
@@ -279,7 +279,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	return 0;
 
 err_alloc:
-	for (i = 0; i <= b->count; i++) {
+	for (i = 0; i < b->count; i++) {
 		if (cap->buf[i].base)
 			fimc_dma_free(ctrl, cap->fmt.sizeimage);
 
@@ -291,6 +291,25 @@ err_alloc:
 
 int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = fh;
+
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "fimc is running\n");
+		return -EBUSY;
+	}
+
+	if (b->memory != V4L2_MEMORY_MMAP) {
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	b->length = ctrl->cap->fmt.sizeimage;
+	b->m.offset = b->index * PAGE_SIZE;
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
 	return 0;
 }
 
@@ -326,11 +345,37 @@ int fimc_streamoff_capture(void *fh)
 
 int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = fh;
+
+	if (b->memory != V4L2_MEMORY_MMAP) {
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	ctrl->cap->buf[b->index].state = VIDEOBUF_QUEUED;
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
 	return 0;
 }
 
 int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 {
+	struct fimc_control *ctrl = fh;
+
+	if (b->memory != V4L2_MEMORY_MMAP) {
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* TODO */
+
+	mutex_unlock(&ctrl->v4l2_lock);
+	
 	return 0;
 }
 
