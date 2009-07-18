@@ -16,13 +16,17 @@
 
 #include <linux/types.h>
 
-#define S3C_MDEV_FIMC		0
-#define S3C_MDEV_POST		1
-#define S3C_MDEV_TV		2
-#define S3C_MDEV_MFC		3
-#define S3C_MDEV_JPEG		4
-#define S3C_MDEV_CMM		5
-#define S3C_MDEV_MAX		6
+/* 3 fimc indexes should be fixed as 0, 1 and 2 */
+#define S3C_MDEV_FIMC		0	/* jsgood: temp */
+#define S3C_MDEV_FIMC0		0
+#define S3C_MDEV_FIMC1		1
+#define S3C_MDEV_FIMC2		2
+#define S3C_MDEV_POST		3
+#define S3C_MDEV_TV		4
+#define S3C_MDEV_MFC		5
+#define S3C_MDEV_JPEG		6
+#define S3C_MDEV_CMM		7
+#define S3C_MDEV_MAX		8
 
 struct s3c_media_device {
 	int		id;

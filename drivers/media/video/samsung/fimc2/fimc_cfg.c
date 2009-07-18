@@ -23,6 +23,34 @@
 
 #include "fimc.h"
 
+dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes)
+{
+	dma_addr_t end, addr, *curr;
+
+	mutex_lock(&ctrl->lock);
+
+	end = ctrl->mem.base + ctrl->mem.size;
+	curr = &ctrl->mem.curr;
+
+	if (*curr + bytes > end) {
+		addr = 0;
+	} else {
+		addr = *curr;
+		*curr += bytes;
+	}
+
+	mutex_unlock(&ctrl->lock);
+
+	return addr;
+}
+
+void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
+{
+	mutex_lock(&ctrl->lock);
+	ctrl->mem.curr -= bytes;
+	mutex_unlock(&ctrl->lock);
+}
+
 int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -61,6 +89,7 @@ int fimc_init_camera(struct fimc_control *ctrl)
 		return ret;
 	}
 
+	ctrl->cam->initialized = 1;
 	fimc_set_active_camera(ctrl, ctrl->cam->id);
 
 	return 0;
@@ -118,7 +147,7 @@ int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 		ret = -EINVAL;
 	}
 
-	if (total_size > ctrl->mem.len) {
+	if (total_size > ctrl->mem.size) {
 		dev_err(ctrl->dev, "Reserved memory is not sufficient.\n");
 		ret = -EINVAL;
 	}

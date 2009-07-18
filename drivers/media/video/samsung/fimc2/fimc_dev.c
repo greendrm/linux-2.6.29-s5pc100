@@ -50,8 +50,10 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
 	struct resource *res;
-	int id = pdev->id, irq;
+	int id, mdev_id, irq;
 
+	id = pdev->id;
+	mdev_id = S3C_MDEV_FIMC0 + id;
 	pdata = to_fimc_plat(&pdev->dev);
 
 	ctrl = get_fimc_ctrl(id);
@@ -59,8 +61,8 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	ctrl->dev = &pdev->dev;
 	ctrl->vd = &fimc_video_device[id];
 	ctrl->vd->minor = id;
-	ctrl->mem.base = s3c_get_media_memory(S3C_MDEV_FIMC);
-	ctrl->mem.len = s3c_get_media_memsize(S3C_MDEV_FIMC);
+	ctrl->mem.base = s3c_get_media_memory(mdev_id);
+	ctrl->mem.size = s3c_get_media_memsize(mdev_id);
 	ctrl->mem.curr = ctrl->mem.base;
 	ctrl->status = FIMC_STREAMOFF;
 

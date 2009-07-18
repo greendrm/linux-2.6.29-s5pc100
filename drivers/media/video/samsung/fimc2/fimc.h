@@ -34,6 +34,7 @@
 #define FIMC_SUBDEVS		3
 #define FIMC_MAXCAMS		4
 #define FIMC_PHYBUFS		4
+#define FIMC_CAPBUFS		(FIMC_PHYBUFS + 1)
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
 #define FIMC_OUTQ_BUFS		3
@@ -125,16 +126,25 @@ enum fimc_autoload {
 /* for reserved memory */
 struct fimc_meminfo {
 	dma_addr_t	base;		/* buffer base */
-	size_t		len;		/* total length */
+	size_t		size;		/* total length */
 	dma_addr_t	curr;		/* current addr */
+};
+
+/* general buffer */
+struct fimc_buf_set {
+	dma_addr_t		base;
+	size_t			length;
+	enum videobuf_state	state;
+	u32			flags;
+	atomic_t		mapped_cnt;
 };
 
 /* for capture device */
 struct fimc_capinfo {
 	struct v4l2_crop	crop;
 	struct v4l2_pix_format	fmt;
-	dma_addr_t		base[FIMC_PHYBUFS];
-
+	struct fimc_buf_set	buf[FIMC_CAPBUFS];
+	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
 	u32			rotate;
@@ -145,14 +155,6 @@ struct fimc_buf_idx {
 	int	prev;
 	int	active;
 	int	next;
-};
-
-struct fimc_buf_set {
-	dma_addr_t		base;
-	size_t			length;
-	enum videobuf_state	state;
-	u32			flags;
-	atomic_t		mapped_cnt;
 };
 
 struct fimc_outinfo {
@@ -271,6 +273,10 @@ struct fimc_global {
 */
 extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
+
+/* general */
+extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
+extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
 
 /* camera */
 extern int fimc_init_camera(struct fimc_control *ctrl);
