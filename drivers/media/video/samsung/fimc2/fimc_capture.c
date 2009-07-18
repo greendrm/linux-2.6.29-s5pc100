@@ -107,48 +107,10 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-static int fimc_init_camera(struct fimc_control *ctrl)
-{
-	struct fimc_global *fimc = get_fimc_dev();
-	struct s3c_platform_fimc *pdata;
-	int ret;
-
-	pdata = to_fimc_plat(ctrl->dev);
-	if (pdata->default_cam >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
-	if (!fimc->camera[pdata->default_cam]) {
-		dev_err(ctrl->dev, "no external camera device\n");
-		return -ENODEV;
-	}
-
-	if (!ctrl->cam)
-		ctrl->cam = fimc->camera[pdata->default_cam];
-
-	clk_set_rate(fimc->mclk, ctrl->cam->clk_rate);
-	clk_enable(fimc->mclk);
-
-	if (ctrl->cam->cam_power)
-		ctrl->cam->cam_power(1);
-
-//	fimc_set_active_camera(ctrl, ctrl->cam->id);
-
-	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
-	if (ret == -ENOIOCTLCMD) {
-		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
-			__FUNCTION__);
-		return ret;
-	}
-
-	return 0;
-}
-
 int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 {
 	struct fimc_global *fimc = get_fimc_dev();
-	struct fimc_control *ctrl = file->private_data;
+	struct fimc_control *ctrl = fh;
 	struct s3c_platform_camera *cam;
 
 	if (inp->index >= FIMC_MAXCAMS) {
@@ -170,7 +132,7 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 
 int fimc_g_input(struct file *file, void *fh, unsigned int *i)
 {
-	struct fimc_control *ctrl = file->private_data;
+	struct fimc_control *ctrl = fh;
 	struct s3c_platform_camera *cam = ctrl->cam;
 
 	*i = (unsigned int) cam->id;
@@ -181,7 +143,7 @@ int fimc_g_input(struct file *file, void *fh, unsigned int *i)
 int fimc_s_input(struct file *file, void *fh, unsigned int i)
 {
 	struct fimc_global *fimc = get_fimc_dev();
-	struct fimc_control *ctrl = file->private_data;
+	struct fimc_control *ctrl = fh;
 
 	if (i >= FIMC_MAXCAMS) {
 		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
@@ -201,13 +163,8 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 int fimc_enum_fmt_vid_capture(struct file *file, void *fh, 
 					struct v4l2_fmtdesc *f)
 {
-	struct fimc_control *ctrl = file->private_data;
+	struct fimc_control *ctrl = fh;
 	int i = f->index;
-
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
 
 	mutex_lock(&ctrl->v4l2_lock);
 
@@ -221,12 +178,7 @@ int fimc_enum_fmt_vid_capture(struct file *file, void *fh,
 
 int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
-	struct fimc_control *ctrl = file->private_data;
-
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
+	struct fimc_control *ctrl = fh;
 
 	if (!ctrl->cap) {
 		dev_err(ctrl->dev, "%s: no capture device info\n", \
@@ -246,13 +198,14 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 
 int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
-	struct fimc_control *ctrl = file->private_data;
+	struct fimc_control *ctrl = fh;
+	int i;
 
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
+	/*
+	 * The first time alloc for struct cap_info, and will be
+	 * released at the file close.
+	 * Anyone has better idea to do this?
+	*/
 	if (!ctrl->cap) {
 		ctrl->cap = kzalloc(sizeof(*ctrl->cap), GFP_KERNEL);
 		if (!ctrl->cap) {
@@ -260,6 +213,9 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 				"capture device info\n", __FUNCTION__);
 			return -ENOMEM;
 		}
+
+		for (i = 0; i < FIMC_CAPBUFS; i++)
+			ctrl->cap->buf[i].state = VIDEOBUF_NEEDS_INIT;
 	}
 
 	mutex_lock(&ctrl->v4l2_lock);
@@ -269,8 +225,8 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
-	/* TODO: change h/w states */
-	fimc_init_camera(ctrl);
+	if (!ctrl->cam || !ctrl->cam->initialized)
+		fimc_init_camera(ctrl);
 
 	return 0;
 }
@@ -282,7 +238,55 @@ int fimc_try_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 
 int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 {
+	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
+	int i;
+
+	if (b->memory != V4L2_MEMORY_MMAP) {
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (!cap) {
+		dev_err(ctrl->dev, "%s: no capture device info\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* buffer count correction */
+	if (b->count > 2)
+		b->count = 4;
+	else if (b->count < 1)
+		b->count = 1;
+
+	/* alloc buffers */
+	for (i = 0; i <= b->count; i++) {
+		cap->buf[i].base = fimc_dma_alloc(ctrl, cap->fmt.sizeimage);
+		if (!cap->buf[i].base) {
+			dev_err(ctrl->dev, "%s: no memory for " \
+				"capture buffer\n", __FUNCTION__);
+			goto err_alloc;
+		}
+
+		cap->buf[i].length = cap->fmt.sizeimage;
+		cap->buf[i].state = VIDEOBUF_PREPARED;
+	}
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
 	return 0;
+
+err_alloc:
+	for (i = 0; i <= b->count; i++) {
+		if (cap->buf[i].base)
+			fimc_dma_free(ctrl, cap->fmt.sizeimage);
+
+		memset(&cap->buf[i], 0, sizeof(cap->buf[i]));
+	}
+
+	return -ENOMEM;
 }
 
 int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)

@@ -16,6 +16,7 @@
 
 #include <linux/types.h>
 
+/* 3 fimc indexes should be fixed as 0, 1 and 2 */
 #define S3C_MDEV_FIMC0		0
 #define S3C_MDEV_FIMC1		1
 #define S3C_MDEV_FIMC2		2

@@ -30,21 +30,29 @@ static struct s3c_media_device s3c_mdevs[] = {
 	},
 #endif
 
-// jsgood: temp
-#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC0
 	{
-		.id = S3C_MDEV_FIMC,
-		.name = "fimc",
-		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2 * SZ_1K,
+		.id = S3C_MDEV_FIMC0,
+		.name = "fimc0",
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC0 * SZ_1K,
 		.paddr = 0,
 	},
 #endif
 
-#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_POST
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC1
 	{
-		.id = S3C_MDEV_POST,
-		.name = "pp",
-		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_POST * SZ_1K,
+		.id = S3C_MDEV_FIMC1,
+		.name = "fimc1",
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC1 * SZ_1K,
+		.paddr = 0,
+	},
+#endif
+
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2
+	{
+		.id = S3C_MDEV_FIMC2,
+		.name = "fimc2",
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2 * SZ_1K,
 		.paddr = 0,
 	},
 #endif

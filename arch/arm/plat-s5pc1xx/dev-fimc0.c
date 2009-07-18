@@ -52,7 +52,6 @@ static struct s3c_platform_fimc default_fimc0_data __initdata = {
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 133000000,
-	.mclk_name	= "sclk_cam",
 	.default_cam	= CAMERA_PAR_A,
 };
 #else

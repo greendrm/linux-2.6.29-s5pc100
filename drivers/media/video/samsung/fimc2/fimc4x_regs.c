@@ -93,7 +93,7 @@ void fimc_select_camera(struct fimc_control *ctrl)
 
 	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK);
 
-	if (ctrl->cam->id == 0)
+	if (ctrl->cam->id == CAMERA_PAR_A)
 		cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
 	else
 		cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
@@ -104,7 +104,7 @@ void fimc_select_camera(struct fimc_control *ctrl)
 	if (ctrl->cam->type == CAM_TYPE_MIPI)
 		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
 	else if (ctrl->cam->type == CAM_TYPE_ITU) {
-		if (ctrl->cam->id == 0)
+		if (ctrl->cam->id == CAMERA_PAR_A)
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
 		else
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;

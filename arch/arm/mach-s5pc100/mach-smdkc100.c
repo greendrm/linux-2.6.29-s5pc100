@@ -462,6 +462,7 @@ static struct s3c_platform_camera __initdata camera_a = {
 	.i2c_busnum	= 0,
 	.info		= &camera_info[0],
 	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.clk_name	= "sclk_cam",
 	.clk_rate	= 44000000,		/* 44MHz */
 	.line_length	= 1280,			/* 1280*1024 */
 	/* default resol for preview kind of thing */
@@ -491,6 +492,7 @@ static struct s3c_platform_camera __initdata camera_c = {
 	.i2c_busnum	= 1,
 	.info		= &camera_info[1],
 	.pixelformat	= V4L2_PIX_FMT_YUYV,
+	.clk_name	= "sclk_cam",
 	.clk_rate	= 24000000,		/* 24MHz */
 	.line_length	= 1280,			/* 1280*1024 */
 	/* default resol for preview kind of thing */
@@ -517,7 +519,6 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 133000000,
-	.mclk_name	= "sclk_cam",
 	.default_cam	= CAMERA_PAR_A,
 	.camera		= { 
 		&camera_a, 
