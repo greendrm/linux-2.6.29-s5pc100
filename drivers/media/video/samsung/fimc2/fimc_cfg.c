@@ -52,7 +52,7 @@ void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
 	mutex_unlock(&ctrl->lock);
 }
 
-void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index_t id)
+void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
 {
 	ctrl->cam = fimc_dev->camera[id];
 

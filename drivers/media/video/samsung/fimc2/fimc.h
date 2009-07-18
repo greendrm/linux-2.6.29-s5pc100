@@ -296,7 +296,7 @@ extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
 
 /* camera */
 extern int fimc_init_camera(struct fimc_control *ctrl);
-extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index_t id);
+extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */

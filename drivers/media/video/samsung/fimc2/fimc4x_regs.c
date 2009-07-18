@@ -22,6 +22,179 @@
 
 #include "fimc.h"
 
+int fimc_hwset_camera_source(struct fimc_control *ctrl)
+{
+	
+	return 0;
+}
+
+int fimc_hwset_clear_irq(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+	cfg |= S3C_CIGCTRL_IRQ_CLR;
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	return 0;
+}
+
+int fimc_hwset_reset(struct fimc_control *ctrl)
+{
+	u32 cfg = 0;
+
+	cfg = readl(ctrl->regs + S3C_CISRCFMT);
+	cfg |= S3C_CISRCFMT_ITU601_8BIT;
+	writel(cfg, ctrl->regs + S3C_CISRCFMT);
+
+	/* s/w reset */
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg |= (S3C_CIGCTRL_SWRST);
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	mdelay(1);
+
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_SWRST;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	/* in case of ITU656, CISRCFMT[31] should be 0 */
+	if ((ctrl->cap != NULL) && (ctrl->cam->fmt == ITU_656_YCBCR422_8BIT)) {
+		cfg = readl(ctrl->regs + S3C_CISRCFMT);
+		cfg &= ~S3C_CISRCFMT_ITU601_8BIT;
+		writel(cfg, ctrl->regs + S3C_CISRCFMT);
+	}
+
+	return 0;
+}
+
+int fimc_hwget_overflow_state(struct fimc_control *ctrl)
+{
+	u32 cfg, status, flag;
+
+	status = readl(ctrl->regs + S3C_CISTATUS);
+	flag = S3C_CISTATUS_OVFIY | S3C_CISTATUS_OVFICB | S3C_CISTATUS_OVFICR;
+
+	if (status & flag) {
+		cfg = readl(ctrl->regs + S3C_CIWDOFST);
+		cfg |= (S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB | \
+			S3C_CIWDOFST_CLROVFICR);
+		writel(cfg, ctrl->regs + S3C_CIWDOFST);
+
+		cfg = readl(ctrl->regs + S3C_CIWDOFST);
+		cfg &= ~(S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB | \
+			S3C_CIWDOFST_CLROVFICR);
+		writel(cfg, ctrl->regs + S3C_CIWDOFST);
+
+		return 1;
+	}
+
+	return 0;
+}
+
+int fimc_hwset_camera_offset(struct fimc_control *ctrl)
+{
+	struct s3c_platform_camera *cam = ctrl->cam;
+	struct v4l2_rect *rect = &cam->window;
+	u32 cfg, h1, h2, v1, v2;
+
+	if (!cam) {
+		dev_err(ctrl->dev, "%s: no active camera\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
+
+	h1 = rect->left;
+	h2 = cam->width - rect->width - rect->left;
+	v1 = rect->top;
+	v2 = cam->height - rect->height - rect->top;
+	
+	cfg = readl(ctrl->regs + S3C_CIWDOFST);
+	cfg &= ~(S3C_CIWDOFST_WINHOROFST_MASK | S3C_CIWDOFST_WINVEROFST_MASK);
+	cfg |= S3C_CIWDOFST_WINHOROFST(h1);
+	cfg |= S3C_CIWDOFST_WINVEROFST(v1);
+	cfg |= S3C_CIWDOFST_WINOFSEN;
+	writel(cfg, ctrl->regs + S3C_CIWDOFST);
+
+	cfg = 0;
+	cfg |= S3C_CIWDOFST2_WINHOROFST2(h2);
+	cfg |= S3C_CIWDOFST2_WINVEROFST2(v2);
+	writel(cfg, ctrl->regs + S3C_CIWDOFST2);
+
+	return 0;
+}
+
+int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
+{
+	struct s3c_platform_camera *cam = ctrl->cam;
+	u32 cfg;
+
+	if (!cam) {
+		dev_err(ctrl->dev, "%s: no active camera\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
+
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+	cfg &= ~(S3C_CIGCTRL_INVPOLPCLK | S3C_CIGCTRL_INVPOLVSYNC | \
+		 S3C_CIGCTRL_INVPOLHREF | S3C_CIGCTRL_INVPOLHSYNC);
+
+	if (cam->inv_pclk)
+		cfg |= S3C_CIGCTRL_INVPOLPCLK;
+
+	if (cam->inv_vsync)
+		cfg |= S3C_CIGCTRL_INVPOLVSYNC;
+
+	if (cam->inv_href)
+		cfg |= S3C_CIGCTRL_INVPOLHREF;
+
+	if (cam->inv_hsync)
+		cfg |= S3C_CIGCTRL_INVPOLHSYNC;
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	return 0;
+}
+
+int fimc_hwset_camera_type(struct fimc_control *ctrl)
+{
+	struct s3c_platform_camera *cam = ctrl->cam;
+	u32 cfg;
+
+	if (!cam) {
+		dev_err(ctrl->dev, "%s: no active camera\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
+
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK | \
+		S3C_CIGCTRL_SELCAM_MASK);
+
+	/* Interface selection */
+	if (cam->type == CAM_TYPE_MIPI) {
+		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
+	} else if (cam->type == CAM_TYPE_ITU) {
+		if (cam->id == CAMERA_PAR_A)
+			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
+		else
+			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
+		/* switch to ITU interface */
+		cfg |= S3C_CIGCTRL_SELCAM_ITU;
+	} else {
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+			__FUNCTION__);
+		return -EINVAL;
+	}
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	return 0;
+}
+
+
+/************************************************/
+
 void fimc_clear_irq(struct fimc_control *ctrl)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);

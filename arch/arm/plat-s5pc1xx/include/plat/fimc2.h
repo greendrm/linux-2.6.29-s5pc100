@@ -20,12 +20,12 @@
 struct platform_device;
 
 /* For exnternal camera device */
-enum fimc_cam_t {
+enum fimc_cam_type {
 	CAM_TYPE_ITU	= 0,
 	CAM_TYPE_MIPI	= 1,
 };
 
-enum fimc_cam_format_t {
+enum fimc_cam_format {
 	ITU_601_YCBCR422_8BIT	= (1 << 31),
 	ITU_656_YCBCR422_8BIT	= (0 << 31),
 	ITU_601_YCBCR422_16BIT	= (1 << 29),
@@ -35,7 +35,7 @@ enum fimc_cam_format_t {
 	MIPI_CSI_RAW12		= 0x2c,
 };
 
-enum fimc_order422_cam_t {
+enum fimc_cam_order422 {
 	CAM_ORDER422_8BIT_YCBYCR	= (0 << 14),
 	CAM_ORDER422_8BIT_YCRYCB	= (1 << 14),
 	CAM_ORDER422_8BIT_CBYCRY	= (2 << 14),
@@ -44,7 +44,7 @@ enum fimc_order422_cam_t {
 	CAM_ORDER422_16BIT_Y4CRCBCRCB	= (1 << 14),
 };
 
-enum fimc_cam_index_t {
+enum fimc_cam_index {
 	CAMERA_PAR_A	= 0,
 	CAMERA_PAR_B	= 1,
 	CAMERA_CSI_C	= 2,
@@ -57,11 +57,11 @@ struct s3c_platform_camera {
 	 * ITU cam A,B: 0,1
 	 * CSI-2 cam C: 2
 	 */
-	enum fimc_cam_index_t		id;
+	enum fimc_cam_index		id;
 
-	enum fimc_cam_t			type;		/* ITU or MIPI */
-	enum fimc_cam_format_t		fmt;		/* input format */
-	enum fimc_order422_cam_t	order422;	/* YCBCR422 order for ITU */
+	enum fimc_cam_type		type;		/* ITU or MIPI */
+	enum fimc_cam_format		fmt;		/* input format */
+	enum fimc_cam_order422		order422;	/* YCBCR422 order for ITU */
 	u32				pixelformat;	/* default fourcc */
 
 	int				i2c_busnum;
@@ -93,7 +93,7 @@ struct s3c_platform_fimc {
 	const char			srclk_name[16];		/* source of interface clock name */
 	const char			clk_name[16];		/* interface clock name */
 	u32				clk_rate;		/* clockrate for interface clock */	
-	enum fimc_cam_index_t		default_cam;		/* index of default cam */
+	enum fimc_cam_index		default_cam;		/* index of default cam */
 	struct s3c_platform_camera	*camera[4];		/* FIXME */
 
 	void				(*cfg_gpio)(struct platform_device *dev);
