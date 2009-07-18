@@ -107,49 +107,6 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-static int fimc_init_camera(struct fimc_control *ctrl)
-{
-	struct fimc_global *fimc = get_fimc_dev();
-	struct s3c_platform_fimc *pdata;
-	int ret;
-
-	pdata = to_fimc_plat(ctrl->dev);
-	if (pdata->default_cam >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
-	if (!fimc->camera[pdata->default_cam]) {
-		dev_err(ctrl->dev, "no external camera device\n");
-		return -ENODEV;
-	}
-
-	/*
-	 * ctrl->cam may not be null if already s_input called,
-	 * otherwise, that should be default_cam if ctrl->cam is null.
-	*/
-	if (!ctrl->cam)
-		ctrl->cam = fimc->camera[pdata->default_cam];
-
-	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
-	clk_enable(ctrl->cam->clk);
-
-	if (ctrl->cam->cam_power)
-		ctrl->cam->cam_power(1);
-
-	/* subdev call for init */
-	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
-	if (ret == -ENOIOCTLCMD) {
-		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
-			__FUNCTION__);
-		return ret;
-	}
-
-	fimc_set_active_camera(ctrl, ctrl->cam->id);
-
-	return 0;
-}
-
 int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 {
 	struct fimc_global *fimc = get_fimc_dev();

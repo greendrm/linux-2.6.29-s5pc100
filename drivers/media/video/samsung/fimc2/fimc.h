@@ -273,6 +273,7 @@ extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
 
 /* camera */
+extern int fimc_init_camera(struct fimc_control *ctrl);
 extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern void fimc_select_camera(struct fimc_control *ctrl);
 

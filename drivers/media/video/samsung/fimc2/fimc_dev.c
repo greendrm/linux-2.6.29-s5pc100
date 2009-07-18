@@ -39,16 +39,6 @@
 
 struct fimc_global *fimc_dev;
 
-void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
-{
-	ctrl->cam = fimc_dev->camera[id];
-
-	dev_info(ctrl->dev, "requested id: %d\n", id);
-	
-	if (ctrl->cam && id < FIMC_TPID)
-		fimc_select_camera(ctrl);
-}
-
 static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
 	return IRQ_HANDLED;

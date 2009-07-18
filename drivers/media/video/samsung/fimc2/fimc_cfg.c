@@ -15,11 +15,66 @@
 #include <linux/string.h>
 #include <linux/platform_device.h>
 #include <linux/mm.h>
+#include <linux/clk.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <plat/media.h>
+#include <plat/fimc2.h>
 
 #include "fimc.h"
+
+int fimc_init_camera(struct fimc_control *ctrl)
+{
+	struct fimc_global *fimc = get_fimc_dev();
+	struct s3c_platform_fimc *pdata;
+	int ret;
+
+	pdata = to_fimc_plat(ctrl->dev);
+	if (pdata->default_cam >= FIMC_MAXCAMS) {
+		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (!fimc->camera[pdata->default_cam]) {
+		dev_err(ctrl->dev, "no external camera device\n");
+		return -ENODEV;
+	}
+
+	/*
+	 * ctrl->cam may not be null if already s_input called,
+	 * otherwise, that should be default_cam if ctrl->cam is null.
+	*/
+	if (!ctrl->cam)
+		ctrl->cam = fimc->camera[pdata->default_cam];
+
+	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
+	clk_enable(ctrl->cam->clk);
+
+	if (ctrl->cam->cam_power)
+		ctrl->cam->cam_power(1);
+
+	/* subdev call for init */
+	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
+	if (ret == -ENOIOCTLCMD) {
+		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
+			__FUNCTION__);
+		return ret;
+	}
+
+	fimc_set_active_camera(ctrl, ctrl->cam->id);
+
+	return 0;
+}
+
+void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
+{
+	ctrl->cam = fimc_dev->camera[id];
+
+	dev_info(ctrl->dev, "requested id: %d\n", id);
+	
+	if (ctrl->cam && id < FIMC_TPID)
+		fimc_select_camera(ctrl);
+}
 
 int fimc_set_rot_degree(struct fimc_control *ctrl, int degree)
 {
