@@ -438,28 +438,40 @@ int fimc_mapping_rot_flip(u32 rot, u32 flip)
 {
 	u32 ret = 0;
 
-	if (rot == 0) {
-		if(flip && V4L2_CID_HFLIP)
+	switch (rot) {
+	case 0:
+		if(flip & V4L2_CID_HFLIP)
 			ret |= 0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret |= 0x2;
-	} else if (rot == 90) {
-		if(flip && V4L2_CID_HFLIP)
+		break;
+
+	case 90:
+		if(flip & V4L2_CID_HFLIP)
 			ret |= 0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret |= 0x2;
-	} else if (rot == 180) {
+		break;
+
+	case 180:
 		ret = 0x3;
-		if(flip && V4L2_CID_HFLIP)
+		if(flip & V4L2_CID_HFLIP)
 			ret &= ~0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret &= ~0x2;
-	} else if (rot == 270) {
+		break;
+
+	case 270:
 		ret = 0x13;
-		if(flip && V4L2_CID_HFLIP)
+		if(flip & V4L2_CID_HFLIP)
 			ret &= ~0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret &= ~0x2;
+		break;
 	}
 
 	return ret;
