@@ -25,7 +25,7 @@
 #include <media/v4l2-ioctl.h>
 #include <media/videobuf-core.h>
 #include <plat/media.h>
-#include <plat/fimc.h>
+#include <plat/fimc2.h>
 #endif
 
 #define FIMC_NAME		"s3c-fimc"
@@ -231,7 +231,7 @@ struct fimc_control {
 	char				name[16];
 	atomic_t			in_use;
 	void __iomem			*regs;		/* register i/o */
-	struct clk			*clock;		/* interface clock */
+	struct clk			*clk;		/* interface clock */
 	struct fimc_meminfo		mem;		/* for reserved mem */
 
 	/* kernel helpers */
@@ -261,7 +261,6 @@ struct fimc_control {
 struct fimc_global {
 	struct fimc_control 		ctrl[FIMC_DEVICES];
 	struct s3c_platform_camera	*camera[FIMC_MAXCAMS];
-	struct clk			*mclk;
 	int				initialized;
 };
 
@@ -274,6 +273,7 @@ extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
 
 /* camera */
+extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern void fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */

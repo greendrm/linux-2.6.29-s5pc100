@@ -68,7 +68,9 @@ struct s3c_platform_camera {
 	struct i2c_board_info		*info;
 	struct v4l2_subdev		*sd;
 
+	const char			clk_name[16];	/* mclk name */
 	u32				clk_rate;	/* mclk ratio */
+	struct clk			*clk;		/* mclk */
 	int				line_length;	/* max length */
 	int				width;		/* default resol */
 	int				height;		/* default resol */
@@ -90,10 +92,7 @@ struct s3c_platform_camera {
 struct s3c_platform_fimc {
 	const char			srclk_name[16];		/* source of interface clock name */
 	const char			clk_name[16];		/* interface clock name */
-	u32				clk_rate;		/* clockrate for interface clock */
-
-	const char			mclk_name[16];		/* mclk name */
-	
+	u32				clk_rate;		/* clockrate for interface clock */	
 	enum fimc_cam_index		default_cam;		/* index of default cam */
 	struct s3c_platform_camera	*camera[4];		/* FIXME */
 

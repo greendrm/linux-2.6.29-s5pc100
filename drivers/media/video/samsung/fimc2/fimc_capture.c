@@ -124,23 +124,28 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		return -ENODEV;
 	}
 
+	/*
+	 * ctrl->cam may not be null if already s_input called,
+	 * otherwise, that should be default_cam if ctrl->cam is null.
+	*/
 	if (!ctrl->cam)
 		ctrl->cam = fimc->camera[pdata->default_cam];
 
-	clk_set_rate(fimc->mclk, ctrl->cam->clk_rate);
-	clk_enable(fimc->mclk);
+	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
+	clk_enable(ctrl->cam->clk);
 
 	if (ctrl->cam->cam_power)
 		ctrl->cam->cam_power(1);
 
-//	fimc_set_active_camera(ctrl, ctrl->cam->id);
-
+	/* subdev call for init */
 	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
 	if (ret == -ENOIOCTLCMD) {
 		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
 			__FUNCTION__);
 		return ret;
 	}
+
+	fimc_set_active_camera(ctrl, ctrl->cam->id);
 
 	return 0;
 }
@@ -204,11 +209,6 @@ int fimc_enum_fmt_vid_capture(struct file *file, void *fh,
 	struct fimc_control *ctrl = file->private_data;
 	int i = f->index;
 
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
 	mutex_lock(&ctrl->v4l2_lock);
 
 	memset(f, 0, sizeof(*f));
@@ -222,11 +222,6 @@ int fimc_enum_fmt_vid_capture(struct file *file, void *fh,
 int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = file->private_data;
-
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
 
 	if (!ctrl->cap) {
 		dev_err(ctrl->dev, "%s: no capture device info\n", \
@@ -248,11 +243,11 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = file->private_data;
 
-	if (f->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		dev_err(ctrl->dev, "%s: invalid buffer type\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
+	/*
+	 * The first time alloc for struct cap_info, and will be
+	 * released at the file close.
+	 * Anyone has better idea to do this?
+	*/
 	if (!ctrl->cap) {
 		ctrl->cap = kzalloc(sizeof(*ctrl->cap), GFP_KERNEL);
 		if (!ctrl->cap) {
