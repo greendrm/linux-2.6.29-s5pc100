@@ -44,7 +44,7 @@ enum fimc_order422_cam_t {
 	CAM_ORDER422_16BIT_Y4CRCBCRCB	= (1 << 14),
 };
 
-enum fimc_cam_index {
+enum fimc_cam_index_t {
 	CAMERA_PAR_A	= 0,
 	CAMERA_PAR_B	= 1,
 	CAMERA_CSI_C	= 2,
@@ -57,7 +57,7 @@ struct s3c_platform_camera {
 	 * ITU cam A,B: 0,1
 	 * CSI-2 cam C: 2
 	 */
-	enum fimc_cam_index		id;
+	enum fimc_cam_index_t		id;
 
 	enum fimc_cam_t			type;		/* ITU or MIPI */
 	enum fimc_cam_format_t		fmt;		/* input format */
@@ -93,7 +93,7 @@ struct s3c_platform_fimc {
 	const char			srclk_name[16];		/* source of interface clock name */
 	const char			clk_name[16];		/* interface clock name */
 	u32				clk_rate;		/* clockrate for interface clock */	
-	enum fimc_cam_index		default_cam;		/* index of default cam */
+	enum fimc_cam_index_t		default_cam;		/* index of default cam */
 	struct s3c_platform_camera	*camera[4];		/* FIXME */
 
 	void				(*cfg_gpio)(struct platform_device *dev);

@@ -87,45 +87,40 @@ void fimc_reset(struct fimc_control *ctrl)
  * 2. Configure input camera's format:
  * 	S3C_CISRCFMT for ITU & S3C_CSIIMGFMT 
  */
-void fimc_select_camera(struct fimc_control *ctrl)
+int fimc_select_camera(struct fimc_control *ctrl)
 {
-	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	struct s3c_platform_camera *cam = ctrl->cam;
+	u32 cfg;
 
-	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK);
+	if (!cam) {
+		dev_err(ctrl->dev, "%s: no active camera\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
 
-	if (ctrl->cam->id == CAMERA_PAR_A)
-		cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
-	else
-		cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK | \
+		S3C_CIGCTRL_SELCAM_MASK);
 
 	/* Interface selection */
-	/* FIXME: Check whether SELCAM_ITU_A or B is necessary when we use MIPI */
-	/* TODO: Input source selection is necessary */
-	if (ctrl->cam->type == CAM_TYPE_MIPI)
+	if (cam->type == CAM_TYPE_MIPI) {
 		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
-	else if (ctrl->cam->type == CAM_TYPE_ITU) {
-		if (ctrl->cam->id == CAMERA_PAR_A)
+	} else if (cam->type == CAM_TYPE_ITU) {
+		if (cam->id == CAMERA_PAR_A)
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
 		else
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
-	} else
-		dev_err(ctrl->dev, "invalid camera bus type selected\n");
+	} else {
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+			__FUNCTION__);
+		return -EINVAL;
+	}
 
 	writel(cfg, ctrl->regs + S3C_CIGCTRL);
 
-	/* configure input source format */
-	if (ctrl->cam->type == CAM_TYPE_ITU) {
-		cfg = readl(ctrl->regs + S3C_CISRCFMT);
-		cfg |= ctrl->cam->fmt;
-		writel(cfg, ctrl->regs + S3C_CISRCFMT);
-	} else if (ctrl->cam->type == CAM_TYPE_MIPI) {
-		cfg = readl(ctrl->regs + S3C_CSIIMGFMT);
-		cfg |= ctrl->cam->fmt;
-		writel(cfg, ctrl->regs + S3C_CSIIMGFMT);
-	} else
-		dev_err(ctrl->dev, "invalid camera bus type selected\n");
+	return 0;
 }
 
 void fimc_reset_camera(void)

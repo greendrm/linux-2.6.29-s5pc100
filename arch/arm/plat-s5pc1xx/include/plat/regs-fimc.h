@@ -178,6 +178,7 @@
 #define S3C_CIGCTRL_INVPOLHSYNC			(1 << 4)
 #define S3C_CIGCTRL_SELCAM_ITU			(0 << 3)
 #define S3C_CIGCTRL_SELCAM_MIPI			(1 << 3)
+#define S3C_CIGCTRL_SELCAM_MASK			(1 << 3)
 #define S3C_CIGCTRL_PROGRESSIVE			(0 << 0)
 #define S3C_CIGCTRL_INTERLACE			(1 << 0)
 
