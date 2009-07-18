@@ -38,28 +38,28 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 	/* Check Overlay Size : Overlay size must be smaller than LCD size. */
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (is_rotate && 0x10) {	/* Landscape mode */
-		if (f->fmt.win.w.width > ctrl->fb.win->y) {
+		if (f->fmt.win.w.width > ctrl->fb.lcd->height) {
 			dev_warn(ctrl->dev, "The width is changed %d -> %d.\n",
-				f->fmt.win.w.width, ctrl->fb.win->y);
-			f->fmt.win.w.width = ctrl->fb.win->y;
+				f->fmt.win.w.width, ctrl->fb.lcd->height);
+			f->fmt.win.w.width = ctrl->fb.lcd->height;
 		}
 		
-		if (f->fmt.win.w.height > ctrl->fb.win->x) {
+		if (f->fmt.win.w.height > ctrl->fb.lcd->width) {
 			dev_warn(ctrl->dev, "The height is changed %d -> %d.\n",
-				f->fmt.win.w.height, ctrl->fb.win->x);
-			f->fmt.win.w.height = ctrl->fb.win->x;
+				f->fmt.win.w.height, ctrl->fb.lcd->width);
+			f->fmt.win.w.height = ctrl->fb.lcd->width;
 		}
 	} else {			/* Portrait mode */
-		if (f->fmt.win.w.width > ctrl->fb.win->x) {
+		if (f->fmt.win.w.width > ctrl->fb.lcd->width) {
 			dev_warn(ctrl->dev, "The width is changed %d -> %d.\n",
-				f->fmt.win.w.width, ctrl->fb.win->x);
-			f->fmt.win.w.width = ctrl->fb.win->x;
+				f->fmt.win.w.width, ctrl->fb.lcd->width);
+			f->fmt.win.w.width = ctrl->fb.lcd->width;
 		}
 		
-		if (f->fmt.win.w.height > ctrl->fb.win->y) {
+		if (f->fmt.win.w.height > ctrl->fb.lcd->height) {
 			dev_warn(ctrl->dev, "The height is changed %d -> %d.\n",
-				f->fmt.win.w.height, ctrl->fb.win->y);
-			f->fmt.win.w.height = ctrl->fb.win->y;
+				f->fmt.win.w.height, ctrl->fb.lcd->height);
+			f->fmt.win.w.height = ctrl->fb.lcd->height;
 		}
 	}
 

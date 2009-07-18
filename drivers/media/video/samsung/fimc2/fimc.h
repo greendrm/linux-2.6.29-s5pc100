@@ -196,6 +196,17 @@ struct s3cfb_lcd {
 
 	void 	(*init_ldi)(void);
 };
+
+struct s3cfb_user_window {
+	int x;
+	int y;
+};
+
+
+#define S3CFB_WIN_OFF_ALL		_IO  ('F', 202)
+#define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
+#define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
+#define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
@@ -274,6 +285,11 @@ struct fimc_global {
 extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[];
 
+/* FIMD */
+extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
+extern int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param);
+extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sleep);
+
 /* general */
 extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
 extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
@@ -338,9 +354,10 @@ extern int fimc_set_dst_crop(struct fimc_control *ctrl);
 extern int fimc_set_rot(struct fimc_control *ctrl);
 extern int fimc_set_path(struct fimc_control *ctrl);
 extern int fimc_set_format(struct fimc_control *ctrl);
-extern int fimc_start_camif(struct fimc_control *ctrl);
+extern int fimc_start_camif(void *param);
 extern int fimc_stop_camif(struct fimc_control *ctrl);
 extern int fimc_stop_streaming(struct fimc_control *ctrl);
+extern int fimc_start_fifo(struct fimc_control *ctrl);
 
 extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
@@ -348,7 +365,9 @@ extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_out_queue(struct fimc_control *ctrl, int *index);
 extern int fimc_init_in_queue(struct fimc_control *ctrl);
 extern int fimc_init_out_queue(struct fimc_control *ctrl);
+
 extern void fimc_dump_context(struct fimc_control *ctrl);
+extern void fimc_print_signal(struct fimc_control *ctrl);
 
 /* Register access file */
 extern void fimc_clear_irq(struct fimc_control *ctrl);

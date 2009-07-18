@@ -15,6 +15,7 @@
 #include <linux/string.h>
 #include <linux/platform_device.h>
 #include <linux/mm.h>
+#include <linux/fb.h>
 #include <linux/clk.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -202,6 +203,7 @@ int fimc_check_param(struct fimc_control *ctrl)
 	struct v4l2_rect src_rect, dst_rect, fimd_rect;
 	int	ret = 0;
 
+	/* check flip */
 	if((ctrl->out->rotate != 90) && (ctrl->out->rotate != 270)) {
 		src_rect.width		= ctrl->out->pix.width;
 		src_rect.height		= ctrl->out->pix.height; 
@@ -722,8 +724,9 @@ int fimc_set_format(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_start_camif(struct fimc_control *ctrl)
+int fimc_start_camif(void *param)
 {
+	struct fimc_control *ctrl = (struct fimc_control *)param;
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	if (ctrl->out != NULL) {
@@ -778,6 +781,8 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 				FIMC_ONESHOT_TIMEOUT);
 		if (ret == 0) {
 			dev_err(ctrl->dev, "Fail : %s\n", __FUNCTION__);
+		} else if (ret == -ERESTARTSYS) {
+			fimc_print_signal(ctrl);
 		}
 		
 		fimc_stop_camif(ctrl);
@@ -785,7 +790,7 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 		fimc_stop_fifo(ctrl);
 	}
 
-	return 0;
+	return ret;
 }
 
 void fimc_dump_context(struct fimc_control *ctrl)
@@ -804,5 +809,130 @@ void fimc_dump_context(struct fimc_control *ctrl)
 	
 	dev_err(ctrl->dev, "state : prev = %d, active = %d, next = %d\n", \
 		ctrl->out->idx.prev, ctrl->out->idx.active, ctrl->out->idx.next);
+}
+
+void fimc_print_signal(struct fimc_control *ctrl)
+{
+	if (signal_pending(current)) {
+		dev_dbg(ctrl->dev, ".pend=%.8lx shpend=%.8lx\n",
+			current->pending.signal.sig[0], 
+			current->signal->shared_pending.signal.sig[0]);
+	} else {
+		dev_dbg(ctrl->dev, ":pend=%.8lx shpend=%.8lx\n",
+			current->pending.signal.sig[0], 
+			current->signal->shared_pending.signal.sig[0]);
+	}
+}
+
+static 
+int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect)
+{
+	switch (ctrl->out->rotate) {
+	case 0:
+		fimd_rect->left		= ctrl->out->win.w.left;
+		fimd_rect->top		= ctrl->out->win.w.top;
+		fimd_rect->width	= ctrl->out->win.w.width;
+		fimd_rect->height	= ctrl->out->win.w.height;
+
+		break;
+
+	case 90:
+		fimd_rect->left		= ctrl->fb.lcd->width - 
+					(ctrl->out->win.w.top \
+						+ ctrl->out->win.w.height);
+		fimd_rect->top		= ctrl->out->win.w.left;
+		fimd_rect->width	= ctrl->out->win.w.height;
+		fimd_rect->height	= ctrl->out->win.w.width;
+
+		break;
+
+	case 180:
+		fimd_rect->left		= ctrl->fb.lcd->width - 
+					(ctrl->out->win.w.left \
+						+ ctrl->out->win.w.width);
+		fimd_rect->top		= ctrl->fb.lcd->height - 
+					(ctrl->out->win.w.top \
+						+ ctrl->out->win.w.height);
+		fimd_rect->width	= ctrl->out->win.w.width;
+		fimd_rect->height	= ctrl->out->win.w.height;
+
+		break;
+
+	case 270:
+		fimd_rect->left		= ctrl->out->win.w.top;
+		fimd_rect->top		= ctrl->fb.lcd->height - 
+					(ctrl->out->win.w.left \
+						+ ctrl->out->win.w.width);
+		fimd_rect->width	= ctrl->out->win.w.height;
+		fimd_rect->height	= ctrl->out->win.w.width;
+
+		break;
+
+	default:
+		dev_err(ctrl->dev, "Rotation degree is inavlid.\n");
+		return -EINVAL;
+
+		break;
+	}
+
+	return 0;
+}
+
+int fimc_start_fifo(struct fimc_control *ctrl)
+{
+	struct v4l2_rect		fimd_rect;
+	struct fb_var_screeninfo	var;	
+	struct s3cfb_user_window	window;
+	int ret = -1;
+	u32 id = ctrl->id;
+
+	memset(&fimd_rect, 0, sizeof(struct v4l2_rect));
+
+	ret = fimc_fimd_rect(ctrl, &fimd_rect);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "fimc_fimd_rect fail\n");
+		return -EINVAL;
+	}
+
+	/* Get WIN var_screeninfo  */
+	ret = s3cfb_direct_ioctl(id, FBIOGET_VSCREENINFO, (unsigned long)&var);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "direct_ioctl(FBIOGET_VSCREENINFO) fail\n");
+		return -EINVAL;
+	}
+
+	/* Don't allocate the memory. */
+	ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 0);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "direct_ioctl(FBIO_ALLOC) fail\n");
+		return -EINVAL;
+	}
+
+	/* Update WIN size  */
+	var.xres = fimd_rect.width;
+	var.yres = fimd_rect.height;
+	ret = s3cfb_direct_ioctl(id, FBIOPUT_VSCREENINFO, (unsigned long)&var);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "direct_ioctl(FBIOPUT_VSCREENINFO) fail\n");
+		return -EINVAL;
+	}
+
+	/* Update WIN position */
+	window.x = fimd_rect.left;
+	window.y = fimd_rect.top;
+	ret = s3cfb_direct_ioctl(id, S3CFB_WIN_POSITION, (unsigned long)&window);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "direct_ioctl(S3CFB_WIN_POSITION) fail\n");
+		return -EINVAL;
+	}
+
+	/* Open WIN FIFO */
+	ret = ctrl->fb.open_fifo(id, 0, fimc_start_camif, (void *)ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
