@@ -54,12 +54,12 @@ struct platform_device s3c_device_dm9000 = {
 static struct resource s3c_dm9000_resources[] = {
         [0] = {
                 .start = S5PC11X_PA_DM9000,
-                .end   = S5PC11X_PA_DM9000 + 1,
+                .end   = S5PC11X_PA_DM9000 + 3,
                 .flags = IORESOURCE_MEM,
         },
         [1] = {
-                .start = S5PC11X_PA_DM9000 + 0x2,
-                .end   = S5PC11X_PA_DM9000 + 0x2 + 0x3f,
+                .start = S5PC11X_PA_DM9000 + 0x41,
+                .end   = S5PC11X_PA_DM9000 + 0x41 + 0x3f,
                 .flags = IORESOURCE_MEM,
         },
         [2] = {
@@ -70,7 +70,7 @@ static struct resource s3c_dm9000_resources[] = {
 };
 
 static struct dm9000_plat_data s3c_dm9000_platdata = {
-        .flags          = DM9000_PLATF_16BITONLY,
+        .flags          = DM9000_PLATF_8BITONLY,
 };
 
 struct platform_device s3c_device_dm9000 = {
