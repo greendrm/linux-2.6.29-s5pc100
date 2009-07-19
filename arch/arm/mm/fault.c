@@ -478,7 +478,7 @@ do_DataAbort(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	info.si_errno = 0;
 	info.si_code  = inf->code;
 	info.si_addr  = (void __user *)addr;
-	arm_notify_die("", regs, &info, fsr, 0);
+	//arm_notify_die("", regs, &info, fsr, 0);
 }
 
 asmlinkage void __exception
