@@ -47,12 +47,9 @@ static inline unsigned long s5pc11x_get_pll(unsigned long baseclk,
 
 	switch(base_pll_type){
 	case S5PC11X_PLL_APLL:
-#if 1		/* temporary for FPGAC110 */
-		do_div(fvco, (pdiv << sdiv));
-#else
 		do_div(fvco, (pdiv << (sdiv-1)));
-#endif
 		break;
+		
 	default:
 		do_div(fvco, (pdiv << sdiv));
 		break;
