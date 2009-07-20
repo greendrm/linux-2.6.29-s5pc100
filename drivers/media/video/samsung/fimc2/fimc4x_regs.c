@@ -24,6 +24,16 @@
 
 int fimc_hwset_camera_source(struct fimc_control *ctrl)
 {
+	struct s3c_platform_camera *cam = ctrl->cam;
+	u32 cfg = 0;
+
+	/* for now, we support only ITU601 8 bit mode */
+	cfg |= S3C_CISRCFMT_ITU601_8BIT;
+	cfg |= (cam->mode | cam->order422);
+	cfg |= S3C_CISRCFMT_SOURCEHSIZE(cam->width);
+	cfg |= S3C_CISRCFMT_SOURCEVSIZE(cam->height);
+
+	writel(cfg, ctrl->regs + S3C_CISRCFMT);
 	
 	return 0;
 }
@@ -355,27 +365,49 @@ int fimc_hwset_prescaler(struct fimc_control *ctrl)
 }
 
 
-int fimc_hwset_output_address(struct fimc_control *ctrl, int id, \
-					dma_addr_t base, u32 pixelformat)
+int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
+				dma_addr_t base, struct v4l2_pix_format *fmt)
 {
 	struct v4l2_rect rect;
-	dma_addr_t phys_cbcr = 0;
+	dma_addr_t addr_y = 0, addr_cb = 0, addr_cr = 0;
 
-	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		if (ctrl->cap) {
+	switch (pixelformat) {
+	/* 1 plane formats */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_RGB24:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+		addr_y = base;
+		break;
 
-		} else if (ctrl->out) {
-			rect.width = ctrl->out->fbuf.fmt.width;
-			rect.height = ctrl->out->fbuf.fmt.height;
-			phys_cbcr = base + (rect.width * rect.height);
-			writel(base, ctrl->regs + S3C_CIOYSA(id));
-			writel(phys_cbcr, ctrl->regs + S3C_CIOCBSA(id));
-		}
-	} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
-		writel(base, ctrl->regs + S3C_CIOYSA(id));
-	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
-		writel(base, ctrl->regs + S3C_CIOYSA(id));
+	/* 2 plane formats */
+	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV21:
+	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV61:
+		addr_y = base;
+		addr_cb = base + (fmt->width * fmt->height);
+		break;
+
+	/* 3 plane formats */
+	case V4L2_PIX_FMT_YUV422P:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 2);
+		break;
+
+	case V4L2_PIX_FMT_YUV420:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 4);
+		break;
 	}
+
+	writel(addr_y, ctrl->regs + S3C_CIOYSA(id));
+	writel(addr_cb, ctrl->regs + S3C_CIOCBSA(id));
+	writel(addr_cr, ctrl->regs + S3C_CIOCRSA(id));
 
 	return 0;
 }
