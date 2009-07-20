@@ -1050,3 +1050,5 @@ v2.6.29.4-r3d15: Jinsung Yang
 		M	arch/arm/mach-s5pc110/include/mach/memory.h
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-0-0-0: Jongpill Lee
+	- New tagging start

@@ -786,22 +786,7 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 
 	printk(KERN_INFO "S5PC110: ARMCLK=%ld, HCLK200=%ld, HCLK166=%ld, HCLK133=%ld, PCLK100=%ld, PCLK83=%ld, PCLK66=%ld\n",
 	       armclk, hclk200, hclk166, hclk133, pclk100, pclk83, pclk66);
-#if 0	/* temporary for FPGAC110 */
-	clk_fout_apll.rate = xtal;
-	clk_fout_mpll.rate = xtal;
-	clk_fout_epll.rate = xtal;
-	clk_mout_vpll.clk.rate = xtal;
 
-	clk_f.rate = xtal;
-	clk_h200.rate = xtal;
-	clk_p100.rate = xtal;
-	clk_h166.rate = xtal;
-	clk_p83.rate = xtal;
-	clk_h133.rate = xtal;
-	clk_p66.rate = xtal;
-	clk_h.rate = xtal;
-	clk_p.rate = xtal;	
-#else
 	clk_fout_apll.rate = apll;
 	clk_fout_mpll.rate = mpll;
 	clk_fout_epll.rate = epll;
@@ -816,7 +801,7 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_p66.rate = pclk66;
 	clk_h.rate = hclk133;
 	clk_p.rate = pclk66;
-#endif
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 }

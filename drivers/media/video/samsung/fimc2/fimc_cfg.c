@@ -52,6 +52,16 @@ void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
 	mutex_unlock(&ctrl->lock);
 }
 
+void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
+{
+	ctrl->cam = fimc_dev->camera[id];
+
+	dev_info(ctrl->dev, "requested id: %d\n", id);
+	
+	if (ctrl->cam && id < FIMC_TPID)
+		fimc_select_camera(ctrl);
+}
+
 int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -94,16 +104,6 @@ int fimc_init_camera(struct fimc_control *ctrl)
 	fimc_set_active_camera(ctrl, ctrl->cam->id);
 
 	return 0;
-}
-
-void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
-{
-	ctrl->cam = fimc_dev->camera[id];
-
-	dev_info(ctrl->dev, "requested id: %d\n", id);
-	
-	if (ctrl->cam && id < FIMC_TPID)
-		fimc_select_camera(ctrl);
 }
 
 int fimc_set_rot_degree(struct fimc_control *ctrl, int degree)
@@ -436,28 +436,40 @@ int fimc_mapping_rot_flip(u32 rot, u32 flip)
 {
 	u32 ret = 0;
 
-	if (rot == 0) {
-		if(flip && V4L2_CID_HFLIP)
+	switch (rot) {
+	case 0:
+		if(flip & V4L2_CID_HFLIP)
 			ret |= 0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret |= 0x2;
-	} else if (rot == 90) {
-		if(flip && V4L2_CID_HFLIP)
+		break;
+
+	case 90:
+		if(flip & V4L2_CID_HFLIP)
 			ret |= 0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret |= 0x2;
-	} else if (rot == 180) {
+		break;
+
+	case 180:
 		ret = 0x3;
-		if(flip && V4L2_CID_HFLIP)
+		if(flip & V4L2_CID_HFLIP)
 			ret &= ~0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret &= ~0x2;
-	} else if (rot == 270) {
+		break;
+
+	case 270:
 		ret = 0x13;
-		if(flip && V4L2_CID_HFLIP)
+		if(flip & V4L2_CID_HFLIP)
 			ret &= ~0x1;
-		if(flip && V4L2_CID_VFLIP)
+
+		if(flip & V4L2_CID_VFLIP)
 			ret &= ~0x2;
+		break;
 	}
 
 	return ret;

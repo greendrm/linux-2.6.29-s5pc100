@@ -210,7 +210,7 @@ struct map_desc smdkc110_iodesc[] = {};
 
 static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_fb,
-	&s3c_device_smc911x,
+	&s3c_device_dm9000,
 	&s3c_device_mfc,
 };
 
@@ -266,33 +266,49 @@ static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
-	s3c24xx_init_clocks(10000000);
+	s3c24xx_init_clocks(24000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
 	s5pc11x_reserve_bootmem();
 }
 
-static void __init smdkc110_smc911x_set(void)
+static void __init smdkc110_dm9000_set(void)
 {
 	unsigned int tmp;
 
-	tmp = S5PC11X_SROM_BCn_TCAH(1);
-	__raw_writel(tmp, S5PC11X_SROM_BC3);
-
+#if 0
+	tmp = 0xfffffff0;
+	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
-	tmp &= ~(S5PC11X_SROM_BW_BYTE_ENABLE3_MASK | S5PC11X_SROM_BW_WAIT_ENABLE3_MASK |
-		S5PC11X_SROM_BW_ADDR_MODE3_MASK | S5PC11X_SROM_BW_DATA_WIDTH3_MASK);
-	tmp |= (S5PC11X_SROM_BW_DATA_WIDTH3_16BIT | S5PC11X_SROM_BW_BYTE_ENABLE3_ENABLE);
+	tmp &= ~(0xf<<20);
+	tmp |= (0xd<<20);
 	__raw_writel(tmp, S5PC11X_SROM_BW);
 
-	tmp = __raw_readl((S5PC11X_MP01CON));
-	tmp &= ~(0xf<<12);
-	tmp |=(2<<12);
+
+	tmp = __raw_readl(S5PC11X_MP01CON);
+	tmp     &= ~(0xf<<20);
+	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
+#else
+	tmp = 0xfffffff0;
+	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
+	tmp = __raw_readl(S5PC11X_SROM_BW);
+	tmp &= ~(0xf<<16);
+	tmp |= (0x2<<16);
+	__raw_writel(tmp, S5PC11X_SROM_BW);
+
+
+	tmp = __raw_readl(S5PC11X_MP01CON);
+	tmp     &= ~(0xf<<16);
+	tmp |=(2<<16);
+	__raw_writel(tmp,(S5PC11X_MP01CON));
+
+#endif
+
 }
 
 static void __init smdkc110_machine_init(void)
 {
-	smdkc110_smc911x_set();
+	smdkc110_dm9000_set();
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #ifdef CONFIG_FB_S3C
@@ -309,7 +325,7 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 					struct meminfo *mi)
 {
 	mi->bank[0].start = 0x30000000;
-	mi->bank[0].size = 128 * SZ_1M;
+	mi->bank[0].size = 64 * SZ_1M;
 	mi->bank[0].node = 0;
 
 	mi->bank[1].start = 0x40000000;

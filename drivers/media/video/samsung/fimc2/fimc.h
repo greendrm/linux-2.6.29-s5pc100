@@ -297,7 +297,7 @@ extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
 /* camera */
 extern int fimc_init_camera(struct fimc_control *ctrl);
 extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
-extern void fimc_select_camera(struct fimc_control *ctrl);
+extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
 extern int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp);
@@ -400,7 +400,8 @@ extern void fimc_disable_input_dma(struct fimc_control *ctrl);
  * D R I V E R  H E L P E R S
  *
 */
-#define to_fimc_plat(d)	to_platform_device(d)->dev.platform_data
+#define to_fimc_plat(d)		to_platform_device(d)->dev.platform_data
+#define get_actual_bufnum(n)	(n > 3 ? 4 : (n < 2 ? 1 : 2))
 
 static inline struct fimc_global *get_fimc_dev(void)
 {

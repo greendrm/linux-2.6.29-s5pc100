@@ -17,6 +17,7 @@
 #include <linux/types.h>
 #include <linux/interrupt.h>
 #include <linux/list.h>
+#include <linux/dm9000.h>
 #include <linux/platform_device.h>
 
 #include <asm/mach/arch.h>
@@ -29,25 +30,59 @@
 
 /* SMC9115 LAN via ROM interface */
 
-static struct resource s3c_smc911x_resources[] = {
+#if 0
+static struct resource s3c_dm9000_resources[] = {
       [0] = {
-              .start  = S5PC11X_PA_SMC9115,
-              .end    = S5PC11X_PA_SMC9115 + 0x1fffffff,
+              .start  = S5PC11X_PA_DM9000,
+              .end    = S5PC11X_PA_DM9000 + 0x1fffffff,
               .flags  = IORESOURCE_MEM,
       },
       [1] = {
-              .start = IRQ_EINT0,
-              .end   = IRQ_EINT0,
+              .start = IRQ_EINT9,
+              .end   = IRQ_EINT9,
               .flags = IORESOURCE_IRQ,
         },
 };
 
-struct platform_device s3c_device_smc911x = {
-      .name           = "smc911x",
+struct platform_device s3c_device_dm9000 = {
+      .name           = "dm9000",
       .id             =  -1,
-      .num_resources  = ARRAY_SIZE(s3c_smc911x_resources),
-      .resource       = s3c_smc911x_resources,
+      .num_resources  = ARRAY_SIZE(s3c_dm9000_resources),
+      .resource       = s3c_dm9000_resources,
 };
+#else
+static struct resource s3c_dm9000_resources[] = {
+        [0] = {
+                .start = S5PC11X_PA_DM9000,
+                .end   = S5PC11X_PA_DM9000 + 3,
+                .flags = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start = S5PC11X_PA_DM9000 + 0x41,
+                .end   = S5PC11X_PA_DM9000 + 0x41 + 0x3f,
+                .flags = IORESOURCE_MEM,
+        },
+        [2] = {
+                .start = IRQ_EINT9,
+                .end   = IRQ_EINT9,
+                .flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
+        }
+};
+
+static struct dm9000_plat_data s3c_dm9000_platdata = {
+        .flags          = DM9000_PLATF_8BITONLY,
+};
+
+struct platform_device s3c_device_dm9000 = {
+	.name           = "dm9000",
+	.id             =  0,
+	.num_resources  = ARRAY_SIZE(s3c_dm9000_resources),
+	.resource       = s3c_dm9000_resources,
+	.dev            = {
+		.platform_data = &s3c_dm9000_platdata,
+	}
+};
+#endif
 
 /* FIMV MFC interface */
 static struct resource s3c_mfc_resources[] = {

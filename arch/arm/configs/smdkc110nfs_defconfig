@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29.4
-# Thu Jul  2 14:28:30 2009
+# Sun Jul 19 21:36:14 2009
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -162,6 +162,7 @@ CONFIG_DEFAULT_IOSCHED="cfq"
 # CONFIG_ARCH_SA1100 is not set
 # CONFIG_ARCH_S3C2410 is not set
 # CONFIG_ARCH_S3C64XX is not set
+# CONFIG_ARCH_S5P64XX is not set
 # CONFIG_ARCH_S5PC1XX is not set
 CONFIG_ARCH_S5PC11X=y
 # CONFIG_ARCH_SHARK is not set
@@ -576,8 +577,10 @@ CONFIG_NET_ETHERNET=y
 CONFIG_MII=y
 # CONFIG_AX88796 is not set
 # CONFIG_SMC91X is not set
-# CONFIG_DM9000 is not set
-CONFIG_SMC911X=y
+CONFIG_DM9000=y
+CONFIG_DM9000_DEBUGLEVEL=4
+# CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL is not set
+# CONFIG_SMC911X is not set
 # CONFIG_SMSC911X is not set
 # CONFIG_DNET is not set
 # CONFIG_IBM_NEW_EMAC_ZMII is not set

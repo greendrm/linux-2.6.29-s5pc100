@@ -61,7 +61,11 @@ extern struct platform_device s3c_device_ts;
 extern struct platform_device s3c_device_g3d;
 extern struct platform_device s3c_device_gvg;
 
+#ifndef CONFIG_MACH_SMDKC110
 extern struct platform_device s3c_device_smc911x;
+#else
+extern struct platform_device s3c_device_dm9000;
+#endif
 
 extern struct platform_device s3c_device_fimc0;
 extern struct platform_device s3c_device_fimc1;
