@@ -727,6 +727,56 @@ int fimc_hwset_stop_input_dma(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, \
+					v4l2_rect bound, v4l2_rect crop)
+{
+	u32 cfg_y = 0, cfg_cb = 0;
+
+	if (crop.left || crop.top || \
+		(bound.width != crop.width) || (bound.height != crop.height)) {
+		if (pixelformat == V4L2_PIX_FMT_RGB32) {
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop.left * 4);
+			cfg_y |= S3C_CIOYOFF_VERTICAL(crop.top);
+		} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop.left * 2);
+			cfg_y |= S3C_CIOYOFF_VERTICAL(crop.top);
+		}
+	}
+
+	writel(cfg_y, ctrl->regs + S3C_CIOYOFF);
+	writel(cfg_cb, ctrl->regs + S3C_CIOCBOFF);
+
+	return 0;
+}
+
+int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, \
+					v4l2_rect bound, v4l2_rect crop)
+{
+	u32 cfg_y = 0, cfg_cb = 0;
+
+	if (crop.left || crop.top || \
+		(bound.width != crop.width) || (bound.height != crop.height)) {
+		if (pixelformat == V4L2_PIX_FMT_NV12) {
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop.left);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop.top);
+			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop.left);
+			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop.top / 2);
+		} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop.left * 4);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop.top);
+		} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop.left * 2);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop.top);
+		}
+	}
+
+	writel(cfg_y, ctrl->regs + S3C_CIIYOFF);
+	writel(cfg_cb, ctrl->regs + S3C_CIICBOFF);
+
+	return 0;
+}
+
+
 int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height)
 {
 	u32 cfg = 0;
