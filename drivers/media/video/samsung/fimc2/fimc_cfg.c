@@ -683,7 +683,7 @@ int fimc_set_rot(struct fimc_control *ctrl)
 		if (ctrl->out->fbuf.base != NULL) {
 			fimc_set_in_rot(ctrl, rot, flip);
 		} else { /* FIFO mode */
-			fimc_set_out_rot(ctrl, rot, flip);		
+			fimc_set_out_rot(ctrl, rot, flip);
 		}
 	} else if (ctrl->cap != NULL) {
 		/* To do */
