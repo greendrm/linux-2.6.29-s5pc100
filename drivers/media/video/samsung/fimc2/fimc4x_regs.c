@@ -12,6 +12,7 @@
 
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/videodev2.h>
 #include <asm/io.h>
 #include <mach/map.h>
 #include <plat/gpio-cfg.h>
@@ -332,6 +333,55 @@ int fimc_hwset_disable_lastirq(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
+{
+	u32 cfg;
+
+	cfg = readl(ctrl->regs + S3C_CIOCTRL);
+	cfg &= ~(S3C_CIOCTRL_ORDER2P_MASK | S3C_CIOCTRL_ORDER422_MASK | \
+		S3C_CIOCTRL_YCBCR_PLANE_MASK);
+
+	switch (pixelformat) {
+	/* 1 plane formats */
+	case V4L2_PIX_FMT_YUYV:
+		cfg |= S3C_CIOCTRL_ORDER422_YCBYCR;
+		break;
+
+	case V4L2_PIX_FMT_UYVY:
+		cfg |= S3C_CIOCTRL_ORDER422_CBYCRY;
+		break;
+
+	case V4L2_PIX_FMT_VYUY:
+		cfg |= S3C_CIOCTRL_ORDER422_CRYCBY;
+		break;
+
+	case V4L2_PIX_FMT_YVYU:
+		cfg |= S3C_CIOCTRL_ORDER422_YCRYCB;
+		break;
+
+	/* 2 plane formats */
+	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV16:
+		cfg |= S3C_CIOCTRL_ORDER2P_LSB_CBCR;
+		break;
+
+	case V4L2_PIX_FMT_NV21:
+	case V4L2_PIX_FMT_NV61:
+		cfg |= S3C_CIOCTRL_ORDER2P_MSB_CBCR;
+		break;
+
+	/* 3 plane formats */
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:
+		cfg |= S3C_CIOCTRL_YCBCR_3PLANE;
+		break;
+	}
+
+	writel(cfg, ctrl->regs + S3C_CIOCTRL);
+
+	return 0;
+}
+
 int fimc_hwset_prescaler(struct fimc_control *ctrl)
 {
 	struct fimc_scaler *sc = &ctrl->sc;
@@ -354,28 +404,52 @@ int fimc_hwset_prescaler(struct fimc_control *ctrl)
 	return 0;
 }
 
-
-int fimc_hwset_output_address(struct fimc_control *ctrl, int id, \
-					dma_addr_t base, u32 pixelformat)
+int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
+				dma_addr_t base, struct v4l2_pix_format *fmt)
 {
-	struct v4l2_rect rect;
-	dma_addr_t phys_cbcr = 0;
+	dma_addr_t addr_y = 0, addr_cb = 0, addr_cr = 0;
 
-	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		if (ctrl->cap) {
+	switch (fmt->pixelformat) {
+	/* 1 plane formats */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_RGB32:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+		addr_y = base;
+		break;
 
-		} else if (ctrl->out) {
-			rect.width = ctrl->out->fbuf.fmt.width;
-			rect.height = ctrl->out->fbuf.fmt.height;
-			phys_cbcr = base + (rect.width * rect.height);
-			writel(base, ctrl->regs + S3C_CIOYSA(id));
-			writel(phys_cbcr, ctrl->regs + S3C_CIOCBSA(id));
-		}
-	} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
-		writel(base, ctrl->regs + S3C_CIOYSA(id));
-	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
-		writel(base, ctrl->regs + S3C_CIOYSA(id));
+	  /* 2 plane formats */
+	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV21:
+	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV61:
+		addr_y = base;
+		addr_cb = base + (fmt->width * fmt->height);
+		break;
+
+	  /* 3 plane formats */
+	case V4L2_PIX_FMT_YUV422P:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 2);
+		break;
+
+	case V4L2_PIX_FMT_YUV420:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 4);
+		break;
+
+	default:
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		break;
 	}
+
+	writel(addr_y, ctrl->regs + S3C_CIOYSA(id));
+	writel(addr_cb, ctrl->regs + S3C_CIOCBSA(id));
+	writel(addr_cr, ctrl->regs + S3C_CIOCRSA(id));
 
 	return 0;
 }
@@ -542,22 +616,51 @@ int fimc_hwset_disable_capture(struct fimc_control *ctrl)
 }
 
 int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
-							u32 pixelformat)
+						struct v4l2_pix_format *fmt)
 {
-	struct v4l2_rect rect;
-	dma_addr_t phys_cbcr = 0;
+	dma_addr_t addr_y = 0, addr_cb = 0, addr_cr = 0;
 
-	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		rect.width = ctrl->out->pix.width;
-		rect.height = ctrl->out->pix.height;
-		phys_cbcr = base + (rect.width * rect.height);
-		writel(base, ctrl->regs + S3C_CIIYSA0);
-		writel(phys_cbcr, ctrl->regs + S3C_CIICBSA0);
-	} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
-		writel(base, ctrl->regs + S3C_CIIYSA0);
-	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
-		writel(base, ctrl->regs + S3C_CIIYSA0);
+	switch (fmt->pixelformat) {
+	/* 1 plane formats */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_RGB32:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+		addr_y = base;
+		break;
+
+	  /* 2 plane formats */
+	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV21:
+	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV61:
+		addr_y = base;
+		addr_cb = base + (fmt->width * fmt->height);
+		break;
+
+	  /* 3 plane formats */
+	case V4L2_PIX_FMT_YUV422P:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 2);
+		break;
+
+	case V4L2_PIX_FMT_YUV420:
+		addr_y = base;
+		addr_cb = addr_y + (fmt->width * fmt->height);
+		addr_cr = addr_cb + (fmt->width * fmt->height / 4);
+		break;
+
+	default:
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		break;
 	}
+
+	writel(addr_y, ctrl->regs + S3C_CIIYSA0);
+	writel(addr_cb, ctrl->regs + S3C_CIICBSA0);
+	writel(addr_cr, ctrl->regs + S3C_CIICBSA0);
 
 	return 0;
 }
@@ -615,6 +718,22 @@ int fimc_hwset_addr_change_disable(struct fimc_control *ctrl)
 	cfg |= S3C_CIREAL_ISIZE_ADDR_CH_DISABLE;
 
 	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
+
+	return 0;
+}
+
+int fimc_hwset_input_burst_cnt(struct fimc_control *ctrl, u32 cnt)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+	cfg &= ~S3C_MSCTRL_BURST_CNT_MASK;
+
+	if (cnt > 4) 
+		cnt = 4;
+	else if (cnt == 0)
+		cnt = 4;
+
+	cfg |= S3C_MSCTRL_SUCCESSIVE_COUNT(cnt);
+	writel(cfg, ctrl->regs + S3C_MSCTRL);
 
 	return 0;
 }
@@ -728,7 +847,7 @@ int fimc_hwset_stop_input_dma(struct fimc_control *ctrl)
 }
 
 int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, \
-					v4l2_rect bound, v4l2_rect crop)
+				struct v4l2_rect bound, struct v4l2_rect crop)
 {
 	u32 cfg_y = 0, cfg_cb = 0;
 
@@ -749,8 +868,9 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, \
 	return 0;
 }
 
+
 int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, \
-					v4l2_rect bound, v4l2_rect crop)
+				struct v4l2_rect bound, struct v4l2_rect crop)
 {
 	u32 cfg_y = 0, cfg_cb = 0;
 
@@ -775,7 +895,6 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, \
 
 	return 0;
 }
-
 
 int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height)
 {
@@ -802,29 +921,50 @@ int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 }
 /************************************************/
 
-void fimc_clear_irq(struct fimc_control *ctrl)
+void fimc_reset_camera(void)
 {
-	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
+	u32 cfg;
 
-	cfg |= S3C_CIGCTRL_IRQ_CLR;
+#if (CONFIG_VIDEO_FIMC_CAM_RESET == 1)
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
 
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-}
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#else
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
 
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#endif
 
-void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+#if (CONFIG_VIDEO_FIMC_CAM_CH == 1)
+	cfg = readl(S5PC1XX_GPH3CON);
+	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
+	cfg |= S5PC1XX_GPH3_OUTPUT(6);
+	writel(cfg, S5PC1XX_GPH3CON);
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+	cfg = readl(S5PC1XX_GPH3DAT);
+	cfg &= ~(0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(200);
 
-	if (enable == 1) {
-		cfg |= (S3C_CIGCTRL_IRQ_ENABLE | S3C_CIGCTRL_IRQ_LEVEL);
-	} else {
-		cfg &= ~S3C_CIGCTRL_IRQ_ENABLE;
-	}
+	cfg |= (0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(2000);
+#endif
 
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	iounmap(regs);
 }
 
 void fimc_reset(struct fimc_control *ctrl)
@@ -903,149 +1043,30 @@ int fimc_select_camera(struct fimc_control *ctrl)
 	return 0;
 }
 
-void fimc_reset_camera(void)
+#if 0
+void fimc_clear_irq(struct fimc_control *ctrl)
 {
-	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
-	u32 cfg;
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
 
-#if (CONFIG_VIDEO_FIMC_CAM_RESET == 1)
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
+	cfg |= S3C_CIGCTRL_IRQ_CLR;
 
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#else
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#endif
-
-#if (CONFIG_VIDEO_FIMC_CAM_CH == 1)
-	cfg = readl(S5PC1XX_GPH3CON);
-	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
-	cfg |= S5PC1XX_GPH3_OUTPUT(6);
-	writel(cfg, S5PC1XX_GPH3CON);
-
-	cfg = readl(S5PC1XX_GPH3DAT);
-	cfg &= ~(0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
-	udelay(200);
-
-	cfg |= (0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
-	udelay(2000);
-#endif
-
-	iounmap(regs);
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
 }
 
 
-int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
+void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable)
 {
-	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
 
-	/* Set CSCR2Y & CSCY2R */
-	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
-	writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	/* Color format setting */
-	if (pixfmt == V4L2_PIX_FMT_NV12) {
-		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_2PLANE_SHIFT_MASK \
-			| S3C_MSCTRL_C_INT_IN_2PLANE | S3C_MSCTRL_INFORMAT_RGB);
-		cfg |= ((0x4<<S3C_MSCTRL_BURST_CNT) | S3C_MSCTRL_C_INT_IN_2PLANE \
-			| S3C_MSCTRL_INFORMAT_YCBCR420);
-		writel(cfg, ctrl->regs + S3C_MSCTRL);
-	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
-				| S3C_MSCTRL_INFORMAT_RGB);
-		cfg |= (S3C_MSCTRL_INFORMAT_RGB | (0x4<<S3C_MSCTRL_BURST_CNT));
-		writel(cfg, ctrl->regs + S3C_MSCTRL);
-	
-		cfg = readl(ctrl->regs + S3C_CISCCTRL);
-		cfg &= ~(S3C_CISCCTRL_INRGB_FMT_RGB666 | \
-				S3C_CISCCTRL_INRGB_FMT_RGB888);
-		cfg |= (S3C_CISCCTRL_INRGB_FMT_RGB888 | \
-				S3C_CISCCTRL_EXTRGB_EXTENSION);
-		writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		cfg = readl(ctrl->regs + S3C_MSCTRL);
-		cfg &= ~(S3C_MSCTRL_BURST_CNT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE \
-				| S3C_MSCTRL_INFORMAT_RGB);
-		cfg |= (S3C_MSCTRL_INFORMAT_RGB | \
-				(0x4<<S3C_MSCTRL_BURST_CNT));
-		writel(cfg, ctrl->regs + S3C_MSCTRL);
-	
-		cfg = readl(ctrl->regs + S3C_CISCCTRL);
-		cfg &= ~(S3C_CISCCTRL_INRGB_FMT_RGB666 | \
-				S3C_CISCCTRL_INRGB_FMT_RGB888);
-		cfg |= (S3C_CISCCTRL_INRGB_FMT_RGB565 | \
-				S3C_CISCCTRL_EXTRGB_EXTENSION);
-		writel(cfg, ctrl->regs + S3C_CISCCTRL);
+	if (enable == 1) {
+		cfg |= (S3C_CIGCTRL_IRQ_ENABLE | S3C_CIGCTRL_IRQ_LEVEL);
 	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixfmt);
-		return -EINVAL;
+		cfg &= ~S3C_CIGCTRL_IRQ_ENABLE;
 	}
 
-	/* To do : Interlace setting in CISCCTRL. */
-
-	return 0;
-}
-
-int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
-
-	/* Color format setting */
-	if (pixfmt == V4L2_PIX_FMT_NV12) {
-		cfg &= ~S3C_CITRGFMT_OUTFORMAT_RGB;
-		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR420;
-		writel(cfg, ctrl->regs + S3C_CITRGFMT);
-
-		cfg = readl(ctrl->regs + S3C_CIOCTRL);
-		cfg &= ~S3C_CIOCTRL_ORDER2P_MASK;
-		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
-		writel(cfg, ctrl->regs + S3C_CIOCTRL);
-
-		/* To do : Check output path whether it is DMA out. */
-
-	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
-		writel(cfg, ctrl->regs + S3C_CITRGFMT);
-	
-		cfg = readl(ctrl->regs + S3C_CISCCTRL);
-		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
-				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
-		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB888);
-		writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
-		writel(cfg, ctrl->regs + S3C_CITRGFMT);
-	
-		cfg = readl(ctrl->regs + S3C_CISCCTRL);
-		cfg &= ~(S3C_CISCCTRL_OUTRGB_FMT_RGB666 | \
-				S3C_CISCCTRL_OUTRGB_FMT_RGB888);
-		cfg |= (S3C_CISCCTRL_OUTRGB_FMT_RGB565);
-		writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixfmt);
-		return -EINVAL;
-	}
-
-	return 0;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
 }
 
 int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
@@ -1326,57 +1347,6 @@ void fimc_set_mainscaler(struct fimc_control *ctrl)
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
 }
 
-void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base)
-{
-	struct v4l2_rect rect;
-	dma_addr_t phys_cbcr = 0;
-	u32 cfg = 0;
-	u32 pixfmt = ctrl->out->pix.pixelformat;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	cfg = readl(ctrl->regs + S3C_CIREAL_ISIZE);
-	cfg |= S3C_CIREAL_ISIZE_ADDR_CH_DISABLE;
-	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
-
-	if (pixfmt == V4L2_PIX_FMT_NV12) {
-		rect.width = ctrl->out->pix.width;
-		rect.height = ctrl->out->pix.height;
-		phys_cbcr = base + (rect.width * rect.height);
-		writel(base, ctrl->regs + S3C_CIIYSA0);
-		writel(phys_cbcr, ctrl->regs + S3C_CIICBSA0);
-	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		writel(base, ctrl->regs + S3C_CIIYSA0);
-	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		writel(base, ctrl->regs + S3C_CIIYSA0);
-	}
-
-	cfg &= ~S3C_CIREAL_ISIZE_ADDR_CH_DISABLE;
-	writel(cfg, ctrl->regs + S3C_CIREAL_ISIZE);
-}
-
-void fimc_set_dst_addr(struct fimc_control *ctrl, dma_addr_t base, u32 idx)
-{
-	struct v4l2_rect rect;
-	dma_addr_t phys_cbcr = 0;
-	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	if (pixfmt == V4L2_PIX_FMT_NV12) {
-		rect.width = ctrl->out->fbuf.fmt.width;
-		rect.height = ctrl->out->fbuf.fmt.height;
-		phys_cbcr = base + (rect.width * rect.height);
-		writel(base, ctrl->regs + S3C_CIOYSA(idx));
-		writel(phys_cbcr, ctrl->regs + S3C_CIOCBSA(idx));
-	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		writel(base, ctrl->regs + S3C_CIOYSA(idx));
-	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		writel(base, ctrl->regs + S3C_CIOYSA(idx));
-	}
-
-}
-
 void fimc_start_scaler(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
@@ -1430,4 +1400,4 @@ void fimc_disable_input_dma(struct fimc_control *ctrl)
 	cfg &= ~S3C_MSCTRL_ENVID;
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
 }
-
+#endif
