@@ -367,7 +367,6 @@ extern int fimc_set_scaler(struct fimc_control *ctrl);
 extern int fimc_set_src_crop(struct fimc_control *ctrl);
 extern int fimc_set_dst_crop(struct fimc_control *ctrl);
 extern int fimc_set_rot(struct fimc_control *ctrl);
-extern int fimc_set_path(struct fimc_control *ctrl);
 #endif
 
 /* Register access file */
@@ -391,7 +390,7 @@ extern int fimc_hwset_disable_lastirq(struct fimc_control *ctrl);
 extern int fimc_hwset_prescaler(struct fimc_control *ctrl);
 extern int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_output_address(struct fimc_control *ctrl, int id, dma_addr_t base, struct v4l2_pix_format *fmt);
-extern int fimc_hwset_input_rot_flip(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_hwset_scaler(struct fimc_control *ctrl);
 extern int fimc_hwset_enable_lcdfifo(struct fimc_control *ctrl);
 extern int fimc_hwset_disable_lcdfifo(struct fimc_control *ctrl);
@@ -415,8 +414,8 @@ extern int fimc_hwset_input_flip(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_hwset_input_source(struct fimc_control *ctrl, enum fimc_input path);
 extern int fimc_hwset_start_input_dma(struct fimc_control *ctrl);
 extern int fimc_hwset_stop_input_dma(struct fimc_control *ctrl);
-extern int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect bound, struct v4l2_rect crop);
-extern int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect bound, struct v4l2_rect crop);
+extern int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect *bound, struct v4l2_rect *crop);
+extern int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect *bound, struct v4l2_rect *crop);
 extern int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height);
 extern int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height);
 
