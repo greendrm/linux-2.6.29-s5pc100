@@ -489,9 +489,27 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	struct fimc_outinfo *out = ctrl->out;
 	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
+
+	if (!out) {
+		out = kzalloc(sizeof(*out), GFP_KERNEL);
+		if (!out) {
+			dev_err(ctrl->dev, "%s: no memory for " \
+				"output device info\n", __FUNCTION__);
+			return -ENOMEM;
+		}
+
+		ctrl->out->is_requested	= 0;
+		ctrl->out->rotate	= 0;
+		ctrl->out->flip		= 0;
+
+		ctrl->out->idx.prev	= -1;
+		ctrl->out->idx.active	= -1;
+		ctrl->out->idx.next	= -1;
+	}
 
 	f->fmt.pix = ctrl->out->pix;
 
