@@ -1166,13 +1166,13 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 
 		base = ctrl->out->buf[index].base;
 		fimc_set_src_addr(ctrl, base);
-
+#if 0
 		ret = fimc_start_fifo(ctrl);
 		if (ret < 0) {
 			dev_err(ctrl->dev, "Fail: fimc_start_fifo\n");
 			return -EINVAL;
 		}
-
+#endif
 		ctrl->out->idx.active = index;
 		ctrl->status = FIMC_STREAMON;
 	}

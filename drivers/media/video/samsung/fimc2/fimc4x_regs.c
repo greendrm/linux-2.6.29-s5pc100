@@ -343,55 +343,6 @@ int fimc_hwset_disable_lastirq(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
-{
-	u32 cfg;
-
-	cfg = readl(ctrl->regs + S3C_CIOCTRL);
-	cfg &= ~(S3C_CIOCTRL_ORDER2P_MASK | S3C_CIOCTRL_ORDER422_MASK | \
-		S3C_CIOCTRL_YCBCR_PLANE_MASK);
-
-	switch (pixelformat) {
-	/* 1 plane formats */
-	case V4L2_PIX_FMT_YUYV:
-		cfg |= S3C_CIOCTRL_ORDER422_YCBYCR;
-		break;
-
-	case V4L2_PIX_FMT_UYVY:
-		cfg |= S3C_CIOCTRL_ORDER422_CBYCRY;
-		break;
-
-	case V4L2_PIX_FMT_VYUY:
-		cfg |= S3C_CIOCTRL_ORDER422_CRYCBY;
-		break;
-
-	case V4L2_PIX_FMT_YVYU:
-		cfg |= S3C_CIOCTRL_ORDER422_YCRYCB;
-		break;
-
-	/* 2 plane formats */
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV16:
-		cfg |= S3C_CIOCTRL_ORDER2P_LSB_CBCR;
-		break;
-
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV61:
-		cfg |= S3C_CIOCTRL_ORDER2P_MSB_CBCR;
-		break;
-
-	/* 3 plane formats */
-	case V4L2_PIX_FMT_YUV422P:	/* fall through */
-	case V4L2_PIX_FMT_YUV420:
-		cfg |= S3C_CIOCTRL_YCBCR_3PLANE;
-		break;
-	}
-
-	writel(cfg, ctrl->regs + S3C_CIOCTRL);
-
-	return 0;
-}
-
 int fimc_hwset_prescaler(struct fimc_control *ctrl)
 {
 	struct fimc_scaler *sc = &ctrl->sc;
