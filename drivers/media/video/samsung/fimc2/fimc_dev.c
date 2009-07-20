@@ -102,7 +102,7 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 			ctrl->out->idx.next	= next;
 
 			/* Set the address */
-			fimc_set_src_addr(ctrl, ctrl->out->buf[next].base);
+			fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
 		}
 	}
 
@@ -455,7 +455,7 @@ static int fimc_release(struct file *filp)
 			ctrl->cam->cam_power(0);
 	} else if (ctrl->out) {
 		ctrl->status = FIMC_READY_OFF;
-		ret = fimc_stop_streaming(ctrl);
+		ret = fimc_outdev_stop_streaming(ctrl);
 		if (ret < 0)
 			dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
 		ctrl->status = FIMC_STREAMOFF;

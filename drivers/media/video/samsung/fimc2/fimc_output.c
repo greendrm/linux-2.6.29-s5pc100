@@ -22,35 +22,31 @@
 
 #include "fimc.h"
 
-void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base)
+void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t base)
 {
-	int ret = 0;
-
-	ret = fimc_hwset_addr_change_disable(ctrl);
-	ret = fimc_hwset_input_address(ctrl, base, &ctrl->out->pix);
-	ret = fimc_hwset_addr_change_enable(ctrl);
+	fimc_hwset_addr_change_disable(ctrl);
+	fimc_hwset_input_address(ctrl, base, &ctrl->out->pix);
+	fimc_hwset_addr_change_enable(ctrl);
 }
 
-int fimc_start_camif(void *param)
+int fimc_outdev_start_camif(void *param)
 {
 	struct fimc_control *ctrl = (struct fimc_control *)param;
-	u32 ret = 0;
 
-	ret = fimc_hwset_start_scaler(ctrl);
-	ret = fimc_hwset_enable_capture(ctrl);
-	ret = fimc_hwset_start_input_dma(ctrl);
+	fimc_hwset_start_scaler(ctrl);
+	fimc_hwset_enable_capture(ctrl);
+	fimc_hwset_start_input_dma(ctrl);
 
 	return 0;
 }
 
-int fimc_stop_camif(void *param)
+int fimc_outdev_stop_camif(void *param)
 {
 	struct fimc_control *ctrl = (struct fimc_control *)param;
-	u32 ret = 0;
 
-	ret = fimc_hwset_stop_input_dma(ctrl);
-	ret = fimc_hwset_stop_scaler(ctrl);
-	ret = fimc_hwset_disable_capture(ctrl);
+	fimc_hwset_stop_input_dma(ctrl);
+	fimc_hwset_stop_scaler(ctrl);
+	fimc_hwset_disable_capture(ctrl);
 
 	return 0;
 }
@@ -61,14 +57,14 @@ static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
 
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	ret = ctrl->fb.close_fifo(ctrl->id, fimc_stop_camif, (void *)ctrl, sleep);
+	ret = ctrl->fb.close_fifo(ctrl->id, fimc_outdev_stop_camif, (void *)ctrl, sleep);
 	if (ret < 0)
 		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 
 	return 0;
 }
 
-int fimc_stop_streaming(struct fimc_control *ctrl)
+int fimc_outdev_stop_streaming(struct fimc_control *ctrl)
 {
 	int ret = 0;
 
@@ -84,7 +80,7 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 			fimc_print_signal(ctrl);
 		}
 		
-		fimc_stop_camif(ctrl);
+		fimc_outdev_stop_camif(ctrl);
 	} else {				/* FIMD FIFO */
 		fimc_stop_fifo(ctrl, FIFO_CLOSE);
 	}
@@ -124,8 +120,7 @@ static int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 	return ret;
 }
 
-
-static void fimc_set_buff_addr(struct fimc_control *ctrl, u32 buf_size)
+static void fimc_outdev_set_buff_addr(struct fimc_control *ctrl, u32 buf_size)
 {
 	u32 base = ctrl->mem.base;	
 	u32 i;
@@ -161,7 +156,7 @@ static int fimc_init_out_buf(struct fimc_control *ctrl)
 		return -EINVAL;
 	}
 
-	fimc_set_buff_addr(ctrl, total_size);
+	fimc_outdev_set_buff_addr(ctrl, total_size);
 	ctrl->out->is_requested	= 0;
 
 	return 0;
@@ -185,7 +180,7 @@ static int fimc_set_rot_degree(struct fimc_control *ctrl, int degree)
 	return 0;
 }
 
-int fimc_check_param(struct fimc_control *ctrl)
+int fimc_outdev_check_param(struct fimc_control *ctrl)
 {
 	struct v4l2_rect dst, bound;
 	u32 is_rotate = 0;
@@ -225,7 +220,7 @@ int fimc_check_param(struct fimc_control *ctrl)
 	return ret;
 }
 
-static void fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
+static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 {
 	fimc_hwset_input_burst_cnt(ctrl, 4);
 	fimc_hwset_input_yuv(ctrl, pixfmt);
@@ -234,29 +229,29 @@ static void fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 	fimc_hwset_ext_rgb(ctrl, 1);
 }
 
-static void fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
+static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
 {
 	fimc_hwset_output_colorspace(ctrl, pixfmt);
 	fimc_hwset_output_yuv(ctrl, pixfmt);
 	fimc_hwset_output_rgb(ctrl, pixfmt);
 }
 
-static void fimc_set_format(struct fimc_control *ctrl)
+static void fimc_outdev_set_format(struct fimc_control *ctrl)
 {
 	u32 pixfmt = 0;
 
 	pixfmt = ctrl->out->pix.pixelformat;
-	fimc_set_src_format(ctrl, pixfmt);
+	fimc_outdev_set_src_format(ctrl, pixfmt);
 
 	if (ctrl->out->fbuf.base)
 		pixfmt = ctrl->out->fbuf.fmt.pixelformat;
 	else 	/* FIFO mode */
 		pixfmt = V4L2_PIX_FMT_RGB32;
-	fimc_set_dst_format(ctrl, pixfmt);
+	fimc_outdev_set_dst_format(ctrl, pixfmt);
 
 }
 
-static void fimc_set_path(struct fimc_control *ctrl)
+static void fimc_outdev_set_path(struct fimc_control *ctrl)
 {
 	/* source path */
 	fimc_hwset_input_source(ctrl, FIMC_SRC_MSDMA);
@@ -271,7 +266,7 @@ static void fimc_set_path(struct fimc_control *ctrl)
 	}
 }
 
-static void fimc_set_rot(struct fimc_control *ctrl)
+static void fimc_outdev_set_rot(struct fimc_control *ctrl)
 {
 	u32 rot = ctrl->out->rotate;
 	u32 flip = ctrl->out->flip;	
@@ -284,7 +279,7 @@ static void fimc_set_rot(struct fimc_control *ctrl)
 	}
 }
 
-static void fimc_set_src_dma_offset(struct fimc_control *ctrl)
+static void fimc_outdev_set_src_dma_offset(struct fimc_control *ctrl)
 {
 	struct v4l2_rect bound, crop;
 	u32 pixfmt = ctrl->out->pix.pixelformat;
@@ -300,7 +295,7 @@ static void fimc_set_src_dma_offset(struct fimc_control *ctrl)
 	fimc_hwset_input_offset(ctrl, pixfmt, &bound, &crop);
 }
 
-void fimc_set_src_dma_size(struct fimc_control *ctrl)
+void fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
 {
 	u32 org_w = 0, org_h = 0, real_w = 0, real_h = 0;	
 
@@ -314,7 +309,7 @@ void fimc_set_src_dma_size(struct fimc_control *ctrl)
 	fimc_hwset_real_input_size(ctrl, real_w, real_h);
 }
 
-void fimc_set_dst_dma_offset(struct fimc_control *ctrl)
+void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 {
 	struct v4l2_rect bound, crop;
 	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
@@ -330,7 +325,7 @@ void fimc_set_dst_dma_offset(struct fimc_control *ctrl)
 	fimc_hwset_output_offset(ctrl, pixfmt, &bound, &crop);
 }
 
-void fimc_set_dst_dma_size(struct fimc_control *ctrl)
+void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 {
 	int is_rotate = 0;
 	struct v4l2_rect rect;
@@ -350,7 +345,7 @@ void fimc_set_dst_dma_size(struct fimc_control *ctrl)
 	fimc_hwset_ext_output_size(ctrl, rect.width, rect.height);
 }
 
-static int fimc_set_scaler(struct fimc_control *ctrl)
+static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 {
 	struct v4l2_rect src, dst;
 	u32 is_rotate = 0;
@@ -417,7 +412,7 @@ static int fimc_set_scaler(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_set_param(struct fimc_control *ctrl)
+int fimc_outdev_set_param(struct fimc_control *ctrl)
 {
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
@@ -425,19 +420,19 @@ int fimc_set_param(struct fimc_control *ctrl)
 	}
 
 	fimc_hwset_enable_irq(ctrl, 0, 0);
-	fimc_set_format(ctrl);
-	fimc_set_path(ctrl);
-	fimc_set_rot(ctrl);
+	fimc_outdev_set_format(ctrl);
+	fimc_outdev_set_path(ctrl);
+	fimc_outdev_set_rot(ctrl);
 
-	fimc_set_src_dma_offset(ctrl);
-	fimc_set_src_dma_size(ctrl);
+	fimc_outdev_set_src_dma_offset(ctrl);
+	fimc_outdev_set_src_dma_size(ctrl);
 
 	if (ctrl->out->fbuf.base)
-		fimc_set_dst_dma_offset(ctrl);
+		fimc_outdev_set_dst_dma_offset(ctrl);
 
-	fimc_set_dst_dma_size(ctrl);
+	fimc_outdev_set_dst_dma_size(ctrl);
 
-	fimc_set_scaler(ctrl);
+	fimc_outdev_set_scaler(ctrl);
 
 	return 0;
 }
@@ -545,7 +540,7 @@ int fimc_start_fifo(struct fimc_control *ctrl)
 	}
 
 	/* Open WIN FIFO */
-	ret = ctrl->fb.open_fifo(id, 0, fimc_start_camif, (void *)ctrl);
+	ret = ctrl->fb.open_fifo(id, 0, fimc_outdev_start_camif, (void *)ctrl);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 		return -EINVAL;
@@ -812,7 +807,7 @@ int fimc_streamon_output(void *fh)
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	ret = fimc_check_param(ctrl);
+	ret = fimc_outdev_check_param(ctrl);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "Fail: fimc_check_param\n");
 		return ret;
@@ -820,9 +815,9 @@ int fimc_streamon_output(void *fh)
 
 	ctrl->status = FIMC_READY_ON;
 
-	ret = fimc_set_param(ctrl);
+	ret = fimc_outdev_set_param(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail: fimc_set_param\n");
+		dev_err(ctrl->dev, "Fail: fimc_outdev_set_param\n");
 		return ret;
 	}
 
@@ -839,9 +834,9 @@ int fimc_streamoff_output(void *fh)
 
 	ctrl->status = FIMC_READY_OFF;
 
-	ret = fimc_stop_streaming(ctrl);
+	ret = fimc_outdev_stop_streaming(ctrl);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
+		dev_err(ctrl->dev, "Fail: fimc_outdev_stop_streaming\n");
 		return -EINVAL;
 	}
 
@@ -888,14 +883,14 @@ static int fimc_qbuf_output_dma(struct fimc_control *ctrl)
 		}
 
 		base = ctrl->out->buf[index].base;
-		fimc_set_src_addr(ctrl, base);
+		fimc_outdev_set_src_addr(ctrl, base);
 
 		dst_base = (dma_addr_t)ctrl->out->fbuf.base;
 		for (i = 0; i < FIMC_PHYBUFS; i++)
 			fimc_hwset_output_address(ctrl, i, dst_base, \
 							&ctrl->out->fbuf.fmt);
 
-		ret = fimc_start_camif(ctrl);
+		ret = fimc_outdev_start_camif(ctrl);
 		if (ret < 0) {
 			dev_err(ctrl->dev, "Fail: fimc_start_camif\n");
 			return -1;
@@ -922,7 +917,7 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 		}
 
 		base = ctrl->out->buf[index].base;
-		fimc_set_src_addr(ctrl, base);
+		fimc_outdev_set_src_addr(ctrl, base);
 
 		ret = fimc_start_fifo(ctrl);
 		if (ret < 0) {
