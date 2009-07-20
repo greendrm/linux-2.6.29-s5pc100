@@ -1055,3 +1055,11 @@ v2.6.29.4-dev-0-0-0: Jongpill Lee
 
 v2.6.29.4-dev-1-0-0: Jongpill Lee
 	- support console and LCD on S5PC110
+
+v2.6.29.4-dev-1-0-1: Jongpill Lee
+	- Added ramdisk defconfig for SMDKC110
+
+	Added files:
+		
+		A	arch/arm/configs/smdkc110ramdisk_defconfig
+
