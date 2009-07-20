@@ -26,6 +26,7 @@
  *	- mm    - mm_struct describing address space
  */
 ENTRY(v7_flush_dcache_all)
+#if 0
 	dmb					@ ensure ordering with previous memory accesses
 	mrc	p15, 1, r0, c0, c0, 1		@ read clidr
 	ands	r3, r0, #0x7000000		@ extract loc from clidr
@@ -68,6 +69,7 @@ finished:
 	dsb
 	isb
 	mov	pc, lr
+#endif
 ENDPROC(v7_flush_dcache_all)
 
 /*

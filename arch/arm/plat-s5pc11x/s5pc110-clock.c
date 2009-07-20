@@ -784,7 +784,7 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	pclk66 = hclk133 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK66);
 
 
-	printk(KERN_INFO "S5PC110: ARMCLK=%ld, HCLK200=%ld, HCLK166=%ld, HCLK133=%ld, PCLK100=%ld, PCLK83=%ld, PCLK66=%ld\n",
+	printk(KERN_INFO "S5PC110: ARMCLK=%ld, HCLKM=%ld, HCLKD=%ld, HCLKP=%ld, PCLKM=%ld, PCLKD=%ld, PCLKP=%ld\n",
 	       armclk, hclk200, hclk166, hclk133, pclk100, pclk83, pclk66);
 
 	clk_fout_apll.rate = apll;
