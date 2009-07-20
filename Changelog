@@ -1063,3 +1063,9 @@ v2.6.29.4-dev-1-0-1: Jongpill Lee
 		
 		A	arch/arm/configs/smdkc110ramdisk_defconfig
 
+v2.6.29.4-dev-1-0-2: Jongpill Lee
+	- Clock Name change
+		
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Makefile.boot
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
