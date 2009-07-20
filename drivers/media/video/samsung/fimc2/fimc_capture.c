@@ -107,6 +107,99 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
+void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id)
+{
+	ctrl->cam = fimc_dev->camera[id];
+
+	dev_info(ctrl->dev, "requested id: %d\n", id);
+	
+	if (ctrl->cam && id < FIMC_TPID)
+		fimc_select_camera(ctrl);
+}
+
+int fimc_init_camera(struct fimc_control *ctrl)
+{
+	struct fimc_global *fimc = get_fimc_dev();
+	struct s3c_platform_fimc *pdata;
+	int ret;
+
+	pdata = to_fimc_plat(ctrl->dev);
+	if (pdata->default_cam >= FIMC_MAXCAMS) {
+		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (!fimc->camera[pdata->default_cam]) {
+		dev_err(ctrl->dev, "no external camera device\n");
+		return -ENODEV;
+	}
+
+	/*
+	 * ctrl->cam may not be null if already s_input called,
+	 * otherwise, that should be default_cam if ctrl->cam is null.
+	*/
+	if (!ctrl->cam)
+		ctrl->cam = fimc->camera[pdata->default_cam];
+
+	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
+	clk_enable(ctrl->cam->clk);
+
+	if (ctrl->cam->cam_power)
+		ctrl->cam->cam_power(1);
+
+	/* subdev call for init */
+	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
+	if (ret == -ENOIOCTLCMD) {
+		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
+			__FUNCTION__);
+		return ret;
+	}
+
+	ctrl->cam->initialized = 1;
+	fimc_set_active_camera(ctrl, ctrl->cam->id);
+
+	return 0;
+}
+
+int fimc_set_scaler_info(struct fimc_control *ctrl)
+{
+	struct fimc_scaler *sc = &ctrl->sc;
+	struct v4l2_rect *window = &ctrl->cam->window;
+	int tx, ty, sx, sy;
+
+	sx = window->width;
+	sy = window->height;
+	tx = ctrl->cap->fmt.width;
+	ty = ctrl->cap->fmt.height;
+
+	sc->real_width = sx;
+	sc->real_height = sy;
+
+	if (sx <= 0 || sy <= 0) {
+		dev_err(ctrl->dev, "%s: invalid source size\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (tx <= 0 || ty <= 0) {
+		dev_err(ctrl->dev, "%s: invalid target size\n", __FUNCTION__);
+		return -EINVAL;
+	}
+
+	fimc_get_scaler_factor(sx, tx, &sc->pre_hratio, &sc->hfactor);
+	fimc_get_scaler_factor(sy, ty, &sc->pre_vratio, &sc->vfactor);
+
+	sc->pre_dst_width = sx / sc->pre_hratio;
+	sc->pre_dst_height = sy / sc->pre_vratio;
+
+	sc->main_hratio = (sx << 8) / (tx << sc->hfactor);
+	sc->main_vratio = (sy << 8) / (ty << sc->vfactor);
+
+	sc->scaleup_h = (tx >= sx) ? 1 : 0;
+	sc->scaleup_v = (ty >= sy) ? 1 : 0;
+	
+	return 0;
+}
+
 int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -225,9 +318,6 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
-	if (!ctrl->cam || !ctrl->cam->initialized)
-		fimc_init_camera(ctrl);
-
 	return 0;
 }
 
@@ -335,6 +425,38 @@ int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 
 int fimc_streamon_capture(void *fh)
 {
+	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
+	int i;
+
+	if (!ctrl->cam || !ctrl->cam->initialized)
+		fimc_init_camera(ctrl);
+
+	fimc_hwset_camera_source(ctrl);
+	fimc_hwset_camera_offset(ctrl);
+	fimc_hwset_camera_type(ctrl);
+	fimc_hwset_camera_polarity(ctrl);
+	fimc_set_scaler_info(ctrl);
+	fimc_hwset_prescaler(ctrl);
+	fimc_hwset_scaler(ctrl);
+	fimc_hwset_output_colorspace(ctrl, cap->fmt.pixelformat);
+
+	if (cap->fmt.pixelformat == V4L2_PIX_FMT_RGB32 || \
+		cap->fmt.pixelformat == V4L2_PIX_FMT_RGB565)
+		fimc_hwset_output_rgb(ctrl, cap->fmt.pixelformat);
+	else
+		fimc_hwset_output_yuv(ctrl, cap->fmt.pixelformat);
+	
+	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
+	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
+	fimc_hwset_org_output_size(ctrl, cap->fmt.width, cap->fmt.height);
+
+	for (i = 0; i < FIMC_CAPBUFS; i++)
+		fimc_hwset_output_address(ctrl, i, cap->buf[i].base, &cap->fmt);
+
+	fimc_hwset_start_scaler(ctrl);
+	fimc_hwset_enable_capture(ctrl);
+	
 	return 0;
 }
 
