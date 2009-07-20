@@ -217,7 +217,7 @@ struct fimc_fbinfo {
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
-	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, u32 sleep);
+	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, int sleep);
 };
 
 /* scaler abstraction: local use recommended */
@@ -395,6 +395,8 @@ extern void fimc_stop_scaler(struct fimc_control *ctrl);
 extern void fimc_disable_capture(struct fimc_control *ctrl);
 extern void fimc_disable_input_dma(struct fimc_control *ctrl);
 
+/* NEW Register access file */
+extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
 
 /*
  * D R I V E R  H E L P E R S

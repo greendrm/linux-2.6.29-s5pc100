@@ -39,8 +39,63 @@
 
 struct fimc_global *fimc_dev;
 
+static inline void fimc_irq_out(struct fimc_control *ctrl)
+{
+	unsigned int	prev, next;
+	int		ret = -1, wakeup = 0;
+
+	/* Interrupt pendding clear */
+	ret = fimc_hwset_clear_irq(ctrl);
+
+	if (ctrl->status != FIMC_READY_OFF) {
+		/* Attach done buffer to outgoing queue. */
+		if (ctrl->out->idx.prev != -1) {
+			ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.prev);
+			if (ret < 0) {
+				dev_err(ctrl->dev, "Failed: \
+						fimc_attach_out_queue.\n");
+			} else {
+				ctrl->out->idx.prev = -1;
+				wakeup = 1; /* To wake up fimc_v4l2_dqbuf(). */
+			}
+		}
+
+		/* Update index structure. */
+		if (ctrl->out->idx.next != -1) {
+			ctrl->out->idx.active	= ctrl->out->idx.next;
+			ctrl->out->idx.next	= -1;
+		}
+
+		/* Detach buffer from incomming queue. */
+		ret =  fimc_detach_in_queue(ctrl, &next);
+		if (ret == 0) {	/* There is a buffer in incomming queue. */
+			prev = ctrl->out->idx.active;
+			ctrl->out->idx.prev	= prev;
+			ctrl->out->idx.next	= next;
+
+			/* Set the address */
+			fimc_set_src_addr(ctrl, ctrl->out->buf[next].base);
+		}
+	}
+
+	if (wakeup == 1)
+		wake_up_interruptible(&ctrl->wq);
+}
+
+static inline void fimc_irq_cap(struct fimc_control *ctrl)
+{
+
+}
+
 static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
+	struct fimc_control *ctrl = (struct fimc_control *) dev_id;
+	if (ctrl->cap) {
+		fimc_irq_cap(ctrl);
+	} else if (ctrl->out) {
+		fimc_irq_out(ctrl);
+	}
+	
 	return IRQ_HANDLED;
 }
 
@@ -123,8 +178,75 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 	return 0;
 }
 
+
+static void fimc_mmap_open(struct vm_area_struct *vma)
+{
+	struct fimc_global *dev = fimc_dev;
+	int pri_data	= (int)vma->vm_private_data;
+	u32 id		= (pri_data / 0x10);
+	u32 idx		= (pri_data % 0x10);
+
+	atomic_inc(&dev->ctrl[id].out->buf[idx].mapped_cnt);
+}
+
+static void fimc_mmap_close(struct vm_area_struct *vma)
+{
+	struct fimc_global *dev = fimc_dev;
+	int pri_data	= (int)vma->vm_private_data;
+	u32 id		= (pri_data / 0x10);
+	u32 idx		= (pri_data % 0x10);
+
+	atomic_dec(&dev->ctrl[id].out->buf[idx].mapped_cnt);
+}
+
+static struct vm_operations_struct fimc_mmap_ops = {
+	.open	= fimc_mmap_open,
+	.close	= fimc_mmap_close,
+};
+
 static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 {
+	struct fimc_control *ctrl = filp->private_data;
+	u32 start_phy_addr = 0;
+	u32 size = vma->vm_end - vma->vm_start;
+	u32 pfn, idx = vma->vm_pgoff;
+	int pri_data = 0;
+
+	if (!ctrl->out) {	/* OUTPUT device */
+		if (size > ctrl->out->buf[idx].length) {
+			dev_err(ctrl->dev, "Requested mmap size is too big.\n");
+			return -EINVAL;
+		}
+
+		pri_data = (ctrl->id * 0x10) + idx;
+		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+		vma->vm_flags |= VM_RESERVED;
+		vma->vm_ops = &fimc_mmap_ops;
+		vma->vm_private_data = (void *)pri_data;
+
+		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+			dev_err(ctrl->dev, "writable mapping must be shared\n");
+			return -EINVAL;
+		}
+
+		start_phy_addr = ctrl->out->buf[idx].base;
+		pfn = __phys_to_pfn(start_phy_addr);
+
+		if (remap_pfn_range(vma, vma->vm_start, pfn, size, \
+							vma->vm_page_prot)) {
+			dev_err(ctrl->dev, "mmap fail\n");
+			return -EINVAL;
+		}
+
+		vma->vm_ops->open(vma);
+
+		ctrl->out->buf[idx].flags |= V4L2_BUF_FLAG_MAPPED;
+	} else {		/* CAPTURE device */
+
+	}
+
+
+
 	return 0;
 }
 
@@ -142,6 +264,97 @@ ssize_t fimc_read(struct file *filp, char *buf, size_t count, loff_t *pos)
 static
 ssize_t fimc_write(struct file *filp, const char *b, size_t c, loff_t *offset)
 {
+	return 0;
+}
+
+static int fimc_wakeup_fifo(struct fimc_control *ctrl)
+{
+#if 0
+	int ret = -1;
+
+	/* Set the rot, pp param register. */
+	ret = fimc_check_param(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "fimc_check_param failed.\n");
+		return -EINVAL;
+	}
+
+	if ( ctrl->rot.degree != 0) {
+		ret = s3c_rp_rot_set_param(ctrl);
+		if (ret < 0) {
+			rp_err(ctrl->log_level, "s3c_rp_rot_set_param failed.\n");
+			return -1;
+		}
+	}
+
+	ret = s3c_rp_pp_set_param(ctrl);
+	if (ret < 0) {
+		rp_err(ctrl->log_level, "s3c_rp_pp_set_param failed.\n");
+		return -1;
+	}
+
+	/* Start PP */
+	ret = s3c_rp_pp_start(ctrl, ctrl->pp.buf_idx.run);
+	if (ret < 0) {
+		rp_err(ctrl->log_level, "Failed : s3c_rp_pp_start().\n");
+		return -1;
+	}
+
+	ctrl->status = FIMC_STREAMON;
+#endif
+
+	return 0;
+}
+
+int fimc_wakeup(void)
+{
+#if 0
+	struct fimc_control	*ctrl;
+	int			ret = -1;
+
+	ctrl = &s3c_rp;
+
+	if (ctrl->status == FIMC_READY_RESUME) {
+		ret = fimc_wakeup_fifo(ctrl);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "s3c_rp_wakeup_fifo failed in %s.\n", __FUNCTION__);
+			return -EINVAL;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+static void fimc_sleep_fifo(struct fimc_control *ctrl)
+{
+#if 0
+	if (ctrl->rot.status != ROT_IDLE)
+		rp_err(ctrl->log_level, "[%s : %d] ROT status isn't idle.\n", __FUNCTION__, __LINE__);
+
+	if ((ctrl->incoming_queue[0] != -1) || (ctrl->inside_queue[0] != -1))
+		rp_err(ctrl->log_level, "[%s : %d] queue status isn't stable.\n", __FUNCTION__, __LINE__);
+
+	if ((ctrl->pp.buf_idx.next != -1) || (ctrl->pp.buf_idx.prev != -1))
+		rp_err(ctrl->log_level, "[%s : %d] PP status isn't stable.\n", __FUNCTION__, __LINE__);
+
+	s3c_rp_pp_fifo_stop(ctrl, FIFO_SLEEP);
+#endif
+}
+
+int fimc_sleep(void)
+{
+#if 0
+	struct fimc_control *ctrl;
+
+	ctrl = &s3c_rp;
+
+	if (ctrl->status == FIMC_STREAMON) {
+		fimc_sleep_fifo(ctrl);
+	}
+
+	ctrl->status		= FIMC_ON_SLEEP;
+#endif
 	return 0;
 }
 
@@ -167,6 +380,20 @@ static int fimc_open(struct file *filp)
 	fimc_reset(ctrl);
 	filp->private_data = ctrl;
 
+	ctrl->fb.open_fifo	= s3cfb_open_fifo;
+	ctrl->fb.close_fifo	= s3cfb_close_fifo;
+	ctrl->status		= FIMC_STREAMOFF;
+
+#if 0
+	/* To do : have to send ctrl to the fimd driver. */
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_SUSPEND_FIFO, (unsigned long)fimc_sleep);
+	if (ret < 0)
+		dev_err(ctrl->dev,  "s3cfb_direct_ioctl(S3CFB_SET_SUSPEND_FIFO) fail\n");
+
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_RESUME_FIFO, (unsigned long)fimc_wakeup);
+	if (ret < 0)
+		dev_err(ctrl->dev,  "s3cfb_direct_ioctl(S3CFB_SET_SUSPEND_FIFO) fail\n");
+#endif
 	mutex_unlock(&ctrl->lock);
 
 	return 0;
@@ -180,6 +407,7 @@ static int fimc_release(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
+	int ret = 0;
 
 	ctrl = (struct fimc_control *) filp->private_data;
 	pdata = to_fimc_plat(ctrl->dev);
@@ -197,6 +425,12 @@ static int fimc_release(struct file *filp)
 		/* shutdown */
 		if (ctrl->cam->cam_power)
 			ctrl->cam->cam_power(0);
+	} else if (ctrl->out) {
+		ctrl->status = FIMC_READY_OFF;
+		ret = fimc_stop_streaming(ctrl);
+		if (ret < 0)
+			dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
+		ctrl->status = FIMC_STREAMOFF;
 	}
 
 	if (ctrl->cap)
