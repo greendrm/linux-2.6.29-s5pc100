@@ -212,19 +212,18 @@ int fimc_check_param(struct fimc_control *ctrl)
 
 	if ((dst.left + dst.width) > bound.width) {
 		dev_err(ctrl->dev, "Horizontal position setting is failed.\n");
-		dev_err(ctrl->dev, "\tleft = %d, width = %d, lcd width = %d, \n", 
+		dev_err(ctrl->dev, "\tleft = %d, width = %d, lcd width = %d, \n",
 			dst.left, dst.width, bound.width);
 		ret = -EINVAL;
 	} else if ((dst.top + dst.height) > bound.height) {
 		dev_err(ctrl->dev, "Vertical position setting is failed.\n");
-		dev_err(ctrl->dev, "\ttop = %d, height = %d, lcd height = %d, \n", 
+		dev_err(ctrl->dev, "\ttop = %d, height = %d, lcd height = %d, \n",
 			dst.top, dst.height, bound.height);		
 		ret = -EINVAL;
 	}
 
 	return ret;
 }
-
 
 static void fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 {
@@ -241,7 +240,6 @@ static void fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
 	fimc_hwset_output_yuv(ctrl, pixfmt);
 	fimc_hwset_output_rgb(ctrl, pixfmt);
 }
-
 
 static void fimc_set_format(struct fimc_control *ctrl)
 {
@@ -285,156 +283,77 @@ static void fimc_set_rot(struct fimc_control *ctrl)
 		fimc_hwset_output_rot_flip(ctrl, rot, flip);
 	}
 }
-#if 0
-static int fimc_set_src_dma_offset(struct fimc_control *ctrl)
+
+static void fimc_set_src_dma_offset(struct fimc_control *ctrl)
 {
 	struct v4l2_rect bound, crop;
-	
-	crop.left	= ctrl->out->crop.c.left;
-	crop.top	= ctrl->out->crop.c.top;
-	crop.width	= ctrl->out->crop.c.width;
-	crop.height	= ctrl->out->crop.c.height;
+	u32 pixfmt = ctrl->out->pix.pixelformat;
 
-	bound.width	= ctrl->out->pix.width;
-	bound.height	= ctrl->out->pix.height;
-	pixfmt		= ctrl->out->pix.pixelformat;
+	bound.width = ctrl->out->pix.width;
+	bound.height = ctrl->out->pix.height;
 
-	fimc_hwset_output_offset(ctrl, pixfmt, &bound, &crop);
+	crop.left = ctrl->out->crop.c.left;
+	crop.top = ctrl->out->crop.c.top;
+	crop.width = ctrl->out->crop.c.width;
+	crop.height = ctrl->out->crop.c.height;
+
+	fimc_hwset_input_offset(ctrl, pixfmt, &bound, &crop);
 }
 
 void fimc_set_src_dma_size(struct fimc_control *ctrl)
 {
-	u32 cfg_o = 0, cfg_r = 0;
-	u32 width_r = 0, height_r = 0;
+	u32 org_w = 0, org_h = 0, real_w = 0, real_h = 0;	
 
-	cfg_o |= S3C_ORGISIZE_HORIZONTAL(ctrl->out->pix.width);
-	cfg_o |= S3C_ORGISIZE_VERTICAL(ctrl->out->pix.height);
-
-	width_r		= ctrl->out->pix.width - ctrl->out->crop.c.left;
-	height_r	= ctrl->out->pix.height - ctrl->out->crop.c.top;
-	cfg_r |= S3C_CIREAL_ISIZE_WIDTH(width_r);
-	cfg_r |= S3C_CIREAL_ISIZE_HEIGHT(height_r);
-
-	writel(cfg_o, ctrl->regs + S3C_ORGISIZE);
-	writel(cfg_r, ctrl->regs + S3C_CIREAL_ISIZE);
+	org_w = ctrl->out->pix.width;
+	org_h = ctrl->out->pix.height;	
 	
+	real_w = org_w - ctrl->out->crop.c.left;
+	real_h = org_h - ctrl->out->crop.c.top;
+
+	fimc_hwset_org_input_size(ctrl, org_w, org_h);
+	fimc_hwset_real_input_size(ctrl, real_w, real_h);
 }
 
 void fimc_set_dst_dma_offset(struct fimc_control *ctrl)
 {
-	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
-	
-	writel(cfg_y, ctrl->regs + S3C_CIOYOFF);
-	writel(cfg_cb, ctrl->regs + S3C_CIOCBOFF);
-	writel(cfg_cr, ctrl->regs + S3C_CIOCROFF);
+	struct v4l2_rect bound, crop;
+	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
+
+	bound.width = ctrl->out->fbuf.fmt.width;
+	bound.height = ctrl->out->fbuf.fmt.height;
+
+	crop.left = ctrl->out->win.w.left;
+	crop.top = ctrl->out->win.w.top;
+	crop.width = ctrl->out->win.w.width;
+	crop.height = ctrl->out->win.w.height;
+
+	fimc_hwset_output_offset(ctrl, pixfmt, &bound, &crop);
 }
 
 void fimc_set_dst_dma_size(struct fimc_control *ctrl)
 {
 	int is_rotate = 0;
-	u32 cfg = 0;
 	struct v4l2_rect rect;
 
-	
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (is_rotate && 0x10) {	/* Landscape mode */
-		rect.width	= ctrl->out->fbuf.fmt.height;
-		rect.height	= ctrl->out->fbuf.fmt.width;
+		rect.width	= ctrl->out->win.w.height;
+		rect.height	= ctrl->out->win.w.width;
 	} else {			/* Portrait mode */
-		rect.width	= ctrl->out->fbuf.fmt.width;
-		rect.height	= ctrl->out->fbuf.fmt.height;
+		rect.width	= ctrl->out->win.w.width;
+		rect.height	= ctrl->out->win.w.height;
 	}
-
-	/* TargetHsize, TargetVsize setting */
-	cfg = readl(ctrl->regs + S3C_CITRGFMT);
-	cfg &= ~S3C_CITRGFMT_TARGETH_MASK;
-	cfg &= ~S3C_CITRGFMT_TARGETV_MASK;
-	cfg |= S3C_CITRGFMT_TARGETHSIZE(rect.width);
-	cfg |= S3C_CITRGFMT_TARGETVSIZE(rect.height);
-	writel(cfg, ctrl->regs + S3C_CITRGFMT);
-
-	/* CITAREA setting */
-	cfg = 0;
-	cfg = S3C_CITAREA_TARGET_AREA(rect.width * rect.height);
-	writel(cfg, ctrl->regs + S3C_CITAREA);
-
-	/* ORGOSIZE */
-	cfg = 0;
-	cfg |= S3C_ORGOSIZE_HORIZONTAL(rect.width);
-	cfg |= S3C_ORGOSIZE_VERTICAL(rect.height);
-	writel(cfg, ctrl->regs + S3C_ORGOSIZE);
-
-	/* TargetHsize_ext, TargetVsize_ext setting */
-	cfg = readl(ctrl->regs + S3C_CIEXTEN);
-	cfg &= ~S3C_CIEXTEN_TARGETH_EXT_MASK;
-	cfg &= ~S3C_CIEXTEN_TARGETV_EXT_MASK;
-	cfg |= S3C_CIEXTEN_TARGETH_EXT(rect.width);
-	cfg |= S3C_CIEXTEN_TARGETV_EXT(rect.height);
-	writel(cfg, ctrl->regs + S3C_CIEXTEN);
-}
-
-
-static void fimc_set_src_crop(struct fimc_control *ctrl)
-{
-	int ret = 0;
-
-	fimc_set_src_dma_offset(ctrl);
 	
-	fimc_set_src_dma_size(ctrl);
+	fimc_hwset_output_size(ctrl, rect.width, rect.height);
+	fimc_hwset_output_area(ctrl, rect.width, rect.height);
+	fimc_hwset_org_output_size(ctrl, rect.width, rect.height);
+	fimc_hwset_ext_output_size(ctrl, rect.width, rect.height);
 }
 
-static void fimc_set_dst_crop(struct fimc_control *ctrl)
-{
-	if (ctrl->out != NULL) {
-		if (ctrl->out->fbuf.base != 0) {	/* DMA OUT */
-			fimc_set_dst_dma_offset(ctrl);
-		} else {				/* FIMD FIFO */
-			/* fall through : See also fimc_fifo_start() */
-		}
-
-		fimc_set_dst_dma_size(ctrl);
-	} else if (ctrl->cap != NULL) {
-
-	} else {
-		dev_err(ctrl->dev, "[%s] Invalid case.\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-#endif
-int fimc_set_param(struct fimc_control *ctrl)
-{
-	if (ctrl->status != FIMC_STREAMOFF) {
-		dev_err(ctrl->dev, "FIMC is running.\n");
-		return -EBUSY;
-	}
-
-	fimc_hwset_enable_irq(ctrl, 0, 0);
-	fimc_set_format(ctrl);
-	fimc_set_path(ctrl);
-	fimc_set_rot(ctrl);
-//	fimc_set_src_crop(ctrl);
-//	fimc_set_dst_crop(ctrl);
-
-#if 0
-
-	ret = fimc_set_scaler(ctrl);
-	if (ret < 0)
-		return -EINVAL;
-#endif
-	return 0;
-}
-
-#if 0
-
-
-
-int fimc_set_scaler(struct fimc_control *ctrl)
+static int fimc_set_scaler(struct fimc_control *ctrl)
 {
 	struct v4l2_rect src, dst;
-	u32 rot = 0, flip = 0, is_rotate = 0;
+	u32 is_rotate = 0;
 	int ret = 0;
 
 	src.width = 0;
@@ -442,39 +361,26 @@ int fimc_set_scaler(struct fimc_control *ctrl)
 	dst.width = 0;
 	dst.height = 0;	
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+	src.width	= ctrl->out->crop.c.width;
+	src.height	= ctrl->out->crop.c.height;
 
-	if (ctrl->out != NULL) {
-		src.width	= ctrl->out->crop.c.width;
-		src.height	= ctrl->out->crop.c.height;
-
-		rot = ctrl->out->rotate;
-		flip = ctrl->out->flip;
-
-		is_rotate = fimc_mapping_rot_flip(rot, flip);
-		if (is_rotate && 0x10) {	/* Landscape mode */
-			if (ctrl->out->fbuf.base != 0) {
-				dst.width	= ctrl->out->fbuf.fmt.height;
-				dst.height	= ctrl->out->fbuf.fmt.width;
-			} else {
-				dst.width	= ctrl->out->win.w.height;
-				dst.height	= ctrl->out->win.w.width;
-			}
-		} else {			/* Portrait mode */
-			if (ctrl->out->fbuf.base != 0) {
-				dst.width	= ctrl->out->fbuf.fmt.width;
-				dst.height	= ctrl->out->fbuf.fmt.height;
-			} else {
-				dst.width	= ctrl->out->win.w.width;
-				dst.height	= ctrl->out->win.w.height;
-			}
+	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
+	if (is_rotate && 0x10) {	/* Landscape mode */
+		if (ctrl->out->fbuf.base) {
+			dst.width	= ctrl->out->fbuf.fmt.height;
+			dst.height	= ctrl->out->fbuf.fmt.width;
+		} else {
+			dst.width	= ctrl->out->win.w.height;
+			dst.height	= ctrl->out->win.w.width;
 		}
-		
-	} else if (ctrl->cap != NULL){
-		/* To do */
-	} else {
-		dev_err(ctrl->dev, "[%s] Invalid case.\n", __FUNCTION__);
-		return -EINVAL;
+	} else {			/* Portrait mode */
+		if (ctrl->out->fbuf.base) {
+			dst.width	= ctrl->out->fbuf.fmt.width;
+			dst.height	= ctrl->out->fbuf.fmt.height;
+		} else {
+			dst.width	= ctrl->out->win.w.width;
+			dst.height	= ctrl->out->win.w.height;
+		}
 	}
 
 	ret = fimc_get_scaler_factor(src.width, dst.width, \
@@ -505,8 +411,33 @@ int fimc_set_scaler(struct fimc_control *ctrl)
 
 	ctrl->sc.shfactor = 10 - (ctrl->sc.hfactor + ctrl->sc.vfactor);
 
-	fimc_set_prescaler(ctrl);
-	fimc_set_mainscaler(ctrl);
+	fimc_hwset_prescaler(ctrl);
+	fimc_hwset_scaler(ctrl);
+
+	return 0;
+}
+
+int fimc_set_param(struct fimc_control *ctrl)
+{
+	if (ctrl->status != FIMC_STREAMOFF) {
+		dev_err(ctrl->dev, "FIMC is running.\n");
+		return -EBUSY;
+	}
+
+	fimc_hwset_enable_irq(ctrl, 0, 0);
+	fimc_set_format(ctrl);
+	fimc_set_path(ctrl);
+	fimc_set_rot(ctrl);
+
+	fimc_set_src_dma_offset(ctrl);
+	fimc_set_src_dma_size(ctrl);
+
+	if (ctrl->out->fbuf.base)
+		fimc_set_dst_dma_offset(ctrl);
+
+	fimc_set_dst_dma_size(ctrl);
+
+	fimc_set_scaler(ctrl);
 
 	return 0;
 }
@@ -622,7 +553,6 @@ int fimc_start_fifo(struct fimc_control *ctrl)
 
 	return 0;
 }
-#endif
 
 int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 {
@@ -993,13 +923,13 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 
 		base = ctrl->out->buf[index].base;
 		fimc_set_src_addr(ctrl, base);
-#if 0
+
 		ret = fimc_start_fifo(ctrl);
 		if (ret < 0) {
 			dev_err(ctrl->dev, "Fail: fimc_start_fifo\n");
 			return -EINVAL;
 		}
-#endif
+
 		ctrl->out->idx.active = index;
 		ctrl->status = FIMC_STREAMON;
 	}

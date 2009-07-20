@@ -621,10 +621,6 @@ int fimc_hwset_output_rgb(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CISCCTRL_OUTRGB_FMT_RGB888;
 	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
 		cfg |= S3C_CISCCTRL_OUTRGB_FMT_RGB565;
-	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
-		return -EINVAL;
 	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
@@ -970,6 +966,20 @@ int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	cfg |= S3C_ORGOSIZE_VERTICAL(height);
 
 	writel(cfg, ctrl->regs + S3C_ORGOSIZE);
+
+	return 0;
+}
+
+int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIEXTEN);
+
+	cfg &= ~S3C_CIEXTEN_TARGETH_EXT_MASK;
+	cfg &= ~S3C_CIEXTEN_TARGETV_EXT_MASK;
+	cfg |= S3C_CIEXTEN_TARGETH_EXT(width);
+	cfg |= S3C_CIEXTEN_TARGETV_EXT(height);
+
+	writel(cfg, ctrl->regs + S3C_CIEXTEN);
 
 	return 0;
 }
