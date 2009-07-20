@@ -39,6 +39,34 @@
 
 struct fimc_global *fimc_dev;
 
+dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes)
+{
+	dma_addr_t end, addr, *curr;
+
+	mutex_lock(&ctrl->lock);
+
+	end = ctrl->mem.base + ctrl->mem.size;
+	curr = &ctrl->mem.curr;
+
+	if (*curr + bytes > end) {
+		addr = 0;
+	} else {
+		addr = *curr;
+		*curr += bytes;
+	}
+
+	mutex_unlock(&ctrl->lock);
+
+	return addr;
+}
+
+void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
+{
+	mutex_lock(&ctrl->lock);
+	ctrl->mem.curr -= bytes;
+	mutex_unlock(&ctrl->lock);
+}
+
 static inline void fimc_irq_out(struct fimc_control *ctrl)
 {
 	unsigned int	prev, next;
@@ -74,7 +102,7 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 			ctrl->out->idx.next	= next;
 
 			/* Set the address */
-			fimc_set_src_addr(ctrl, ctrl->out->buf[next].base);
+			fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
 		}
 	}
 
@@ -427,7 +455,7 @@ static int fimc_release(struct file *filp)
 			ctrl->cam->cam_power(0);
 	} else if (ctrl->out) {
 		ctrl->status = FIMC_READY_OFF;
-		ret = fimc_stop_streaming(ctrl);
+		ret = fimc_outdev_stop_streaming(ctrl);
 		if (ret < 0)
 			dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
 		ctrl->status = FIMC_STREAMOFF;

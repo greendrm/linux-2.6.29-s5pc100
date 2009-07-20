@@ -319,6 +319,11 @@ extern int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b);
 
 /* output device */
+extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
+extern int fimc_outdev_stop_camif(void *param);
+extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
+extern int fimc_start_fifo(struct fimc_control *ctrl);
+
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_output(void *fh, struct v4l2_control *c);
@@ -333,32 +338,6 @@ extern int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f
 extern int fimc_s_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f);
 extern int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f);
 
-/* overlay device */
-extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
-extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
-extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
-extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
-extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
-
-/* Configuration */
-extern int fimc_set_rot_degree(struct fimc_control *ctrl, int degree);
-extern int fimc_check_out_buf(struct fimc_control *ctrl, u32 num);
-extern int fimc_init_out_buf(struct fimc_control *ctrl);
-extern int fimc_check_param(struct fimc_control *ctrl);
-extern int fimc_set_param(struct fimc_control *ctrl);
-
-extern int fimc_mapping_rot_flip(u32 rot, u32 flip);
-extern int fimc_set_scaler(struct fimc_control *ctrl);
-extern int fimc_set_src_crop(struct fimc_control *ctrl);
-extern int fimc_set_dst_crop(struct fimc_control *ctrl);
-extern int fimc_set_rot(struct fimc_control *ctrl);
-extern int fimc_set_path(struct fimc_control *ctrl);
-extern int fimc_set_format(struct fimc_control *ctrl);
-extern int fimc_start_camif(void *param);
-extern int fimc_stop_camif(void *param);
-extern int fimc_stop_streaming(struct fimc_control *ctrl);
-extern int fimc_start_fifo(struct fimc_control *ctrl);
-
 extern int fimc_attach_in_queue(struct fimc_control *ctrl, u32 index);
 extern int fimc_detach_in_queue(struct fimc_control *ctrl, int *index);
 extern int fimc_attach_out_queue(struct fimc_control *ctrl, u32 index);
@@ -369,34 +348,74 @@ extern int fimc_init_out_queue(struct fimc_control *ctrl);
 extern void fimc_dump_context(struct fimc_control *ctrl);
 extern void fimc_print_signal(struct fimc_control *ctrl);
 
+
+/* overlay device */
+extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
+extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
+extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
+extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
+extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
+
+/* Configuration */
+extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
+extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
+#if 0
+extern int fimc_set_scaler(struct fimc_control *ctrl);
+extern int fimc_set_src_crop(struct fimc_control *ctrl);
+extern int fimc_set_dst_crop(struct fimc_control *ctrl);
+extern int fimc_set_rot(struct fimc_control *ctrl);
+#endif
+
 /* Register access file */
-extern void fimc_clear_irq(struct fimc_control *ctrl);
-extern void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable);
+extern void fimc_reset_camera(void);
 extern void fimc_reset(struct fimc_control *ctrl);
-extern void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
-extern void fimc_set_dst_addr(struct fimc_control *ctrl, dma_addr_t base, u32 idx);
-extern void fimc_set_prescaler(struct fimc_control *ctrl);
-extern void fimc_set_mainscaler(struct fimc_control *ctrl);
-extern int fimc_set_src_dma_offset(struct fimc_control *ctrl);
-extern void fimc_set_src_dma_size(struct fimc_control *ctrl);
-extern void fimc_set_dst_dma_offset(struct fimc_control *ctrl);
-extern void fimc_set_dst_dma_size(struct fimc_control *ctrl);
-extern int fimc_set_src_path(struct fimc_control *ctrl, u32 path);
-extern int fimc_set_dst_path(struct fimc_control *ctrl, u32 path);
-extern int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
-extern int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
-extern int fimc_set_dst_format(struct fimc_control *ctrl, u32 pixfmt);
-extern int fimc_set_src_format(struct fimc_control *ctrl, u32 pixfmt);
-
-extern void fimc_start_scaler(struct fimc_control *ctrl);
-extern void fimc_enable_capture(struct fimc_control *ctrl);
-extern void fimc_enable_input_dma(struct fimc_control *ctrl);
-extern void fimc_stop_scaler(struct fimc_control *ctrl);
-extern void fimc_disable_capture(struct fimc_control *ctrl);
-extern void fimc_disable_input_dma(struct fimc_control *ctrl);
-
-/* NEW Register access file */
+extern int fimc_hwset_camera_source(struct fimc_control *ctrl);
+extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int level);
+extern int fimc_hwset_disable_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
+extern int fimc_hwset_reset(struct fimc_control *ctrl);
+extern int fimc_hwget_overflow_state(struct fimc_control *ctrl);
+extern int fimc_hwset_camera_offset(struct fimc_control *ctrl);
+extern int fimc_hwset_camera_polarity(struct fimc_control *ctrl);
+extern int fimc_hwset_camera_type(struct fimc_control *ctrl);
+extern int fimc_hwset_output_size(struct fimc_control *ctrl, int width, int height);
+extern int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_output_rot_flip(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_hwset_output_area(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwset_enable_lastirq(struct fimc_control *ctrl);
+extern int fimc_hwset_disable_lastirq(struct fimc_control *ctrl);
+extern int fimc_hwset_prescaler(struct fimc_control *ctrl);
+extern int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_output_address(struct fimc_control *ctrl, int id, dma_addr_t base, struct v4l2_pix_format *fmt);
+extern int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_hwset_scaler(struct fimc_control *ctrl);
+extern int fimc_hwset_enable_lcdfifo(struct fimc_control *ctrl);
+extern int fimc_hwset_disable_lcdfifo(struct fimc_control *ctrl);
+extern int fimc_hwset_start_scaler(struct fimc_control *ctrl);
+extern int fimc_hwset_stop_scaler(struct fimc_control *ctrl);
+extern int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_output_rgb(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_ext_rgb(struct fimc_control *ctrl, int enable);
+extern int fimc_hwset_enable_capture(struct fimc_control *ctrl);
+extern int fimc_hwset_disable_capture(struct fimc_control *ctrl);
+extern int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, struct v4l2_pix_format *fmt);
+extern int fimc_hwset_enable_autoload(struct fimc_control *ctrl);
+extern int fimc_hwset_disable_autoload(struct fimc_control *ctrl);
+extern int fimc_hwset_real_input_size(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwset_addr_change_enable(struct fimc_control *ctrl);
+extern int fimc_hwset_addr_change_disable(struct fimc_control *ctrl);
+extern int fimc_hwset_input_burst_cnt(struct fimc_control *ctrl, u32 cnt);
+extern int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_input_flip(struct fimc_control *ctrl, u32 rot, u32 flip);
+extern int fimc_hwset_input_source(struct fimc_control *ctrl, enum fimc_input path);
+extern int fimc_hwset_start_input_dma(struct fimc_control *ctrl);
+extern int fimc_hwset_stop_input_dma(struct fimc_control *ctrl);
+extern int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect *bound, struct v4l2_rect *crop);
+extern int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, struct v4l2_rect *bound, struct v4l2_rect *crop);
+extern int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height);
 
 /*
  * D R I V E R  H E L P E R S
