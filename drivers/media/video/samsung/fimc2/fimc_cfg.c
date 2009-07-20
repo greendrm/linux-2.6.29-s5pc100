@@ -200,40 +200,38 @@ int fimc_init_out_buf(struct fimc_control *ctrl)
 
 int fimc_check_param(struct fimc_control *ctrl)
 {
-	struct v4l2_rect src_rect, dst_rect, fimd_rect;
-	int	ret = 0;
+	struct v4l2_rect dst, bound;
+	u32 is_rotate = 0;
+	int ret = 0;
 
-	/* check flip */
-	if((ctrl->out->rotate != 90) && (ctrl->out->rotate != 270)) {
-		src_rect.width		= ctrl->out->pix.width;
-		src_rect.height		= ctrl->out->pix.height; 
-		fimd_rect.width		= ctrl->fb.lcd->width;
-		fimd_rect.height	= ctrl->fb.lcd->height;
-	} else {	/* Landscape mode */
-		src_rect.width		= ctrl->out->pix.height;
-		src_rect.height		= ctrl->out->pix.width;
-		fimd_rect.width		= ctrl->fb.lcd->height;
-		fimd_rect.height	= ctrl->fb.lcd->width;
-	}
+	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
+	dst.top		= ctrl->out->win.w.top;
+	dst.left	= ctrl->out->win.w.left;
+	dst.width	= ctrl->out->win.w.width;
+	dst.height	= ctrl->out->win.w.height;
 
-	/* In case of OVERLAY device */
-	dst_rect.width	= ctrl->out->win.w.width;
-	dst_rect.height	= ctrl->out->win.w.height;
-	dst_rect.top	= ctrl->out->win.w.top;
-	dst_rect.left	= ctrl->out->win.w.left;
-	
-	/* To do : OUTPUT device */
+	if (!ctrl->out->fbuf.base) {	/* Destructive OVERLAY device */
+ 		bound.width		= ctrl->out->fbuf.fmt.width;
+		bound.height		= ctrl->out->fbuf.fmt.height;
+  	} else {			/* Non-Destructive OVERLAY device */
+		if (is_rotate && 0x10) {	/* Landscape mode */
+	 		bound.width		= ctrl->fb.lcd->height;
+			bound.height		= ctrl->fb.lcd->width;
+		} else {			/* Portrait mode */
+	 		bound.width		= ctrl->fb.lcd->width;
+			bound.height		= ctrl->fb.lcd->height;
+		} 
+ 	}
 
-
-	if ((dst_rect.left + dst_rect.width) > fimd_rect.width) {
+	if ((dst.left + dst.width) > bound.width) {
 		dev_err(ctrl->dev, "Horizontal position setting is failed.\n");
 		dev_err(ctrl->dev, "\tleft = %d, width = %d, lcd width = %d, \n", 
-			dst_rect.left, dst_rect.width, fimd_rect.width);
+			dst.left, dst.width, bound.width);
 		ret = -EINVAL;
-	} else if ((dst_rect.top + dst_rect.height) > fimd_rect.height) {
+	} else if ((dst.top + dst.height) > bound.height) {
 		dev_err(ctrl->dev, "Vertical position setting is failed.\n");
 		dev_err(ctrl->dev, "\ttop = %d, height = %d, lcd height = %d, \n", 
-			dst_rect.top, dst_rect.height, fimd_rect.height);		
+			dst.top, dst.height, bound.height);		
 		ret = -EINVAL;
 	}
 
@@ -743,8 +741,9 @@ int fimc_start_camif(void *param)
 	return 0;
 }
 
-int fimc_stop_camif(struct fimc_control *ctrl)
+int fimc_stop_camif(void *param)
 {
+	struct fimc_control *ctrl = (struct fimc_control *)param;
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
 	if (ctrl->out != NULL) {
@@ -761,10 +760,15 @@ int fimc_stop_camif(struct fimc_control *ctrl)
 	return 0;
 }
 
-static int fimc_stop_fifo(struct fimc_control *ctrl)
+static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
 {
+	int ret = -1;
+
 	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
+	ret = ctrl->fb.close_fifo(ctrl->id, fimc_stop_camif, (void *)ctrl, sleep);
+	if (ret < 0)
+		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 
 	return 0;
 }
@@ -787,7 +791,7 @@ int fimc_stop_streaming(struct fimc_control *ctrl)
 		
 		fimc_stop_camif(ctrl);
 	} else {				/* FIMD FIFO */
-		fimc_stop_fifo(ctrl);
+		fimc_stop_fifo(ctrl, FIFO_CLOSE);
 	}
 
 	return ret;

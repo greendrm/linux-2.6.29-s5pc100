@@ -217,7 +217,7 @@ struct fimc_fbinfo {
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
-	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, int sleep);
+	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, u32 sleep);
 };
 
 /* scaler abstraction: local use recommended */
@@ -355,7 +355,7 @@ extern int fimc_set_rot(struct fimc_control *ctrl);
 extern int fimc_set_path(struct fimc_control *ctrl);
 extern int fimc_set_format(struct fimc_control *ctrl);
 extern int fimc_start_camif(void *param);
-extern int fimc_stop_camif(struct fimc_control *ctrl);
+extern int fimc_stop_camif(void *param);
 extern int fimc_stop_streaming(struct fimc_control *ctrl);
 extern int fimc_start_fifo(struct fimc_control *ctrl);
 
