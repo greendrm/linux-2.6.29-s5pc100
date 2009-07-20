@@ -27,6 +27,7 @@
 #include <linux/clk.h>
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
+#include <linux/spi/spi.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -129,28 +130,42 @@ static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
         },
 };
 
-#ifdef CONFIG_FB_S3C
-static void smdkc110_cfg_gpio(struct platform_device *pdev)
+#ifdef CONFIG_FB_S3C_LTE480WV
+static void lte480wv_cfg_gpio(struct platform_device *pdev)
 {
 	int i;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++) {
 		s3c_gpio_cfgpin(S5PC11X_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF0(i), S3C_GPIO_PULL_NONE);
+	}
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++) {
 		s3c_gpio_cfgpin(S5PC11X_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF1(i), S3C_GPIO_PULL_NONE);
+	}
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++) {
 		s3c_gpio_cfgpin(S5PC11X_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF2(i), S3C_GPIO_PULL_NONE);
+	}
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
 		s3c_gpio_cfgpin(S5PC11X_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF3(i), S3C_GPIO_PULL_NONE);
+	}
 
 	/* mDNIe SEL: why we shall write 0x2 ? */
 	writel(0x2, S5P_MDNIE_SEL);
+
+	/* drive strength to max */
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x12c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x14c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
+	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
 }
 
-static int smdkc110_backlight_on(struct platform_device *pdev)
+static int lte480wv_backlight_on(struct platform_device *pdev)
 {
 	int err;
 
@@ -168,7 +183,7 @@ static int smdkc110_backlight_on(struct platform_device *pdev)
 	return 0;
 }
 
-static int smdkc110_reset_lcd(struct platform_device *pdev)
+static int lte480wv_reset_lcd(struct platform_device *pdev)
 {
 	int err;
 
@@ -193,16 +208,152 @@ static int smdkc110_reset_lcd(struct platform_device *pdev)
 	return 0;
 }
 
-static struct s3c_platform_fb fb_data __initdata = {
+static struct s3c_platform_fb lte480wv_data __initdata = {
 	.hw_ver	= 0x60,
 	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
 	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
 
-	.cfg_gpio = smdkc110_cfg_gpio,
-	.backlight_on = smdkc110_backlight_on,
-	.reset_lcd = smdkc110_reset_lcd,
+	.cfg_gpio = lte480wv_cfg_gpio,
+	.backlight_on = lte480wv_backlight_on,
+	.reset_lcd = lte480wv_reset_lcd,
+};
+#endif
+
+#ifdef CONFIG_FB_S3C_TL2796
+static void tl2796_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF0(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF1(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF2(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF3(i), S3C_GPIO_PULL_NONE);
+	}
+
+	/* mDNIe SEL: why we shall write 0x2 ? */
+	writel(0x2, S5P_MDNIE_SEL);
+
+	/* drive strength to max */
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x12c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x14c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
+	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
+
+	s3c_gpio_cfgpin(S5PC11X_GPB(4), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(5), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(6), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(7), S3C_GPIO_SFN(1));
+
+	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);	
+
+	s3c_gpio_cfgpin(S5PC11X_GPH0(5), S3C_GPIO_SFN(1));
+}
+
+static int tl2796_backlight_on(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC11X_GPD0(3), "GPD0");
+
+	if (err) {
+		printk(KERN_ERR "failed to request GPD0 for "
+			"lcd backlight control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC11X_GPD0(3), 1);
+	gpio_free(S5PC11X_GPD0(3));
+
+	return 0;
+}
+
+static int tl2796_reset_lcd(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC11X_GPH0(6), "GPH0");
+	if (err) {
+		printk(KERN_ERR "failed to request GPH0 for "
+			"lcd reset control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC11X_GPH0(6), 1);
+	mdelay(100);
+
+	gpio_set_value(S5PC11X_GPH0(6), 0);
+	mdelay(10);
+
+	gpio_set_value(S5PC11X_GPH0(6), 1);
+	mdelay(10);
+
+	gpio_free(S5PC11X_GPH0(6));
+
+	return 0;
+}
+
+static struct s3c_platform_fb tl2796_data __initdata = {
+	.hw_ver	= 0x60,
+	.clk_name = "lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
+	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
+
+	.cfg_gpio = tl2796_cfg_gpio,
+	.backlight_on = tl2796_backlight_on,
+	.reset_lcd = tl2796_reset_lcd,
+};
+
+#define LCD_BUS_NUM 	3
+#define DISPLAY_CS	S5PC1XX_GPK3(5)
+static struct spi_board_info spi_board_info[] __initdata = {
+    	{
+	    	.modalias	= "tl2796",
+		.platform_data	= NULL,
+		.max_speed_hz	= 1200000,
+		.bus_num	= LCD_BUS_NUM,
+		.chip_select	= 0,
+		.mode		= SPI_MODE_3,
+		.controller_data = (void *)DISPLAY_CS,
+	},
+};
+
+#define DISPLAY_CLK	S5PC1XX_GPK3(6)
+#define DISPLAY_SI	S5PC1XX_GPK3(7)
+static struct spi_gpio_platform_data tl2796_spi_gpio_data = {
+	.sck	= DISPLAY_CLK,
+	.mosi	= DISPLAY_SI,
+	.miso	= -1,
+
+	.num_chipselect	= 1,
+};
+
+static struct platform_device s3c_device_spi_gpio = {
+	.name	= "spi_gpio",
+	.id	= LCD_BUS_NUM,
+	.dev	= {
+		.parent		= &s3c_device_fb.dev,
+		.platform_data	= &tl2796_spi_gpio_data,
+	},
 };
 #endif
 
@@ -212,6 +363,9 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_fb,
 	&s3c_device_dm9000,
 	&s3c_device_mfc,
+#ifdef CONFIG_FB_S3C_TL2796
+	&s3c_device_spi_gpio,
+#endif
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -309,11 +463,17 @@ static void __init smdkc110_dm9000_set(void)
 static void __init smdkc110_machine_init(void)
 {
 	smdkc110_dm9000_set();
-	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
-#ifdef CONFIG_FB_S3C
-	s3cfb_set_platdata(&fb_data);
+#ifdef CONFIG_FB_S3C_LTE480WV
+	s3cfb_set_platdata(&lte480wv_data);
 #endif
+
+#ifdef CONFIG_FB_S3C_TL2796
+	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
+	s3cfb_set_platdata(&tl2796_data);
+#endif
+
+	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)
 //	s5pc11x_pm_init();
