@@ -28,6 +28,7 @@
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -159,10 +160,10 @@ static void lte480wv_cfg_gpio(struct platform_device *pdev)
 	writel(0x2, S5P_MDNIE_SEL);
 
 	/* drive strength to max */
-	writel(0xffffffff, S5PC11X_VA_GPIO + 0x12c);
-	writel(0xffffffff, S5PC11X_VA_GPIO + 0x14c);
-	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
-	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
+	writel(0xffffffff, S5PC11X_GPF0_BASE + 0xc);
+	writel(0xffffffff, S5PC11X_GPF1_BASE + 0xc);
+	writel(0xffffffff, S5PC11X_GPF2_BASE + 0xc);
+	writel(0x000000ff, S5PC11X_GPF3_BASE + 0xc);
 }
 
 static int lte480wv_backlight_on(struct platform_device *pdev)
@@ -263,9 +264,9 @@ static void tl2796_cfg_gpio(struct platform_device *pdev)
 	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);	
+	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);
 
-	s3c_gpio_cfgpin(S5PC11X_GPH0(5), S3C_GPIO_SFN(1));
+	gpio_direction_output(S5PC11X_GPH0(5), 1);
 }
 
 static int tl2796_backlight_on(struct platform_device *pdev)
@@ -324,7 +325,7 @@ static struct s3c_platform_fb tl2796_data __initdata = {
 };
 
 #define LCD_BUS_NUM 	3
-#define DISPLAY_CS	S5PC1XX_GPK3(5)
+#define DISPLAY_CS	S5PC11X_GPB(5)
 static struct spi_board_info spi_board_info[] __initdata = {
     	{
 	    	.modalias	= "tl2796",
@@ -337,8 +338,8 @@ static struct spi_board_info spi_board_info[] __initdata = {
 	},
 };
 
-#define DISPLAY_CLK	S5PC1XX_GPK3(6)
-#define DISPLAY_SI	S5PC1XX_GPK3(7)
+#define DISPLAY_CLK	S5PC11X_GPB(4)
+#define DISPLAY_SI	S5PC11X_GPB(7)
 static struct spi_gpio_platform_data tl2796_spi_gpio_data = {
 	.sck	= DISPLAY_CLK,
 	.mosi	= DISPLAY_SI,
