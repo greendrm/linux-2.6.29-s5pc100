@@ -39,54 +39,6 @@ static int fimc_querycap(struct file *filp, void *fh,
 	return 0;
 }
 
-static int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
-{
-	struct fimc_control *ctrl = file->private_data;
-	struct fimc_global *fimc = get_fimc_dev();
-	struct s3c_platform_camera *cam;
-
-	if (inp->index >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
-	cam = fimc->camera[inp->index];
-
-	strcpy(inp->name, cam->info->type);
-	inp->type = V4L2_INPUT_TYPE_CAMERA;
-
-	return 0;
-}
-
-static int fimc_g_input(struct file *file, void *fh, unsigned int *i)
-{
-	struct fimc_control *ctrl = file->private_data;
-	struct s3c_platform_camera *cam = ctrl->cam;
-
-	*i = (unsigned int) cam->id;
-
-	return 0;
-}
-
-static int fimc_s_input(struct file *file, void *fh, unsigned int i)
-{
-	struct fimc_control *ctrl = file->private_data;
-	struct fimc_global *fimc = get_fimc_dev();
-
-	if (i >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
-		return -EINVAL;
-	}
-
-	mutex_lock(&ctrl->v4l2_lock);
-
-	ctrl->sd = fimc->camera[i]->sd;
-
-	mutex_unlock(&ctrl->v4l2_lock);
-
-	return 0;
-}
-
 static int fimc_reqbufs(struct file *filp, void *fh, 
 				struct v4l2_requestbuffers *b)
 {
@@ -289,9 +241,6 @@ static int fimc_dqbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 
 const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_querycap		= fimc_querycap,
-	.vidioc_enum_input		= fimc_enum_input,
-	.vidioc_g_input			= fimc_g_input,
-	.vidioc_s_input			= fimc_s_input,
 	.vidioc_reqbufs			= fimc_reqbufs,
 	.vidioc_querybuf		= fimc_querybuf,
 	.vidioc_g_ctrl			= fimc_g_ctrl,
@@ -302,25 +251,19 @@ const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_streamoff		= fimc_streamoff,
 	.vidioc_qbuf			= fimc_qbuf,
 	.vidioc_dqbuf			= fimc_dqbuf,
-#if 0
-	.vidioc_enum_fmt_vid_cap	= fimc_enum_fmt_vid_cap,
-	.vidioc_g_fmt_vid_cap		= fimc_g_fmt_vid_cap,
-	.vidioc_s_fmt_vid_cap		= fimc_s_fmt_vid_cap,
-	.vidioc_try_fmt_vid_cap		= fimc_try_fmt_vid_cap,
+	.vidioc_enum_fmt_vid_cap	= fimc_enum_fmt_vid_capture,
+	.vidioc_g_fmt_vid_cap		= fimc_g_fmt_vid_capture,
+	.vidioc_s_fmt_vid_cap		= fimc_s_fmt_vid_capture,
+	.vidioc_try_fmt_vid_cap		= fimc_try_fmt_vid_capture,
+	.vidioc_enum_input		= fimc_enum_input,
 	.vidioc_g_input			= fimc_g_input,
 	.vidioc_s_input			= fimc_s_input,
-	.vidioc_g_output		= fimc_g_output,
-	.vidioc_s_output		= fimc_s_output,
-	.vidioc_enum_input		= fimc_enum_input,
-	.vidioc_enum_output		= fimc_enum_output,
-	.vidioc_s_parm			= fimc_s_parm,
-#endif
+//	.vidioc_s_parm			= fimc_s_parm,
 	.vidioc_g_fmt_vid_out		= fimc_g_fmt_vid_out,
 	.vidioc_s_fmt_vid_out		= fimc_s_fmt_vid_out,
 	.vidioc_try_fmt_vid_out		= fimc_try_fmt_vid_out,
 	.vidioc_g_fbuf			= fimc_g_fbuf,
 	.vidioc_s_fbuf			= fimc_s_fbuf,
-
 	.vidioc_try_fmt_vid_overlay	= fimc_try_fmt_overlay,
 	.vidioc_g_fmt_vid_overlay	= fimc_g_fmt_vid_overlay,
 	.vidioc_s_fmt_vid_overlay	= fimc_s_fmt_vid_overlay,

@@ -48,9 +48,12 @@ config FB_S3C_LTE480WV
 
 config FB_S3C_TL2796
 	bool "TL2796"
-	depends on MACH_UNIVERSAL
+	depends on MACH_SMDKC110 || MACH_UNIVERSAL
+	select SPI
+	select SPI_GPIO
+	select SPI_BITBANG
 	---help---
-	  This enables support for Samsung  TL2796 WVGA LCD panel
+	  This enables support for Samsung TL2796 WVGA LCD panel
 
 endchoice	
 
