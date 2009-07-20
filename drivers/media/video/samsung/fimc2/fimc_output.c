@@ -624,9 +624,9 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
-	b->flags	= ctrl->out->buf[b->index].flags;
-	b->m.offset	= b->index * PAGE_SIZE;
- 	b->length	= ctrl->out->buf[b->index].length;
+	b->flags = ctrl->out->buf[b->index].flags;
+	b->m.offset = b->index * PAGE_SIZE;
+ 	b->length = ctrl->out->buf[b->index].length;
 
 	return 0;
 }
@@ -692,16 +692,16 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		max_w	= FIMC_SRC_MAX_W;
-		max_h	= FIMC_SRC_MAX_H;
+		max_w = FIMC_SRC_MAX_W;
+		max_h = FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		if (is_rotate && 0x10) {		/* Landscape mode */
-			max_w	= ctrl->fb.lcd->height;
-			max_h	= ctrl->fb.lcd->width;
+			max_w = ctrl->fb.lcd->height;
+			max_h = ctrl->fb.lcd->width;
 		} else {				/* Portrait */
-			max_w	= ctrl->fb.lcd->width;
-			max_h	= ctrl->fb.lcd->height;
+			max_w = ctrl->fb.lcd->width;
+			max_h = ctrl->fb.lcd->height;
 		}
 	} else {
 		dev_err(ctrl->dev, "V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_RGB32 \
@@ -710,25 +710,25 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	}
 
 	/* crop bounds */
-	ctrl->cropcap.bounds.left	= 0;
-	ctrl->cropcap.bounds.top	= 0;
-	ctrl->cropcap.bounds.width	= max_w;
-	ctrl->cropcap.bounds.height	= max_h;
+	ctrl->cropcap.bounds.left = 0;
+	ctrl->cropcap.bounds.top = 0;
+	ctrl->cropcap.bounds.width = max_w;
+	ctrl->cropcap.bounds.height = max_h;
 
 	/* crop default values */
-	ctrl->cropcap.defrect.left	= 0;
-	ctrl->cropcap.defrect.top	= 0;
-	ctrl->cropcap.defrect.width	= max_w;
-	ctrl->cropcap.defrect.height	= max_h;
+	ctrl->cropcap.defrect.left = 0;
+	ctrl->cropcap.defrect.top = 0;
+	ctrl->cropcap.defrect.width = max_w;
+	ctrl->cropcap.defrect.height = max_h;
 
 	/* crop pixel aspec values */
 	/* To Do : Have to modify but I don't know the meaning. */
-	ctrl->cropcap.pixelaspect.numerator	= 16;
-	ctrl->cropcap.pixelaspect.denominator	= 9;
+	ctrl->cropcap.pixelaspect.numerator = 16;
+	ctrl->cropcap.pixelaspect.denominator = 9;
 
-	a->bounds	= ctrl->cropcap.bounds;
-	a->defrect	= ctrl->cropcap.defrect;
-	a->pixelaspect	= ctrl->cropcap.pixelaspect;
+	a->bounds = ctrl->cropcap.bounds;
+	a->defrect = ctrl->cropcap.defrect;
+	a->pixelaspect = ctrl->cropcap.pixelaspect;
 
 	return 0;
 }
@@ -755,17 +755,17 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		max_w	= FIMC_SRC_MAX_W;
-		max_h	= FIMC_SRC_MAX_H;
+		max_w = FIMC_SRC_MAX_W;
+		max_h = FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		if (is_rotate && 0x10) {		/* Landscape mode */
-			max_w	= ctrl->fb.lcd->height;
-			max_h	= ctrl->fb.lcd->width;
+			max_w = ctrl->fb.lcd->height;
+			max_h = ctrl->fb.lcd->width;
 		} else {				/* Portrait */
-			max_w	= ctrl->fb.lcd->width;
-			max_h	= ctrl->fb.lcd->height;
-		}	
+			max_w = ctrl->fb.lcd->width;
+			max_h = ctrl->fb.lcd->height;
+		}
 	}
 
 	if ((a->c.width > max_w) || (a->c.height > max_h)) {
@@ -797,10 +797,10 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 
-	ctrl->out->crop.c.left		= a->c.left;
-	ctrl->out->crop.c.top		= a->c.top;
-	ctrl->out->crop.c.width		= a->c.width;
-	ctrl->out->crop.c.height	= a->c.height;
+	ctrl->out->crop.c.left = a->c.left;
+	ctrl->out->crop.c.top = a->c.top;
+	ctrl->out->crop.c.width	= a->c.width;
+	ctrl->out->crop.c.height = a->c.height;
 
 	return 0;
 }
@@ -859,15 +859,15 @@ int fimc_streamoff_output(void *fh)
 
 	/* Make all buffers DQUEUED state. */
 	for(i = 0; i < FIMC_OUTBUFS; i++) {
-		ctrl->out->buf[i].state	=	VIDEOBUF_IDLE;
-		ctrl->out->buf[i].flags =	V4L2_BUF_FLAG_MAPPED;
+		ctrl->out->buf[i].state	= VIDEOBUF_IDLE;
+		ctrl->out->buf[i].flags = V4L2_BUF_FLAG_MAPPED;
 	}
 
-	ctrl->out->idx.prev	= -1;
-	ctrl->out->idx.active	= -1;
-	ctrl->out->idx.next	= -1;
+	ctrl->out->idx.prev = -1;
+	ctrl->out->idx.active = -1;
+	ctrl->out->idx.next = -1;
 
-	ctrl->status		= FIMC_STREAMOFF;
+	ctrl->status = FIMC_STREAMOFF;
 
 	return 0;
 }
@@ -1035,13 +1035,13 @@ int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 			return -ENOMEM;
 		}
 
-		ctrl->out->is_requested	= 0;
-		ctrl->out->rotate	= 0;
-		ctrl->out->flip		= 0;
+		ctrl->out->is_requested = 0;
+		ctrl->out->rotate = 0;
+		ctrl->out->flip	= 0;
 
-		ctrl->out->idx.prev	= -1;
-		ctrl->out->idx.active	= -1;
-		ctrl->out->idx.next	= -1;
+		ctrl->out->idx.prev = -1;
+		ctrl->out->idx.active = -1;
+		ctrl->out->idx.next = -1;
 	}
 
 	f->fmt.pix = ctrl->out->pix;
@@ -1097,8 +1097,8 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 		f->fmt.pix.bytesperline	= f->fmt.pix.width;
 	}
 
-	f->fmt.pix.sizeimage	= f->fmt.pix.bytesperline * f->fmt.pix.height;
-	f->fmt.pix.colorspace	= V4L2_COLORSPACE_SMPTE170M;
+	f->fmt.pix.sizeimage = f->fmt.pix.bytesperline * f->fmt.pix.height;
+	f->fmt.pix.colorspace = V4L2_COLORSPACE_SMPTE170M;
 
 	return ret;
 }

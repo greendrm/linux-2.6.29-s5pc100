@@ -108,13 +108,13 @@ int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	fb->capability	= ctrl->out->fbuf.capability;
-	fb->flags	= 0;
-	fb->base	= ctrl->out->fbuf.base;
+	fb->capability = ctrl->out->fbuf.capability;
+	fb->flags = 0;
+	fb->base = ctrl->out->fbuf.base;
 
-	fb->fmt.width		= ctrl->out->fbuf.fmt.width;
-	fb->fmt.height		= ctrl->out->fbuf.fmt.height;
-	fb->fmt.pixelformat	= ctrl->out->fbuf.fmt.pixelformat;
+	fb->fmt.width = ctrl->out->fbuf.fmt.width;
+	fb->fmt.height = ctrl->out->fbuf.fmt.height;
+	fb->fmt.pixelformat = ctrl->out->fbuf.fmt.pixelformat;
 
 	if (format == V4L2_PIX_FMT_NV12)
 		bpp = 1;
@@ -124,10 +124,10 @@ int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 		bpp = 3;
 
 	ctrl->out->fbuf.fmt.bytesperline = fb->fmt.width * bpp;
-	fb->fmt.bytesperline	= ctrl->out->fbuf.fmt.bytesperline;
-	fb->fmt.sizeimage	= ctrl->out->fbuf.fmt.sizeimage;
-	fb->fmt.colorspace	= V4L2_COLORSPACE_SMPTE170M;
-	fb->fmt.priv		= 0;
+	fb->fmt.bytesperline = ctrl->out->fbuf.fmt.bytesperline;
+	fb->fmt.sizeimage = ctrl->out->fbuf.fmt.sizeimage;
+	fb->fmt.colorspace = V4L2_COLORSPACE_SMPTE170M;
+	fb->fmt.priv = 0;
 
 	return 0;
 }
@@ -140,13 +140,13 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
-	ctrl->out->fbuf.capability	= V4L2_FBUF_CAP_EXTERNOVERLAY;
-	ctrl->out->fbuf.flags		= 0;
-	ctrl->out->fbuf.base		= fb->base;
+	ctrl->out->fbuf.capability = V4L2_FBUF_CAP_EXTERNOVERLAY;
+	ctrl->out->fbuf.flags = 0;
+	ctrl->out->fbuf.base = fb->base;
 
 	if(fb->base) {
-		ctrl->out->fbuf.fmt.width	= fb->fmt.width;
-		ctrl->out->fbuf.fmt.height	= fb->fmt.height;
+		ctrl->out->fbuf.fmt.width = fb->fmt.width;
+		ctrl->out->fbuf.fmt.height = fb->fmt.height;
 		ctrl->out->fbuf.fmt.pixelformat	= fb->fmt.pixelformat;
 
 		if (format == V4L2_PIX_FMT_NV12)
@@ -157,9 +157,9 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 			bpp = 2;
 
 		ctrl->out->fbuf.fmt.bytesperline = fb->fmt.width * bpp;
-		ctrl->out->fbuf.fmt.sizeimage	= fb->fmt.sizeimage;
-		ctrl->out->fbuf.fmt.colorspace	= V4L2_COLORSPACE_SMPTE170M;
-		ctrl->out->fbuf.fmt.priv	= 0;
+		ctrl->out->fbuf.fmt.sizeimage = fb->fmt.sizeimage;
+		ctrl->out->fbuf.fmt.colorspace = V4L2_COLORSPACE_SMPTE170M;
+		ctrl->out->fbuf.fmt.priv = 0;
 	}
 
 	return 0;
