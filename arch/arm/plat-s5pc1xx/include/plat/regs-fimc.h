@@ -94,6 +94,7 @@
 
 #define S3C_CISTATUS_GET_FRAME_COUNT(x)		(((x) >> 26) & 0x3)
 #define S3C_CISTATUS_GET_FRAME_END(x)		(((x) >> 17) & 0x1)
+#define S3C_CISTATUS_GET_LAST_CAPTURE_END(x)	(((x) >> 16) & 0x1)
 
 #define S3C_CIIMGEFF_PAT_CB(x)			((x) << 13)
 #define S3C_CIIMGEFF_PAT_CR(x)			((x) << 0)
@@ -204,12 +205,20 @@
 #define S3C_CITRGFMT_TARGETH_MASK		(0x1fff << 16)
 
 /* Output DMA control register */
+#define S3C_CIOCTRL_ORDER2P_LSB_CBCR		(0 << 24)
+#define S3C_CIOCTRL_ORDER2P_LSB_CRCB		(1 << 24)
+#define S3C_CIOCTRL_ORDER2P_MSB_CBCR		(2 << 24)
+#define S3C_CIOCTRL_ORDER2P_MSB_CRCB		(3 << 24)
 #define S3C_CIOCTRL_ORDER2P_SHIFT		(24)
 #define S3C_CIOCTRL_ORDER2P_MASK		(3 << 24)
 #define S3C_CIOCTRL_YCBCR_3PLANE		(0 << 3)
 #define S3C_CIOCTRL_YCBCR_2PLANE		(1 << 3)
 #define S3C_CIOCTRL_YCBCR_PLANE_MASK		(1 << 3)
 #define S3C_CIOCTRL_LASTIRQ_ENABLE		(1 << 2)
+#define S3C_CIOCTRL_ORDER422_YCBYCR		(0 << 0)
+#define S3C_CIOCTRL_ORDER422_YCRYCB		(1 << 0)
+#define S3C_CIOCTRL_ORDER422_CBYCRY		(2 << 0)
+#define S3C_CIOCTRL_ORDER422_CRYCBY		(3 << 0)
 #define S3C_CIOCTRL_ORDER422_MASK		(3 << 0)
 
 /* Main scaler control register */
