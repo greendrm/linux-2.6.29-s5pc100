@@ -563,7 +563,7 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 
 	/* To do : V4L2_MEMORY_USERPTR */
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
+		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
 		return -EINVAL;
 	}
 
@@ -607,8 +607,11 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 		return -EBUSY;
 	}
 
+	printk("[%s] b->memory = %d.\n", __FUNCTION__, b->memory);
+	printk("[%s] b->index = %d.\n", __FUNCTION__, b->index);	
+
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
+		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
 		return -EINVAL;
 	}
 
@@ -1018,7 +1021,6 @@ int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	struct fimc_outinfo *out = ctrl->out;
-	int ret = -1;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -1029,6 +1031,8 @@ int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 				"output device info\n", __FUNCTION__);
 			return -ENOMEM;
 		}
+
+		ctrl->out = out;
 
 		ctrl->out->is_requested = 0;
 		ctrl->out->rotate = 0;
@@ -1041,7 +1045,7 @@ int fimc_g_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 
 	f->fmt.pix = ctrl->out->pix;
 
-	return ret;
+	return 0;
 }
 
 int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)

@@ -67,6 +67,9 @@ static int fimc_querybuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
+printk("[%s] b->memory = %d.\n", __FUNCTION__, b->memory);
+printk("[%s] b->index = %d.\n", __FUNCTION__, b->index);
+
 	if (b->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		ret = fimc_querybuf_capture(fh, b);
 	} else if (b->type == V4L2_BUF_TYPE_VIDEO_OUTPUT) {

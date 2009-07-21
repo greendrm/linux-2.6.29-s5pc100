@@ -492,17 +492,17 @@ static void fimc_vdev_release(struct video_device *vdev)
 struct video_device fimc_video_device[FIMC_DEVICES] = {
 	[0] = {
 		.fops = &fimc_fops,
-//		.ioctl_ops = &fimc_v4l2_ops,
+		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 	[1] = {
 		.fops = &fimc_fops,
-//		.ioctl_ops = &fimc_v4l2_ops,
+		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 	[2] = {
 		.fops = &fimc_fops,
-//		.ioctl_ops = &fimc_v4l2_ops,
+		.ioctl_ops = &fimc_v4l2_ops,
 		.release  = fimc_vdev_release,
 	},
 };
