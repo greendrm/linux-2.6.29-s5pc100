@@ -144,6 +144,7 @@ struct fimc_capinfo {
 	struct v4l2_crop	crop;
 	struct v4l2_pix_format	fmt;
 	struct fimc_buf_set	buf[FIMC_CAPBUFS];
+	int			nr_bufs;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
@@ -418,6 +419,7 @@ extern int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, s
 extern int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height);
 extern int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height);
 extern int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
 
 /*
  * D R I V E R  H E L P E R S
