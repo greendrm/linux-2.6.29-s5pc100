@@ -1069,3 +1069,11 @@ v2.6.29.4-dev-1-0-2: Jongpill Lee
 	Modified Files:
 		M       arch/arm/mach-s5pc110/Makefile.boot
 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+
+v2.6.29.4-dev-1-0-3: Kukjin Kim
+	- Support S5PC110 H-type
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/Kconfig
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+
