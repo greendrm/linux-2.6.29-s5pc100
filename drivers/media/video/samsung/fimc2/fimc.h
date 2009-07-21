@@ -40,8 +40,8 @@
 #define FIMC_OUTQ_BUFS		3
 #define FIMC_TPID		3
 
-#define FIMC_SRC_MAX_W		1920
-#define FIMC_SRC_MAX_H		1080
+#define FIMC_SRC_MAX_W		1280
+#define FIMC_SRC_MAX_H		720
 
 #define FIMC_ONESHOT_TIMEOUT	200
 #define FIMC_DQUEUE_TIMEOUT	200
@@ -284,7 +284,8 @@ struct fimc_global {
  *
 */
 extern struct fimc_global *fimc_dev;
-extern struct video_device fimc_video_device[];
+extern struct video_device fimc_video_device[FIMC_DEVICES];
+extern const struct v4l2_ioctl_ops fimc_v4l2_ops;
 
 /* FIMD */
 extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
@@ -320,13 +321,10 @@ extern int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b);
 
 /* output device */
-extern void fimc_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
-extern int fimc_stop_camif(void *param);
-extern int fimc_start_camif(void *param);
-extern int fimc_stop_streaming(struct fimc_control *ctrl);
+extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
+extern int fimc_outdev_stop_camif(void *param);
+extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
 extern int fimc_start_fifo(struct fimc_control *ctrl);
-extern int fimc_check_param(struct fimc_control *ctrl);
-extern int fimc_set_param(struct fimc_control *ctrl);
 
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);
