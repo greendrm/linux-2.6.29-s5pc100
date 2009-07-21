@@ -59,7 +59,7 @@
 #define S5PC11X_EINTPEND(x)		(S5PC11X_EINT30PEND+x*04)	/* EINT0 ~  EINT31  */
 
 #define eint_offset(irq)		((irq) < IRQ_EINT16_31 ? ((irq)-IRQ_EINT0) :  \
-					((irq-S3C_IRQ_EINT_BASE)+IRQ_EINT16_31-IRQ_EINT0))
+					(irq-S3C_IRQ_EINT_BASE))
 					
 #define eint_irq_to_bit(irq)		(1 << (eint_offset(irq) & 0x7))
 
