@@ -40,8 +40,8 @@
 #define FIMC_OUTQ_BUFS		3
 #define FIMC_TPID		3
 
-#define FIMC_SRC_MAX_W		1920
-#define FIMC_SRC_MAX_H		1080
+#define FIMC_SRC_MAX_W		1280
+#define FIMC_SRC_MAX_H		720
 
 #define FIMC_ONESHOT_TIMEOUT	200
 #define FIMC_DQUEUE_TIMEOUT	200
@@ -283,7 +283,8 @@ struct fimc_global {
  *
 */
 extern struct fimc_global *fimc_dev;
-extern struct video_device fimc_video_device[];
+extern struct video_device fimc_video_device[FIMC_DEVICES];
+extern const struct v4l2_ioctl_ops fimc_v4l2_ops;
 
 /* FIMD */
 extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
