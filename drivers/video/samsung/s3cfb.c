@@ -719,6 +719,16 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 		ret = s3cfb_set_par(fb);
 		break;
 
+	case S3CFB_GET_LCDINFO:
+printk("[%s : %d] =========== \n", __FUNCTION__, __LINE__);
+		ret = memcpy(argp, lcd, sizeof(struct s3cfb_lcd)) ? 0 : -EFAULT;
+		if (ret) {
+			err("failed to S3CFB_GET_LCDINFO.\n");
+			break;
+		}
+
+		break;
+
 	case S3CFB_WIN_POSITION:
 		ret = memcpy(&user_win, (struct s3cfb_user_window __user *) arg, \
 				sizeof(user_win)) ? 0 : -EFAULT;

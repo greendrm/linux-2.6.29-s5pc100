@@ -261,7 +261,7 @@ struct s3cfb_user_chroma {
 #define S3CFB_SET_VSYNC_INT		_IOW ('F', 206, unsigned int)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
-
+#define S3CFB_GET_LCDINFO		_IOR ('F', 302, struct s3cfb_lcd)
 
 /*
  * E X T E R N S

@@ -494,7 +494,7 @@ int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect)
 int fimc_start_fifo(struct fimc_control *ctrl)
 {
 	struct v4l2_rect		fimd_rect;
-	struct fb_var_screeninfo	var;	
+	struct fb_var_screeninfo	var;
 	struct s3cfb_user_window	window;
 	int ret = -1;
 	u32 id = ctrl->id;
@@ -605,14 +605,6 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
 		return -EBUSY;
-	}
-
-	printk("[%s] b->memory = %d.\n", __FUNCTION__, b->memory);
-	printk("[%s] b->index = %d.\n", __FUNCTION__, b->index);	
-
-	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
-		return -EINVAL;
 	}
 
 	if (b->index > ctrl->out->buf_num ) {

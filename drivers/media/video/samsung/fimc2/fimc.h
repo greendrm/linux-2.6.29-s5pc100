@@ -207,6 +207,7 @@ struct s3cfb_user_window {
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
+#define S3CFB_GET_LCDINFO		_IOR ('F', 302, struct s3cfb_lcd)
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {

@@ -390,6 +390,7 @@ static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
+	struct s3cfb_lcd lcd;
 	int ret;
 
 	ctrl = video_get_drvdata(video_devdata(filp));
@@ -410,6 +411,15 @@ static int fimc_open(struct file *filp)
 
 	ctrl->fb.open_fifo	= s3cfb_open_fifo;
 	ctrl->fb.close_fifo	= s3cfb_close_fifo;
+
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCDINFO, (unsigned long)&lcd);
+	if (ret < 0)
+		dev_err(ctrl->dev,  "s3cfb_direct_ioctl(S3CFB_GET_LCDINFO) fail\n");
+
+	printk("lcd.width = %d, lcd.height = %d\n", lcd.width, lcd.height);
+	
+	//memcpy(ctrl->fb.lcd, &lcd, sizeof(lcd));
+
 	ctrl->status		= FIMC_STREAMOFF;
 
 #if 0
