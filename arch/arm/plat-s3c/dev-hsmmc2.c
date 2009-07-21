@@ -1,10 +1,10 @@
-/* linux/arch/arm/plat-s3c/dev-hsmmc1.c
+/* linux/arch/arm/plat-s3c/dev-hsmmc2.c
  *
  * Copyright (c) 2008 Simtec Electronics
  *	Ben Dooks <ben@simtec.co.uk>
  *	http://armlinux.simtec.co.uk/
  *
- * S3C series device definition for hsmmc device 1
+ * S3C series device definition for hsmmc device 2
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

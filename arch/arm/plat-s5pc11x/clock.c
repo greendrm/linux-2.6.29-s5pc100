@@ -212,6 +212,30 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h166,
 		.enable		= s5pc11x_clk_ip1_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP1_FIMD,
+	}, {
+		.name		= "hsmmc",
+		.id		= 0,
+		.parent		= &clk_h166,
+		.enable		= s5pc11x_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC0,
+	}, {
+		.name		= "hsmmc",
+		.id		= 1,
+		.parent		= &clk_h166,
+		.enable		= s5pc11x_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC1,
+	}, {
+		.name		= "hsmmc",
+		.id		= 2,
+		.parent		= &clk_h166,
+		.enable		= s5pc11x_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC2,
+	}, {
+		.name		= "hsmmc",
+		.id		= 3,
+		.parent		= &clk_h166,
+		.enable		= s5pc11x_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC3,
 	},
 };
 

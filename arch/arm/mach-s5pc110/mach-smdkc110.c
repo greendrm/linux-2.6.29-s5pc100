@@ -367,6 +367,10 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_FB_S3C_TL2796
 	&s3c_device_spi_gpio,
 #endif
+        &s3c_device_hsmmc0,
+        &s3c_device_hsmmc1,
+        &s3c_device_hsmmc2,
+        &s3c_device_hsmmc3,        
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {

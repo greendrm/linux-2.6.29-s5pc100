@@ -384,9 +384,21 @@ static struct clk *clkset_mmc2_list[] = {
 	&clk_mout_vpll.clk,
 };
 
+static struct clk *clkset_mmc3_list[] = {
+	&clk_mout_epll.clk,
+	&clk_mout_mpll.clk,
+	&clk_fin_epll,
+	&clk_mout_vpll.clk,
+};
+
 static struct clk_sources clkset_mmc2 = {
 	.sources	= clkset_mmc2_list,
 	.nr_sources	= ARRAY_SIZE(clkset_mmc2_list),
+};
+
+static struct clk_sources clkset_mmc3 = {
+	.sources	= clkset_mmc3_list,
+	.nr_sources	= ARRAY_SIZE(clkset_mmc3_list),
 };
 
 static struct clk *clkset_lcd_list[] = {
@@ -564,6 +576,25 @@ static struct clksrc_clk clk_mmc2 = {
 	.reg_source	= S5P_CLK_SRC4,
 };
 
+static struct clksrc_clk clk_mmc3 = {
+	.clk	= {
+		.name		= "mmc_bus",
+		.id		= 3,
+		.ctrlbit        = S5P_CLKGATE_SCLK0_MMC3,
+		.enable		= s5pc11x_sclk0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC4_MMC3_SHIFT,
+	.mask		= S5P_CLKSRC4_MMC3_MASK,
+	.sources	= &clkset_mmc3,
+	.divider_shift	= S5P_CLKDIV4_MMC3_SHIFT,
+	.reg_divider	= S5P_CLK_DIV4,
+	.reg_source	= S5P_CLK_SRC4,
+};
+
 static struct clksrc_clk clk_uart_uclk1 = {
 	.clk	= {
 		.name		= "uclk1",
@@ -688,6 +719,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_mmc0,
 	&clk_mmc1,
 	&clk_mmc2,
+	&clk_mmc3,	
 	&clk_uart_uclk1,
 	&clk_spi0,
 	&clk_spi1,
@@ -818,6 +850,7 @@ static struct clk *clks[] __initdata = {
 	&clk_mmc0.clk,
 	&clk_mmc1.clk,
 	&clk_mmc2.clk,
+	&clk_mmc3.clk,	
 	&clk_uart_uclk1.clk,
 	&clk_spi0.clk,
 	&clk_spi1.clk,
