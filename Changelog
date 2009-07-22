@@ -871,7 +871,7 @@ v2.6.29.4-r3d2: Jonghun Han
 		M       arch/arm/plat-s5pc1xx/clock.c
 
 +v2.6.29.4-r3d3: Jassi
-	- SPI renaming for TomTom.
+	- SPI renaming
 
 v2.6.29.4-r3d4: Kukjin Kim
 	- Bug fixed for DMAC transfer size
@@ -1100,3 +1100,6 @@ v2.6.29.4-dev-1-0-4: Changhwan Youn
 
 	Added Files:
 		A       arch/arm/plat-s3c/dev-hsmmc3.c
+
+v2.6.29.4-dev-1-0-5: Hyunwoong Kim
+	- Temporary Release for s5pc110(2009.07.22) 
