@@ -601,10 +601,6 @@ int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB888;
 	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB565;
-	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
-		return -EINVAL;
 	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
@@ -688,7 +684,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 	case V4L2_PIX_FMT_NV16:
 	case V4L2_PIX_FMT_NV61:
 		addr_y = base;
-		addr_cb = base + (fmt->width * fmt->height);
+		addr_cb = addr_y + (fmt->width * fmt->height);
 		break;
 
 	  /* 3 plane formats */
@@ -711,7 +707,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 
 	writel(addr_y, ctrl->regs + S3C_CIIYSA0);
 	writel(addr_cb, ctrl->regs + S3C_CIICBSA0);
-	writel(addr_cr, ctrl->regs + S3C_CIICBSA0);
+	writel(addr_cr, ctrl->regs + S3C_CIICRSA0);
 
 	return 0;
 }
