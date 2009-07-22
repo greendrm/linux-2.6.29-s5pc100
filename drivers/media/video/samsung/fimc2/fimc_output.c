@@ -90,7 +90,8 @@ int fimc_outdev_stop_streaming(struct fimc_control *ctrl)
 
 static int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 {
-	struct s3cfb_lcd *lcd = ctrl->fb.lcd;
+	int	hres = ctrl->fb.lcd_hres; 
+	int	vres = ctrl->fb.lcd_vres;		
 	u32	pixfmt = ctrl->out->pix.pixelformat;
 	u32	y_size, cbcr_size, rgb_size, total_size = 0;
 	int 	ret = 0;
@@ -100,10 +101,10 @@ static int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 		cbcr_size = (y_size>>2);
 		total_size = PAGE_ALIGN(y_size + (cbcr_size<<1)) * num;
 	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		rgb_size = PAGE_ALIGN(lcd->width * lcd->height * 4);
+		rgb_size = PAGE_ALIGN(hres * vres * 4);
 		total_size = rgb_size * num;
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		rgb_size = PAGE_ALIGN(lcd->width * lcd->height * 2);
+		rgb_size = PAGE_ALIGN(hres * vres * 2);
 		total_size = rgb_size * num;
 
 	} else {
@@ -138,7 +139,8 @@ static void fimc_outdev_set_buff_addr(struct fimc_control *ctrl, u32 buf_size)
 
 static int fimc_init_out_buf(struct fimc_control *ctrl)
 {
-	struct s3cfb_lcd *lcd = ctrl->fb.lcd;
+	int	hres = ctrl->fb.lcd_hres; 
+	int	vres = ctrl->fb.lcd_vres;
 	u32 pixfmt = ctrl->out->pix.pixelformat;
 	u32 total_size, y_size, cb_size;
 
@@ -147,9 +149,9 @@ static int fimc_init_out_buf(struct fimc_control *ctrl)
 		cb_size = ((FIMC_SRC_MAX_W * FIMC_SRC_MAX_H)>>2);
 		total_size = PAGE_ALIGN(y_size + (cb_size<<1));
 	} else if (pixfmt == V4L2_PIX_FMT_RGB32) {
-		total_size = PAGE_ALIGN((lcd->width * lcd->height)<<2);
+		total_size = PAGE_ALIGN((hres * vres)<<2);
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
-		total_size = PAGE_ALIGN((lcd->width * lcd->height)<<1);
+		total_size = PAGE_ALIGN((hres * vres)<<1);
 	} else {
 		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
 				__FUNCTION__, pixfmt);
@@ -192,27 +194,27 @@ int fimc_outdev_check_param(struct fimc_control *ctrl)
 	dst.width = ctrl->out->win.w.width;
 	dst.height = ctrl->out->win.w.height;
 
-	if (!ctrl->out->fbuf.base) {	/* Destructive OVERLAY device */
+	if (ctrl->out->fbuf.base) {	/* Destructive OVERLAY device */
  		bound.width = ctrl->out->fbuf.fmt.width;
 		bound.height = ctrl->out->fbuf.fmt.height;
   	} else {			/* Non-Destructive OVERLAY device */
 		if (is_rotate && 0x10) {	/* Landscape mode */
-	 		bound.width = ctrl->fb.lcd->height;
-			bound.height = ctrl->fb.lcd->width;
+	 		bound.width = ctrl->fb.lcd_vres;
+			bound.height = ctrl->fb.lcd_hres;
 		} else {			/* Portrait mode */
-	 		bound.width = ctrl->fb.lcd->width;
-			bound.height = ctrl->fb.lcd->height;
+	 		bound.width = ctrl->fb.lcd_hres;
+			bound.height = ctrl->fb.lcd_vres;
 		} 
  	}
 
 	if ((dst.left + dst.width) > bound.width) {
 		dev_err(ctrl->dev, "Horizontal position setting is failed.\n");
-		dev_err(ctrl->dev, "\tleft = %d, width = %d, lcd width = %d, \n",
+		dev_err(ctrl->dev, "\tleft = %d, width = %d, bound width = %d, \n",
 			dst.left, dst.width, bound.width);
 		ret = -EINVAL;
 	} else if ((dst.top + dst.height) > bound.height) {
 		dev_err(ctrl->dev, "Vertical position setting is failed.\n");
-		dev_err(ctrl->dev, "\ttop = %d, height = %d, lcd height = %d, \n",
+		dev_err(ctrl->dev, "\ttop = %d, height = %d, bound height = %d, \n",
 			dst.top, dst.height, bound.height);		
 		ret = -EINVAL;
 	}
@@ -401,8 +403,8 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 	if ((src.width == dst.width) && (src.height == dst.height))
 		ctrl->sc.bypass = 1;
 
-	ctrl->sc.scaleup_h = (src.width >= dst.width) ? 1 : 0;
-	ctrl->sc.scaleup_v = (src.height >= dst.height) ? 1 : 0;
+	ctrl->sc.scaleup_h = (dst.width >= src.width) ? 1 : 0;
+	ctrl->sc.scaleup_v = (dst.height >= src.height) ? 1 : 0;
 
 	ctrl->sc.shfactor = 10 - (ctrl->sc.hfactor + ctrl->sc.vfactor);
 
@@ -419,7 +421,7 @@ int fimc_outdev_set_param(struct fimc_control *ctrl)
 		return -EBUSY;
 	}
 
-	fimc_hwset_enable_irq(ctrl, 0, 0);
+	fimc_hwset_enable_irq(ctrl, 0, 1);
 	fimc_outdev_set_format(ctrl);
 	fimc_outdev_set_path(ctrl);
 	fimc_outdev_set_rot(ctrl);
@@ -450,7 +452,7 @@ int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect)
 		break;
 
 	case 90:
-		fimd_rect->left		= ctrl->fb.lcd->width - 
+		fimd_rect->left		= ctrl->fb.lcd_hres - 
 					(ctrl->out->win.w.top \
 						+ ctrl->out->win.w.height);
 		fimd_rect->top		= ctrl->out->win.w.left;
@@ -460,10 +462,10 @@ int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect)
 		break;
 
 	case 180:
-		fimd_rect->left		= ctrl->fb.lcd->width - 
+		fimd_rect->left		= ctrl->fb.lcd_hres - 
 					(ctrl->out->win.w.left \
 						+ ctrl->out->win.w.width);
-		fimd_rect->top		= ctrl->fb.lcd->height - 
+		fimd_rect->top		= ctrl->fb.lcd_vres - 
 					(ctrl->out->win.w.top \
 						+ ctrl->out->win.w.height);
 		fimd_rect->width	= ctrl->out->win.w.width;
@@ -473,7 +475,7 @@ int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect)
 
 	case 270:
 		fimd_rect->left		= ctrl->out->win.w.top;
-		fimd_rect->top		= ctrl->fb.lcd->height - 
+		fimd_rect->top		= ctrl->fb.lcd_vres - 
 					(ctrl->out->win.w.left \
 						+ ctrl->out->win.w.width);
 		fimd_rect->width	= ctrl->out->win.w.height;
@@ -687,15 +689,15 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		if (is_rotate && 0x10) {		/* Landscape mode */
-			max_w = ctrl->fb.lcd->height;
-			max_h = ctrl->fb.lcd->width;
+			max_w = ctrl->fb.lcd_vres;
+			max_h = ctrl->fb.lcd_hres;
 		} else {				/* Portrait */
-			max_w = ctrl->fb.lcd->width;
-			max_h = ctrl->fb.lcd->height;
+			max_w = ctrl->fb.lcd_hres;
+			max_h = ctrl->fb.lcd_vres;
 		}
 	} else {
-		dev_err(ctrl->dev, "V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_RGB32 \
-				and V4L2_PIX_FMT_RGB565 are only supported.\n");
+		dev_err(ctrl->dev, " Supported format: \
+		V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_RGB565.\n");
 		return -EINVAL;
 	}
 
@@ -750,11 +752,11 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		if (is_rotate && 0x10) {		/* Landscape mode */
-			max_w = ctrl->fb.lcd->height;
-			max_h = ctrl->fb.lcd->width;
+			max_w = ctrl->fb.lcd_vres;
+			max_h = ctrl->fb.lcd_hres;
 		} else {				/* Portrait */
-			max_w = ctrl->fb.lcd->width;
-			max_h = ctrl->fb.lcd->height;
+			max_w = ctrl->fb.lcd_hres;
+			max_h = ctrl->fb.lcd_vres;
 		}
 	}
 
@@ -808,13 +810,13 @@ int fimc_streamon_output(void *fh)
 		return ret;
 	}
 
-	ctrl->status = FIMC_READY_ON;
-
 	ret = fimc_outdev_set_param(ctrl);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "Fail: fimc_outdev_set_param\n");
 		return ret;
 	}
+
+	ctrl->status = FIMC_READY_ON;
 
 	return ret;
 }
@@ -933,12 +935,7 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 	dma_addr_t dst_base = 0;
 	int	ret = -1;
 
-	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	if (ctrl->status != FIMC_STREAMOFF) {
-		dev_err(ctrl->dev, "FIMC is running.\n");
-		return -EBUSY;
-	}
+	dev_info(ctrl->dev, "[%s] queued idx = %d\n", __FUNCTION__, b->index);
 
 	if (b->memory != V4L2_MEMORY_MMAP ) {
 		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported.\n");
@@ -987,6 +984,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 		ret = wait_event_interruptible_timeout(ctrl->wq, \
 			(ctrl->out->out_queue[0] != -1), FIMC_DQUEUE_TIMEOUT);
 		if (ret == 0) {
+			fimc_dump_context(ctrl);
 			dev_err(ctrl->dev, "[0] out_queue is empty.\n");
 			return -EINVAL;
 		} else if (ret == -ERESTARTSYS) {
