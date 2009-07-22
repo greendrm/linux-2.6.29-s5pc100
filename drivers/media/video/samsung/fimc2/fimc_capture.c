@@ -141,6 +141,9 @@ int fimc_init_camera(struct fimc_control *ctrl)
 	if (!ctrl->cam)
 		ctrl->cam = fimc->camera[pdata->default_cam];
 
+	if (ctrl->cam->initialized)
+		return 0;
+
 	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
 	clk_enable(ctrl->cam->clk);
 
@@ -349,7 +352,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	mutex_lock(&ctrl->v4l2_lock);
 
 	/* buffer count correction */
-	if (b->count > 3)
+	if (b->count > 4)
 		b->count = 5;
 	else if (b->count < 2)
 		b->count = 2;
@@ -391,11 +394,6 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "fimc is running\n");
 		return -EBUSY;
-	}
-
-	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
-		return -EINVAL;
 	}
 
 	mutex_lock(&ctrl->v4l2_lock);

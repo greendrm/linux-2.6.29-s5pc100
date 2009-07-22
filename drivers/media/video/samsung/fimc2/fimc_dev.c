@@ -270,10 +270,23 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 
 		ctrl->out->buf[idx].flags |= V4L2_BUF_FLAG_MAPPED;
 	} else {		/* CAPTURE device */
+		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+		vma->vm_flags |= VM_RESERVED;
 
+		/* page frame number of the address for a source frame to be stored at. */
+		pfn = __phys_to_pfn(ctrl->cap->buf[vma->vm_pgoff].base);
+
+		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+			dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
+				__FUNCTION__);
+			return -EINVAL;
+		}
+
+		if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
+			dev_err(ctrl->dev, "%s: mmap fail\n", __FUNCTION__);
+			return -EINVAL;
+		}
 	}
-
-
 
 	return 0;
 }

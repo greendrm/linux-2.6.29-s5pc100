@@ -444,11 +444,11 @@ static struct s5k6aa_platform_data s5k6aa = {
 
 static struct i2c_board_info  __initdata camera_info[] = {
 	{
-		I2C_BOARD_INFO("S5K4BA", 0x5a),
+		I2C_BOARD_INFO("S5K4BA", 0x2d),
 		.platform_data = &s5k4ba,
 	},
 	{
-		I2C_BOARD_INFO("S5K6AA", 0x78),
+		I2C_BOARD_INFO("S5K6AA", 0x3c),
 		.platform_data = &s5k6aa,
 	},
 };

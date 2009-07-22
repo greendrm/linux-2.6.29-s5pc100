@@ -131,24 +131,6 @@ static int s5k4ba_i2c_write(struct v4l2_subdev *sd, unsigned char i2c_data[],
 	return i2c_transfer(client->adapter, &msg, 1) == 1 ? 0 : -EIO;
 }
 
-static int s5k4ba_write_regs(struct v4l2_subdev *sd, unsigned char regs[], 
-				int size)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int i, err;
-
-	for (i = 0; i < size; i++) {
-		if (i == 4)
-			mdelay(5);
-		err = s5k4ba_i2c_write(sd, &regs[i], sizeof(regs[i]));
-		if (err < 0)
-			v4l_info(client, "%s: register set failed\n", \
-			__FUNCTION__);
-	}
-
-	return 0;	/* FIXME */
-}
-
 static const char *s5k4ba_querymenu_wb_preset[] = {
 	"WB Tungsten", "WB Fluorescent", "WB sunny", "WB cloudy", NULL
 };
@@ -482,12 +464,18 @@ out:
 static int s5k4ba_init(struct v4l2_subdev *sd, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int err = -EINVAL;
+	int err = -EINVAL, i;
 
 	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
 
-	err = s5k4ba_write_regs(sd, (unsigned char *)s5k4ba_init_reg, \
-				S5K4BA_INIT_REGS);
+	for (i = 0; i < S5K4BA_INIT_REGS; i++) {
+		err = s5k4ba_i2c_write(sd, s5k4ba_init_reg[i], \
+					sizeof(s5k4ba_init_reg[i]));
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", \
+			__FUNCTION__);
+	}
+
 	if (err < 0) {
 		v4l_err(client, "%s: camera initialization failed\n", \
 			__FUNCTION__);
