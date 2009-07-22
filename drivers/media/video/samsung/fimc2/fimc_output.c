@@ -198,7 +198,7 @@ int fimc_outdev_check_param(struct fimc_control *ctrl)
  		bound.width = ctrl->out->fbuf.fmt.width;
 		bound.height = ctrl->out->fbuf.fmt.height;
   	} else {			/* Non-Destructive OVERLAY device */
-		if (is_rotate && 0x10) {	/* Landscape mode */
+		if (is_rotate & 0x10) {	/* Landscape mode */
 	 		bound.width = ctrl->fb.lcd_vres;
 			bound.height = ctrl->fb.lcd_hres;
 		} else {			/* Portrait mode */
@@ -299,16 +299,15 @@ static void fimc_outdev_set_src_dma_offset(struct fimc_control *ctrl)
 
 void fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
 {
-	u32 org_w = 0, org_h = 0, real_w = 0, real_h = 0;	
+	struct v4l2_rect org, real;
 
-	org_w = ctrl->out->pix.width;
-	org_h = ctrl->out->pix.height;	
+	org.width = ctrl->out->pix.width;
+	org.height = ctrl->out->pix.height;
+	real.width = ctrl->out->crop.c.width;
+	real.height = ctrl->out->crop.c.height;
 	
-	real_w = org_w - ctrl->out->crop.c.left;
-	real_h = org_h - ctrl->out->crop.c.top;
-
-	fimc_hwset_org_input_size(ctrl, org_w, org_h);
-	fimc_hwset_real_input_size(ctrl, real_w, real_h);
+	fimc_hwset_org_input_size(ctrl, org.width, org.height);
+	fimc_hwset_real_input_size(ctrl, real.width, real.height);
 }
 
 void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
@@ -329,11 +328,11 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 
 void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 {
-	int is_rotate = 0;
 	struct v4l2_rect rect;
+	int is_rotate = 0;
 
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
-	if (is_rotate && 0x10) {	/* Landscape mode */
+	if (is_rotate & 0x10) {	/* Landscape mode */
 		rect.width	= ctrl->out->win.w.height;
 		rect.height	= ctrl->out->win.w.width;
 	} else {			/* Portrait mode */
@@ -347,38 +346,40 @@ void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 	fimc_hwset_ext_output_size(ctrl, rect.width, rect.height);
 }
 
+static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
+				struct v4l2_rect *src, struct v4l2_rect *dst)
+{
+	u32 is_rotate = 0;
+	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
+
+	if(is_rotate & 0x10) {
+		dst->width = ctrl->out->win.w.height;
+		dst->height = ctrl->out->win.w.width;
+
+		if (ctrl->out->fbuf.base) {	/* OUTPUT ROTATOR */
+			src->width = ctrl->out->crop.c.width;
+			src->height = ctrl->out->crop.c.height;
+		} else {			/* INPUT ROTATOR */
+			src->width = ctrl->out->crop.c.height;
+			src->height = ctrl->out->crop.c.width;
+		}
+	} else {
+		src->width = ctrl->out->crop.c.width;
+		src->height = ctrl->out->crop.c.height;
+
+		dst->width = ctrl->out->win.w.width;
+		dst->height = ctrl->out->win.w.height;
+	}
+}
+
 static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 {
 	struct v4l2_rect src, dst;
-	u32 is_rotate = 0;
 	int ret = 0;
 
-	src.width = 0;
-	src.height = 0;
-	dst.width = 0;
-	dst.height = 0;	
+	fimc_outdev_calibrate_scale_info(ctrl, &src, &dst);
 
-	src.width	= ctrl->out->crop.c.width;
-	src.height	= ctrl->out->crop.c.height;
-
-	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
-	if (is_rotate && 0x10) {	/* Landscape mode */
-		if (ctrl->out->fbuf.base) {
-			dst.width	= ctrl->out->fbuf.fmt.height;
-			dst.height	= ctrl->out->fbuf.fmt.width;
-		} else {
-			dst.width	= ctrl->out->win.w.height;
-			dst.height	= ctrl->out->win.w.width;
-		}
-	} else {			/* Portrait mode */
-		if (ctrl->out->fbuf.base) {
-			dst.width	= ctrl->out->fbuf.fmt.width;
-			dst.height	= ctrl->out->fbuf.fmt.height;
-		} else {
-			dst.width	= ctrl->out->win.w.width;
-			dst.height	= ctrl->out->win.w.height;
-		}
-	}
+	printk("src_w(%d), src_h(%d), dst_w(%d), dst_h(%d)\n", src.width, src.height, dst.width, dst.height);
 
 	ret = fimc_get_scaler_factor(src.width, dst.width, \
 			&ctrl->sc.pre_hratio, &ctrl->sc.hfactor);
@@ -394,11 +395,17 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 		return -EINVAL;
 	}
 
+	printk("ctrl->sc.pre_hratio(%d), ctrl->sc.hfactor(%d), ctrl->sc.pre_vratio(%d), ctrl->sc.vfactor(%d)\n", \
+		ctrl->sc.pre_hratio, ctrl->sc.hfactor, ctrl->sc.pre_vratio, ctrl->sc.vfactor);
+
 	ctrl->sc.pre_dst_width = src.width / ctrl->sc.pre_hratio;
 	ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
 
 	ctrl->sc.pre_dst_height = src.height / ctrl->sc.pre_vratio;
 	ctrl->sc.main_vratio = (src.height << 8) / (dst.height<<ctrl->sc.vfactor);
+
+	printk("ctrl->sc.pre_dst_width(%d), ctrl->sc.main_hratio(%d), ctrl->sc.pre_dst_height(%d), ctrl->sc.main_vratio(%d)\n", \
+		ctrl->sc.pre_dst_width, ctrl->sc.main_hratio, ctrl->sc.pre_dst_height, ctrl->sc.main_vratio);
 
 	if ((src.width == dst.width) && (src.height == dst.height))
 		ctrl->sc.bypass = 1;
@@ -688,7 +695,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 		max_h = FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if (is_rotate && 0x10) {		/* Landscape mode */
+		if (is_rotate & 0x10) {		/* Landscape mode */
 			max_w = ctrl->fb.lcd_vres;
 			max_h = ctrl->fb.lcd_hres;
 		} else {				/* Portrait */
@@ -751,7 +758,7 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		max_h = FIMC_SRC_MAX_H;
 	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
 			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if (is_rotate && 0x10) {		/* Landscape mode */
+		if (is_rotate & 0x10) {		/* Landscape mode */
 			max_w = ctrl->fb.lcd_vres;
 			max_h = ctrl->fb.lcd_hres;
 		} else {				/* Portrait */
