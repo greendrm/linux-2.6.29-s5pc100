@@ -37,6 +37,7 @@ u32 fimc_mapping_rot_flip(u32 rot, u32 flip)
 		break;
 
 	case 90:
+		ret = 0x10;
 		if(flip & V4L2_CID_HFLIP)
 			ret |= 0x1;
 
