@@ -1077,3 +1077,26 @@ v2.6.29.4-dev-1-0-3: Kukjin Kim
 		M	arch/arm/mach-s5pc110/Kconfig
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-1-0-4: Changhwan Youn 
+        - SD/MMC support using HCLK for S5PC110 SMDK board 
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/Makefile
+		M       arch/arm/mach-s5pc110/cpu.c
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/mach-s5pc110/setup-sdhci.c
+		M       arch/arm/plat-s3c/Kconfig
+		M       arch/arm/plat-s3c/Makefile
+		M       arch/arm/plat-s3c/dev-hsmmc.c
+		M       arch/arm/plat-s3c/dev-hsmmc2.c
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s3c/include/plat/sdhci.h
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+		M       drivers/mmc/host/Kconfig
+		M       drivers/video/samsung/s3cfb_tl2796.c
+
+	Added Files:
+		A       arch/arm/plat-s3c/dev-hsmmc3.c
