@@ -459,7 +459,7 @@ static void __init smdkc110_dm9000_set(void)
 	tmp     &= ~(0xf<<20);
 	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
-#else
+/* #else */
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
