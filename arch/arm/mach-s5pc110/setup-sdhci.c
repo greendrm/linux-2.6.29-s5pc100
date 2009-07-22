@@ -1,11 +1,11 @@
-/* linux/arch/arm/mach-s3c6410/setup-sdhci.c
+/* linux/arch/arm/mach-s5pc110/setup-sdhci.c
  *
  * Copyright 2008 Simtec Electronics
  * Copyright 2008 Simtec Electronics
  *	Ben Dooks <ben@simtec.co.uk>
  *	http://armlinux.simtec.co.uk/
  *
- * S3C6410 - Helper functions for settign up SDHCI device(s) (HSMMC)
+ * S5PC110 - Helper functions for settign up SDHCI device(s) (HSMMC)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,9 +32,9 @@
 
 /* clock sources for the mmc bus clock, order as for the ctrl2[5..4] */
 char *s3c6410_hsmmc_clksrcs[4] = {
-	[0] = "mmc_bus",
-	[1] = "mmc_bus",
-	[2] = "hsmmc",
+	[0] = "hsmmc",
+	[1] = "hsmmc",
+//	[2] = "mmc_bus",
 };
 
 void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
@@ -43,7 +43,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	unsigned int end;
 
         /* Channel 0 supports 1,4 and 8-bit bus width */
-        end = S5PC11X_GPG0(2 + width);
+        end = S5PC11X_GPG0(3 + width);
 
         /* Set all the necessary GPG0 ins to special-function 2 */
         for (gpio = S5PC11X_GPG0(0); gpio < end; gpio++) {
@@ -51,9 +51,8 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
                 s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
         }
 
-        /* GPG1 chip Detect */
-        s3c_gpio_setpull(S5PC11X_GPG1(2), S3C_GPIO_PULL_UP);
-        s3c_gpio_cfgpin(S5PC11X_GPG1(2), S3C_GPIO_SFN(2));
+        /* Chip detect pin Pull up*/
+        s3c_gpio_setpull(S5PC11X_GPG0(2), S3C_GPIO_PULL_UP);	
 }
 
 void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
@@ -85,17 +84,16 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 	unsigned int end;
 
 	/* Channel 1 supports 1 and 4-bit bus width */
-	end = S5PC11X_GPG2(2 + width);
+	end = S5PC11X_GPG1(3 + width);
 
 	/* Set all the necessary GPG2 pins to special-function 2 */
-	for (gpio = S5PC11X_GPG2(0); gpio < end; gpio++) {
+	for (gpio = S5PC11X_GPG1(0); gpio < end; gpio++) {
 		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 	}
-
-	/* GPG2 chip Detect */
-	s3c_gpio_setpull(S5PC11X_GPG2(6), S3C_GPIO_PULL_UP);
-	s3c_gpio_cfgpin(S5PC11X_GPG2(6), S3C_GPIO_SFN(2));
+	
+        /* Chip detect pin Pull up*/
+        s3c_gpio_setpull(S5PC11X_GPG1(2), S3C_GPIO_PULL_UP);	
 }
 
 void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
@@ -103,8 +101,26 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
         unsigned int gpio;
         unsigned int end;
 
-        /* Channel 1 supports 1 and 4-bit bus width */
-        end = S5PC11X_GPG3(2 + width);
+        /* Channel 2 supports 1 and 4-bit bus width */
+        end = S5PC11X_GPG2(3 + width);
+
+        /* Set all the necessary GPG3 pins to special-function 2 */
+        for (gpio = S5PC11X_GPG2(0); gpio < end; gpio++) {
+                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+        }
+
+        /* Chip detect pin Pull up*/
+        s3c_gpio_setpull(S5PC11X_GPG2(2), S3C_GPIO_PULL_UP);
+}
+
+void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
+{
+        unsigned int gpio;
+        unsigned int end;
+
+        /* Channel 3 supports 1 and 4-bit bus width */
+        end = S5PC11X_GPG3(3 + width);
 
         /* Set all the necessary GPG3 pins to special-function 2 */
         for (gpio = S5PC11X_GPG3(0); gpio < end; gpio++) {
@@ -112,7 +128,7 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
                 s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
         }
 
-        /* GPG3 chip Detect */
-        s3c_gpio_setpull(S5PC11X_GPG3(6), S3C_GPIO_PULL_UP);
-        s3c_gpio_cfgpin(S5PC11X_GPG3(6), S3C_GPIO_SFN(2));
+        /* Chip detect pin Pull up*/
+        s3c_gpio_setpull(S5PC11X_GPG3(2), S3C_GPIO_PULL_UP);
 }
+

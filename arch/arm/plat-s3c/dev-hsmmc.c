@@ -37,7 +37,7 @@ static u64 s3c_device_hsmmc_dmamask = 0xffffffffUL;
 
 struct s3c_sdhci_platdata s3c_hsmmc0_def_platdata = {
 	.max_width	= 4,
-	.host_caps	= (MMC_CAP_4_BIT_DATA |
+	.host_caps	= (MMC_CAP_4_BIT_DATA | MMC_CAP_ON_BOARD |
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
 };
 
