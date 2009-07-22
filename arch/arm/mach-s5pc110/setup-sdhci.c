@@ -34,7 +34,7 @@
 char *s3c6410_hsmmc_clksrcs[4] = {
 	[0] = "hsmmc",
 	[1] = "hsmmc",
-	[2] = "mmc_bus",
+//	[2] = "mmc_bus",
 };
 
 void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)

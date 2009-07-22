@@ -14,7 +14,7 @@ config CPU_S5PC110
 	help
 	  Enable S5PC110 CPU support
 
-config S5PC1XX_SETUP_SDHCI
+config S5PC11X_SETUP_SDHCI
         bool
         help
           Internal helper functions for S5PC1XX based SDHCI systems
@@ -27,7 +27,7 @@ config MACH_SMDKC110
         select S3C_DEV_HSMMC
         select S3C_DEV_HSMMC1
         select S3C_DEV_HSMMC2
-        select S3C_DEV_HSMMC3       
+ #       select S3C_DEV_HSMMC3       
         select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE

@@ -354,10 +354,55 @@ static struct clk_sources clkset_uart = {
 };
 
 static struct clk *clkset_mmc0_list[] = {
-	&clk_mout_epll.clk,
-	&clk_mout_mpll.clk,
-	&clk_fin_epll,
 	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,	
+	&clk_mout_vpll.clk,
+	&clk_fin_epll,
+};
+
+static struct clk *clkset_mmc1_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,	
+	&clk_mout_vpll.clk,
+	&clk_fin_epll,
+};
+
+static struct clk *clkset_mmc2_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,	
+	&clk_mout_vpll.clk,
+	&clk_fin_epll,
+};
+
+static struct clk *clkset_mmc3_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,	
+	&clk_mout_vpll.clk,
+	&clk_fin_epll,
 };
 
 static struct clk_sources clkset_mmc0 = {
@@ -365,30 +410,9 @@ static struct clk_sources clkset_mmc0 = {
 	.nr_sources	= ARRAY_SIZE(clkset_mmc0_list),
 };
 
-static struct clk *clkset_mmc1_list[] = {
-	&clk_mout_epll.clk,
-	&clk_mout_mpll.clk,
-	&clk_fin_epll,
-	&clk_mout_vpll.clk,
-};
-
 static struct clk_sources clkset_mmc1 = {
 	.sources	= clkset_mmc1_list,
 	.nr_sources	= ARRAY_SIZE(clkset_mmc1_list),
-};
-
-static struct clk *clkset_mmc2_list[] = {
-	&clk_mout_epll.clk,
-	&clk_mout_mpll.clk,
-	&clk_fin_epll,
-	&clk_mout_vpll.clk,
-};
-
-static struct clk *clkset_mmc3_list[] = {
-	&clk_mout_epll.clk,
-	&clk_mout_mpll.clk,
-	&clk_fin_epll,
-	&clk_mout_vpll.clk,
 };
 
 static struct clk_sources clkset_mmc2 = {

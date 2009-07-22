@@ -87,6 +87,12 @@ void __init s5pc110_map_io(void)
 {
 	iotable_init(s5pc110_iodesc, ARRAY_SIZE(s5pc110_iodesc));
 
+	/* HS-MMC Platform data init*/
+        s3c6410_default_sdhci0();
+        s3c6410_default_sdhci1();
+        s3c6410_default_sdhci2();
+        s3c6410_default_sdhci3();	
+
 	/* set s5pc110 idle function */
 	s5pc11x_idle = s5pc110_idle;
 }

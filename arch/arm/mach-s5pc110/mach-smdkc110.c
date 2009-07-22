@@ -367,10 +367,22 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_FB_S3C_TL2796
 	&s3c_device_spi_gpio,
 #endif
+
+#ifdef CONFIG_S3C_DEV_HSMMC
         &s3c_device_hsmmc0,
+#endif        
+
+#ifdef CONFIG_S3C_DEV_HSMMC1
         &s3c_device_hsmmc1,
+#endif        
+        
+#ifdef CONFIG_S3C_DEV_HSMMC2        
         &s3c_device_hsmmc2,
+#endif        
+        
+#ifdef CONFIG_S3C_DEV_HSMMC3
         &s3c_device_hsmmc3,        
+#endif                
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -477,6 +489,10 @@ static void __init smdkc110_machine_init(void)
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&tl2796_data);
 #endif
+
+	/* Setting up the HS-MMC clock using doutMpll */
+	writel(((readl(S5P_CLK_SRC4) & ~(0xffff << 0)) | 0x6666), S5P_CLK_SRC4);
+	writel(((readl(S5P_CLK_DIV4) & ~(0xffff << 0)) | 0x1111), S5P_CLK_DIV4);
 
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
