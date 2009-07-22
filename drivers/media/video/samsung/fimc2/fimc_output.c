@@ -271,13 +271,13 @@ static void fimc_outdev_set_path(struct fimc_control *ctrl)
 static void fimc_outdev_set_rot(struct fimc_control *ctrl)
 {
 	u32 rot = ctrl->out->rotate;
-	u32 flip = ctrl->out->flip;	
+	u32 flip = ctrl->out->flip;
 	
 	if (ctrl->out->fbuf.base) {
+		fimc_hwset_output_rot_flip(ctrl, rot, flip);
+	} else { /* FIFO mode */
 		fimc_hwset_input_rot(ctrl, rot, flip);
 		fimc_hwset_input_flip(ctrl, rot, flip);
-	} else { /* FIFO mode */
-		fimc_hwset_output_rot_flip(ctrl, rot, flip);
 	}
 }
 
