@@ -111,7 +111,19 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
+	struct fimc_capinfo *cap = ctrl->cap;
 
+	fimc_hwset_clear_irq(ctrl);
+	fimc_hwget_overflow_state(ctrl);
+
+	if (cap->irq == FIMC_IRQ_NORMAL) {
+		fimc_hwset_enable_lastirq(ctrl);
+		fimc_hwset_disable_lastirq(ctrl);
+		cap->irq = FIMC_IRQ_LAST;
+	} else if (cap->irq == FIMC_IRQ_LAST) {
+		wake_up_interruptible(&ctrl->wq);
+		cap->irq = FIMC_IRQ_NONE;
+	}
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -273,7 +285,7 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 		vma->vm_flags |= VM_RESERVED;
 
 		/* page frame number of the address for a source frame to be stored at. */
-		pfn = __phys_to_pfn(ctrl->cap->buf[vma->vm_pgoff].base);
+		pfn = __phys_to_pfn(ctrl->cap->bufs[vma->vm_pgoff].base);
 
 		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
 			dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
@@ -292,7 +304,22 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 
 static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
-	return 0;
+	struct fimc_control *ctrl = filp->private_data;
+	struct fimc_capinfo *cap = ctrl->cap;
+	u32 mask = 0;
+
+	if (cap) {
+		if (cap->inqueue[0] == -1) {
+			wait_event_interruptible_timeout(ctrl->wq, \
+				cap->inqueue[0] != -1, FIMC_DQUEUE_TIMEOUT);
+		}
+
+		ctrl->cap->irq = FIMC_IRQ_NORMAL;
+		poll_wait(filp, &ctrl->wq, wait);
+		mask = POLLIN | POLLRDNORM;
+	}
+
+	return mask;
 }
 
 static

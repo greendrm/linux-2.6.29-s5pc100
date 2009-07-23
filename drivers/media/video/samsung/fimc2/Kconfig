@@ -9,6 +9,10 @@ config VIDEO_FIMC2
 	---help---
 	  This is a video4linux driver for Samsung FIMC device.
 
+config VIDEO_FIMC_DEBUG
+	bool "FIMC driver debug messages"
+	depends on VIDEO_FIMC2
+
 config VIDEO_FIMC_MIPI
 	bool "FIMC works with MIPI-CSI2 (Rx)"
 	depends on VIDEO_FIMC2 && ARCH_S5PC1XX
