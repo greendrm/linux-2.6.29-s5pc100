@@ -67,43 +67,69 @@ void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
 	mutex_unlock(&ctrl->lock);
 }
 
-static inline void fimc_irq_out(struct fimc_control *ctrl)
+static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 {
-	unsigned int	prev, next;
-	int		ret = -1, wakeup = 0;
+	int ret = -1;
 
-	/* Interrupt pendding clear */
-	ret = fimc_hwset_clear_irq(ctrl);
-	if (ctrl->status != FIMC_READY_OFF) {
-		/* Attach done buffer to outgoing queue. */
-		if (ctrl->out->idx.prev != -1) {
-			ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.prev);
-			if (ret < 0) {
-				dev_err(ctrl->dev, "Failed: \
-						fimc_attach_out_queue.\n");
-			} else {
-				ctrl->out->idx.prev = -1;
-				wakeup = 1; /* To wake up fimc_v4l2_dqbuf(). */
-			}
-		}
+	/* Attach done buffer to outgoing queue. */
+	ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.active);
+	if (ret < 0)
+		dev_err(ctrl->dev, "Failed: fimc_attach_out_queue.\n");
 
-		/* Update index structure. */
-		if (ctrl->out->idx.next != -1) {
-			ctrl->out->idx.active	= ctrl->out->idx.next;
-			ctrl->out->idx.next	= -1;
-		}
+	ctrl->out->idx.active = -1;
+	ctrl->status = FIMC_STREAMON_IDLE;
 
-		/* Detach buffer from incomming queue. */
-		ret =  fimc_detach_in_queue(ctrl, &next);
-		if (ret == 0) {	/* There is a buffer in incomming queue. */
-			prev = ctrl->out->idx.active;
-			ctrl->out->idx.prev	= prev;
-			ctrl->out->idx.next	= next;
+	return 1;
+}
 
-			/* Set the address */
-			fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
+static inline u32 fimc_irq_out_fimd(struct fimc_control *ctrl)
+{
+	u32 prev, next, wakeup = 0;
+	int ret = -1;
+
+	/* Attach done buffer to outgoing queue. */
+	if (ctrl->out->idx.prev != -1) {
+		ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.prev);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed: \
+					fimc_attach_out_queue.\n");
+		} else {
+			ctrl->out->idx.prev = -1;
+			wakeup = 1; /* To wake up fimc_v4l2_dqbuf(). */
 		}
 	}
+
+	/* Update index structure. */
+	if (ctrl->out->idx.next != -1) {
+		ctrl->out->idx.active	= ctrl->out->idx.next;
+		ctrl->out->idx.next	= -1;
+	}
+
+	/* Detach buffer from incomming queue. */
+	ret =  fimc_detach_in_queue(ctrl, &next);
+	if (ret == 0) {	/* There is a buffer in incomming queue. */
+		prev = ctrl->out->idx.active;
+		ctrl->out->idx.prev	= prev;
+		ctrl->out->idx.next	= next;
+
+		/* Set the address */
+		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
+	}
+
+	return wakeup;
+}
+
+static inline void fimc_irq_out(struct fimc_control *ctrl)
+{
+	u32 wakeup = 1;
+
+	/* Interrupt pendding clear */
+	fimc_hwset_clear_irq(ctrl);
+	
+	if (ctrl->out->fbuf.base)
+		wakeup = fimc_irq_out_dma(ctrl);
+	else if (ctrl->status != FIMC_READY_OFF)
+		wakeup = fimc_irq_out_fimd(ctrl);
 
 	if (wakeup == 1)
 		wake_up_interruptible(&ctrl->wq);
@@ -465,7 +491,6 @@ static int fimc_release(struct file *filp)
 			ctrl->cam->cam_power(0);
 	} else if (ctrl->out) {
 		if (ctrl->status != FIMC_STREAMOFF) {
-			ctrl->status = FIMC_READY_OFF;
 			ret = fimc_outdev_stop_streaming(ctrl);
 			if (ret < 0)
 				dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
