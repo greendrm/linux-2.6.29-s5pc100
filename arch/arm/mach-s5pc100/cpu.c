@@ -74,13 +74,8 @@ static struct map_desc s5pc100_iodesc[] __initdata = {
 
 static void s5pc100_idle(void)
 {
-#if !defined(CONFIG_MMC_SDHCI_S3C) && !defined(CONFIG_MMC_SDHCI_MODULE)
 	unsigned int tmp;
 
-#if defined(T32_PROBE_DEBUGGING)
-/* debugging with T32  GPIO port GPD1 which is connected with 2 pin of J1 connector */
-	gpio_direction_output(S5PC1XX_GPD(1), 0);
-#endif
 /*
  * 1. Set CFG_STANDBYWFI field of PWR_CFG to 2¡¯b01.
  * 2. Set PMU_INT_DISABLE bit of OTHERS register to 1¡¯b1 to prevent interrupts from
@@ -93,11 +88,6 @@ static void s5pc100_idle(void)
 	__raw_writel(tmp, S5P_PWR_CFG);
 
 	cpu_do_idle();
-
-#if defined(T32_PROBE_DEBUGGING)
-	gpio_direction_output(S5PC1XX_GPD(1), 1);
-#endif
-#endif
 }
 
 void __init s5pc100_map_io(void)

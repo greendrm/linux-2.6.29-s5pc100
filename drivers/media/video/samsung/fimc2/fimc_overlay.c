@@ -37,7 +37,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 
 	/* Check Overlay Size : Overlay size must be smaller than LCD size. */
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
-	if (is_rotate && 0x10) {	/* Landscape mode */
+	if (is_rotate & 0x10) {	/* Landscape mode */
 		if (f->fmt.win.w.width > ctrl->fb.lcd_vres) {
 			dev_warn(ctrl->dev, "The width is changed %d -> %d.\n",
 				f->fmt.win.w.width, ctrl->fb.lcd_vres);

@@ -34,6 +34,19 @@ static int set_conf_done = 0;
 #define GET_MAX_LUN_REQUEST	0xFE
 #define BOT_RESET_REQUEST	0xFF
 
+/* TEST MODE in set_feature request */
+#define TEST_SELECTOR_MASK	0xFF
+#define TEST_PKT_SIZE		53
+
+static u8 test_pkt[TEST_PKT_SIZE] = {
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,				//JKJKJKJK x 9
+	0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,				//JJKKJJKK x 8
+	0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,				//JJJJKKKK x 8
+	0xFE,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,		//JJJJJJJKKKKKKK x8 - '1'
+	0x7F,0xBF,0xDF,0xEF,0xF7,0xFB,0xFD,					//'1' + JJJJJJJK x 8
+	0xFC,0x7E,0xBF,0xDF,0xEF,0xF7,0xFB,0xFD,0x7E				//{JKKKKKKK x 10},JK
+};
+
 void s3c_udc_ep_set_stall(struct s3c_ep *ep);
 
 static inline void s3c_udc_ep0_zlp(void)
@@ -1013,6 +1026,67 @@ static int s3c_udc_clear_feature(struct usb_ep *_ep)
 	return 0;
 }
 
+/* Set into the test mode for Test Mode set_feature request */
+static inline void set_test_mode(void)
+{
+	u32 ep_ctrl, dctl;
+	u8 test_selector = (usb_ctrl.wIndex>>8) & TEST_SELECTOR_MASK;
+
+	if(test_selector>0 && test_selector<6)
+	{
+		ep_ctrl = readl(S3C_UDC_OTG_DIEPCTL(EP0_CON));
+
+		writel(1<<19| 0<<0, S3C_UDC_OTG_DIEPTSIZ(EP0_CON));
+		writel(ep_ctrl|DEPCTL_EPENA|DEPCTL_CNAK|EP0_CON<<DEPCTL_NEXT_EP_BIT , S3C_UDC_OTG_DIEPCTL(EP0_CON));
+	}
+
+	switch(test_selector) {
+	case TEST_J_SEL:
+		/* some delay is necessary like printk() or udelay() */
+		printk("Test mode selector in set_feature request is TEST J\n");
+
+		dctl = readl(S3C_UDC_OTG_DCTL);
+		writel((dctl&~(TEST_CONTROL_MASK))|TEST_J_MODE, S3C_UDC_OTG_DCTL);
+		break;
+	case TEST_K_SEL:
+		/* some delay is necessary like printk() or udelay() */
+		printk("Test mode selector in set_feature request is TEST K\n");
+
+		dctl = readl(S3C_UDC_OTG_DCTL);
+		writel((dctl&~(TEST_CONTROL_MASK))|TEST_K_MODE, S3C_UDC_OTG_DCTL);
+		break;
+	case TEST_SE0_NAK_SEL:
+		/* some delay is necessary like printk() or udelay() */
+		printk("Test mode selector in set_feature request is TEST SE0 NAK\n");
+
+		dctl = readl(S3C_UDC_OTG_DCTL);
+		writel((dctl&~(TEST_CONTROL_MASK))|TEST_SE0_NAK_MODE, S3C_UDC_OTG_DCTL);
+		break;
+	case TEST_PACKET_SEL:
+		/* some delay is necessary like printk() or udelay() */
+		printk("Test mode selector in set_feature request is TEST PACKET\n");
+
+		dma_cache_maint(test_pkt, TEST_PKT_SIZE, DMA_TO_DEVICE);
+		writel(virt_to_phys(test_pkt), S3C_UDC_OTG_DIEPDMA(EP0_CON));
+
+		ep_ctrl = readl(S3C_UDC_OTG_DIEPCTL(EP0_CON));
+
+		writel(1<<19| TEST_PKT_SIZE<<0, S3C_UDC_OTG_DIEPTSIZ(EP0_CON));
+		writel(ep_ctrl|DEPCTL_EPENA|DEPCTL_CNAK|EP0_CON<<DEPCTL_NEXT_EP_BIT, S3C_UDC_OTG_DIEPCTL(EP0_CON));
+
+		dctl = readl(S3C_UDC_OTG_DCTL);
+		writel((dctl&~(TEST_CONTROL_MASK))|TEST_PACKET_MODE, S3C_UDC_OTG_DCTL);
+		break;
+	case TEST_FORCE_ENABLE_SEL:
+		/* some delay is necessary like printk() or udelay() */
+		printk("Test mode selector in set_feature request is TEST FORCE ENABLE\n");
+
+		dctl = readl(S3C_UDC_OTG_DCTL);
+		writel((dctl&~(TEST_CONTROL_MASK))|TEST_FORCE_ENABLE_MODE, S3C_UDC_OTG_DCTL);
+		break;
+	}
+}
+
 static int s3c_udc_set_feature(struct usb_ep *_ep)
 {
 	struct s3c_ep	*ep;
@@ -1037,6 +1111,7 @@ static int s3c_udc_set_feature(struct usb_ep *_ep)
 
 		case USB_DEVICE_TEST_MODE:
 			DEBUG_SETUP("\tSET_FEATURE: USB_DEVICE_TEST_MODE\n");
+			set_test_mode();
 			break;
 
 		case USB_DEVICE_B_HNP_ENABLE:

@@ -1113,3 +1113,23 @@ v2.6.29.4-dev-1-0-6: Ohkyoung Kwon
 	Added Files:
 		A       arch/arm/configs/smdkc110onenand_defconfig
 
+v2.6.29.4-dev-1-0-7: Kyoungil Kim
+	- Support USB Ethernet Gadget for s5pc110
+
+	Modified Files:
+		M       arch/arm/configs/smdkc110ramdisk_defconfig
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s3c/include/plat/regs-otg.h
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M       drivers/usb/gadget/Kconfig
+		M       drivers/usb/gadget/s3c_udc.h
+		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+
+v2.6.29.4-dev-1-0-8: Jae-Cheol Lee
+	- Support IDLE and CHIPID for s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+		M	arch/arm/plat-s5pc11x/cpu.c
