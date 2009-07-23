@@ -24,11 +24,11 @@ config MACH_SMDKC110
 	select CPU_S5PC110
 	select S3C_DMA_PL330
 	select S3C_DEV_I2C1
-        select S3C_DEV_HSMMC
-        select S3C_DEV_HSMMC1
-        select S3C_DEV_HSMMC2
- #       select S3C_DEV_HSMMC3       
-        select S5PC11X_SETUP_SDHCI
+	select S3C_DEV_HSMMC
+	select S3C_DEV_HSMMC1
+	select S3C_DEV_HSMMC2
+	select S3C_DEV_HSMMC3       
+	select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE
 	help

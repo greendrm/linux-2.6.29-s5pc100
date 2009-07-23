@@ -858,6 +858,10 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_h.rate = hclk133;
 	clk_p.rate = pclk66;
 
+	/* Setting up the HS-MMC clock using doutMpll */	// chaos
+	writel(((readl(S5P_CLK_SRC4) & ~(0xffff << 0)) | 0x6666), S5P_CLK_SRC4);
+	writel(((readl(S5P_CLK_DIV4) & ~(0xffff << 0)) | 0xdddd), S5P_CLK_DIV4);
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 }
