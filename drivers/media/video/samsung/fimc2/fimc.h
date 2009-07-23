@@ -189,15 +189,6 @@ struct s3cfb_window {
 	int			(*resume_fifo)(void);
 };
 
-struct s3cfb_lcd {
-	int	width;
-	int	height;
-	int	bpp;
-	int	freq;
-
-	void 	(*init_ldi)(void);
-};
-
 struct s3cfb_user_window {
 	int x;
 	int y;
@@ -208,14 +199,17 @@ struct s3cfb_user_window {
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
-#define S3CFB_GET_LCDINFO		_IOR ('F', 302, struct s3cfb_lcd)
+#define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
+#define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
+
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
 	struct fb_var_screeninfo	*var;
 	struct s3cfb_window		*win;
-	struct s3cfb_lcd		*lcd;
+	int				lcd_hres;
+	int				lcd_vres;	
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);

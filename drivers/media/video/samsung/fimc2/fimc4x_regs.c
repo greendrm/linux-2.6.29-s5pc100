@@ -302,10 +302,10 @@ int fimc_hwset_output_rot_flip(struct fimc_control *ctrl, u32 rot, u32 flip)
 	if (val & 0x10)
 		cfg |= S3C_CITRGFMT_OUTROT90_CLOCKWISE;
 
-	if (val & V4L2_CID_HFLIP)
+	if (val & 0x01)
 		cfg |= S3C_CITRGFMT_FLIP_X_MIRROR;
 
-	if (val & V4L2_CID_VFLIP)
+	if (val & 0x02)
 		cfg |= S3C_CITRGFMT_FLIP_Y_MIRROR;
 
 	writel(cfg, ctrl->regs + S3C_CITRGFMT);
@@ -445,11 +445,13 @@ int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV16:
 		cfg |= S3C_CIOCTRL_ORDER2P_LSB_CBCR;
+		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
 		break;
 
 	case V4L2_PIX_FMT_NV21:		/* fall through */
 	case V4L2_PIX_FMT_NV61:
 		cfg |= S3C_CIOCTRL_ORDER2P_MSB_CBCR;
+		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
 		break;
 
 	/* 3 plane formats */
@@ -601,10 +603,6 @@ int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB888;
 	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB565;
-	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
-		return -EINVAL;
 	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
@@ -688,7 +686,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 	case V4L2_PIX_FMT_NV16:
 	case V4L2_PIX_FMT_NV61:
 		addr_y = base;
-		addr_cb = base + (fmt->width * fmt->height);
+		addr_cb = addr_y + (fmt->width * fmt->height);
 		break;
 
 	  /* 3 plane formats */
@@ -711,7 +709,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 
 	writel(addr_y, ctrl->regs + S3C_CIIYSA0);
 	writel(addr_cb, ctrl->regs + S3C_CIICBSA0);
-	writel(addr_cr, ctrl->regs + S3C_CIICBSA0);
+	writel(addr_cr, ctrl->regs + S3C_CIICRSA0);
 
 	return 0;
 }
@@ -849,10 +847,10 @@ int fimc_hwset_input_flip(struct fimc_control *ctrl, u32 rot, u32 flip)
 	cfg &= ~(S3C_MSCTRL_FLIP_X_MIRROR | S3C_MSCTRL_FLIP_Y_MIRROR);
 	val = fimc_mapping_rot_flip(rot, flip);
 
-	if(val & V4L2_CID_HFLIP)
+	if(val & 0x01)
 		cfg |= S3C_MSCTRL_FLIP_X_MIRROR;
 
-	if(val & V4L2_CID_VFLIP)
+	if(val & 0x02)
 		cfg |= S3C_MSCTRL_FLIP_Y_MIRROR;
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -1114,172 +1112,3 @@ int fimc_select_camera(struct fimc_control *ctrl)
 	return 0;
 }
 
-#if 0
-void fimc_clear_irq(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
-
-	cfg |= S3C_CIGCTRL_IRQ_CLR;
-
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-}
-
-
-void fimc_set_int_enable(struct fimc_control *ctrl, u32 enable)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
-
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
-
-	if (enable == 1) {
-		cfg |= (S3C_CIGCTRL_IRQ_ENABLE | S3C_CIGCTRL_IRQ_LEVEL);
-	} else {
-		cfg &= ~S3C_CIGCTRL_IRQ_ENABLE;
-	}
-
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-}
-
-int fimc_set_in_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
-{
-	int rot_flip = 0;
-	u32 cfg_r = readl(ctrl->regs + S3C_CITRGFMT);
-	u32 cfg_f = readl(ctrl->regs + S3C_MSCTRL);
-
-	cfg_r &= ~S3C_CITRGFMT_INROT90_CLOCKWISE;
-	cfg_f &= ~S3C_MSCTRL_FLIP_MASK;	
-
-	rot_flip = fimc_mapping_rot_flip(rot, flip);
-
-	if (rot_flip & 0x10)
-		cfg_r |= S3C_CITRGFMT_INROT90_CLOCKWISE;
-
-	if(rot_flip & V4L2_CID_HFLIP)
-		cfg_f |= S3C_MSCTRL_FLIP_X_MIRROR;
-
-	if(rot_flip & V4L2_CID_VFLIP)
-		cfg_f |= S3C_MSCTRL_FLIP_Y_MIRROR;
-
-	writel(cfg_r, ctrl->regs + S3C_CITRGFMT);
-	writel(cfg_f, ctrl->regs + S3C_MSCTRL);	
-
-	return 0;
-}
-
-int fimc_set_out_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
-{
-	int rot_flip = 0;
-	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
-
-	cfg &= ~(S3C_CITRGFMT_OUTROT90_CLOCKWISE | S3C_CITRGFMT_FLIP_MASK);
-
-	rot_flip = fimc_mapping_rot_flip(rot, flip);
-
-	if (rot_flip & 0x10)
-		cfg |= S3C_CITRGFMT_OUTROT90_CLOCKWISE;
-
-	if(rot_flip & V4L2_CID_HFLIP)
-		cfg |= S3C_CITRGFMT_FLIP_X_MIRROR;
-
-	if(rot_flip & V4L2_CID_VFLIP)
-		cfg |= S3C_CITRGFMT_FLIP_Y_MIRROR;
-
-	writel(cfg, ctrl->regs + S3C_CITRGFMT);
-
-	return 0;
-}
-
-void fimc_set_prescaler(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-
-	cfg |= S3C_CISCPRERATIO_SHFACTOR(ctrl->sc.shfactor);
-	cfg |= S3C_CISCPRERATIO_PREHORRATIO(ctrl->sc.pre_hratio);
-	cfg |= S3C_CISCPRERATIO_PREVERRATIO(ctrl->sc.pre_vratio);
-
-	writel(cfg, ctrl->regs + S3C_CISCPRERATIO);
-
-	cfg = 0;
-	cfg |= S3C_CISCPREDST_PREDSTWIDTH(ctrl->sc.pre_dst_width);
-	cfg |= S3C_CISCPREDST_PREDSTHEIGHT(ctrl->sc.pre_dst_height);
-
-	writel(cfg, ctrl->regs + S3C_CISCPREDST);
-}
-
-void fimc_set_mainscaler(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
-
-	cfg &= ~(S3C_CISCCTRL_SCALERBYPASS | \
-		S3C_CISCCTRL_SCALEUP_H | S3C_CISCCTRL_SCALEUP_V | \
-		S3C_CISCCTRL_MAIN_V_RATIO_MASK | S3C_CISCCTRL_MAIN_H_RATIO_MASK);
-
-	if (ctrl->sc.bypass)
-		cfg |= S3C_CISCCTRL_SCALERBYPASS;
-
-	if (ctrl->sc.scaleup_h)
-		cfg |= S3C_CISCCTRL_SCALEUP_H;
-
-	if (ctrl->sc.scaleup_v)
-		cfg |= S3C_CISCCTRL_SCALEUP_V;
-
-	cfg |= S3C_CISCCTRL_MAINHORRATIO(ctrl->sc.main_hratio);
-	cfg |= S3C_CISCCTRL_MAINVERRATIO(ctrl->sc.main_vratio);
-
-	writel(cfg, ctrl->regs + S3C_CISCCTRL);
-}
-
-void fimc_start_scaler(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-
-	if (!ctrl->sc.bypass) {
-		cfg = readl(ctrl->regs + S3C_CISCCTRL);
-		cfg |= S3C_CISCCTRL_SCALERSTART;
-		writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	}
-}
-
-void fimc_stop_scaler(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
-
-	cfg &= ~S3C_CISCCTRL_SCALERSTART;
-	writel(cfg, ctrl->regs + S3C_CISCCTRL);
-}
-
-void fimc_enable_capture(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-
-	cfg = readl(ctrl->regs + S3C_CIIMGCPT);
-	cfg |= S3C_CIIMGCPT_IMGCPTEN;
-	if (!ctrl->sc.bypass)
-		cfg |= S3C_CIIMGCPT_IMGCPTEN_SC;
-	writel(cfg, ctrl->regs + S3C_CIIMGCPT);
-}
-
-void fimc_disable_capture(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_CIIMGCPT);
-
-	cfg &= ~(S3C_CIIMGCPT_IMGCPTEN | S3C_CIIMGCPT_IMGCPTEN_SC);
-	writel(cfg, ctrl->regs + S3C_CIIMGCPT);
-}
-
-void fimc_enable_input_dma(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
-
-	cfg |= S3C_MSCTRL_ENVID;
-	writel(cfg, ctrl->regs + S3C_MSCTRL);
-}
-
-void fimc_disable_input_dma(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
-
-	cfg &= ~S3C_MSCTRL_ENVID;
-	writel(cfg, ctrl->regs + S3C_MSCTRL);
-}
-#endif

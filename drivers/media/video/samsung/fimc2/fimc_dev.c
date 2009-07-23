@@ -74,7 +74,6 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 
 	/* Interrupt pendding clear */
 	ret = fimc_hwset_clear_irq(ctrl);
-
 	if (ctrl->status != FIMC_READY_OFF) {
 		/* Attach done buffer to outgoing queue. */
 		if (ctrl->out->idx.prev != -1) {
@@ -240,7 +239,7 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 	u32 pfn, idx = vma->vm_pgoff;
 	int pri_data = 0;
 
-	if (!ctrl->out) {	/* OUTPUT device */
+	if (ctrl->out) {	/* OUTPUT device */
 		if (size > ctrl->out->buf[idx].length) {
 			dev_err(ctrl->dev, "Requested mmap size is too big.\n");
 			return -EINVAL;
@@ -390,7 +389,6 @@ static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	struct s3cfb_lcd lcd;
 	int ret;
 
 	ctrl = video_get_drvdata(video_devdata(filp));
@@ -412,13 +410,15 @@ static int fimc_open(struct file *filp)
 	ctrl->fb.open_fifo	= s3cfb_open_fifo;
 	ctrl->fb.close_fifo	= s3cfb_close_fifo;
 
-	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCDINFO, (unsigned long)&lcd);
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_WIDTH, \
+					(unsigned long)&ctrl->fb.lcd_hres);
 	if (ret < 0)
-		dev_err(ctrl->dev,  "s3cfb_direct_ioctl(S3CFB_GET_LCDINFO) fail\n");
+		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_WIDTH\n");
 
-	printk("lcd.width = %d, lcd.height = %d\n", lcd.width, lcd.height);
-	
-	//memcpy(ctrl->fb.lcd, &lcd, sizeof(lcd));
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_HEIGHT, \
+					(unsigned long)&ctrl->fb.lcd_vres);
+	if (ret < 0)
+		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_HEIGHT\n");
 
 	ctrl->status		= FIMC_STREAMOFF;
 
@@ -464,18 +464,22 @@ static int fimc_release(struct file *filp)
 		if (ctrl->cam->cam_power)
 			ctrl->cam->cam_power(0);
 	} else if (ctrl->out) {
-		ctrl->status = FIMC_READY_OFF;
-		ret = fimc_outdev_stop_streaming(ctrl);
-		if (ret < 0)
-			dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
-		ctrl->status = FIMC_STREAMOFF;
+		if (ctrl->status != FIMC_STREAMOFF) {
+			ctrl->status = FIMC_READY_OFF;
+			ret = fimc_outdev_stop_streaming(ctrl);
+			if (ret < 0)
+				dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
+			ctrl->status = FIMC_STREAMOFF;
+		}
 	}
 
 	if (ctrl->cap)
 		kfree(ctrl->cap);
 
-	if (ctrl->out)
+	if (ctrl->out) {
 		kfree(ctrl->out);
+		ctrl->out = NULL;
+	}
 
 	mutex_unlock(&ctrl->lock);
 	
