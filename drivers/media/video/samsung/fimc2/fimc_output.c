@@ -106,7 +106,6 @@ static int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 	} else if (pixfmt == V4L2_PIX_FMT_RGB565) {
 		rgb_size = PAGE_ALIGN(hres * vres * 2);
 		total_size = rgb_size * num;
-
 	} else {
 		dev_err(ctrl->dev, "[%s] Invalid pixelformt : %d\n", 
 				__FUNCTION__, pixfmt);
@@ -305,7 +304,12 @@ void fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
 	org.height = ctrl->out->pix.height;
 	real.width = ctrl->out->crop.c.width;
 	real.height = ctrl->out->crop.c.height;
-	
+
+#if 0
+	printk("[%s] org.width(%d), org.height(%d), real.width(%d), real.height(%d)\n", \
+		__FUNCTION__, org.width, org.height, real.width, real.height);
+#endif
+
 	fimc_hwset_org_input_size(ctrl, org.width, org.height);
 	fimc_hwset_real_input_size(ctrl, real.width, real.height);
 }
@@ -379,8 +383,10 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 
 	fimc_outdev_calibrate_scale_info(ctrl, &src, &dst);
 
-	printk("src_w(%d), src_h(%d), dst_w(%d), dst_h(%d)\n", src.width, src.height, dst.width, dst.height);
-
+#if 0
+	printk("src_w(%d), src_h(%d), dst_w(%d), dst_h(%d)\n", \
+				src.width, src.height, dst.width, dst.height);
+#endif
 	ret = fimc_get_scaler_factor(src.width, dst.width, \
 			&ctrl->sc.pre_hratio, &ctrl->sc.hfactor);
 	if (ret < 0) {
@@ -395,18 +401,24 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 		return -EINVAL;
 	}
 
-	printk("ctrl->sc.pre_hratio(%d), ctrl->sc.hfactor(%d), ctrl->sc.pre_vratio(%d), ctrl->sc.vfactor(%d)\n", \
-		ctrl->sc.pre_hratio, ctrl->sc.hfactor, ctrl->sc.pre_vratio, ctrl->sc.vfactor);
-
+#if 0
+	printk("ctrl->sc.pre_hratio(%d), ctrl->sc.hfactor(%d), \
+		ctrl->sc.pre_vratio(%d), ctrl->sc.vfactor(%d)\n", \
+		ctrl->sc.pre_hratio, ctrl->sc.hfactor, \
+		ctrl->sc.pre_vratio, ctrl->sc.vfactor);
+#endif
 	ctrl->sc.pre_dst_width = src.width / ctrl->sc.pre_hratio;
 	ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
 
 	ctrl->sc.pre_dst_height = src.height / ctrl->sc.pre_vratio;
 	ctrl->sc.main_vratio = (src.height << 8) / (dst.height<<ctrl->sc.vfactor);
 
-	printk("ctrl->sc.pre_dst_width(%d), ctrl->sc.main_hratio(%d), ctrl->sc.pre_dst_height(%d), ctrl->sc.main_vratio(%d)\n", \
-		ctrl->sc.pre_dst_width, ctrl->sc.main_hratio, ctrl->sc.pre_dst_height, ctrl->sc.main_vratio);
-
+#if 0
+	printk("ctrl->sc.pre_dst_width(%d), ctrl->sc.main_hratio(%d), \
+		ctrl->sc.pre_dst_height(%d), ctrl->sc.main_vratio(%d)\n", \
+		ctrl->sc.pre_dst_width, ctrl->sc.main_hratio, \
+		ctrl->sc.pre_dst_height, ctrl->sc.main_vratio);
+#endif
 	if ((src.width == dst.width) && (src.height == dst.height))
 		ctrl->sc.bypass = 1;
 
@@ -735,9 +747,6 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	u32 pixelformat = ctrl->out->pix.pixelformat;
-	u32 max_w = 0, max_h = 0;	
-	u32 is_rotate = 0;
 
 	dev_info(ctrl->dev, "[%s] called\n", __FUNCTION__);
 
@@ -752,24 +761,9 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 
-	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
-	if (pixelformat == V4L2_PIX_FMT_NV12) {
-		max_w = FIMC_SRC_MAX_W;
-		max_h = FIMC_SRC_MAX_H;
-	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
-			(pixelformat == V4L2_PIX_FMT_RGB565)) {
-		if (is_rotate & 0x10) {		/* Landscape mode */
-			max_w = ctrl->fb.lcd_vres;
-			max_h = ctrl->fb.lcd_hres;
-		} else {				/* Portrait */
-			max_w = ctrl->fb.lcd_hres;
-			max_h = ctrl->fb.lcd_vres;
-		}
-	}
-
-	if ((a->c.width > max_w) || (a->c.height > max_h)) {
-		dev_err(ctrl->dev, "The crop rect width and height must be \
-				smaller than %d and %d.\n", max_w, max_h);
+	if ((a->c.width > FIMC_SRC_MAX_W) || (a->c.height > FIMC_SRC_MAX_H)) {
+		dev_err(ctrl->dev, "The crop width/height must be smaller than \
+				%d and %d.\n", FIMC_SRC_MAX_W, FIMC_SRC_MAX_H);
 		return -EINVAL;
 	}
 
@@ -780,18 +774,18 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 	
-	if ((a->c.left > max_w) || (a->c.top > max_h)) {
-		dev_err(ctrl->dev, "The crop rect left and top must be \
-				smaller than %d, %d.\n", max_w, max_h);
+	if ((a->c.left > FIMC_SRC_MAX_W) || (a->c.top > FIMC_SRC_MAX_H)) {
+		dev_err(ctrl->dev, "The crop left/top must be smaller than \
+				%d, %d.\n", FIMC_SRC_MAX_W, FIMC_SRC_MAX_H);
 		return -EINVAL;
 	}
 
-	if ((a->c.left + a->c.width) > max_w) {
+	if ((a->c.left + a->c.width) > FIMC_SRC_MAX_W) {
 		dev_err(ctrl->dev, "The crop rect must be in bound rect.\n");
 		return -EINVAL;
 	}
 	
-	if ((a->c.top + a->c.height) > max_h) {
+	if ((a->c.top + a->c.height) > FIMC_SRC_MAX_H) {
 		dev_err(ctrl->dev, "The crop rect must be in bound rect.\n");
 		return -EINVAL;
 	}
