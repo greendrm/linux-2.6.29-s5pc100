@@ -1126,3 +1126,10 @@ v2.6.29.4-dev-1-0-7: Kyoungil Kim
 		M       drivers/usb/gadget/Kconfig
 		M       drivers/usb/gadget/s3c_udc.h
 		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+
+v2.6.29.4-dev-1-0-8: Jae-Cheol Lee
+	- Support IDLE and CHIPID for s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+		M	arch/arm/plat-s5pc11x/cpu.c
