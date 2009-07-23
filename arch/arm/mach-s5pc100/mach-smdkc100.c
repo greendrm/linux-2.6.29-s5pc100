@@ -444,11 +444,11 @@ static struct s5k6aa_platform_data s5k6aa = {
 
 static struct i2c_board_info  __initdata camera_info[] = {
 	{
-		I2C_BOARD_INFO("S5K4BA", 0x5a),
+		I2C_BOARD_INFO("S5K4BA", 0x2d),
 		.platform_data = &s5k4ba,
 	},
 	{
-		I2C_BOARD_INFO("S5K6AA", 0x78),
+		I2C_BOARD_INFO("S5K6AA", 0x3c),
 		.platform_data = &s5k6aa,
 	},
 };
@@ -457,7 +457,7 @@ static struct i2c_board_info  __initdata camera_info[] = {
 static struct s3c_platform_camera __initdata camera_a = {
 	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
-	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 0,
 	.info		= &camera_info[0],

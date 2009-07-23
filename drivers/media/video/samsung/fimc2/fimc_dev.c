@@ -67,44 +67,69 @@ void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
 	mutex_unlock(&ctrl->lock);
 }
 
-static inline void fimc_irq_out(struct fimc_control *ctrl)
+static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 {
-	unsigned int	prev, next;
-	int		ret = -1, wakeup = 0;
+	int ret = -1;
 
-	/* Interrupt pendding clear */
-	ret = fimc_hwset_clear_irq(ctrl);
+	/* Attach done buffer to outgoing queue. */
+	ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.active);
+	if (ret < 0)
+		dev_err(ctrl->dev, "Failed: fimc_attach_out_queue.\n");
 
-	if (ctrl->status != FIMC_READY_OFF) {
-		/* Attach done buffer to outgoing queue. */
-		if (ctrl->out->idx.prev != -1) {
-			ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.prev);
-			if (ret < 0) {
-				dev_err(ctrl->dev, "Failed: \
-						fimc_attach_out_queue.\n");
-			} else {
-				ctrl->out->idx.prev = -1;
-				wakeup = 1; /* To wake up fimc_v4l2_dqbuf(). */
-			}
-		}
+	ctrl->out->idx.active = -1;
+	ctrl->status = FIMC_STREAMON_IDLE;
 
-		/* Update index structure. */
-		if (ctrl->out->idx.next != -1) {
-			ctrl->out->idx.active	= ctrl->out->idx.next;
-			ctrl->out->idx.next	= -1;
-		}
+	return 1;
+}
 
-		/* Detach buffer from incomming queue. */
-		ret =  fimc_detach_in_queue(ctrl, &next);
-		if (ret == 0) {	/* There is a buffer in incomming queue. */
-			prev = ctrl->out->idx.active;
-			ctrl->out->idx.prev	= prev;
-			ctrl->out->idx.next	= next;
+static inline u32 fimc_irq_out_fimd(struct fimc_control *ctrl)
+{
+	u32 prev, next, wakeup = 0;
+	int ret = -1;
 
-			/* Set the address */
-			fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
+	/* Attach done buffer to outgoing queue. */
+	if (ctrl->out->idx.prev != -1) {
+		ret = fimc_attach_out_queue(ctrl, ctrl->out->idx.prev);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "Failed: \
+					fimc_attach_out_queue.\n");
+		} else {
+			ctrl->out->idx.prev = -1;
+			wakeup = 1; /* To wake up fimc_v4l2_dqbuf(). */
 		}
 	}
+
+	/* Update index structure. */
+	if (ctrl->out->idx.next != -1) {
+		ctrl->out->idx.active	= ctrl->out->idx.next;
+		ctrl->out->idx.next	= -1;
+	}
+
+	/* Detach buffer from incomming queue. */
+	ret =  fimc_detach_in_queue(ctrl, &next);
+	if (ret == 0) {	/* There is a buffer in incomming queue. */
+		prev = ctrl->out->idx.active;
+		ctrl->out->idx.prev	= prev;
+		ctrl->out->idx.next	= next;
+
+		/* Set the address */
+		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
+	}
+
+	return wakeup;
+}
+
+static inline void fimc_irq_out(struct fimc_control *ctrl)
+{
+	u32 wakeup = 1;
+
+	/* Interrupt pendding clear */
+	fimc_hwset_clear_irq(ctrl);
+	
+	if (ctrl->out->fbuf.base)
+		wakeup = fimc_irq_out_dma(ctrl);
+	else if (ctrl->status != FIMC_READY_OFF)
+		wakeup = fimc_irq_out_fimd(ctrl);
 
 	if (wakeup == 1)
 		wake_up_interruptible(&ctrl->wq);
@@ -112,7 +137,19 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
+	struct fimc_capinfo *cap = ctrl->cap;
 
+	fimc_hwset_clear_irq(ctrl);
+	fimc_hwget_overflow_state(ctrl);
+
+	if (cap->irq == FIMC_IRQ_NORMAL) {
+		fimc_hwset_enable_lastirq(ctrl);
+		fimc_hwset_disable_lastirq(ctrl);
+		cap->irq = FIMC_IRQ_LAST;
+	} else if (cap->irq == FIMC_IRQ_LAST) {
+		wake_up_interruptible(&ctrl->wq);
+		cap->irq = FIMC_IRQ_NONE;
+	}
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -240,7 +277,7 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 	u32 pfn, idx = vma->vm_pgoff;
 	int pri_data = 0;
 
-	if (!ctrl->out) {	/* OUTPUT device */
+	if (ctrl->out) {	/* OUTPUT device */
 		if (size > ctrl->out->buf[idx].length) {
 			dev_err(ctrl->dev, "Requested mmap size is too big.\n");
 			return -EINVAL;
@@ -270,17 +307,45 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 
 		ctrl->out->buf[idx].flags |= V4L2_BUF_FLAG_MAPPED;
 	} else {		/* CAPTURE device */
+		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+		vma->vm_flags |= VM_RESERVED;
 
+		/* page frame number of the address for a source frame to be stored at. */
+		pfn = __phys_to_pfn(ctrl->cap->bufs[vma->vm_pgoff].base);
+
+		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+			dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
+				__FUNCTION__);
+			return -EINVAL;
+		}
+
+		if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
+			dev_err(ctrl->dev, "%s: mmap fail\n", __FUNCTION__);
+			return -EINVAL;
+		}
 	}
-
-
 
 	return 0;
 }
 
 static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
-	return 0;
+	struct fimc_control *ctrl = filp->private_data;
+	struct fimc_capinfo *cap = ctrl->cap;
+	u32 mask = 0;
+
+	if (cap) {
+		if (cap->inqueue[0] == -1) {
+			wait_event_interruptible_timeout(ctrl->wq, \
+				cap->inqueue[0] != -1, FIMC_DQUEUE_TIMEOUT);
+		}
+
+		ctrl->cap->irq = FIMC_IRQ_NORMAL;
+		poll_wait(filp, &ctrl->wq, wait);
+		mask = POLLIN | POLLRDNORM;
+	}
+
+	return mask;
 }
 
 static
@@ -390,7 +455,6 @@ static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	struct s3cfb_lcd lcd;
 	int ret;
 
 	ctrl = video_get_drvdata(video_devdata(filp));
@@ -412,13 +476,15 @@ static int fimc_open(struct file *filp)
 	ctrl->fb.open_fifo	= s3cfb_open_fifo;
 	ctrl->fb.close_fifo	= s3cfb_close_fifo;
 
-	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCDINFO, (unsigned long)&lcd);
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_WIDTH, \
+					(unsigned long)&ctrl->fb.lcd_hres);
 	if (ret < 0)
-		dev_err(ctrl->dev,  "s3cfb_direct_ioctl(S3CFB_GET_LCDINFO) fail\n");
+		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_WIDTH\n");
 
-	printk("lcd.width = %d, lcd.height = %d\n", lcd.width, lcd.height);
-	
-	//memcpy(ctrl->fb.lcd, &lcd, sizeof(lcd));
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_HEIGHT, \
+					(unsigned long)&ctrl->fb.lcd_vres);
+	if (ret < 0)
+		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_HEIGHT\n");
 
 	ctrl->status		= FIMC_STREAMOFF;
 
@@ -464,18 +530,21 @@ static int fimc_release(struct file *filp)
 		if (ctrl->cam->cam_power)
 			ctrl->cam->cam_power(0);
 	} else if (ctrl->out) {
-		ctrl->status = FIMC_READY_OFF;
-		ret = fimc_outdev_stop_streaming(ctrl);
-		if (ret < 0)
-			dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
-		ctrl->status = FIMC_STREAMOFF;
+		if (ctrl->status != FIMC_STREAMOFF) {
+			ret = fimc_outdev_stop_streaming(ctrl);
+			if (ret < 0)
+				dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
+			ctrl->status = FIMC_STREAMOFF;
+		}
 	}
 
 	if (ctrl->cap)
 		kfree(ctrl->cap);
 
-	if (ctrl->out)
+	if (ctrl->out) {
 		kfree(ctrl->out);
+		ctrl->out = NULL;
+	}
 
 	mutex_unlock(&ctrl->lock);
 	

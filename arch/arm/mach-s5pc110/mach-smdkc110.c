@@ -383,6 +383,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_S3C_DEV_HSMMC3
         &s3c_device_hsmmc3,
 #endif                
+	&s3c_device_usbgadget,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -459,7 +460,7 @@ static void __init smdkc110_dm9000_set(void)
 	tmp     &= ~(0xf<<20);
 	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
-#else
+/* #else */
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
@@ -535,6 +536,13 @@ MACHINE_END
 #ifdef CONFIG_USB_SUPPORT
 /* Initializes OTG Phy. */
 void otg_phy_init(void) {
+	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<0), S5P_USB_PHY_CONTROL); /*USB PHY0 Enable */
+	writel((readl(S3C_USBOTG_PHYPWR)&~(0x3<<3))|(0x1<<5), S3C_USBOTG_PHYPWR);
+	writel((readl(S3C_USBOTG_PHYCLK)&~(0x5<<2))|(0x3<<0), S3C_USBOTG_PHYCLK);
+	writel((readl(S3C_USBOTG_RSTCON)&~(0x3<<1))|(0x1<<0), S3C_USBOTG_RSTCON);
+	udelay(10);
+	writel(readl(S3C_USBOTG_RSTCON)&~(0x7<<0), S3C_USBOTG_RSTCON);
+	udelay(10);
 
 }
 EXPORT_SYMBOL(otg_phy_init);
@@ -545,6 +553,8 @@ EXPORT_SYMBOL(usb_ctrl);
 
 /* OTG PHY Power Off */
 void otg_phy_off(void) {
+	writel(readl(S3C_USBOTG_PHYPWR)|(0x3<<3), S3C_USBOTG_PHYPWR);
+	writel(readl(S5P_USB_PHY_CONTROL)&~(1<<0), S5P_USB_PHY_CONTROL);
 
 }
 EXPORT_SYMBOL(otg_phy_off);

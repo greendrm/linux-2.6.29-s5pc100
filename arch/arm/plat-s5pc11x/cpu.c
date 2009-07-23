@@ -40,8 +40,8 @@ static const char name_s5pc110[] = "S5PC110";
 
 static struct cpu_table cpu_ids[] __initdata = {
 	{
-		.idcode		= 0xABABAB00,
-		.idmask		= 0xfffffff0,
+		.idcode		= 0x43110000,
+		.idmask		= 0xfffff000,
 		.map_io		= s5pc110_map_io,
 		.init_clocks    = s5pc110_init_clocks,
 		.init_uarts	= s5pc110_init_uarts,
@@ -115,7 +115,6 @@ void __init s5pc11x_init_io(struct map_desc *mach_desc, int size)
 	iotable_init(mach_desc, size);
 
 	idcode = __raw_readl(S5PC11X_VA_CHIPID);
-	idcode = 0xABABAB00;
 
 	s3c_init_cpu(idcode, cpu_ids, ARRAY_SIZE(cpu_ids));
 }

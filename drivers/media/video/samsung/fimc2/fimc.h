@@ -117,6 +117,12 @@ enum fimc_autoload {
 	FIMC_ONE_SHOT,
 };
 
+enum fimc_irq {
+	FIMC_IRQ_NONE,
+	FIMC_IRQ_NORMAL,
+	FIMC_IRQ_LAST,
+};
+
 
 /*
  * S T R U C T U R E S
@@ -143,8 +149,11 @@ struct fimc_buf_set {
 struct fimc_capinfo {
 	struct v4l2_crop	crop;
 	struct v4l2_pix_format	fmt;
-	struct fimc_buf_set	buf[FIMC_CAPBUFS];
+	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
 	int			nr_bufs;
+	int			inqueue[FIMC_CAPBUFS];
+	int			outqueue[FIMC_PHYBUFS];
+	enum fimc_irq		irq;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
@@ -189,15 +198,6 @@ struct s3cfb_window {
 	int			(*resume_fifo)(void);
 };
 
-struct s3cfb_lcd {
-	int	width;
-	int	height;
-	int	bpp;
-	int	freq;
-
-	void 	(*init_ldi)(void);
-};
-
 struct s3cfb_user_window {
 	int x;
 	int y;
@@ -208,14 +208,17 @@ struct s3cfb_user_window {
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
-#define S3CFB_GET_LCDINFO		_IOR ('F', 302, struct s3cfb_lcd)
+#define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
+#define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
+
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
 	struct fb_var_screeninfo	*var;
 	struct s3cfb_window		*win;
-	struct s3cfb_lcd		*lcd;
+	int				lcd_hres;
+	int				lcd_vres;	
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
@@ -298,8 +301,6 @@ extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
 extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
 
 /* camera */
-extern int fimc_init_camera(struct fimc_control *ctrl);
-extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
@@ -426,7 +427,6 @@ extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
  *
 */
 #define to_fimc_plat(d)		to_platform_device(d)->dev.platform_data
-#define get_actual_bufnum(n)	(n > 3 ? 4 : (n < 2 ? 1 : 2))
 
 static inline struct fimc_global *get_fimc_dev(void)
 {
