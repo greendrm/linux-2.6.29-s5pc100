@@ -1133,3 +1133,16 @@ v2.6.29.4-dev-1-0-8: Jae-Cheol Lee
 	Modified Files:
 		M	arch/arm/mach-s5pc110/cpu.c
 		M	arch/arm/plat-s5pc11x/cpu.c
+
+v2.6.29.4-dev-1-0-9: Jae-Cheol Lee
+	- Fix VIC for C110 and 6442
+	- Add PWM device for C110
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/entry-macro.S
+		M	arch/arm/mach-s5pc110/include/mach/entry-macro.S
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/Kconfig
+		M	arch/arm/plat-s5pc11x/Makefile
+		M	arch/arm/plat-s5pc11x/include/plat/gpio-bank-d0.h
+		M	arch/arm/plat-s5pc11x/pwm.c
