@@ -514,9 +514,9 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 128 * SZ_1M;
 	mi->bank[0].node = 0;
-#else
+#elif defined(CONFIG_S5PC110_AC_TYPE)
 	mi->bank[0].start = 0x30000000;
-	mi->bank[0].size = 64 * SZ_1M;
+	mi->bank[0].size = 80 * SZ_1M;
 	mi->bank[0].node = 0;
 #endif
 
