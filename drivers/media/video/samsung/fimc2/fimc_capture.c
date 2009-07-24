@@ -127,7 +127,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 
 	pdata = to_fimc_plat(ctrl->dev);
 	if (pdata->default_cam >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid camera index\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
@@ -155,7 +155,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	/* subdev call for init */
 	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
 	if (ret == -ENOIOCTLCMD) {
-		dev_err(ctrl->dev, "%s: s_config subdev api not supported\n",
+		dev_err(ctrl->dev, "[%s] s_config subdev api not supported\n",
 			__FUNCTION__);
 		return ret;
 	}
@@ -181,12 +181,12 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 	sc->real_height = sy;
 
 	if (sx <= 0 || sy <= 0) {
-		dev_err(ctrl->dev, "%s: invalid source size\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid source size\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
 	if (tx <= 0 || ty <= 0) {
-		dev_err(ctrl->dev, "%s: invalid target size\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid target size\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
@@ -283,7 +283,7 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 	struct s3c_platform_camera *cam;
 
 	if (inp->index >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid input index\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 	struct fimc_control *ctrl = fh;
 
 	if (i >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid input index\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
@@ -360,7 +360,7 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
 	if (!ctrl->cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n", \
+		dev_err(ctrl->dev, "[%s] no capture device info\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
@@ -391,7 +391,7 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	if (!cap) {
 		cap = kzalloc(sizeof(*cap), GFP_KERNEL);
 		if (!cap) {
-			dev_err(ctrl->dev, "%s: no memory for " \
+			dev_err(ctrl->dev, "[%s] no memory for " \
 				"capture device info\n", __FUNCTION__);
 			return -ENOMEM;
 		}
@@ -430,12 +430,12 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	int i;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid memory type\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
 	if (!cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n", \
+		dev_err(ctrl->dev, "[%s] no capture device info\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -458,7 +458,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 		cap->bufs[i].base = fimc_dma_alloc(ctrl, \
 					PAGE_ALIGN(cap->fmt.sizeimage));
 		if (!cap->bufs[i].base) {
-			dev_err(ctrl->dev, "%s: no memory for " \
+			dev_err(ctrl->dev, "[%s] no memory for " \
 				"capture buffer\n", __FUNCTION__);
 			goto err_alloc;
 		}
@@ -575,7 +575,7 @@ int fimc_streamon_capture(void *fh)
 	}
 
 	if (cap->nr_bufs != queued) {
-		dev_err(ctrl->dev, "%s: all requested buffers should " \
+		dev_err(ctrl->dev, "[%s] all requested buffers should " \
 			"be enqueued before streamon\n", __FUNCTION__);
 		return -EINVAL;
 	}
@@ -634,12 +634,12 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 	struct fimc_capinfo *cap = ctrl->cap;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid memory type\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
 	if (cap->bufs[b->index].state == VIDEOBUF_QUEUED) {
-		dev_err(ctrl->dev, "%s: already in QUEUED state\n", \
+		dev_err(ctrl->dev, "[%s] already in QUEUED state\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
@@ -672,7 +672,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	int ppnum;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid memory type\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
@@ -684,7 +684,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	dev_dbg(ctrl->dev, "[%s] dqbuf index %d\n", __FUNCTION__, b->index);
 
 	if (b->index < 0) {
-		dev_err(ctrl->dev, "%s: no available capture buffer\n", \
+		dev_err(ctrl->dev, "[%s] no available capture buffer\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
