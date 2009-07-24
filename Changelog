@@ -1153,3 +1153,11 @@ v2.6.29.4-dev-1-0-10: Jongpill Lee
 	Modified Files:
 		M       arch/arm/mach-s5pc110/mach-smdkc110.c
 		M       drivers/watchdog/Kconfig
+
+v2.6.29.4-dev-1-0-11: Jongpill Lee
+	- Added select type of S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+
