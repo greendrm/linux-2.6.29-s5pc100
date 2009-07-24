@@ -23,6 +23,31 @@
 
 #include "fimc.h"
 
+struct fimc_limit fimc_limits[FIMC_DEVICES] = {
+	{
+		.pre_dst_w	= 3264,
+		.bypass_w	= 8192,
+		.trg_h_no_rot	= 3264,
+		.trg_h_rot	= 1280,
+		.real_w_no_rot	= 8192,
+		.real_h_rot	= 1280,
+	}, {
+		.pre_dst_w	= 1280,
+		.bypass_w	= 8192,
+		.trg_h_no_rot	= 1280,
+		.trg_h_rot	= 8192,
+		.real_w_no_rot	= 8192,
+		.real_h_rot	= 768,
+	}, {
+		.pre_dst_w	= 1440,
+		.bypass_w	= 8192,
+		.trg_h_no_rot	= 1440,
+		.trg_h_rot	= 0,
+		.real_w_no_rot	= 8192,
+		.real_h_rot	= 0,
+	},
+};
+
 int fimc_hwset_camera_source(struct fimc_control *ctrl)
 {
 	struct s3c_platform_camera *cam = ctrl->cam;
@@ -233,9 +258,8 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 
 int fimc_hwset_output_size(struct fimc_control *ctrl, int width, int height)
 {
-	u32 cfg;
+	u32 cfg= readl(ctrl->regs + S3C_CITRGFMT);
 
-	cfg = readl(ctrl->regs + S3C_CITRGFMT);
 	cfg &= ~(S3C_CITRGFMT_TARGETH_MASK | S3C_CITRGFMT_TARGETV_MASK);
 
 	cfg |= S3C_CITRGFMT_TARGETHSIZE(width);
