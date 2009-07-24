@@ -300,27 +300,123 @@ static void fimc_outdev_set_src_dma_offset(struct fimc_control *ctrl)
 	fimc_hwset_input_offset(ctrl, pixfmt, &bound, &crop);
 }
 
-void fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
+static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
+				struct v4l2_rect *real, struct v4l2_rect *org)
 {
-	struct v4l2_rect org, real;
+	u32 rot = ctrl->out->rotate;
 
-	org.width = ctrl->out->pix.width;
-	org.height = ctrl->out->pix.height;
-	real.width = ctrl->out->crop.c.width;
-	real.height = ctrl->out->crop.c.height;
+	if ((!ctrl->out->fbuf.base) && ((rot == 90) || (rot == 270))) {	
+		/* Input Rotator */
+		if (real->height % 16) {
+			dev_err(ctrl->dev, "SRC Real_H: multiple of 16 !\n");
+			return -EINVAL;
+		}
+		
+		if (ctrl->sc.pre_hratio) {
+			if (real->height % (ctrl->sc.pre_hratio*4)) {
+				dev_err(ctrl->dev, "SRC Real_H: multiple of \
+							4*pre_hratio !\n");
+				return -EINVAL;
+			}
+		}
 
-#if 0
-	printk("[%s] org.width(%d), org.height(%d), real.width(%d), real.height(%d)\n", \
-		__FUNCTION__, org.width, org.height, real.width, real.height);
-#endif
+		if (real->height < 16) {
+			dev_err(ctrl->dev, "SRC Real_H: Min 16.\n");
+			return -EINVAL;
+		}
 
-	fimc_hwset_org_input_size(ctrl, org.width, org.height);
-	fimc_hwset_real_input_size(ctrl, real.width, real.height);
+		if (real->width < 8) {
+			dev_err(ctrl->dev, "SRC Real_W: Min 8.\n");
+			return -EINVAL;
+		}
+
+		if (ctrl->sc.pre_vratio) {
+			if (real->width % ctrl->sc.pre_vratio) {
+				dev_err(ctrl->dev, "SRC Real_W: multiple of \
+								pre_vratio !\n");
+				return -EINVAL;
+			}		
+		}
+	} else {
+		/* No Input Rotator */
+		if (real->height < 8) {
+			dev_err(ctrl->dev, "SRC Real_H: Min 8.\n");
+			return -EINVAL;
+		}
+
+		if (ctrl->sc.pre_vratio) {
+			if (real->height % ctrl->sc.pre_vratio) {
+				dev_err(ctrl->dev, "SRC Real_H: multiple of \
+								pre_vratio !\n");
+				return -EINVAL;
+			}
+		}
+
+		if (real->width % 16) {
+			dev_err(ctrl->dev, "SRC Real_W: multiple of 16 !\n");
+			return -EINVAL;
+		}
+
+		if (ctrl->sc.pre_hratio) {
+			if (real->width % (ctrl->sc.pre_hratio*4)) {
+				dev_err(ctrl->dev, "SRC Real_W: multiple of \
+							4*pre_hratio !\n");
+				return -EINVAL;
+			}
+		}
+
+		if (real->width < 16) {
+			dev_err(ctrl->dev, "SRC Real_W: Min 16.\n");
+			return -EINVAL;
+		}
+	}
+
+	if (org->height < 8) {
+		dev_err(ctrl->dev, "SRC Org_H: Min 8.\n");
+		return -EINVAL;
+	}
+
+	if (org->height < real->height) {
+		dev_err(ctrl->dev, "SRC Org_H: Should be larger than Real_H\n");
+		return -EINVAL;
+	}
+
+	if (org->width % 8) {
+		dev_err(ctrl->dev, "SRC Org_W: multiple of 8.\n");
+		return -EINVAL;
+	}
+
+	if (org->width < real->width) {
+		dev_err(ctrl->dev, "SRC Org_W: Should be Org_W >= Real_W\n");
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
-void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
+static int fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
 {
-	struct v4l2_rect bound, crop;
+	struct v4l2_rect real, org;
+	int ret = 0;
+
+	real.width = ctrl->out->crop.c.width;
+	real.height = ctrl->out->crop.c.height;
+	org.width = ctrl->out->pix.width;
+	org.height = ctrl->out->pix.height;
+	
+	ret = fimc_outdev_check_src_size(ctrl, &real, &org);
+	if (ret < 0)
+		return ret;
+	
+	fimc_hwset_org_input_size(ctrl, org.width, org.height);
+	fimc_hwset_real_input_size(ctrl, real.width, real.height);
+
+	return 0;
+}
+
+static void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
+{
+	struct v4l2_rect bound, win;
 	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
 
 	switch (ctrl->out->rotate) {
@@ -328,10 +424,10 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 		bound.width = ctrl->out->fbuf.fmt.width;
 		bound.height = ctrl->out->fbuf.fmt.height;
 
-		crop.left = ctrl->out->win.w.left;
-		crop.top = ctrl->out->win.w.top;
-		crop.width = ctrl->out->win.w.width;
-		crop.height = ctrl->out->win.w.height;
+		win.left = ctrl->out->win.w.left;
+		win.top = ctrl->out->win.w.top;
+		win.width = ctrl->out->win.w.width;
+		win.height = ctrl->out->win.w.height;
 
 		break;
 
@@ -339,11 +435,11 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 		bound.width = ctrl->out->fbuf.fmt.height;
 		bound.height = ctrl->out->fbuf.fmt.width;
 		
-		crop.left = ctrl->out->fbuf.fmt.height - \
+		win.left = ctrl->out->fbuf.fmt.height - \
 				(ctrl->out->win.w.height + ctrl->out->win.w.top);
-		crop.top = ctrl->out->win.w.left;
-		crop.width = ctrl->out->win.w.height;
-		crop.height = ctrl->out->win.w.width;
+		win.top = ctrl->out->win.w.left;
+		win.width = ctrl->out->win.w.height;
+		win.height = ctrl->out->win.w.width;
 
 		break;
 
@@ -351,12 +447,12 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 		bound.width = ctrl->out->fbuf.fmt.width;
 		bound.height = ctrl->out->fbuf.fmt.height;
 
-		crop.left = ctrl->out->fbuf.fmt.width - \
+		win.left = ctrl->out->fbuf.fmt.width - \
 				(ctrl->out->win.w.left + ctrl->out->win.w.width);
-		crop.top = ctrl->out->fbuf.fmt.height - \
+		win.top = ctrl->out->fbuf.fmt.height - \
 				(ctrl->out->win.w.top + ctrl->out->win.w.height);
-		crop.width = ctrl->out->win.w.width;
-		crop.height = ctrl->out->win.w.height;
+		win.width = ctrl->out->win.w.width;
+		win.height = ctrl->out->win.w.height;
 
 		break;
 
@@ -364,11 +460,11 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 		bound.width = ctrl->out->fbuf.fmt.height;
 		bound.height = ctrl->out->fbuf.fmt.width;
 
-		crop.left = ctrl->out->win.w.top;
-		crop.top = ctrl->out->fbuf.fmt.width - \
+		win.left = ctrl->out->win.w.top;
+		win.top = ctrl->out->fbuf.fmt.width - \
 				(ctrl->out->win.w.left + ctrl->out->win.w.width);
-		crop.width = ctrl->out->win.w.height;
-		crop.height = ctrl->out->win.w.width;
+		win.width = ctrl->out->win.w.height;
+		win.height = ctrl->out->win.w.width;
 
 		break;
 
@@ -377,42 +473,88 @@ void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 		break;
 	}
 
-#if 0
-	printk("================== %s ======================\n", __FUNCTION__);
-	printk("bound.width(%d), bound.height(%d)\n", bound.width, bound.height);
-	printk("crop.width(%d), crop.height(%d)\n", crop.width, crop.height);
-	printk("crop.top(%d), crop.left(%d)\n", crop.top, crop.left);	
-#endif
 
-	fimc_hwset_output_offset(ctrl, pixfmt, &bound, &crop);
+	dev_dbg(ctrl->dev, "bound.width(%d), bound.height(%d)\n", 
+				bound.width, bound.height);
+	dev_dbg(ctrl->dev, "win.width(%d), win.height(%d)\n", 
+				win.width, win.height);
+	dev_dbg(ctrl->dev, "win.top(%d), win.left(%d)\n", win.top, win.left);
+
+	fimc_hwset_output_offset(ctrl, pixfmt, &bound, &win);
 }
 
-void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
+static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
+				struct v4l2_rect *real, struct v4l2_rect *org)
 {
-	struct v4l2_rect org, real, dst;
+	u32 rot = ctrl->out->rotate;
+
+	if (real->height % 2) {
+		dev_err(ctrl->dev, "DST Real_H: should be even number.\n");
+		return -EINVAL;
+	}
+
+	if (ctrl->out->fbuf.base && ((rot == 90) || (rot == 270))) {	
+		/* Output Rotator */
+		if (org->height < real->width) {
+			dev_err(ctrl->dev, "DST Org_H: Should be Org_H >= Real_W\n");
+			return -EINVAL;
+		}
+
+		if (org->width < real->height) {
+			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_H\n");
+			return -EINVAL;
+		}
+	} else if (ctrl->out->fbuf.base){
+		/* No Output Rotator */
+		if (org->height < 8) {
+			dev_err(ctrl->dev, "DST Org_H: Min 8.\n");
+			return -EINVAL;
+		}
+
+		if (org->height < real->height) {
+			dev_err(ctrl->dev, "DST Org_H: Should be Org_H >= Real_H\n");
+			return -EINVAL;
+		}
+
+		if (org->width % 8) {
+			dev_err(ctrl->dev, "DST Org_W: multiple of 8.\n");
+			return -EINVAL;
+		}
+
+		if (org->width < real->width) {
+			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_W\n");
+			return -EINVAL;
+		}
+
+	}
+		
+	return 0;
+}
+
+static int fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
+{
+	struct v4l2_rect org, real;
+	int ret = -1;
+	
 	memset(&org, 0, sizeof(org));
 	memset(&real, 0, sizeof(real));
-	memset(&dst, 0, sizeof(dst));
 
 	if (ctrl->out->fbuf.base) {
-		real.width	= ctrl->out->win.w.width;
-		real.height	= ctrl->out->win.w.height;
+		real.width = ctrl->out->win.w.width;
+		real.height = ctrl->out->win.w.height;
 		
-		dst.width	= ctrl->out->fbuf.fmt.width;
-		dst.height	= ctrl->out->fbuf.fmt.height;
-
 		switch (ctrl->out->rotate) {
 		case 0:
 		case 180:
-			org.width	= dst.width;
-			org.height	= dst.height;
+			org.width = ctrl->out->fbuf.fmt.width;
+			org.height = ctrl->out->fbuf.fmt.height;
 
 			break;
 
 		case 90:
 		case 270:
-			org.width	= dst.height;
-			org.height	= dst.width;
+			org.width = ctrl->out->fbuf.fmt.height;
+			org.height = ctrl->out->fbuf.fmt.width;
 
 			break;
 
@@ -421,26 +563,23 @@ void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 			break;
 		}		
 	} else {
-		dst.width	= ctrl->fb.lcd_hres;
-		dst.height	= ctrl->fb.lcd_vres;
-
 		switch (ctrl->out->rotate) {
 		case 0:
 		case 180:
-			real.width	= ctrl->out->win.w.width;
-			real.height	= ctrl->out->win.w.height;
-			org.width	= dst.width;
-			org.height	= dst.height;
+			real.width = ctrl->out->win.w.width;
+			real.height = ctrl->out->win.w.height;
+			org.width = ctrl->fb.lcd_hres;
+			org.height = ctrl->fb.lcd_vres;
 
 			break;
 
 		case 90:
 		case 270:
-			real.width	= ctrl->out->win.w.height;
-			real.height	= ctrl->out->win.w.width;
+			real.width = ctrl->out->win.w.height;
+			real.height = ctrl->out->win.w.width;
 
-			org.width	= dst.height;
-			org.height	= dst.width;
+			org.width = ctrl->fb.lcd_vres;
+			org.height = ctrl->fb.lcd_hres;
 
 			break;
 
@@ -450,15 +589,22 @@ void fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 		}		
 
 	}
-#if 0	
-	printk("================== %s ======================\n", __FUNCTION__);	
-	printk("org.width(%d), org.height(%d)\n", org.width, org.height);
-	printk("real.width(%d), real.height(%d)\n", real.width, real.height);
-#endif
+
+	dev_dbg(ctrl->dev, "org.width(%d), org.height(%d)\n", \
+				org.width, org.height);
+	dev_dbg(ctrl->dev, "real.width(%d), real.height(%d)\n", \
+				real.width, real.height);
+
+	ret = fimc_outdev_check_dst_size(ctrl, &real, &org);
+	if (ret < 0)
+		return ret;
+
 	fimc_hwset_output_size(ctrl, real.width, real.height);
 	fimc_hwset_output_area(ctrl, real.width, real.height);
 	fimc_hwset_org_output_size(ctrl, org.width, org.height);
 	fimc_hwset_ext_output_size(ctrl, real.width, real.height);
+
+	return 0;
 }
 
 static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
@@ -471,7 +617,7 @@ static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
 		dst->height = ctrl->out->win.w.height;
 	} else {			/* INPUT ROTATOR */
 		switch (ctrl->out->rotate) {
-		case 0:
+		case 0:		/* fall through */
 		case 180:
 			src->width = ctrl->out->crop.c.width;
 			src->height = ctrl->out->crop.c.height;
@@ -480,7 +626,7 @@ static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
 			
 			break;
 
-		case 90:
+		case 90:	/* fall through */
 		case 270:
 			src->width = ctrl->out->crop.c.height;
 			src->height = ctrl->out->crop.c.width;
@@ -493,9 +639,73 @@ static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
 			dev_err(ctrl->dev, "Rotation degree is inavlid.\n");
 			break;
 		}
-		
-
 	}
+	
+	dev_dbg(ctrl->dev, "src->width(%d), src->height(%d)\n", \
+				src->width, src->height);
+	dev_dbg(ctrl->dev, "dst->width(%d), dst->height(%d)\n", \
+				dst->width, dst->height);
+}
+
+static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
+				struct v4l2_rect *src, struct v4l2_rect *dst)
+{
+	u32 pixels = 0, dstfmt = 0;
+
+	/* Check scaler limitation */
+	if (ctrl->sc.pre_dst_width > ctrl->limit->pre_dst_w) {
+		dev_err(ctrl->dev, "FIMC%d : MAX PreDstWidth is %d.\n", 
+					ctrl->id, ctrl->limit->pre_dst_w);
+		return -EDOM;
+	}
+
+	/* SRC width double boundary check */
+	switch (ctrl->out->pix.pixelformat) {
+	case V4L2_PIX_FMT_RGB32:
+		pixels = 1;
+		break;
+	case V4L2_PIX_FMT_RGB565:
+		pixels = 2;
+		break;
+	case V4L2_PIX_FMT_NV12:
+		pixels = 8;
+		break;
+	default: 
+		dev_err(ctrl->dev, "Invalid color format.\n");
+		return -EINVAL;
+	}
+
+	if (src->width % pixels) {
+		dev_err(ctrl->dev, "source width should be multiple of \
+						%d pixels.\n", pixels);
+		return -EDOM;
+	}
+
+	/* DST width double boundary check */
+	if (ctrl->out->fbuf.base)
+		dstfmt = ctrl->out->fbuf.fmt.pixelformat;
+	else
+		dstfmt = V4L2_PIX_FMT_RGB32;
+	
+	switch (dstfmt) {
+	case V4L2_PIX_FMT_RGB32:
+		pixels = 1;
+		break;
+	case V4L2_PIX_FMT_RGB565:
+		pixels = 2;
+		break;
+	default: 
+		dev_err(ctrl->dev, "Invalid color format.\n");
+		return -EINVAL;
+	}
+
+	if (dst->width % pixels) {
+		dev_err(ctrl->dev, "source width should be multiple of \
+						%d pixels.\n", pixels);
+		return -EDOM;
+	}
+	
+	return 0;
 }
 
 static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
@@ -506,43 +716,38 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 	memset(&dst, 0, sizeof(dst));	
 
 	fimc_outdev_calibrate_scale_info(ctrl, &src, &dst);
-#if 0
-	printk("================== %s ======================\n", __FUNCTION__);	
-	printk("src.width(%d), src.height(%d)\n", src.width, src.height);
-	printk("dst.width(%d), dst.height(%d)\n", dst.width, dst.height);
-#endif
+
 	ret = fimc_get_scaler_factor(src.width, dst.width, \
 			&ctrl->sc.pre_hratio, &ctrl->sc.hfactor);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail : fimc_get_scaler_factor(width).\n");
-		return -EINVAL;
+		dev_err(ctrl->dev, "Fail : Out of Width scale range.\n");
+		return ret;
 	}
 
 	ret = fimc_get_scaler_factor(src.height, dst.height, \
 			&ctrl->sc.pre_vratio, &ctrl->sc.vfactor);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "Fail : fimc_get_scaler_factor(height).\n");
-		return -EINVAL;
+		dev_err(ctrl->dev, "Fail : Out of Height scale range.\n");
+		return ret;
 	}
 
-#if 0
-	printk("ctrl->sc.pre_hratio(%d), ctrl->sc.hfactor(%d), \
-		ctrl->sc.pre_vratio(%d), ctrl->sc.vfactor(%d)\n", \
-		ctrl->sc.pre_hratio, ctrl->sc.hfactor, \
-		ctrl->sc.pre_vratio, ctrl->sc.vfactor);
-#endif
 	ctrl->sc.pre_dst_width = src.width / ctrl->sc.pre_hratio;
 	ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
 
 	ctrl->sc.pre_dst_height = src.height / ctrl->sc.pre_vratio;
 	ctrl->sc.main_vratio = (src.height << 8) / (dst.height<<ctrl->sc.vfactor);
 
-#if 0
-	printk("ctrl->sc.pre_dst_width(%d), ctrl->sc.main_hratio(%d), \
-		ctrl->sc.pre_dst_height(%d), ctrl->sc.main_vratio(%d)\n", \
-		ctrl->sc.pre_dst_width, ctrl->sc.main_hratio, \
-		ctrl->sc.pre_dst_height, ctrl->sc.main_vratio);
-#endif
+
+	dev_dbg(ctrl->dev, "pre_hratio(%d), hfactor(%d), \
+			pre_vratio(%d), vfactor(%d)\n", \
+			ctrl->sc.pre_hratio, ctrl->sc.hfactor, \
+			ctrl->sc.pre_vratio, ctrl->sc.vfactor);
+
+
+	dev_dbg(ctrl->dev, "pre_dst_width(%d), main_hratio(%d),\
+			pre_dst_height(%d), main_vratio(%d)\n", \
+			ctrl->sc.pre_dst_width, ctrl->sc.main_hratio, \
+			ctrl->sc.pre_dst_height, ctrl->sc.main_vratio);
 
 	/* Input DMA cannot support scaler bypass. */
 	ctrl->sc.bypass = 0;
@@ -552,6 +757,10 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 
 	ctrl->sc.shfactor = 10 - (ctrl->sc.hfactor + ctrl->sc.vfactor);
 
+	ret = fimc_outdev_check_scaler(ctrl, &src, &dst);
+	if (ret < 0) 
+		return ret;
+
 	fimc_hwset_prescaler(ctrl);
 	fimc_hwset_scaler(ctrl);
 
@@ -560,6 +769,7 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 
 int fimc_outdev_set_param(struct fimc_control *ctrl)
 {
+	int ret = -1;
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
 		return -EBUSY;
@@ -571,13 +781,22 @@ int fimc_outdev_set_param(struct fimc_control *ctrl)
 	fimc_outdev_set_rot(ctrl);
 
 	fimc_outdev_set_src_dma_offset(ctrl);
-	fimc_outdev_set_src_dma_size(ctrl);
+	ret = fimc_outdev_set_src_dma_size(ctrl);
+	if (ret < 0) 
+		return ret;
 
 	if (ctrl->out->fbuf.base)
 		fimc_outdev_set_dst_dma_offset(ctrl);
 
-	fimc_outdev_set_dst_dma_size(ctrl);
-	fimc_outdev_set_scaler(ctrl);
+	ret = fimc_outdev_set_dst_dma_size(ctrl);
+	if (ret < 0) 
+		return ret;
+
+	ret = fimc_outdev_set_scaler(ctrl);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "Fail : fimc_get_scaler_factor(width).\n");
+		return -EDOM;
+	}
 
 	return 0;
 }
@@ -796,6 +1015,11 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running.\n");
 		return -EBUSY;
+	}
+
+	if (ctrl->id == 2) {
+		dev_err(ctrl->dev, "FIMC2 cannot support rotation.\n");
+		return -EINVAL;
 	}
 
 	switch (c->id) {

@@ -63,7 +63,7 @@ static void __init s3c_button_init(void)
 {
 	u32 tmp;
 	
-	printk("########## SMDK6442 Button init function \n");
+	printk("########## SMDKC110 Button init function \n");
 
 	if (s3c_button_gpio_init()) {
 		printk(KERN_ERR "%s failed\n", __FUNCTION__);

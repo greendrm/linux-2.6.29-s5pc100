@@ -493,6 +493,8 @@ static int s5pc11x_setrate_clksrc(struct clk *clk, unsigned long rate)
 	val |= (div - 1) << sclk->shift;
 	__raw_writel(val, reg);
 
+	printk("div %d, rate %d", div, rate);
+
 	return 0;
 }
 
@@ -530,7 +532,7 @@ static unsigned long s5pc11x_roundrate_clksrc(struct clk *clk,
 	if (rate > parent_rate)
 		rate = parent_rate;
 	else {
-		div = rate / parent_rate;
+		div = parent_rate / rate;
 
 		if (div == 0)
 			div = 1;
@@ -858,12 +860,18 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_h.rate = hclk133;
 	clk_p.rate = pclk66;
 
-	/* Setting up the HS-MMC clock using doutMpll */	// chaos
-	writel(((readl(S5P_CLK_SRC4) & ~(0xffff << 0)) | 0x6666), S5P_CLK_SRC4);
-	writel(((readl(S5P_CLK_DIV4) & ~(0xffff << 0)) | 0xdddd), S5P_CLK_DIV4);
+	clk_set_parent(&clk_mmc0.clk, &clk_mout_mpll.clk);
+	clk_set_parent(&clk_mmc1.clk, &clk_mout_mpll.clk);
+	clk_set_parent(&clk_mmc2.clk, &clk_mout_mpll.clk);
+	clk_set_parent(&clk_mmc3.clk, &clk_mout_mpll.clk);
 
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
+
+	clk_set_rate(&clk_mmc0.clk, 50*MHZ);	
+	clk_set_rate(&clk_mmc1.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc2.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc3.clk, 50*MHZ);	
 }
 
 static struct clk *clks[] __initdata = {
