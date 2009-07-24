@@ -146,10 +146,8 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 		fimc_hwset_enable_lastirq(ctrl);
 		fimc_hwset_disable_lastirq(ctrl);
 		cap->irq = FIMC_IRQ_LAST;
-	} else if (cap->irq == FIMC_IRQ_LAST) {
+	} else if (cap->irq == FIMC_IRQ_LAST)
 		wake_up_interruptible(&ctrl->wq);
-		cap->irq = FIMC_IRQ_NONE;
-	}
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -332,17 +330,23 @@ static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	struct fimc_capinfo *cap = ctrl->cap;
-	u32 mask = 0;
+	u32 mask = 0, ret = 1;
 
 	if (cap) {
 		if (cap->inqueue[0] == -1) {
-			wait_event_interruptible_timeout(ctrl->wq, \
+			ret = wait_event_interruptible_timeout(ctrl->wq, \
 				cap->inqueue[0] != -1, FIMC_DQUEUE_TIMEOUT);
 		}
 
-		ctrl->cap->irq = FIMC_IRQ_NORMAL;
-		poll_wait(filp, &ctrl->wq, wait);
-		mask = POLLIN | POLLRDNORM;
+		if (ret) {
+			if (cap->irq == FIMC_IRQ_LAST) {
+				cap->irq = FIMC_IRQ_NONE;
+				mask = POLLIN | POLLRDNORM;				
+			} else {
+				cap->irq = FIMC_IRQ_NORMAL;
+				poll_wait(filp, &ctrl->wq, wait);
+			}
+		}
 	}
 
 	return mask;
@@ -538,8 +542,10 @@ static int fimc_release(struct file *filp)
 		}
 	}
 
-	if (ctrl->cap)
+	if (ctrl->cap) {
 		kfree(ctrl->cap);
+		ctrl->cap = NULL;
+	}
 
 	if (ctrl->out) {
 		kfree(ctrl->out);
@@ -797,7 +803,9 @@ err_fimc:
 static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
+
 	kfree(fimc_dev);
+	fimc_dev = NULL;
 
 	return 0;
 }

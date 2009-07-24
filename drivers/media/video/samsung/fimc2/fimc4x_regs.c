@@ -404,7 +404,8 @@ int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid pixel format (%08x)\n", \
+			__FUNCTION__, fmt->pixelformat);
 		break;
 	}
 
@@ -535,7 +536,7 @@ int fimc_hwget_frame_count(struct fimc_control *ctrl)
 
 	num = S3C_CISTATUS_GET_FRAME_COUNT(readl(ctrl->regs + S3C_CISTATUS));
 
-	dev_dbg(ctrl->dev, "%s: frame count: %d\n", __FUNCTION__, num);
+	dev_dbg(ctrl->dev, "[%s] frame count: %d\n", __FUNCTION__, num);
 	
 	return num;
 }
