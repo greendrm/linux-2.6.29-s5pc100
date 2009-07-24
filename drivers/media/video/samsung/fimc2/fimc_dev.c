@@ -143,11 +143,14 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 	fimc_hwget_overflow_state(ctrl);
 
 	if (cap->irq == FIMC_IRQ_NORMAL) {
+		printk("%s:%d\n", __FUNCTION__, __LINE__);
 		fimc_hwset_enable_lastirq(ctrl);
 		fimc_hwset_disable_lastirq(ctrl);
 		cap->irq = FIMC_IRQ_LAST;
-	} else if (cap->irq == FIMC_IRQ_LAST)
+	} else if (cap->irq == FIMC_IRQ_LAST) {
+	printk("%s:%d\n", __FUNCTION__, __LINE__);
 		wake_up_interruptible(&ctrl->wq);
+	}
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -339,12 +342,12 @@ static u32 fimc_poll(struct file *filp, poll_table *wait)
 		}
 
 		if (ret) {
-			if (cap->irq == FIMC_IRQ_LAST) {
-				cap->irq = FIMC_IRQ_NONE;
-				mask = POLLIN | POLLRDNORM;				
-			} else {
+			if (cap->irq == FIMC_IRQ_NONE) {
 				cap->irq = FIMC_IRQ_NORMAL;
 				poll_wait(filp, &ctrl->wq, wait);
+			} else if (cap->irq == FIMC_IRQ_LAST) {
+				cap->irq = FIMC_IRQ_NONE;
+				mask = POLLIN | POLLRDNORM;
 			}
 		}
 	}
@@ -513,11 +516,10 @@ resource_busy:
 
 static int fimc_release(struct file *filp)
 {
-	struct fimc_control *ctrl;
+	struct fimc_control *ctrl = filp->private_data;
 	struct s3c_platform_fimc *pdata;
 	int ret = 0;
 
-	ctrl = (struct fimc_control *) filp->private_data;
 	pdata = to_fimc_plat(ctrl->dev);
 
 	mutex_lock(&ctrl->lock);
@@ -533,6 +535,9 @@ static int fimc_release(struct file *filp)
 		/* shutdown */
 		if (ctrl->cam->cam_power)
 			ctrl->cam->cam_power(0);
+
+		/* should be initialized at the next open */
+		ctrl->cam->initialized = 0;
 	} else if (ctrl->out) {
 		if (ctrl->status != FIMC_STREAMOFF) {
 			ret = fimc_outdev_stop_streaming(ctrl);
