@@ -117,6 +117,12 @@ enum fimc_autoload {
 	FIMC_ONE_SHOT,
 };
 
+enum fimc_irq {
+	FIMC_IRQ_NONE,
+	FIMC_IRQ_NORMAL,
+	FIMC_IRQ_LAST,
+};
+
 
 /*
  * S T R U C T U R E S
@@ -143,8 +149,11 @@ struct fimc_buf_set {
 struct fimc_capinfo {
 	struct v4l2_crop	crop;
 	struct v4l2_pix_format	fmt;
-	struct fimc_buf_set	buf[FIMC_CAPBUFS];
+	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
 	int			nr_bufs;
+	int			inqueue[FIMC_CAPBUFS];
+	int			outqueue[FIMC_PHYBUFS];
+	enum fimc_irq		irq;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
@@ -303,8 +312,6 @@ extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
 extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
 
 /* camera */
-extern int fimc_init_camera(struct fimc_control *ctrl);
-extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
@@ -431,7 +438,6 @@ extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
  *
 */
 #define to_fimc_plat(d)		to_platform_device(d)->dev.platform_data
-#define get_actual_bufnum(n)	(n > 3 ? 4 : (n < 2 ? 1 : 2))
 
 static inline struct fimc_global *get_fimc_dev(void)
 {

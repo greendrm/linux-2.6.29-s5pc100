@@ -256,16 +256,28 @@ static void tl2796_cfg_gpio(struct platform_device *pdev)
 	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
 	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
 
+#if 1
 	s3c_gpio_cfgpin(S5PC11X_GPB(4), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(5), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(6), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(7), S3C_GPIO_SFN(1));
-
+#else
+	/* why the followings do not work? */
+	gpio_request(S5PC11X_GPB(4), "GPB");
+	gpio_request(S5PC11X_GPB(5), "GPB");
+	gpio_request(S5PC11X_GPB(6), "GPB");
+	gpio_request(S5PC11X_GPB(7), "GPB");
+	gpio_direction_output(S5PC11X_GPB(4), 0);
+	gpio_direction_output(S5PC11X_GPB(5), 0);
+	gpio_direction_output(S5PC11X_GPB(6), 0);
+	gpio_direction_output(S5PC11X_GPB(7), 0);
+#endif
 	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);
 
+	gpio_request(S5PC11X_GPH0(5), "GPH0");
 	gpio_direction_output(S5PC11X_GPH0(5), 1);
 }
 
@@ -317,7 +329,7 @@ static struct s3c_platform_fb tl2796_data __initdata = {
 	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
-	.swap = FB_SWAP_HWORD,
+	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
 
 	.cfg_gpio = tl2796_cfg_gpio,
 	.backlight_on = tl2796_backlight_on,
@@ -382,7 +394,11 @@ static struct platform_device *smdkc110_devices[] __initdata = {
         
 #ifdef CONFIG_S3C_DEV_HSMMC3
         &s3c_device_hsmmc3,        
-#endif                
+#endif
+
+#ifdef CONFIG_S3C2410_WATCHDOG
+	&s3c_device_wdt,
+#endif
 	&s3c_device_usbgadget,
 };
 
@@ -409,9 +425,9 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
-#if defined(CONFIG_TIMER_PWM)
+#if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
-        .pwm_id         = 0,
+        .pwm_id         = 3,
         .max_brightness = 255,
         .dft_brightness = 255,
         .pwm_period_ns  = 78770,
@@ -420,7 +436,7 @@ static struct platform_pwm_backlight_data smdk_backlight_data = {
 static struct platform_device smdk_backlight_device = {
         .name           = "pwm-backlight",
         .dev            = {
-                .parent = &s3c_device_timer[0].dev,
+                .parent = &s3c_device_timer[3].dev,
                 .platform_data = &smdk_backlight_data,
         },
 };
@@ -498,7 +514,7 @@ static void __init smdkc110_machine_init(void)
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)
-//	s5pc11x_pm_init();
+	s5pc11x_pm_init();
 #endif
 }
 
@@ -510,9 +526,9 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 128 * SZ_1M;
 	mi->bank[0].node = 0;
-#else
+#elif defined(CONFIG_S5PC110_AC_TYPE)
 	mi->bank[0].start = 0x30000000;
-	mi->bank[0].size = 64 * SZ_1M;
+	mi->bank[0].size = 80 * SZ_1M;
 	mi->bank[0].node = 0;
 #endif
 

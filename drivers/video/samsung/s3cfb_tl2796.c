@@ -65,7 +65,7 @@ const unsigned short SEQ_STANDBY_OFF[] = {
 	ENDDEF, 0x0000
 };
 
-
+#if 1 /* smdkc110 */
 const unsigned short SEQ_SETTING[] = {
 	0x31, 0x08, /* panel setting */
 	0x32, 0x14,
@@ -74,6 +74,58 @@ const unsigned short SEQ_SETTING[] = {
 	0x12, 0x08,
 	0x13, 0x08,
 	0x15, 0x10, /* 0x15, 0x00 */
+	0x16, 0x00, /* 24bit line and 16M color */
+
+	0xef, 0xd0, /* pentile key setting */
+	DATA_ONLY, 0xe8,
+
+	0x39, 0x44,
+	0x40, 0x00, 
+	0x41, 0x3f, 
+	0x42, 0x2b, 
+	0x43, 0x1f, 
+	0x44, 0x24, 
+	0x45, 0x1b, 
+	0x46, 0x29, 
+	0x50, 0x00, 
+	0x51, 0x00, 
+	0x52, 0x00, 
+	0x53, 0x1b, 
+	0x54, 0x22, 
+	0x55, 0x1b, 
+	0x56, 0x2a, 
+	0x60, 0x00, 
+	0x61, 0x3f, 
+	0x62, 0x25, 
+	0x63, 0x1c, 
+	0x64, 0x21, 
+	0x65, 0x18, 
+	0x66, 0x3e, 
+
+	0x17, 0x22,	//Boosting Freq
+	0x18, 0x33,	//power AMP Medium
+	0x19, 0x03,	//Gamma Amp Medium
+	0x1a, 0x01,	//Power Boosting 
+	0x22, 0xa4,	//Vinternal = 0.65*VCI
+	0x23, 0x00,	//VLOUT1 Setting = 0.98*VCI
+	0x26, 0xa0,	//Display Condition LTPS signal generation : Reference= DOTCLK
+
+	0x1d, 0xa0,
+	SLEEPMSEC, 300,
+
+	0x14, 0x03,
+
+	ENDDEF, 0x0000
+};
+#else /* universal */
+const unsigned short SEQ_SETTING[] = {
+	0x31, 0x08, /* panel setting */
+	0x32, 0x14,
+	0x30, 0x02,
+	0x27, 0x01,
+	0x12, 0x08,
+	0x13, 0x08,
+	0x15, 0x00,
 	0x16, 0x00, /* 24bit line and 16M color */
 
 	0xEF, 0xD0, /* pentile key setting */
@@ -114,13 +166,30 @@ const unsigned short SEQ_SETTING[] = {
 
 	ENDDEF, 0x0000
 };
+#endif
 
+/* FIXME: will be moved to platform data */
 static struct s3cfb_lcd tl2796 = {
 	.width = 480,
 	.height = 800,
 	.bpp = 24,
-	.freq = 60,
 
+#if 1
+	/* smdkc110 */
+	.freq = 50,
+	.timing = {
+		.h_fp = 9,
+		.h_bp = 9,
+		.h_sw = 2,
+		.v_fp = 5,
+		.v_fpe = 1,
+		.v_bp = 5,
+		.v_bpe = 1,
+		.v_sw = 2,
+	},
+#else	
+	/* universal */
+	.freq = 60,
 	.timing = {
 		.h_fp = 66,
 		.h_bp = 2,
@@ -131,7 +200,7 @@ static struct s3cfb_lcd tl2796 = {
 		.v_bpe = 1,
 		.v_sw = 5,
 	},
-
+#endif
 	.polarity = {
 		.rise_vclk = 1,
 		.inv_hsync = 1,

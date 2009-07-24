@@ -41,7 +41,7 @@
 */
 	.text
 
-	/* s5pc100_cpu_save
+	/* s5pc110_cpu_save
 	 *
 	 * save enough of the CPU state to allow us to re-start
 	 * pm.c code. as we store items like the sp/lr, we will
@@ -59,7 +59,7 @@
 	 *	     1 => resumed from sleep
 	*/
 
-ENTRY(s5pc100_cpu_save)
+ENTRY(s5pc110_cpu_save)
 #if 0
 	stmfd	sp!, { r4 - r12, lr }
 
@@ -112,7 +112,7 @@ resume_with_mmu:
 	.ltorg
 
 	@@ the next bits sit in the .data segment, even though they
-	@@ happen to be code... the s5pc100_sleep_save_phys needs to be
+	@@ happen to be code... the s5pc110_sleep_save_phys needs to be
 	@@ accessed by the resume code before it can restore the MMU.
 	@@ This means that the variable has to be close enough for the
 	@@ code to read it... since the .text segment needs to be RO,
@@ -120,19 +120,19 @@ resume_with_mmu:
 
 	.data
 
-	.global	s5pc100_sleep_save_phys
-s5pc100_sleep_save_phys:
+	.global	s5pc110_sleep_save_phys
+s5pc110_sleep_save_phys:
 	.word	0
 
 
 	/* sleep magic, to allow the bootloader to check for an valid
 	 * image to resume to. Must be the first word before the
-	 * s5pc100_cpu_resume entry.
+	 * s5pc110_cpu_resume entry.
 	*/
 
 	.word	0x2bedf00d
 
-	/* s5pc100_cpu_resume
+	/* s5pc110_cpu_resume
 	 *
 	 * resume code entry for bootloader to call
 	 *
@@ -141,7 +141,7 @@ s5pc100_sleep_save_phys:
 	 * must not write to the code segment (code is read-only)
 	*/
 
-ENTRY(s5pc100_cpu_resume)
+ENTRY(s5pc110_cpu_resume)
 	mov	r0, #PSR_I_BIT | PSR_F_BIT | SVC_MODE
 	msr	cpsr_c, r0
 
@@ -152,7 +152,7 @@ ENTRY(s5pc100_cpu_resume)
 	mcr	p15, 0, r1, c8, c7, 0		@@ invalidate TLBs
 	mcr	p15, 0, r1, c7, c5, 0		@@ invalidate I Cache
 
-	ldr	r0, s5pc100_sleep_save_phys	@ address of restore block
+	ldr	r0, s5pc110_sleep_save_phys	@ address of restore block
 #if 0
 
 	ldmia	r0, { r4 - r13 }

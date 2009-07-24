@@ -34,8 +34,21 @@ config MACH_SMDKC110
 	help
 	  Machine support for the Samsung SMDKC110
 
+choice
+        prompt "Setup CPU Type for S5PC110"
+        depends on PLAT_S5PC11X
+	default S5PC110_H_TYPE
+
 config S5PC110_H_TYPE
-        bool "Support S5PC110 H-Type"
+        bool "Select H-Type"
+        depends on PLAT_S5PC11X
         help
-          Support S5PC110 H-Type
+					Select H-Type of S5PC110
+
+config S5PC110_AC_TYPE
+        bool "select AC-Type"
+        depends on PLAT_S5PC11X
+        help
+					Select AC-Type of S5PC110
+endchoice
 
