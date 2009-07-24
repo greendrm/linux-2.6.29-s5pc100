@@ -146,10 +146,8 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 		fimc_hwset_enable_lastirq(ctrl);
 		fimc_hwset_disable_lastirq(ctrl);
 		cap->irq = FIMC_IRQ_LAST;
-	} else if (cap->irq == FIMC_IRQ_LAST) {
+	} else if (cap->irq == FIMC_IRQ_LAST)
 		wake_up_interruptible(&ctrl->wq);
-		cap->irq = FIMC_IRQ_NONE;
-	}
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
@@ -199,7 +197,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	/* get resource for io memory */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
-		dev_err(ctrl->dev, "%s: failed to get io memory region\n", \
+		dev_err(ctrl->dev, "[%s] failed to get io memory region\n", \
 			__FUNCTION__);
 		return NULL;
 	}
@@ -208,7 +206,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	res = request_mem_region(res->start, res->end - \
 					res->start + 1, pdev->name);
 	if (!res) {
-		dev_err(ctrl->dev, "%s: failed to request io memory region\n", \
+		dev_err(ctrl->dev, "[%s] failed to request io memory region\n", \
 			__FUNCTION__);
 		return NULL;
 	}
@@ -216,7 +214,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	/* ioremap for register block */
 	ctrl->regs = ioremap(res->start, res->end - res->start + 1);
 	if (!ctrl->regs) {
-		dev_err(ctrl->dev, "%s: failed to remap io region\n", \
+		dev_err(ctrl->dev, "[%s] failed to remap io region\n", \
 			__FUNCTION__);
 		return NULL;
 	}
@@ -224,7 +222,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	/* irq */
 	irq = platform_get_irq(pdev, 0);
 	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
-		dev_err(ctrl->dev, "%s: request_irq failed\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] request_irq failed\n", __FUNCTION__);
 
 	fimc_reset(ctrl);
 
@@ -314,13 +312,13 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 		pfn = __phys_to_pfn(ctrl->cap->bufs[vma->vm_pgoff].base);
 
 		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
-			dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
+			dev_err(ctrl->dev, "[%s] writable mapping must be shared\n", \
 				__FUNCTION__);
 			return -EINVAL;
 		}
 
 		if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
-			dev_err(ctrl->dev, "%s: mmap fail\n", __FUNCTION__);
+			dev_err(ctrl->dev, "[%s] mmap fail\n", __FUNCTION__);
 			return -EINVAL;
 		}
 	}
@@ -332,17 +330,23 @@ static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	struct fimc_capinfo *cap = ctrl->cap;
-	u32 mask = 0;
+	u32 mask = 0, ret = 1;
 
 	if (cap) {
 		if (cap->inqueue[0] == -1) {
-			wait_event_interruptible_timeout(ctrl->wq, \
+			ret = wait_event_interruptible_timeout(ctrl->wq, \
 				cap->inqueue[0] != -1, FIMC_DQUEUE_TIMEOUT);
 		}
 
-		ctrl->cap->irq = FIMC_IRQ_NORMAL;
-		poll_wait(filp, &ctrl->wq, wait);
-		mask = POLLIN | POLLRDNORM;
+		if (ret) {
+			if (cap->irq == FIMC_IRQ_LAST) {
+				cap->irq = FIMC_IRQ_NONE;
+				mask = POLLIN | POLLRDNORM;				
+			} else {
+				cap->irq = FIMC_IRQ_NORMAL;
+				poll_wait(filp, &ctrl->wq, wait);
+			}
+		}
 	}
 
 	return mask;
@@ -538,8 +542,10 @@ static int fimc_release(struct file *filp)
 		}
 	}
 
-	if (ctrl->cap)
+	if (ctrl->cap) {
 		kfree(ctrl->cap);
+		ctrl->cap = NULL;
+	}
 
 	if (ctrl->out) {
 		kfree(ctrl->out);
@@ -603,7 +609,7 @@ static int fimc_init_global(struct platform_device *pdev)
 		/* mclk */
 		cam->clk = clk_get(&pdev->dev, cam->clk_name);
 		if (IS_ERR(cam->clk)) {
-			dev_err(&pdev->dev, "%s: failed to get mclk source\n", \
+			dev_err(&pdev->dev, "[%s] failed to get mclk source\n", \
 				__FUNCTION__);
 			return -EINVAL;
 		}
@@ -646,7 +652,7 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 
 		i2c_info = cam->info;
 		if (!i2c_info) {
-			dev_err(&pdev->dev, "%s: subdev i2c board info missing\n", \
+			dev_err(&pdev->dev, "[%s] subdev i2c board info missing\n", \
 				__FUNCTION__);
 			return -ENODEV;
 		}
@@ -675,7 +681,7 @@ static int fimc_configure_subdev(struct platform_device *pdev, int id)
 				name, i2c_info, &addr);
 		if (!sd) {
 			dev_err(&pdev->dev, \
-				"%s: v4l2 subdev board registering failed\n", \
+				"[%s] v4l2 subdev board registering failed\n", \
 				__FUNCTION__);
 		}
 
@@ -699,7 +705,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	if (!fimc_dev) {
 		fimc_dev = kzalloc(sizeof(*fimc_dev), GFP_KERNEL);
 		if (!fimc_dev) {
-			dev_err(&pdev->dev, "%s: not enough memory\n", \
+			dev_err(&pdev->dev, "[%s] not enough memory\n", \
 				__FUNCTION__);
 			goto err_fimc;
 		}
@@ -707,7 +713,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 
 	ctrl = fimc_register_controller(pdev);
 	if (!ctrl) {
-		dev_err(&pdev->dev, "%s: cannot register fimc controller\n", \
+		dev_err(&pdev->dev, "[%s] cannot register fimc controller\n", \
 			__FUNCTION__);
 		goto err_fimc;
 	}
@@ -719,7 +725,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* fimc source clock */
 	srclk = clk_get(&pdev->dev, pdata->srclk_name);
 	if (IS_ERR(srclk)) {
-		dev_err(&pdev->dev, "%s: failed to get source clock of fimc\n", \
+		dev_err(&pdev->dev, "[%s] failed to get source clock of fimc\n", \
 			__FUNCTION__);
 		goto err_clk_io;
 	}
@@ -727,7 +733,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* fimc clock */
 	ctrl->clk = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(ctrl->clk)) {
-		dev_err(&pdev->dev, "%s: failed to get fimc clock source\n", \
+		dev_err(&pdev->dev, "[%s] failed to get fimc clock source\n", \
 			__FUNCTION__);
 		goto err_clk_io;
 	}
@@ -748,7 +754,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* V4L2 device-subdev registration */
 	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
 	if (ret) {
-		dev_err(&pdev->dev, "%s: v4l2 device register failed\n", \
+		dev_err(&pdev->dev, "[%s] v4l2 device register failed\n", \
 			__FUNCTION__);
 		goto err_clk_io;
 	}
@@ -763,14 +769,14 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	/* v4l2 subdev configuration */
 	ret = fimc_configure_subdev(pdev, ctrl->id);
 	if (ret) {
-		dev_err(&pdev->dev, "%s: subdev[%d] registering failed\n", \
+		dev_err(&pdev->dev, "[%s] subdev[%d] registering failed\n", \
 			__FUNCTION__, ctrl->id);
 	}
 
 	/* video device register */
 	ret = video_register_device(ctrl->vd, VFL_TYPE_GRABBER, ctrl->id);
 	if (ret) {
-		dev_err(&pdev->dev, "%s: cannot register video driver\n", \
+		dev_err(&pdev->dev, "[%s] cannot register video driver\n", \
 			__FUNCTION__);
 		goto err_global;
 	}
@@ -797,7 +803,9 @@ err_fimc:
 static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
+
 	kfree(fimc_dev);
+	fimc_dev = NULL;
 
 	return 0;
 }

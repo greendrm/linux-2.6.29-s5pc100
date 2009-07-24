@@ -137,7 +137,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 	u32 cfg, h1, h2, v1, v2;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "[%s] no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -168,7 +168,7 @@ int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "[%s] no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -201,7 +201,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "[%s] no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -221,7 +221,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
 	} else {
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+		dev_err(ctrl->dev, "[%s] invalid camera bus type selected\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
@@ -279,7 +279,7 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid pixel format\n", __FUNCTION__);
 		break;
 	}
 
@@ -404,7 +404,8 @@ int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid pixel format (%08x)\n", \
+			__FUNCTION__, fmt->pixelformat);
 		break;
 	}
 
@@ -535,7 +536,7 @@ int fimc_hwget_frame_count(struct fimc_control *ctrl)
 
 	num = S3C_CISTATUS_GET_FRAME_COUNT(readl(ctrl->regs + S3C_CISTATUS));
 
-	dev_dbg(ctrl->dev, "%s: frame count: %d\n", __FUNCTION__, num);
+	dev_dbg(ctrl->dev, "[%s] frame count: %d\n", __FUNCTION__, num);
 	
 	return num;
 }
@@ -709,7 +710,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "[%s] invalid pixel format\n", __FUNCTION__);
 		break;
 	}
 
@@ -1118,7 +1119,7 @@ int fimc_select_camera(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "[%s] no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -1138,7 +1139,7 @@ int fimc_select_camera(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
 	} else {
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+		dev_err(ctrl->dev, "[%s] invalid camera bus type selected\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
