@@ -1177,3 +1177,10 @@ v2.6.29.4-dev-1-0-12: Jongpill Lee
 	Deleted Files:
 		D       arch/arm/plat-s3c/s3c-button.c
 		D       arch/arm/plat-s5pc11x/include/plat/regs-power.h
+
+v2.6.29.4-dev-1-0-13: Changhwan Youn
+	- SD/MMC support using MPLL clock for SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/s5pc110-clock.c
