@@ -382,7 +382,11 @@ static struct platform_device *smdkc110_devices[] __initdata = {
         
 #ifdef CONFIG_S3C_DEV_HSMMC3
         &s3c_device_hsmmc3,        
-#endif                
+#endif
+
+#ifdef CONFIG_S3C2410_WATCHDOG
+	&s3c_device_wdt,
+#endif
 	&s3c_device_usbgadget,
 };
 
