@@ -186,6 +186,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	ctrl->mem.size = s3c_get_media_memsize(mdev_id);
 	ctrl->mem.curr = ctrl->mem.base;
 	ctrl->status = FIMC_STREAMOFF;
+	ctrl->limit = &fimc_limits[id];
 
 	sprintf(ctrl->name, "%s%d", FIMC_NAME, id);
 	strcpy(ctrl->vd->name, ctrl->name);

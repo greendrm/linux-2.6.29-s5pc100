@@ -243,6 +243,15 @@ struct fimc_scaler {
 	u32 shfactor;
 };
 
+struct fimc_limit {
+	u32 pre_dst_w;
+	u32 bypass_w;
+	u32 trg_h_no_rot;
+	u32 trg_h_rot;
+	u32 real_w_no_rot;
+	u32 real_h_rot;
+};
+
 /* fimc controller abstration */
 struct fimc_control {
 	int				id;		/* controller id */
@@ -266,6 +275,7 @@ struct fimc_control {
 	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
+	struct fimc_limit		*limit;		/* H/W limitation */
 	struct s3c_platform_camera	*cam;		/* activated camera */
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
@@ -290,6 +300,7 @@ struct fimc_global {
 extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[FIMC_DEVICES];
 extern const struct v4l2_ioctl_ops fimc_v4l2_ops;
+extern struct fimc_limit fimc_limits[FIMC_DEVICES];
 
 /* FIMD */
 extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
