@@ -39,6 +39,12 @@
 	ldreq	\irqstat, [ \tmp, # VIC_IRQ_STATUS ]
 	teqeq	\irqstat, #0
 
+	@ otherwise try vic2
+	addeq	\tmp, \base, #(S3C_VA_VIC2 - S3C_VA_VIC0)
+	addeq	\irqnr, \irqnr, #32
+	ldreq	\irqstat, [ \tmp, # VIC_IRQ_STATUS ]
+	teqeq	\irqstat, #0
+
 	clzne	\irqstat, \irqstat
 	subne	\irqnr, \irqnr, \irqstat
 	.endm

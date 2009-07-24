@@ -413,9 +413,9 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
-#if defined(CONFIG_TIMER_PWM)
+#if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
-        .pwm_id         = 0,
+        .pwm_id         = 3,
         .max_brightness = 255,
         .dft_brightness = 255,
         .pwm_period_ns  = 78770,
@@ -424,7 +424,7 @@ static struct platform_pwm_backlight_data smdk_backlight_data = {
 static struct platform_device smdk_backlight_device = {
         .name           = "pwm-backlight",
         .dev            = {
-                .parent = &s3c_device_timer[0].dev,
+                .parent = &s3c_device_timer[3].dev,
                 .platform_data = &smdk_backlight_data,
         },
 };
