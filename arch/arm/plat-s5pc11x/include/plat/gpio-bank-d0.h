@@ -33,6 +33,6 @@
 #define S5PC11X_GPD_0_2_EX_DMA_ACKn	(0x3 << 8)
 #define S5PC11X_GPD_0_2_GPIO_INT6_2	(0xf << 8)
 
-#define S5PC11X_GPD_0_2_TOUT_3		(0x2 << 12)
+#define S5PC11X_GPD_0_3_TOUT_3		(0x2 << 12)
 #define S5PC11X_GPD_0_3_PWM_MIE		(0xf << 12)
 

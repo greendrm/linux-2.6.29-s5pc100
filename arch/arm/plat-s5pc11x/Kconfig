@@ -126,4 +126,9 @@ config S5PC11X_DEV_FB
 	help
 	  Compile in platform device definitions for FIMD controller
 
+config S5P_HAVE_PWM
+        bool "PWM device support"
+        select HAVE_PWM
+        help
+           Support for exporting the PWM timer blocks via the pwm device
 endif

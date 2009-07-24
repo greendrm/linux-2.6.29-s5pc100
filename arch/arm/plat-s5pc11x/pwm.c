@@ -25,7 +25,7 @@
 #include <plat/regs-timer.h>
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
-#include <plat/gpio-bank-d.h>
+#include <plat/irqs.h>
 
 struct pwm_device {
 	struct list_head	 list;
@@ -299,22 +299,42 @@ static int s3c_pwm_probe(struct platform_device *pdev)
 	int ret;
 
 	if (id == 0) {
-		if(gpio_is_valid(S5PC11X_GPD(0))) {
-			ret = gpio_request(S5PC11X_GPD(0), "GPD");
+		if(gpio_is_valid(S5PC11X_GPD0(0))) {
+			ret = gpio_request(S5PC11X_GPD0(0), "GPD");
 
 			if (ret) {
 				printk(KERN_ERR "failed to request GPD for PWM-OUT 0\n");
 			}
-			s3c_gpio_cfgpin(S5PC11X_GPD(0), S5PC11X_GPD0_TOUT_0);			 
+			s3c_gpio_cfgpin(S5PC11X_GPD0(0), S5PC11X_GPD_0_0_TOUT_0);			 
 		}
 	} else if(id == 1) {
-		if(gpio_is_valid(S5PC11X_GPD(1))) {
-			ret = gpio_request(S5PC11X_GPD(1), "GPD");
+		if(gpio_is_valid(S5PC11X_GPD0(1))) {
+			ret = gpio_request(S5PC11X_GPD0(1), "GPD");
 
 			if (ret) {
 				printk(KERN_ERR "failed to request GPD for PWM-OUT 1\n");
 			}
-			s3c_gpio_cfgpin(S5PC11X_GPD(1), S5PC11X_GPD1_TOUT_1);			 
+			s3c_gpio_cfgpin(S5PC11X_GPD0(1), S5PC11X_GPD_0_1_TOUT_1);			 
+		}
+	
+	} else if(id == 2) {
+		if(gpio_is_valid(S5PC11X_GPD0(2))) {
+			ret = gpio_request(S5PC11X_GPD0(2), "GPD");
+
+			if (ret) {
+				printk(KERN_ERR "failed to request GPD for PWM-OUT 2\n");
+			}
+			s3c_gpio_cfgpin(S5PC11X_GPD0(2), S5PC11X_GPD_0_2_TOUT_2);			 
+		}
+	
+	} else if(id == 3) {
+		if(gpio_is_valid(S5PC11X_GPD0(3))) {
+			ret = gpio_request(S5PC11X_GPD0(3), "GPD");
+
+			if (ret) {
+				printk(KERN_ERR "failed to request GPD for PWM-OUT 3\n");
+			}
+			s3c_gpio_cfgpin(S5PC11X_GPD0(3), S5PC11X_GPD_0_3_TOUT_3);			 
 		}
 	
 	} else {
