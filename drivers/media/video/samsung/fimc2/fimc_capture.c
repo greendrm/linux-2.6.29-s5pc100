@@ -495,17 +495,37 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = fh;
+	int ret = 0;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
-	return 0;
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* First, get ctrl supported by subdev */
+	ret = subdev_call(ctrl, core, g_ctrl, c);
+
+	mutex_unlock(&ctrl->v4l2_lock);
+	
+	return ret;
 }
 
 int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = fh;
+	int ret;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	if (c->id < V4L2_CID_PRIVATE_BASE) {
+		/* If issued CID is not private based, try on subdev */
+		ret = subdev_call(ctrl, core, s_ctrl, c);
+		mutex_unlock(&ctrl->v4l2_lock);
+		return ret;
+	}
+
+	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
 }
