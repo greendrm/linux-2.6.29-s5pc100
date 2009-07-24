@@ -108,17 +108,6 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-static void fimc_set_active_camera(struct fimc_control *ctrl, 
-					enum fimc_cam_index id)
-{
-	ctrl->cam = fimc_dev->camera[id];
-
-	dev_info(ctrl->dev, "requested id: %d\n", id);
-	
-	if (ctrl->cam && id < FIMC_TPID)
-		fimc_select_camera(ctrl);
-}
-
 static int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -161,7 +150,6 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	}
 
 	ctrl->cam->initialized = 1;
-	fimc_set_active_camera(ctrl, ctrl->cam->id);
 
 	return 0;
 }
