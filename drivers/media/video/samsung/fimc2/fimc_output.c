@@ -504,7 +504,7 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_H\n");
 			return -EINVAL;
 		}
-	} else {
+	} else if (ctrl->out->fbuf.base){
 		/* No Output Rotator */
 		if (org->height < 8) {
 			dev_err(ctrl->dev, "DST Org_H: Min 8.\n");
@@ -520,13 +520,12 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 			dev_err(ctrl->dev, "DST Org_W: multiple of 8.\n");
 			return -EINVAL;
 		}
-#if 0
-		printk("org->width(%d), real->width(%d)\n", org->width, real->width);
+
 		if (org->width < real->width) {
 			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_W\n");
 			return -EINVAL;
 		}
-#endif
+
 	}
 		
 	return 0;
