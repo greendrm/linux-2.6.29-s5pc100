@@ -42,7 +42,6 @@
 #include <plat/iic-core.h>
 #include <plat/s5pc110.h>
 
-#include <plat/regs-power.h>
 #include <plat/regs-clock.h>
 
 #undef T32_PROBE_DEBUGGING

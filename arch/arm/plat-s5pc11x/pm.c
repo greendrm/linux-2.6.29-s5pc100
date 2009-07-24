@@ -1,11 +1,9 @@
-/* linux/arch/arm/plat-s3c24xx/pm.c
+/* linux/arch/arm/plat-s5pc11x/pm.c
  *
- * Copyright (c) 2004,2006 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
+ * Copyright (c) 2004,2009 Simtec Electronics
+ *	boyko.lee <boyko.lee@samsung.com>
  *
- * S3C24XX Power Manager (Suspend-To-RAM) support
- *
- * See Documentation/arm/Samsung-S3C24XX/Suspend.txt for more information
+ * S5PC11X Power Manager (Suspend-To-RAM) support
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,35 +45,6 @@
 #include <plat/regs-clock.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-cfg.h>
-#include <plat/gpio-bank-a0.h>
-#include <plat/gpio-bank-a1.h>
-#include <plat/gpio-bank-b.h>
-#include <plat/gpio-bank-c.h>
-#include <plat/gpio-bank-d.h>
-#include <plat/gpio-bank-e0.h>
-#include <plat/gpio-bank-e1.h>
-#include <plat/gpio-bank-f0.h>
-#include <plat/gpio-bank-f1.h>
-#include <plat/gpio-bank-f2.h>
-#include <plat/gpio-bank-f3.h>
-#include <plat/gpio-bank-g0.h>
-#include <plat/gpio-bank-g1.h>
-#include <plat/gpio-bank-g2.h>
-#include <plat/gpio-bank-g3.h>
-#include <plat/gpio-bank-h0.h>
-#include <plat/gpio-bank-h1.h>
-#include <plat/gpio-bank-h2.h>
-#include <plat/gpio-bank-h3.h>
-#include <plat/gpio-bank-i.h>
-#include <plat/gpio-bank-j0.h>
-#include <plat/gpio-bank-j1.h>
-#include <plat/gpio-bank-j2.h>
-#include <plat/gpio-bank-j3.h>
-#include <plat/gpio-bank-j4.h>
-#include <plat/gpio-bank-k0.h>
-#include <plat/gpio-bank-k1.h>
-#include <plat/gpio-bank-k2.h>
-#include <plat/gpio-bank-k3.h>
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
 #include <asm/gpio.h>
@@ -83,23 +52,10 @@
 #include <asm/mach/time.h>
 
 #include <plat/pm.h>
-#include <plat/regs-power.h>
-
-/* for external use */
-
-unsigned long s5pc11x_pm_flags;
-void __iomem *weint_base;
-
-enum PLL_TYPE
-{
-	PM_APLL,
-	PM_MPLL,
-	PM_EPLL,
-	PM_HPLL
-};
 
 #define PFX "s5pc11x-pm: "
 static struct sleep_save core_save[] = {
+#if 0
 	SAVE_ITEM(S5P_CLK_SRC0),
 	SAVE_ITEM(S5P_CLK_SRC1),
 	SAVE_ITEM(S5P_CLK_SRC2),
@@ -137,9 +93,11 @@ static struct sleep_save core_save[] = {
 	SAVE_ITEM(S5P_MIPI_PHY_CON0),
 	SAVE_ITEM(S5P_MIPI_PHY_CON1),
 	SAVE_ITEM(S5P_HDMI_PHY_CON0),
+#endif
 };
 
 static struct sleep_save gpio_save[] = {
+#if 0
 	SAVE_ITEM(S5PC11X_GPA0CON),
 	SAVE_ITEM(S5PC11X_GPA0DAT),
 	SAVE_ITEM(S5PC11X_GPA0PUD),
@@ -224,11 +182,13 @@ static struct sleep_save gpio_save[] = {
 	SAVE_ITEM(S5PC11X_GPK3CON),
 	SAVE_ITEM(S5PC11X_GPK3DAT),
 	SAVE_ITEM(S5PC11X_GPK3PUD),
+#endif
 };
 
 /* this lot should be really saved by the IRQ code */
 /* VICXADDRESSXX initilaization to be needed */
 static struct sleep_save irq_save[] = {
+#if 0
 	SAVE_ITEM(S5PC110_VIC0REG(VIC_INT_SELECT)),
 	SAVE_ITEM(S5PC110_VIC1REG(VIC_INT_SELECT)),
 	SAVE_ITEM(S5PC110_VIC2REG(VIC_INT_SELECT)),
@@ -238,9 +198,11 @@ static struct sleep_save irq_save[] = {
 	SAVE_ITEM(S5PC110_VIC0REG(VIC_INT_SOFT)),
 	SAVE_ITEM(S5PC110_VIC1REG(VIC_INT_SOFT)),
 	SAVE_ITEM(S5PC110_VIC2REG(VIC_INT_SOFT)),
+#endif
 };
 
 static struct sleep_save sromc_save[] = {
+#if 0
 	SAVE_ITEM(S5PC11X_SROM_BW),
 	SAVE_ITEM(S5PC11X_SROM_BC0),
 	SAVE_ITEM(S5PC11X_SROM_BC1),
@@ -248,15 +210,7 @@ static struct sleep_save sromc_save[] = {
 	SAVE_ITEM(S5PC11X_SROM_BC3),
 	SAVE_ITEM(S5PC11X_SROM_BC4),
 	SAVE_ITEM(S5PC11X_SROM_BC5),
-};
-
-/* NAND control registers */
-#define PM_NFCONF             (S3C_VA_NAND + 0x00)        
-#define PM_NFCONT             (S3C_VA_NAND + 0x04)        
-
-static struct sleep_save nand_save[] = {
-        SAVE_ITEM(PM_NFCONF),
-        SAVE_ITEM(PM_NFCONT),
+#endif
 };
 
 #define SAVE_UART(va) \
@@ -270,7 +224,9 @@ static struct sleep_save nand_save[] = {
 
 
 static struct sleep_save uart_save[] = {
+#if 0
 	SAVE_UART(S3C24XX_VA_UART0),
+#endif
 };
 
 #define DBG(fmt...)
@@ -390,110 +346,16 @@ static void s5pc11x_pm_show_resume_irqs(int start, unsigned long which,
 	}
 }
 
-static irqreturn_t s5pc11x_eint11_interrupt(int irq, void *dev_id)
-{
-	printk("EINT11 is occured\n");
-
-	return IRQ_HANDLED;
-}
-
-static void s5pc11x_pm_configure_extint(void)
-{
-/* for each of the external interrupts (EINT0..EINT15) we
- * need to check wether it is an external interrupt source,
- * and then configure it as an input if it is not
- * And SMDKC100 has two External Interrupt Switch EINT11(GPH1_3) and EINT31(GPH3_7)
- * So System can wake up with both External interrupt source.
- */
-
-	u32 tmp;
-
-	weint_base = ioremap(S5P_APM_BASE, 0x350);
-
-	/* Mask all External Interrupt */
-	writel(0xff , weint_base + S5P_APM_WEINT0_MASK);
-	writel(0xfb , weint_base + S5P_APM_WEINT1_MASK);
-	writel(0xff , weint_base + S5P_APM_WEINT2_MASK);
-	writel(0xff , weint_base + S5P_APM_WEINT3_MASK);
-
-	/* Clear all External Interrupt Pending */
-	writel(0xff , weint_base + S5P_APM_WEINT0_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT1_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT2_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT3_PEND);
-
-	/* GPH1(3) setting */
-	tmp = readl(weint_base + S5P_APM_GPH1CON);
-	tmp &= ~(0xf << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_GPH1CON);
-
-	/* LED Off for test */
-	tmp = readl(weint_base + S5P_APM_GPH1DAT);
-	tmp &= ~(0xf0);
-	writel(tmp , weint_base + S5P_APM_GPH1DAT);
-
-	tmp = readl(weint_base + S5P_APM_GPH1PUD);
-	tmp &= ~(0xf0);
-	writel(tmp , weint_base + S5P_APM_GPH1PUD);
-
-	/* EINT1_CON Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_CON);
-	tmp &= ~(0x7 << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_WEINT1_CON);
-
-	/* EINT1 MASK Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_MASK);
-	tmp &= ~(1 << 3);
-	writel(tmp , weint_base + S5P_APM_WEINT1_MASK);
-
-	udelay(50);
-
-	set_irq_type(IRQ_EINT11, IRQ_TYPE_EDGE_FALLING);
-	if (request_irq(IRQ_EINT11, s5pc11x_eint11_interrupt, IRQF_TRIGGER_FALLING, "EINT11", NULL)){
-		printk(KERN_ERR "EINT interrupt can not register\n");
-	}
-
-	tmp = readl(S5P_EINT_WAKEUP_MASK);
-	tmp = ~(1 << (IRQ_EINT11 - IRQ_EINT0));
-	writel(tmp , S5P_EINT_WAKEUP_MASK);
-}
-
 void (*pm_cpu_prep)(void);
 void (*pm_cpu_sleep)(void);
 
 #define any_allowed(mask, allow) (((mask) & (allow)) != (allow))
 
-static int s5pc11x_pm_clk(enum PLL_TYPE pm_pll,u32 mdiv, u32 pdiv, u32 sdiv)
-{
-	u32 pll_value;
-	u32 pll_addr;
-
-	pll_value = (1 << 31) | (mdiv << 16) | (pdiv << 8) | (sdiv << 0);
-
-	switch(pm_pll)
-	{
-		case PM_APLL:
-			pll_addr = S5P_APLL_CON;
-		case PM_MPLL:
-			pll_addr = S5P_MPLL_CON;
-		case PM_EPLL:
-			pll_addr = S5P_EPLL_CON;
-		case PM_HPLL:
-			pll_addr = S5P_HPLL_CON;
-	}
-
-	writel(pll_value , pll_addr);
-
-	while(!((readl(pll_addr) >> 30) & 0x1)){}
-}
 
 /* s5pc11x_pm_enter
  *
  * central control for sleep/resume process
 */
-
 static int s5pc11x_pm_enter(suspend_state_t state)
 {
 	unsigned long regs_save[16];
@@ -509,19 +371,18 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	}
 
 	/* store the physical address of the register recovery block */
-	s5pc100_sleep_save_phys = virt_to_phys(regs_save);
+	s5pc110_sleep_save_phys = virt_to_phys(regs_save);
 
-	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc100_sleep_save_phys);
+	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc110_sleep_save_phys);
 
 	s5pc11x_pm_do_save(gpio_save, ARRAY_SIZE(gpio_save));
 	s5pc11x_pm_do_save(irq_save, ARRAY_SIZE(irq_save));
 	s5pc11x_pm_do_save(core_save, ARRAY_SIZE(core_save));
 	s5pc11x_pm_do_save(sromc_save, ARRAY_SIZE(sromc_save));
-	s5pc11x_pm_do_save(nand_save, ARRAY_SIZE(nand_save));
 	s5pc11x_pm_do_save(uart_save, ARRAY_SIZE(uart_save));
 
 	/* ensure INF_REG0  has the resume address */
-	__raw_writel(virt_to_phys(s5pc100_cpu_resume), S5P_INFORM0);
+	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
 	/* call cpu specific preperation */
 
@@ -538,107 +399,24 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_SOFT_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_SOFT_CLEAR));
 
-	/* Mask all wake up source */
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= ~(0x1 << 7);
-	tmp |= (0x7ff << 8);
-	/* unmask alarm wakeup source */
-	tmp &= ~(0x1 << 10);
-	__raw_writel(tmp , S5P_PWR_CFG);
-	__raw_writel(0xffffffff , S5P_EINT_WAKEUP_MASK);
-
-	/* Wake up source setting */
-	s5pc11x_pm_configure_extint();
-
-	/* : USB Power Control */
-	/*   - USB PHY Disable */
-	/*   - Make USB Tranceiver PAD to Suspend */
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp &= ~(1<<16);           	/* USB Signal Mask Clear */
-   	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5PC11X_UHOST);
-	tmp |= (1<<0);
-	__raw_writel(tmp, S5PC11X_UHOST);
-
-	/* Sleep Mode Pad Configuration */
-	__raw_writel(0x2, S5PC11X_PDNEN); /* Controlled by SLPEN Bit (You Should Clear SLPEN Bit in Wake Up Process...) */
-    
-	/* Set WFI instruction to SLEEP mode */
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= S5P_CFG_WFI_CLEAN;
-	tmp |= S5P_CFG_WFI_SLEEP;
-	__raw_writel(tmp, S5P_PWR_CFG);
-
-	/* Clear WAKEUP_STAT register for next wakeup */
-	tmp = __raw_readl(S5P_WAKEUP_STAT);
-	__raw_writel(tmp, S5P_WAKEUP_STAT);
-
-#if 1
-	/* Set Power Stable Count */
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp &=~(1 << S5P_OTHER_STA_TYPE);
-	tmp |= (STA_TYPE_SFR << S5P_OTHER_STA_TYPE);
-	__raw_writel(tmp , S5P_OTHERS);
-	
-	__raw_writel(((S5P_PWR_STABLE_COUNT << S5P_PWR_STA_CNT) | (1 << S5P_PWR_STA_EXP_SCALE)), S5P_PWR_STABLE);
-
-	/* Set Syscon Interrupt */
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= (1 << S5P_OTHER_SYS_INT);
-	__raw_writel(tmp, S5P_OTHERS);
-
-	/* Disable OSC_EN (Disable X-tal Osc Pad in Sleep mode) */
-	tmp = __raw_readl(S5P_SLEEP_CFG);
-	tmp &= ~(1 << 0);
-	__raw_writel(tmp, S5P_SLEEP_CFG);
-#endif
-
 	/* s5pc11x_cpu_save will also act as our return point from when
 	 * we resume as it saves its own register state, so use the return
 	 * code to differentiate return from save and return from sleep */
 
-	if (s5pc100_cpu_save(regs_save) == 0) {
+	if (s5pc110_cpu_save(regs_save) == 0) {
 		flush_cache_all();
 		/* This function for Chip bug on EVT0 */
-#if 0
-		s5pc11x_pm_clk(PM_APLL, 512 , 2 , 5);
-		s5pc11x_pm_clk(PM_MPLL, 128 , 2 , 5);
-		s5pc11x_pm_clk(PM_EPLL, 128 , 2 , 5);
-		s5pc11x_pm_clk(PM_HPLL, 128 , 2 , 5);
-#endif
 		pm_cpu_sleep();
 	}
 
 	/* restore the cpu state */
 	cpu_init();
 
-	/* Sleep Mode Pad Configuration */
-    	__raw_writel(0x2, S5PC11X_PDNEN);	/* Clear SLPEN Bit for Pad back to Normal Mode */
-
-	/* MTC IO OFF |  MTC IO SD-MMC OFF | USB Phy Enable */
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp |= (1<<31);
-	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp |= ((1<<22)|(1<<16));
-	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5PC11X_UHOST);
-	tmp &= ~(1<<0);
-	__raw_writel(tmp, S5PC11X_UHOST);
-
-	
 	s5pc11x_pm_do_restore(gpio_save, ARRAY_SIZE(gpio_save));
 	s5pc11x_pm_do_restore(irq_save, ARRAY_SIZE(irq_save));
 	s5pc11x_pm_do_restore(core_save, ARRAY_SIZE(core_save));
 	s5pc11x_pm_do_restore(sromc_save, ARRAY_SIZE(sromc_save));
-	s5pc11x_pm_do_restore(nand_save, ARRAY_SIZE(nand_save));
 	s5pc11x_pm_do_restore(uart_save, ARRAY_SIZE(uart_save));
-
-	tmp = readl(weint_base + S5P_APM_WEINT1_PEND);
-	writel(tmp , weint_base + S5P_APM_WEINT1_PEND);
 
 	DBG("post sleep, preparing to return\n");
 
