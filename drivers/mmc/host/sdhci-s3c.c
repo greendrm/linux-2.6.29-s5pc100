@@ -333,9 +333,8 @@ static int __devinit sdhci_s3c_probe(struct platform_device *pdev)
 	host->quirks |= (SDHCI_QUIRK_32BIT_DMA_ADDR |
 			 SDHCI_QUIRK_32BIT_DMA_SIZE);
 
-#ifdef CONFIG_CPU_S5P6440
 	host->quirks |= SDHCI_QUIRK_NO_HISPD_BIT;
-#endif
+
 	if (pdata->host_caps)
 		host->mmc->caps = pdata->host_caps;
 	else
