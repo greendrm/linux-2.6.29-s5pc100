@@ -256,16 +256,28 @@ static void tl2796_cfg_gpio(struct platform_device *pdev)
 	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
 	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
 
+#if 1
 	s3c_gpio_cfgpin(S5PC11X_GPB(4), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(5), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(6), S3C_GPIO_SFN(1));
 	s3c_gpio_cfgpin(S5PC11X_GPB(7), S3C_GPIO_SFN(1));
-
+#else
+	/* why the followings do not work? */
+	gpio_request(S5PC11X_GPB(4), "GPB");
+	gpio_request(S5PC11X_GPB(5), "GPB");
+	gpio_request(S5PC11X_GPB(6), "GPB");
+	gpio_request(S5PC11X_GPB(7), "GPB");
+	gpio_direction_output(S5PC11X_GPB(4), 0);
+	gpio_direction_output(S5PC11X_GPB(5), 0);
+	gpio_direction_output(S5PC11X_GPB(6), 0);
+	gpio_direction_output(S5PC11X_GPB(7), 0);
+#endif
 	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);
 
+	gpio_request(S5PC11X_GPH0(5), "GPH0");
 	gpio_direction_output(S5PC11X_GPH0(5), 1);
 }
 
