@@ -33,8 +33,7 @@ obj-$(CONFIG_CPU_S5PC110_CLOCK)	+= s5pc110-clock.o changediv.o
 #obj-$(CONFIG_S5PC11X_SETUP_I2C0) += setup-i2c0.o
 #obj-$(CONFIG_S5PC11X_SETUP_I2C1) += setup-i2c1.o
 #obj-$(CONFIG_S5PC11X_ADC)        += adc.o
-#obj-$(CONFIG_TIMER_PWM)          += pwm.o
-#obj-$(CONFIG_S5PC11X_PWM)        += pwm-s5pc100.o
+obj-$(CONFIG_HAVE_PWM)		 += pwm.o
 
 # Device setup - FIMC
 #obj-$(CONFIG_S5PC11X_DEV_FIMC0)	  += dev-fimc0.o
