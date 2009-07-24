@@ -317,7 +317,7 @@ static struct s3c_platform_fb tl2796_data __initdata = {
 	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
-	.swap = FB_SWAP_HWORD,
+	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
 
 	.cfg_gpio = tl2796_cfg_gpio,
 	.backlight_on = tl2796_backlight_on,
