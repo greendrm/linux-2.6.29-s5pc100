@@ -1161,3 +1161,19 @@ v2.6.29.4-dev-1-0-11: Jongpill Lee
 		M       arch/arm/mach-s5pc110/Kconfig
 		M       arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-1-0-12: Jongpill Lee
+	- temporary update some code for PM on SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/button-smdkc110.c
+		M       arch/arm/mach-s5pc110/cpu.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/mach-s5pc110/pm.c
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc11x/sleep.S
+
+	Deleted Files:
+		D       arch/arm/plat-s3c/s3c-button.c
+		D       arch/arm/plat-s5pc11x/include/plat/regs-power.h

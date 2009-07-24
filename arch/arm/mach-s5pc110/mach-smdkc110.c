@@ -502,7 +502,7 @@ static void __init smdkc110_machine_init(void)
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)
-//	s5pc11x_pm_init();
+	s5pc11x_pm_init();
 #endif
 }
 
