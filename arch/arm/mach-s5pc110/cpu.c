@@ -84,6 +84,7 @@ static void s5pc110_idle(void)
  * 5. Execute Wait For Interrupt instruction (WFI).
  */
 
+#if 0
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
 	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
@@ -95,6 +96,7 @@ static void s5pc110_idle(void)
 	__raw_writel(tmp, S5P_PWR_CFG);
 
 	cpu_do_idle();
+#endif
 }
 void __init s5pc110_map_io(void)
 {
