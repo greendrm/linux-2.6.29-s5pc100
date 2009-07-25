@@ -337,6 +337,12 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 				return -EINVAL;
 			}		
 		}
+
+		if (real->height > ctrl->limit->real_h_rot) {
+			dev_err(ctrl->dev, "SRC REAL_H: Real_H <= %d\n", \
+						ctrl->limit->real_h_rot);
+			return -EINVAL;
+		} 
 	} else {
 		/* No Input Rotator */
 		if (real->height < 8) {
@@ -369,6 +375,12 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 			dev_err(ctrl->dev, "SRC Real_W: Min 16.\n");
 			return -EINVAL;
 		}
+		
+		if (real->width > ctrl->limit->real_w_no_rot) {
+			dev_err(ctrl->dev, "SRC REAL_W: Real_W <= %d\n", \
+						ctrl->limit->real_w_no_rot);
+			return -EINVAL;
+		} 
 	}
 
 	if (org->height < 8) {
@@ -377,7 +389,7 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 	}
 
 	if (org->height < real->height) {
-		dev_err(ctrl->dev, "SRC Org_H: Should be larger than Real_H\n");
+		dev_err(ctrl->dev, "SRC Org_H: larger than Real_H\n");
 		return -EINVAL;
 	}
 
@@ -387,7 +399,7 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 	}
 
 	if (org->width < real->width) {
-		dev_err(ctrl->dev, "SRC Org_W: Should be Org_W >= Real_W\n");
+		dev_err(ctrl->dev, "SRC Org_W: Org_W >= Real_W\n");
 		return -EINVAL;
 	}
 
@@ -489,19 +501,25 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 	u32 rot = ctrl->out->rotate;
 
 	if (real->height % 2) {
-		dev_err(ctrl->dev, "DST Real_H: should be even number.\n");
+		dev_err(ctrl->dev, "DST Real_H: even number.\n");
 		return -EINVAL;
 	}
 
 	if (ctrl->out->fbuf.base && ((rot == 90) || (rot == 270))) {	
 		/* Output Rotator */
 		if (org->height < real->width) {
-			dev_err(ctrl->dev, "DST Org_H: Should be Org_H >= Real_W\n");
+			dev_err(ctrl->dev, "DST Org_H: Org_H >= Real_W\n");
 			return -EINVAL;
 		}
 
 		if (org->width < real->height) {
-			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_H\n");
+			dev_err(ctrl->dev, "DST Org_W: Org_W >= Real_H\n");
+			return -EINVAL;
+		}
+
+		if (real->height > ctrl->limit->trg_h_rot) {
+			dev_err(ctrl->dev, "DST REAL_H: Real_H <= %d\n", \
+						ctrl->limit->trg_h_rot);
 			return -EINVAL;
 		}
 	} else if (ctrl->out->fbuf.base){
@@ -512,7 +530,7 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 		}
 
 		if (org->height < real->height) {
-			dev_err(ctrl->dev, "DST Org_H: Should be Org_H >= Real_H\n");
+			dev_err(ctrl->dev, "DST Org_H: Org_H >= Real_H\n");
 			return -EINVAL;
 		}
 
@@ -522,10 +540,15 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 		}
 
 		if (org->width < real->width) {
-			dev_err(ctrl->dev, "DST Org_W: Should be Org_W >= Real_W\n");
+			dev_err(ctrl->dev, "DST Org_W: Org_W >= Real_W\n");
 			return -EINVAL;
 		}
 
+		if (real->height > ctrl->limit->trg_h_no_rot) {
+			dev_err(ctrl->dev, "DST REAL_H: Real_H <= %d\n", \
+						ctrl->limit->trg_h_no_rot);
+			return -EINVAL;
+		}
 	}
 		
 	return 0;
@@ -590,9 +613,9 @@ static int fimc_outdev_set_dst_dma_size(struct fimc_control *ctrl)
 
 	}
 
-	dev_dbg(ctrl->dev, "org.width(%d), org.height(%d)\n", \
+	dev_dbg(ctrl->dev, "DST : org.width(%d), org.height(%d)\n", \
 				org.width, org.height);
-	dev_dbg(ctrl->dev, "real.width(%d), real.height(%d)\n", \
+	dev_dbg(ctrl->dev, "DST : real.width(%d), real.height(%d)\n", \
 				real.width, real.height);
 
 	ret = fimc_outdev_check_dst_size(ctrl, &real, &org);
@@ -676,7 +699,7 @@ static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
 	}
 
 	if (src->width % pixels) {
-		dev_err(ctrl->dev, "source width should be multiple of \
+		dev_err(ctrl->dev, "source width multiple of \
 						%d pixels.\n", pixels);
 		return -EDOM;
 	}
@@ -700,7 +723,7 @@ static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
 	}
 
 	if (dst->width % pixels) {
-		dev_err(ctrl->dev, "source width should be multiple of \
+		dev_err(ctrl->dev, "source width multiple of \
 						%d pixels.\n", pixels);
 		return -EDOM;
 	}
