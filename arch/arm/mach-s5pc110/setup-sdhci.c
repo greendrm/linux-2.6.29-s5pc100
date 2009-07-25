@@ -34,13 +34,16 @@
 char *s3c6410_hsmmc_clksrcs[4] = {
 	[0] = "hsmmc",
 	[1] = "hsmmc",
-//	[2] = "mmc_bus",
+	[2] = "mmc_bus",
 };
 
 void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 {
 	unsigned int gpio;
 	unsigned int end;
+
+	if(width < 4)
+		width = 4;
 
         /* Channel 0 supports 1,4 and 8-bit bus width */
         end = S5PC11X_GPG0(3 + width);
@@ -71,6 +74,8 @@ void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
 	ctrl2 &= S3C_SDHCI_CTRL2_SELBASECLK_MASK;
 	ctrl2 |= (S3C64XX_SDHCI_CTRL2_ENSTAASYNCCLR |
 		  S3C64XX_SDHCI_CTRL2_ENCMDCNFMSK |
+		  S3C_SDHCI_CTRL2_ENFBCLKRX |
+		  S3C_SDHCI_CTRL3_FCSEL0 |
 		  S3C_SDHCI_CTRL2_DFCNT_NONE |
 		  S3C_SDHCI_CTRL2_ENCLKOUTHOLD);
 
@@ -82,11 +87,15 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 {
 	unsigned int gpio;
 	unsigned int end;
+	unsigned int err;
+
+	if(width < 4)
+		width = 4;
 
 	/* Channel 1 supports 1 and 4-bit bus width */
 	end = S5PC11X_GPG1(3 + width);
 
-	/* Set all the necessary GPG2 pins to special-function 2 */
+	/* Set all the necessary GPG1 pins to special-function 2 */
 	for (gpio = S5PC11X_GPG1(0); gpio < end; gpio++) {
 		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
@@ -101,10 +110,13 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
         unsigned int gpio;
         unsigned int end;
 
+	if(width < 4)
+		width = 4;
+
         /* Channel 2 supports 1 and 4-bit bus width */
         end = S5PC11X_GPG2(3 + width);
 
-        /* Set all the necessary GPG3 pins to special-function 2 */
+        /* Set all the necessary GPG2 pins to special-function 2 */
         for (gpio = S5PC11X_GPG2(0); gpio < end; gpio++) {
                 s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
                 s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
@@ -118,6 +130,9 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 {
         unsigned int gpio;
         unsigned int end;
+
+	if(width < 4)
+		width = 4;
 
         /* Channel 3 supports 1 and 4-bit bus width */
         end = S5PC11X_GPG3(3 + width);

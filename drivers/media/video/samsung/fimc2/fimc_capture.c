@@ -108,17 +108,6 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-static void fimc_set_active_camera(struct fimc_control *ctrl, 
-					enum fimc_cam_index id)
-{
-	ctrl->cam = fimc_dev->camera[id];
-
-	dev_info(ctrl->dev, "requested id: %d\n", id);
-	
-	if (ctrl->cam && id < FIMC_TPID)
-		fimc_select_camera(ctrl);
-}
-
 static int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -161,7 +150,6 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	}
 
 	ctrl->cam->initialized = 1;
-	fimc_set_active_camera(ctrl, ctrl->cam->id);
 
 	return 0;
 }
@@ -507,17 +495,37 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = fh;
+	int ret = 0;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
-	return 0;
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* First, get ctrl supported by subdev */
+	ret = subdev_call(ctrl, core, g_ctrl, c);
+
+	mutex_unlock(&ctrl->v4l2_lock);
+	
+	return ret;
 }
 
 int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = fh;
+	int ret;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	if (c->id < V4L2_CID_PRIVATE_BASE) {
+		/* If issued CID is not private based, try on subdev */
+		ret = subdev_call(ctrl, core, s_ctrl, c);
+		mutex_unlock(&ctrl->v4l2_lock);
+		return ret;
+	}
+
+	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
 }

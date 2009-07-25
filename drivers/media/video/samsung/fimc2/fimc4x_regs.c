@@ -238,6 +238,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 	/* Interface selection */
 	if (cam->type == CAM_TYPE_MIPI) {
 		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
+		writel(cam->fmt, ctrl->regs + S3C_CSIIMGFMT);
 	} else if (cam->type == CAM_TYPE_ITU) {
 		if (cam->id == CAMERA_PAR_A)
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
@@ -1012,14 +1013,6 @@ int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	return 0;
 }
 
-int fimc_hwset_mipi_format(struct fimc_control *ctrl, enum fimc_cam_format fmt)
-{
-	writel(fmt, ctrl->regs + S3C_CSIIMGFMT);
-
-	return 0;
-}
-/************************************************/
-
 void fimc_reset_camera(void)
 {
 	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
@@ -1123,53 +1116,5 @@ void fimc_reset(struct fimc_control *ctrl)
 	}
 
 	fimc_reset_cfg(ctrl);
-}
-
-/*
- * 1. Configure camera input we are to use:
- * for now we use cam->id to identify camera A and B
- * but need to be changed to go with VIDIOC_S_INPUT
- * - Parallel interface : camera A (SELCAM_ITU_A & SELCAM_ITU)
- *   			camera B (SELCAM_ITU_B & SELCAM_ITU)
- *   			test pattern (TESTPATTERN_*)
- * - Serial interface : camera C (SELCAM_MIPI)
- *   			test pattern (TESTPATTERN_*)
- * 2. Configure input camera's format:
- * 	S3C_CISRCFMT for ITU & S3C_CSIIMGFMT 
- */
-int fimc_select_camera(struct fimc_control *ctrl)
-{
-	struct s3c_platform_camera *cam = ctrl->cam;
-	u32 cfg;
-
-	if (!cam) {
-		dev_err(ctrl->dev, "[%s] no active camera\n", \
-			__FUNCTION__);
-		return -ENODEV;
-	}
-
-	cfg = readl(ctrl->regs + S3C_CIGCTRL);
-	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK | \
-		S3C_CIGCTRL_SELCAM_MASK);
-
-	/* Interface selection */
-	if (cam->type == CAM_TYPE_MIPI) {
-		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
-	} else if (cam->type == CAM_TYPE_ITU) {
-		if (cam->id == CAMERA_PAR_A)
-			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
-		else
-			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
-		/* switch to ITU interface */
-		cfg |= S3C_CIGCTRL_SELCAM_ITU;
-	} else {
-		dev_err(ctrl->dev, "[%s] invalid camera bus type selected\n", \
-			__FUNCTION__);
-		return -EINVAL;
-	}
-
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-
-	return 0;
 }
 
