@@ -128,6 +128,22 @@ static int fimc_cropcap(struct file *filp, void *fh, struct v4l2_cropcap *a)
 	return ret;
 }
 
+static int fimc_g_crop(struct file *filp, void *fh, struct v4l2_crop *a)
+{
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	int ret = -1;
+
+	if (a->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {
+		ret = fimc_g_crop_capture(fh, a);
+	} else {
+		dev_err(ctrl->dev, "V4L2_BUF_TYPE_VIDEO_CAPTURE and \
+			V4L2_BUF_TYPE_VIDEO_OUTPUT are only supported.\n");
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
 static int fimc_s_crop(struct file *filp, void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -225,6 +241,7 @@ const struct v4l2_ioctl_ops fimc_v4l2_ops = {
 	.vidioc_g_ctrl			= fimc_g_ctrl,
 	.vidioc_s_ctrl			= fimc_s_ctrl,
 	.vidioc_cropcap			= fimc_cropcap,
+	.vidioc_g_crop			= fimc_g_crop,
 	.vidioc_s_crop			= fimc_s_crop,
 	.vidioc_streamon		= fimc_streamon,
 	.vidioc_streamoff		= fimc_streamoff,

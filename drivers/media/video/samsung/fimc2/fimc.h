@@ -147,7 +147,8 @@ struct fimc_buf_set {
 
 /* for capture device */
 struct fimc_capinfo {
-	struct v4l2_crop	crop;
+	struct v4l2_cropcap	cropcap;
+	struct v4l2_rect	crop;
 	struct v4l2_pix_format	fmt;
 	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
 	int			nr_bufs;
@@ -168,7 +169,8 @@ struct fimc_buf_idx {
 };
 
 struct fimc_outinfo {
-	struct v4l2_crop 	crop;
+	struct v4l2_cropcap	cropcap;
+	struct v4l2_rect 	crop;
 	struct v4l2_pix_format	pix;
 	struct v4l2_window	win;
 	struct v4l2_framebuffer	fbuf;
@@ -272,7 +274,6 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
-	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
 	struct fimc_limit		*limit;		/* H/W limitation */
@@ -309,7 +310,7 @@ extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sle
 
 /* general */
 extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
-extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
+extern void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes);
 
 /* camera */
 extern int fimc_select_camera(struct fimc_control *ctrl);
@@ -327,6 +328,7 @@ extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a);
+extern int fimc_g_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_s_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_streamon_capture(void *fh);
 extern int fimc_streamoff_capture(void *fh);

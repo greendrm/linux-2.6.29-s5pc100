@@ -43,8 +43,8 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 		.index		= 1,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
-		.description	= "RGB-8-8-8",
-		.pixelformat	= V4L2_PIX_FMT_RGB24,		
+		.description	= "RGB-8-8-8, unpacked 24 bpp",
+		.pixelformat	= V4L2_PIX_FMT_RGB32,		
 	}, {
 		.index		= 2,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
@@ -429,6 +429,9 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	memset(&cap->fmt, 0, sizeof(cap->fmt));
 	memcpy(&cap->fmt, &f->fmt.pix, sizeof(cap->fmt));
 
+	if (cap->fmt.colorspace == V4L2_COLORSPACE_JPEG)
+		ctrl->sc.bypass = 1;
+
 	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
@@ -469,6 +472,14 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	dev_dbg(ctrl->dev, "[%s] requested %d buffers\n", \
 		__FUNCTION__, b->count);
 
+	/* free previous buffers */
+	for (i = 0; i < FIMC_CAPBUFS; i++) {
+		fimc_dma_free(ctrl, &cap->bufs[i].base, cap->bufs[i].length);
+		cap->bufs[i].base = 0;
+		cap->bufs[i].length = 0;
+		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
+	}
+
 	/* alloc buffers */
 	for (i = 0; i < cap->nr_bufs; i++) {
 		cap->bufs[i].base = fimc_dma_alloc(ctrl, \
@@ -489,8 +500,10 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 err_alloc:
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].base)
-			fimc_dma_free(ctrl, cap->bufs[i].length);
+		if (cap->bufs[i].base) {
+			fimc_dma_free(ctrl, &cap->bufs[i].base, \
+					cap->bufs[i].length);
+		}
 
 		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
 	}
@@ -561,8 +574,47 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a)
 {
 	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	if (!ctrl->cam) {
+		dev_err(ctrl->dev, "%s: s_input should be done before crop\n", \
+			__FUNCTION__);
+		return -ENODEV;
+	}
+
+	/* crop limitations */
+	cap->cropcap.bounds.left = 0;
+	cap->cropcap.bounds.top = 0;
+	cap->cropcap.bounds.width = ctrl->cam->width;
+	cap->cropcap.bounds.height = ctrl->cam->height;
+
+	/* crop default values */
+	cap->cropcap.defrect.left = 0;
+	cap->cropcap.defrect.top = 0;
+	cap->cropcap.defrect.width = ctrl->cam->width;
+	cap->cropcap.defrect.height = ctrl->cam->height;
+
+	a->bounds = cap->cropcap.bounds;
+	a->defrect = cap->cropcap.defrect;
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
+	return 0;
+}
+
+int fimc_g_crop_capture(void *fh, struct v4l2_crop *a)
+{
+	struct fimc_control *ctrl = fh;
+
+	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+	a->c = ctrl->cap->crop;
+	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
 }
@@ -573,6 +625,10 @@ int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
+	mutex_lock(&ctrl->v4l2_lock);
+	ctrl->cap->crop = a->c;
+	mutex_unlock(&ctrl->v4l2_lock);
+
 	return 0;
 }
 
@@ -580,7 +636,9 @@ int fimc_start_capture(struct fimc_control *ctrl)
 {
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
-	fimc_hwset_start_scaler(ctrl);
+	if (!ctrl->sc.bypass)
+		fimc_hwset_start_scaler(ctrl);
+
 	fimc_hwset_enable_capture(ctrl);
 
 	return 0;
@@ -600,7 +658,7 @@ int fimc_streamon_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int queued = 0, i;
+	int queued = 0, i, width, height;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
@@ -616,6 +674,8 @@ int fimc_streamon_capture(void *fh)
 		return -EINVAL;
 	}
 
+	width = min_t(int, cap->fmt.width, cap->crop.width);
+	height = min_t(int, cap->fmt.height, cap->crop.height);
 	ctrl->status = FIMC_READY_ON;
 	cap->irq = FIMC_IRQ_NONE;
 
@@ -641,7 +701,10 @@ int fimc_streamon_capture(void *fh)
 	
 	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
-	fimc_hwset_org_output_size(ctrl, cap->fmt.width, cap->fmt.height);
+	fimc_hwset_output_offset(ctrl, cap->fmt.pixelformat, \
+				&cap->cropcap.bounds, &cap->crop);
+
+	fimc_hwset_org_output_size(ctrl, width, height);
 
 	fimc_start_capture(ctrl);
 	ctrl->status = FIMC_STREAMON;
@@ -686,13 +749,17 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_QUEUED;
 
-	fimc_stop_capture(ctrl);
+	/* do not change the status although stop capture */
+	if (ctrl->status == FIMC_STREAMON)
+		fimc_stop_capture(ctrl);
+
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
 	fimc_update_hwaddr(ctrl);
 
 	wake_up_interruptible(&ctrl->wq);
 
+	/* current ctrl->status means previous status before qbuf */
 	if (ctrl->status == FIMC_STREAMON)
 		fimc_start_capture(ctrl);
 

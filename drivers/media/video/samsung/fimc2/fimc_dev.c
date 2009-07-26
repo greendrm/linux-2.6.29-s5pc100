@@ -60,10 +60,13 @@ dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes)
 	return addr;
 }
 
-void fimc_dma_free(struct fimc_control *ctrl, u32 bytes)
+void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes)
 {
 	mutex_lock(&ctrl->lock);
+
 	ctrl->mem.curr -= bytes;
+	*addr = 0;
+
 	mutex_unlock(&ctrl->lock);
 }
 
@@ -143,12 +146,10 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 	fimc_hwget_overflow_state(ctrl);
 
 	if (cap->irq == FIMC_IRQ_NORMAL) {
-		printk("%s:%d\n", __FUNCTION__, __LINE__);
 		fimc_hwset_enable_lastirq(ctrl);
 		fimc_hwset_disable_lastirq(ctrl);
 		cap->irq = FIMC_IRQ_LAST;
 	} else if (cap->irq == FIMC_IRQ_LAST) {
-	printk("%s:%d\n", __FUNCTION__, __LINE__);
 		wake_up_interruptible(&ctrl->wq);
 	}
 }
@@ -519,7 +520,7 @@ static int fimc_release(struct file *filp)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	struct s3c_platform_fimc *pdata;
-	int ret = 0;
+	int ret = 0, i;
 
 	pdata = to_fimc_plat(ctrl->dev);
 
@@ -539,7 +540,9 @@ static int fimc_release(struct file *filp)
 
 		/* should be initialized at the next open */
 		ctrl->cam->initialized = 0;
-	} else if (ctrl->out) {
+	} 
+
+	if (ctrl->out) {
 		if (ctrl->status != FIMC_STREAMOFF) {
 			ret = fimc_outdev_stop_streaming(ctrl);
 			if (ret < 0)
@@ -549,6 +552,11 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->cap) {
+		for (i = 0; i < FIMC_CAPBUFS; i++) {
+			fimc_dma_free(ctrl, &ctrl->cap->bufs[i].base, \
+					ctrl->cap->bufs[i].length);
+		}
+
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
 	}

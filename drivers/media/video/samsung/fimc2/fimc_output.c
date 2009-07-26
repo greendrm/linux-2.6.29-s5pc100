@@ -292,10 +292,10 @@ static void fimc_outdev_set_src_dma_offset(struct fimc_control *ctrl)
 	bound.width = ctrl->out->pix.width;
 	bound.height = ctrl->out->pix.height;
 
-	crop.left = ctrl->out->crop.c.left;
-	crop.top = ctrl->out->crop.c.top;
-	crop.width = ctrl->out->crop.c.width;
-	crop.height = ctrl->out->crop.c.height;
+	crop.left = ctrl->out->crop.left;
+	crop.top = ctrl->out->crop.top;
+	crop.width = ctrl->out->crop.width;
+	crop.height = ctrl->out->crop.height;
 
 	fimc_hwset_input_offset(ctrl, pixfmt, &bound, &crop);
 }
@@ -411,8 +411,8 @@ static int fimc_outdev_set_src_dma_size(struct fimc_control *ctrl)
 	struct v4l2_rect real, org;
 	int ret = 0;
 
-	real.width = ctrl->out->crop.c.width;
-	real.height = ctrl->out->crop.c.height;
+	real.width = ctrl->out->crop.width;
+	real.height = ctrl->out->crop.height;
 	org.width = ctrl->out->pix.width;
 	org.height = ctrl->out->pix.height;
 	
@@ -634,16 +634,16 @@ static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
 				struct v4l2_rect *src, struct v4l2_rect *dst)
 {
 	if (ctrl->out->fbuf.base) {	/* OUTPUT ROTATOR */
-		src->width = ctrl->out->crop.c.width;
-		src->height = ctrl->out->crop.c.height;
+		src->width = ctrl->out->crop.width;
+		src->height = ctrl->out->crop.height;
 		dst->width = ctrl->out->win.w.width;
 		dst->height = ctrl->out->win.w.height;
 	} else {			/* INPUT ROTATOR */
 		switch (ctrl->out->rotate) {
 		case 0:		/* fall through */
 		case 180:
-			src->width = ctrl->out->crop.c.width;
-			src->height = ctrl->out->crop.c.height;
+			src->width = ctrl->out->crop.width;
+			src->height = ctrl->out->crop.height;
 			dst->width = ctrl->out->win.w.width;
 			dst->height = ctrl->out->win.w.height;
 			
@@ -651,8 +651,8 @@ static void fimc_outdev_calibrate_scale_info(struct fimc_control *ctrl, \
 
 		case 90:	/* fall through */
 		case 270:
-			src->width = ctrl->out->crop.c.height;
-			src->height = ctrl->out->crop.c.width;
+			src->width = ctrl->out->crop.height;
+			src->height = ctrl->out->crop.width;
 			dst->width = ctrl->out->win.w.height;
 			dst->height = ctrl->out->win.w.width;
 
@@ -1061,6 +1061,7 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
+	struct fimc_outinfo *out = ctrl->out;
 	u32 pixelformat = ctrl->out->pix.pixelformat;
 	u32 is_rotate = 0;
 	u32 max_w = 0, max_h = 0;
@@ -1092,25 +1093,25 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	}
 
 	/* crop bounds */
-	ctrl->cropcap.bounds.left = 0;
-	ctrl->cropcap.bounds.top = 0;
-	ctrl->cropcap.bounds.width = max_w;
-	ctrl->cropcap.bounds.height = max_h;
+	out->cropcap.bounds.left = 0;
+	out->cropcap.bounds.top = 0;
+	out->cropcap.bounds.width = max_w;
+	out->cropcap.bounds.height = max_h;
 
 	/* crop default values */
-	ctrl->cropcap.defrect.left = 0;
-	ctrl->cropcap.defrect.top = 0;
-	ctrl->cropcap.defrect.width = max_w;
-	ctrl->cropcap.defrect.height = max_h;
+	out->cropcap.defrect.left = 0;
+	out->cropcap.defrect.top = 0;
+	out->cropcap.defrect.width = max_w;
+	out->cropcap.defrect.height = max_h;
 
 	/* crop pixel aspec values */
 	/* To Do : Have to modify but I don't know the meaning. */
-	ctrl->cropcap.pixelaspect.numerator = 16;
-	ctrl->cropcap.pixelaspect.denominator = 9;
+	out->cropcap.pixelaspect.numerator = 16;
+	out->cropcap.pixelaspect.denominator = 9;
 
-	a->bounds = ctrl->cropcap.bounds;
-	a->defrect = ctrl->cropcap.defrect;
-	a->pixelaspect = ctrl->cropcap.pixelaspect;
+	a->bounds = out->cropcap.bounds;
+	a->defrect = out->cropcap.defrect;
+	a->pixelaspect = out->cropcap.pixelaspect;
 
 	return 0;
 }
@@ -1161,10 +1162,10 @@ int fimc_s_crop_output(void *fh, struct v4l2_crop *a)
 		return -EINVAL;
 	}
 
-	ctrl->out->crop.c.left = a->c.left;
-	ctrl->out->crop.c.top = a->c.top;
-	ctrl->out->crop.c.width	= a->c.width;
-	ctrl->out->crop.c.height = a->c.height;
+	ctrl->out->crop.left = a->c.left;
+	ctrl->out->crop.top = a->c.top;
+	ctrl->out->crop.width = a->c.width;
+	ctrl->out->crop.height = a->c.height;
 
 	return 0;
 }
