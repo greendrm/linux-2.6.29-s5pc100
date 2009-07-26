@@ -552,11 +552,14 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->cap) {
+		mutex_unlock(&ctrl->lock);
+
 		for (i = 0; i < FIMC_CAPBUFS; i++) {
 			fimc_dma_free(ctrl, &ctrl->cap->bufs[i].base, \
 					ctrl->cap->bufs[i].length);
 		}
 
+		mutex_lock(&ctrl->lock);
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
 	}
