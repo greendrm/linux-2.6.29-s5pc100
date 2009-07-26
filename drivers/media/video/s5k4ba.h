@@ -1,5 +1,5 @@
 #define S5K4BA_COMPLETE
-#undef S5K4BA_COMPLETE
+//#undef S5K4BA_COMPLETE
 /*
  * Driver for S5K4BA (UXGA camera) from Samsung Electronics
  * 

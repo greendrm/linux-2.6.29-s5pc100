@@ -264,6 +264,34 @@ static int fimc_update_hwaddr(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
+{
+	struct fimc_control *ctrl = fh;
+	int ret;
+
+	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+	ret = subdev_call(ctrl, video, g_parm, a);
+	mutex_unlock(&ctrl->v4l2_lock);
+
+	return ret;
+}
+
+int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
+{
+	struct fimc_control *ctrl = fh;
+	int ret;
+
+	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+
+	mutex_lock(&ctrl->v4l2_lock);
+	ret = subdev_call(ctrl, video, s_parm, a);
+	mutex_unlock(&ctrl->v4l2_lock);
+
+	return ret;
+}
+
 int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 {
 	struct fimc_global *fimc = get_fimc_dev();

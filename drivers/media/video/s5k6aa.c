@@ -128,7 +128,7 @@ static int s5k6aa_i2c_write(struct v4l2_subdev *sd, unsigned char i2c_data[],
 	unsigned char buf[length], i;
 	struct i2c_msg msg = {client->addr, 0, length, buf};
 
-	for (i = 0; i<length; i++) {
+	for (i = 0; i < length; i++) {
 		buf[i] = i2c_data[i];
 	}
 	return i2c_transfer(client->adapter, &msg, 1) == 1 ? 0 : -EIO;

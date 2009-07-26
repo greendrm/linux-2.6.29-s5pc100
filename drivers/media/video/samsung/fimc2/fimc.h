@@ -332,6 +332,8 @@ extern int fimc_streamon_capture(void *fh);
 extern int fimc_streamoff_capture(void *fh);
 extern int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b);
+extern int fimc_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
+extern int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
 
 /* output device */
 extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
