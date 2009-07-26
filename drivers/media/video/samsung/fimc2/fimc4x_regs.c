@@ -279,15 +279,15 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 	cfg &= ~S3C_CITRGFMT_OUTFORMAT_MASK;
 
 	switch (pixelformat) {
-	case V4L2_PIX_FMT_RGB565:
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
 	case V4L2_PIX_FMT_RGB32:
 		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
 		break;
 
-	case V4L2_PIX_FMT_YUYV:
-	case V4L2_PIX_FMT_UYVY:
-	case V4L2_PIX_FMT_VYUY:
-	case V4L2_PIX_FMT_YVYU:
+	case V4L2_PIX_FMT_YUYV:	/* fall through */
+	case V4L2_PIX_FMT_UYVY:	/* fall through */
+	case V4L2_PIX_FMT_VYUY:	/* fall through */
+	case V4L2_PIX_FMT_YVYU:	/* fall through */
 		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR422_1PLANE;
 		break;
 
@@ -295,10 +295,10 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR422;
 		break;
 
-	case V4L2_PIX_FMT_YUV420:
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV21:		/* fall through */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
 	case V4L2_PIX_FMT_NV61:
 		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR420;
 		break;
@@ -407,9 +407,9 @@ int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
 		break;
 
 	/* 2 plane formats */
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV12:	/* fall through */
+	case V4L2_PIX_FMT_NV21:	/* fall through */
+	case V4L2_PIX_FMT_NV16:	/* fall through */
 	case V4L2_PIX_FMT_NV61:
 		addr_y = base;
 		addr_cb = base + (fmt->width * fmt->height);
@@ -713,9 +713,9 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 		break;
 
 	  /* 2 plane formats */
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV12:	/* fall through */
+	case V4L2_PIX_FMT_NV21:	/* fall through */
+	case V4L2_PIX_FMT_NV16:	/* fall through */
 	case V4L2_PIX_FMT_NV61:
 		addr_y = base;
 		addr_cb = addr_y + (fmt->width * fmt->height);
@@ -852,14 +852,14 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_MSCTRL_C_INT_IN_2PLANE;
 		break;
 
-	case V4L2_PIX_FMT_YUYV:
-	case V4L2_PIX_FMT_UYVY:
-	case V4L2_PIX_FMT_VYUY:
-	case V4L2_PIX_FMT_YVYU:
-	case V4L2_PIX_FMT_YUV422P:
-	case V4L2_PIX_FMT_YUV420:
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
+	case V4L2_PIX_FMT_NV21:		/* fall through */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
 	case V4L2_PIX_FMT_NV61:
 	default:
 		break;
@@ -926,6 +926,7 @@ int fimc_hwset_stop_input_dma(struct fimc_control *ctrl)
 	return 0;
 }
 
+/* FIXME */
 int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 				struct v4l2_rect *bounds, struct v4l2_rect *crop)
 {
@@ -1069,6 +1070,7 @@ int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	return 0;
 }
 
+/* FIXME */
 void fimc_reset_camera(void)
 {
 	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
