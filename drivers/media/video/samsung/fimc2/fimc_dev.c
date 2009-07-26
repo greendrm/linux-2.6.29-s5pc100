@@ -246,7 +246,6 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 	return 0;
 }
 
-
 static void fimc_mmap_open(struct vm_area_struct *vma)
 {
 	struct fimc_global *dev = fimc_dev;

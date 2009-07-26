@@ -1243,7 +1243,7 @@ static int fimc_qbuf_output_dma(struct fimc_control *ctrl)
 	u32 i = 0;
 	
 	if ((ctrl->status == FIMC_READY_ON) || \
-				(ctrl->status == FIMC_STREAMON_IDLE)) {
+		(ctrl->status == FIMC_STREAMON_IDLE)) {
 		ret =  fimc_detach_in_queue(ctrl, &index);
 		if (ret < 0) {
 			dev_err(ctrl->dev, "Fail: fimc_detach_in_queue\n");
