@@ -162,7 +162,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 	u32 cfg, h1, h2, v1, v2;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "[%s] no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -193,7 +193,7 @@ int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "[%s] no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -226,7 +226,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "[%s] no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n", \
 			__FUNCTION__);
 		return -ENODEV;
 	}
@@ -247,7 +247,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
 	} else {
-		dev_err(ctrl->dev, "[%s] invalid camera bus type selected\n", \
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
@@ -304,7 +304,7 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "[%s] invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
 		break;
 	}
 
@@ -324,13 +324,13 @@ int fimc_hwset_output_rot_flip(struct fimc_control *ctrl, u32 rot, u32 flip)
 
 	val = fimc_mapping_rot_flip(rot, flip);
 
-	if (val & 0x10)
+	if (val & FIMC_ROT)
 		cfg |= S3C_CITRGFMT_OUTROT90_CLOCKWISE;
 
-	if (val & 0x01)
+	if (val & FIMC_XFLIP)
 		cfg |= S3C_CITRGFMT_FLIP_X_MIRROR;
 
-	if (val & 0x02)
+	if (val & FIMC_YFLIP)
 		cfg |= S3C_CITRGFMT_FLIP_Y_MIRROR;
 
 	writel(cfg, ctrl->regs + S3C_CITRGFMT);
@@ -429,7 +429,7 @@ int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
 		break;
 
 	default:
-		dev_err(ctrl->dev, "[%s] invalid pixel format (%08x)\n", \
+		dev_err(ctrl->dev, "%s: invalid pixel format (%08x)\n", \
 			__FUNCTION__, fmt->pixelformat);
 		break;
 	}
@@ -501,7 +501,7 @@ int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 
 	val = fimc_mapping_rot_flip(rot, flip);
 
-	if (val & 0x10)
+	if (val & FIMC_ROT)
 		cfg |= S3C_CITRGFMT_INROT90_CLOCKWISE;
 
 	writel(cfg, ctrl->regs + S3C_CITRGFMT);
@@ -561,7 +561,7 @@ int fimc_hwget_frame_count(struct fimc_control *ctrl)
 
 	num = S3C_CISTATUS_GET_FRAME_COUNT(readl(ctrl->regs + S3C_CISTATUS));
 
-	dev_dbg(ctrl->dev, "[%s] frame count: %d\n", __FUNCTION__, num);
+	dev_dbg(ctrl->dev, "%s: frame count: %d\n", __FUNCTION__, num);
 	
 	return num;
 }
@@ -735,7 +735,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 		break;
 
 	default:
-		dev_err(ctrl->dev, "[%s] invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
 		break;
 	}
 
@@ -831,7 +831,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 					(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		cfg |= S3C_MSCTRL_INFORMAT_RGB;
 	} else {
-		dev_err(ctrl->dev, "[%s]Invalid pixelformt : %d\n", 
+		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
 				__FUNCTION__, pixelformat);
 		return -EINVAL;
 	}
@@ -878,10 +878,10 @@ int fimc_hwset_input_flip(struct fimc_control *ctrl, u32 rot, u32 flip)
 	cfg &= ~(S3C_MSCTRL_FLIP_X_MIRROR | S3C_MSCTRL_FLIP_Y_MIRROR);
 	val = fimc_mapping_rot_flip(rot, flip);
 
-	if(val & 0x01)
+	if(val & FIMC_XFLIP)
 		cfg |= S3C_MSCTRL_FLIP_X_MIRROR;
 
-	if(val & 0x02)
+	if(val & FIMC_YFLIP)
 		cfg |= S3C_MSCTRL_FLIP_Y_MIRROR;
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -1150,7 +1150,7 @@ void fimc_reset(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
 
-	dev_dbg(ctrl->dev, "[%s] called\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s: called\n", __FUNCTION__);
 
 	cfg = readl(ctrl->regs + S3C_CISRCFMT);
 	cfg |= S3C_CISRCFMT_ITU601_8BIT;
