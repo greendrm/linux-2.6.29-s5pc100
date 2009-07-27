@@ -354,7 +354,6 @@ extern int fimc_init_out_queue(struct fimc_control *ctrl);
 extern void fimc_dump_context(struct fimc_control *ctrl);
 extern void fimc_print_signal(struct fimc_control *ctrl);
 
-
 /* overlay device */
 extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
 extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);

@@ -123,7 +123,7 @@ static int fimc_check_out_buf(struct fimc_control *ctrl, u32 num)
 
 static void fimc_outdev_set_buff_addr(struct fimc_control *ctrl, u32 buf_size)
 {
-	u32 base = ctrl->mem.base;	
+	u32 base = ctrl->mem.base;
 	u32 i;
 
 	for (i = 0; i < FIMC_OUTBUFS; i++) {
@@ -948,12 +948,6 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 		return -EBUSY;
 	}
 
-	/* To do : V4L2_MEMORY_USERPTR */
-	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
-		return -EINVAL;
-	}
-
 	if (ctrl->out->is_requested == 1 && b->count != 0 ) {
 		dev_err(ctrl->dev, "Buffers were already requested\n");
 		return -EBUSY;
@@ -1300,18 +1294,26 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 	return 0;	
 }
 
+static int fimc_update_in_queue_addr(struct fimc_control *ctrl, u32 index, u32 addr)
+{
+	if (index >= FIMC_OUTBUFS) {
+		dev_err(ctrl->dev, "%s: Failed \n", __FUNCTION__);
+		return -EINVAL;
+	}
+	
+	ctrl->out->buf[index].base = addr;
+		
+	return 0;
+}
+
 int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	dma_addr_t dst_base = 0;
-	int	ret = -1;
+	int ret = -1;
+	u32 addr = (u32)b->m.userptr;
 
 	dev_info(ctrl->dev, "%s: queued idx = %d\n", __FUNCTION__, b->index);
-
-	if (b->memory != V4L2_MEMORY_MMAP ) {
-		dev_err(ctrl->dev, "V4L2_MEMORY_MMAP is only supported\n");
-		return -EINVAL;
-	}
 
 	if (b->index > ctrl->out->buf_num ) {
 		dev_err(ctrl->dev, "The index is out of bounds\n \
@@ -1328,6 +1330,12 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	if (b->memory == V4L2_MEMORY_USERPTR) {
+		ret = fimc_update_in_queue_addr(ctrl, b->index, addr);
+		if (ret < 0)
+			return ret;
+	}
+	
 	/* Attach the buffer to the incoming queue. */
 	ret =  fimc_attach_in_queue(ctrl, b->index);
 	if (ret < 0) {
