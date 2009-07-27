@@ -429,8 +429,10 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	memset(&cap->fmt, 0, sizeof(cap->fmt));
 	memcpy(&cap->fmt, &f->fmt.pix, sizeof(cap->fmt));
 
-	if (cap->fmt.colorspace == V4L2_COLORSPACE_JPEG)
+	if (cap->fmt.colorspace == V4L2_COLORSPACE_JPEG) {
 		ctrl->sc.bypass = 1;
+		cap->lastirq = 1;
+	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
@@ -542,8 +544,21 @@ int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	/* First, get ctrl supported by subdev */
-	ret = subdev_call(ctrl, core, g_ctrl, c);
+	switch (c->id) {
+	case V4L2_CID_ROTATION:
+		ctrl->cap->rotate = c->value;
+		break;
+
+	case V4L2_CID_HFLIP:	/* fall through */
+	case V4L2_CID_VFLIP:
+		ctrl->cap->flip = c->id;
+		break;
+
+	default:
+		/* get ctrl supported by subdev */
+		ret = subdev_call(ctrl, core, g_ctrl, c);
+		break;
+	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 	
@@ -553,22 +568,31 @@ int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = fh;
-	int ret;
+	int ret = 0;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	if (c->id < V4L2_CID_PRIVATE_BASE) {
-		/* If issued CID is not private based, try on subdev */
+	switch (c->id) {
+	case V4L2_CID_ROTATION:
+		ctrl->cap->rotate = c->value;
+		break;
+
+	case V4L2_CID_HFLIP:	/* fall through */
+	case V4L2_CID_VFLIP:
+		ctrl->cap->flip = c->id;
+		break;
+
+	default:
+		/* try on subdev */
 		ret = subdev_call(ctrl, core, s_ctrl, c);
-		mutex_unlock(&ctrl->v4l2_lock);
-		return ret;
+		break;
 	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
-	return 0;
+	return ret;
 }
 
 int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a)
@@ -648,7 +672,14 @@ int fimc_stop_capture(struct fimc_control *ctrl)
 {
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
-	fimc_hwset_disable_capture(ctrl);
+	if (ctrl->cap->lastirq) {
+		fimc_hwset_enable_lastirq(ctrl);
+		fimc_hwset_disable_capture(ctrl);
+		fimc_hwset_disable_lastirq(ctrl);
+	} else {
+		fimc_hwset_disable_capture(ctrl);
+	}
+
 	fimc_hwset_stop_scaler(ctrl);
 
 	return 0;
@@ -658,7 +689,7 @@ int fimc_streamon_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int queued = 0, i;
+	int queued = 0, i, rot;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
@@ -696,10 +727,20 @@ int fimc_streamon_capture(void *fh)
 		fimc_hwset_output_rgb(ctrl, cap->fmt.pixelformat);
 	else
 		fimc_hwset_output_yuv(ctrl, cap->fmt.pixelformat);
-	
+
 	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
-	fimc_hwset_org_output_size(ctrl, cap->fmt.width, cap->fmt.height);
+
+	fimc_hwset_output_rot_flip(ctrl, cap->rotate, cap->flip);
+	rot = fimc_mapping_rot_flip(cap->rotate, cap->flip);
+
+	if (rot & FIMC_ROT) {
+		fimc_hwset_org_output_size(ctrl, cap->fmt.height, \
+						cap->fmt.width);
+	} else {
+		fimc_hwset_org_output_size(ctrl, cap->fmt.width, \
+						cap->fmt.height);
+	}
 
 	fimc_start_capture(ctrl);
 	ctrl->status = FIMC_STREAMON;
@@ -745,8 +786,8 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_QUEUED;
 
 	/* do not change the status although stop capture */
-	if (ctrl->status == FIMC_STREAMON)
-		fimc_stop_capture(ctrl);
+//	if (ctrl->status == FIMC_STREAMON)
+//		fimc_stop_capture(ctrl);
 
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
@@ -755,8 +796,8 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 	wake_up_interruptible(&ctrl->wq);
 
 	/* current ctrl->status means previous status before qbuf */
-	if (ctrl->status == FIMC_STREAMON)
-		fimc_start_capture(ctrl);
+//	if (ctrl->status == FIMC_STREAMON)
+//		fimc_start_capture(ctrl);
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
@@ -789,11 +830,11 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	cap->bufs[b->index].state = VIDEOBUF_ACTIVE;
 
-	fimc_stop_capture(ctrl);
+//	fimc_stop_capture(ctrl);
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
 	fimc_update_hwaddr(ctrl);
-	fimc_start_capture(ctrl);
+//	fimc_start_capture(ctrl);
 
 	mutex_unlock(&ctrl->v4l2_lock);
 	

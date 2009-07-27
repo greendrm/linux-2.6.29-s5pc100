@@ -284,10 +284,10 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
 		break;
 
-	case V4L2_PIX_FMT_YUYV:	/* fall through */
-	case V4L2_PIX_FMT_UYVY:	/* fall through */
-	case V4L2_PIX_FMT_VYUY:	/* fall through */
-	case V4L2_PIX_FMT_YVYU:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
 		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR422_1PLANE;
 		break;
 

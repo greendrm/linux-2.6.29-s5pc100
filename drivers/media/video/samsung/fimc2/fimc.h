@@ -141,7 +141,9 @@ struct fimc_capinfo {
 	int			nr_bufs;
 	int			inqueue[FIMC_CAPBUFS];
 	int			outqueue[FIMC_PHYBUFS];
-	enum fimc_irq		irq;
+	//enum fimc_irq		irq;
+	int			irq;
+	int			lastirq;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
