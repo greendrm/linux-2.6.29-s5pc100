@@ -298,6 +298,8 @@ extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sle
 /* general */
 extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
 extern void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes);
+extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
+extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
 
 /* camera */
 extern int fimc_select_camera(struct fimc_control *ctrl);
@@ -359,16 +361,6 @@ extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_forma
 extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
 extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
 extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
-
-/* Configuration */
-extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
-extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
-#if 0
-extern int fimc_set_scaler(struct fimc_control *ctrl);
-extern int fimc_set_src_crop(struct fimc_control *ctrl);
-extern int fimc_set_dst_crop(struct fimc_control *ctrl);
-extern int fimc_set_rot(struct fimc_control *ctrl);
-#endif
 
 /* Register access file */
 extern void fimc_reset_camera(void);
