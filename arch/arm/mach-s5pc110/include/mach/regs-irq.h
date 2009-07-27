@@ -21,5 +21,5 @@
 #define S5PC110_VIC0REG(x)          		((x) + S3C_VA_VIC0)
 #define S5PC110_VIC1REG(x)          		((x) + S3C_VA_VIC1)
 #define S5PC110_VIC2REG(x)         		((x) + S3C_VA_VIC2)
-
+#define S5PC110_VIC3REG(x)         		((x) + S3C_VA_VIC3)
 #endif /* __ASM_ARCH_REGS_IRQ_H */
