@@ -368,6 +368,77 @@ ssize_t fimc_write(struct file *filp, const char *b, size_t c, loff_t *offset)
 	return 0;
 }
 
+u32 fimc_mapping_rot_flip(u32 rot, u32 flip)
+{
+	u32 ret = 0;
+
+	switch (rot) {
+	case 0:
+		if(flip & V4L2_CID_HFLIP)
+			ret |= FIMC_XFLIP;
+
+		if(flip & V4L2_CID_VFLIP)
+			ret |= FIMC_YFLIP;
+		break;
+
+	case 90:
+		ret = FIMC_ROT;
+		if(flip & V4L2_CID_HFLIP)
+			ret |= FIMC_XFLIP;
+
+		if(flip & V4L2_CID_VFLIP)
+			ret |= FIMC_YFLIP;
+		break;
+
+	case 180:
+		ret = (FIMC_XFLIP | FIMC_YFLIP);
+		if(flip & V4L2_CID_HFLIP)
+			ret &= ~FIMC_XFLIP;
+
+		if(flip & V4L2_CID_VFLIP)
+			ret &= ~FIMC_YFLIP;
+		break;
+
+	case 270:
+		ret = (FIMC_XFLIP | FIMC_YFLIP | FIMC_ROT);
+		if(flip & V4L2_CID_HFLIP)
+			ret &= ~FIMC_XFLIP;
+
+		if(flip & V4L2_CID_VFLIP)
+			ret &= ~FIMC_YFLIP;
+		break;
+	}
+
+	return ret;
+}
+
+int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift)
+{
+	if (src >= tar * 64) {
+		return -EINVAL;
+	} else if (src >= tar * 32) {
+		*ratio = 32;
+		*shift = 5;
+	} else if (src >= tar * 16) {
+		*ratio = 16;
+		*shift = 4;
+	} else if (src >= tar * 8) {
+		*ratio = 8;
+		*shift = 3;
+	} else if (src >= tar * 4) {
+		*ratio = 4;
+		*shift = 2;
+	} else if (src >= tar * 2) {
+		*ratio = 2;
+		*shift = 1;
+	} else {
+		*ratio = 1;
+		*shift = 0;
+	}
+
+	return 0;
+}
+
 static int fimc_wakeup_fifo(struct fimc_control *ctrl)
 {
 #if 0
