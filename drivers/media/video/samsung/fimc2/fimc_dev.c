@@ -157,6 +157,7 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) dev_id;
+
 	if (ctrl->cap) {
 		fimc_irq_cap(ctrl);
 	} else if (ctrl->out) {
@@ -494,7 +495,7 @@ static int fimc_open(struct file *filp)
 	if (ret < 0)
 		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_HEIGHT\n");
 
-	ctrl->status		= FIMC_STREAMOFF;
+	ctrl->status = FIMC_STREAMOFF;
 
 #if 0
 	/* To do : have to send ctrl to the fimd driver. */
