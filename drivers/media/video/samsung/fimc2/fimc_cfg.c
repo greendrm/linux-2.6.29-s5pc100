@@ -30,37 +30,37 @@ u32 fimc_mapping_rot_flip(u32 rot, u32 flip)
 	switch (rot) {
 	case 0:
 		if(flip & V4L2_CID_HFLIP)
-			ret |= 0x1;
+			ret |= FIMC_XFLIP;
 
 		if(flip & V4L2_CID_VFLIP)
-			ret |= 0x2;
+			ret |= FIMC_YFLIP;
 		break;
 
 	case 90:
-		ret = 0x10;
+		ret = FIMC_ROT;
 		if(flip & V4L2_CID_HFLIP)
-			ret |= 0x1;
+			ret |= FIMC_XFLIP;
 
 		if(flip & V4L2_CID_VFLIP)
-			ret |= 0x2;
+			ret |= FIMC_YFLIP;
 		break;
 
 	case 180:
-		ret = 0x3;
+		ret = (FIMC_XFLIP | FIMC_YFLIP);
 		if(flip & V4L2_CID_HFLIP)
-			ret &= ~0x1;
+			ret &= ~FIMC_XFLIP;
 
 		if(flip & V4L2_CID_VFLIP)
-			ret &= ~0x2;
+			ret &= ~FIMC_YFLIP;
 		break;
 
 	case 270:
-		ret = 0x13;
+		ret = (FIMC_XFLIP | FIMC_YFLIP | FIMC_ROT);
 		if(flip & V4L2_CID_HFLIP)
-			ret &= ~0x1;
+			ret &= ~FIMC_XFLIP;
 
 		if(flip & V4L2_CID_VFLIP)
-			ret &= ~0x2;
+			ret &= ~FIMC_YFLIP;
 		break;
 	}
 
