@@ -785,20 +785,23 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_QUEUED;
 
+/* we need to start again? */
+#if 0
 	/* do not change the status although stop capture */
-//	if (ctrl->status == FIMC_STREAMON)
-//		fimc_stop_capture(ctrl);
-
+	if (ctrl->status == FIMC_STREAMON)
+		fimc_stop_capture(ctrl);
+#endif
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
 	fimc_update_hwaddr(ctrl);
 
 	wake_up_interruptible(&ctrl->wq);
 
+#if 0
 	/* current ctrl->status means previous status before qbuf */
-//	if (ctrl->status == FIMC_STREAMON)
-//		fimc_start_capture(ctrl);
-
+	if (ctrl->status == FIMC_STREAMON)
+		fimc_start_capture(ctrl);
+#endif
 	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
@@ -830,12 +833,18 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	cap->bufs[b->index].state = VIDEOBUF_ACTIVE;
 
-//	fimc_stop_capture(ctrl);
+/* we need to start again? */
+#if 0
+	fimc_stop_capture(ctrl);
+#endif
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
 	fimc_update_hwaddr(ctrl);
-//	fimc_start_capture(ctrl);
 
+/* we need to start again? */
+#if 0
+	fimc_start_capture(ctrl);
+#endif
 	mutex_unlock(&ctrl->v4l2_lock);
 	
 	return 0;
