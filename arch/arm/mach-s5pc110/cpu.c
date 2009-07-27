@@ -84,7 +84,7 @@ static void s5pc110_idle(void)
  * 5. Execute Wait For Interrupt instruction (WFI).
  */
 
-#if 0
+#if 1
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
 	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
