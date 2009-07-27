@@ -658,7 +658,7 @@ int fimc_streamon_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int queued = 0, i, width, height;
+	int queued = 0, i;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
@@ -674,8 +674,6 @@ int fimc_streamon_capture(void *fh)
 		return -EINVAL;
 	}
 
-	width = min_t(int, cap->fmt.width, cap->crop.width);
-	height = min_t(int, cap->fmt.height, cap->crop.height);
 	ctrl->status = FIMC_READY_ON;
 	cap->irq = FIMC_IRQ_NONE;
 
@@ -701,10 +699,7 @@ int fimc_streamon_capture(void *fh)
 	
 	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
-	fimc_hwset_output_offset(ctrl, cap->fmt.pixelformat, \
-				&cap->cropcap.bounds, &cap->crop);
-
-	fimc_hwset_org_output_size(ctrl, width, height);
+	fimc_hwset_org_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 
 	fimc_start_capture(ctrl);
 	ctrl->status = FIMC_STREAMON;

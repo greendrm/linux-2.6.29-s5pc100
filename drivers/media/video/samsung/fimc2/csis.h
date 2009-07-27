@@ -14,7 +14,7 @@
 #define _S3C_CSIS_H
 
 #define S3C_CSIS_NAME		"s3c-csis"
-#define S3C_CSIS_NR_LANES	2
+#define S3C_CSIS_NR_LANES	1
 
 #define info(args...)	do { printk(KERN_INFO S3C_CSIS_NAME ": " args); } while (0)
 #define err(args...)	do { printk(KERN_ERR  S3C_CSIS_NAME ": " args); } while (0)
