@@ -701,9 +701,6 @@ int fimc_streamon_capture(void *fh)
 	
 	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
-	fimc_hwset_output_offset(ctrl, cap->fmt.pixelformat, \
-				&cap->cropcap.bounds, &cap->crop);
-
 	fimc_hwset_org_output_size(ctrl, width, height);
 
 	fimc_start_capture(ctrl);
