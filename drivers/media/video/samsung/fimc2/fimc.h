@@ -364,7 +364,6 @@ extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
 
 /* Register access file */
-extern void fimc_reset_camera(void);
 extern void fimc_reset(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_source(struct fimc_control *ctrl);
 extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int level);
