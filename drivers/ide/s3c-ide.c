@@ -791,6 +791,7 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 	writel( reg | 0x00200000, S5PC1XX_GPK3CON);
 	reg = readl(S5PC1XX_GPK3PUD) & ~(0xc00);
 	writel(reg | (0x800), S5PC1XX_GPK3PUD);
+#if 0
 	/* EBI_ADDR[7:0] disable */
 	writel(0x0, S5PC1XX_GPL0CON);
 	/* EBI_ADDR[15:8] disable */
@@ -801,6 +802,7 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 	writel(0x0, S5PC1XX_GPL3CON);
 	/* EBI_DATA[15:11] disable */
 	writel(0x0, S5PC1XX_GPL4CON);
+#endif
 	
 	/*Change to true IDE mode */
 	change_mode_to_ata();
