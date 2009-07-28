@@ -1213,3 +1213,10 @@ v2.6.29.4-dev-1-0-16: Jongpill Lee
 	Modified Files:
                 M       arch/arm/plat-s5pc11x/pm.c
                 M       arch/arm/plat-s5pc11x/sleep.S
+
+v2.6.29.4-dev-1-0-17: Jae-Cheol Lee
+	- Changed gpiolib initcall from arch_initcall to core_initcall for
+	s5pc110
+
+	Modified Files:
+		M	arch/arm/plat-s5pc11x/gpiolib.c
