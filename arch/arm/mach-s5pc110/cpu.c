@@ -117,6 +117,9 @@ void __init s5pc110_init_clocks(int xtal)
 	s5pc11x_register_clocks();
 	s5pc110_register_clocks();
 	s5pc110_setup_clocks();
+#if defined(CONFIG_HAVE_PWM)
+        s3c_pwmclk_init();
+#endif	
 }
 
 void __init s5pc110_init_irq(void)

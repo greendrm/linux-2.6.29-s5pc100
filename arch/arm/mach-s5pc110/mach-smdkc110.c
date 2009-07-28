@@ -399,6 +399,14 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_S3C2410_WATCHDOG
 	&s3c_device_wdt,
 #endif
+
+#ifdef CONFIG_HAVE_PWM
+	&s3c_device_timer[0],
+	&s3c_device_timer[1],
+	&s3c_device_timer[2],
+	&s3c_device_timer[3],
+
+#endif
 	&s3c_device_usbgadget,
 };
 
