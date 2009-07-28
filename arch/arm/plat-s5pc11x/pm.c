@@ -454,10 +454,6 @@ static struct sleep_save sromc_save[] = {
 
 static struct sleep_save uart_save[] = {
 	SAVE_UART(S3C24XX_VA_UART0),
-	SAVE_UART(S3C24XX_VA_UART1),
-	SAVE_UART(S3C24XX_VA_UART2),
-	SAVE_UART(S3C24XX_VA_UART3),
-		
 };
 
 #define DBG(fmt...)
