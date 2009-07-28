@@ -550,4 +550,4 @@ static __init int s5pc11x_gpiolib_init(void)
 	return 0;
 }
 
-arch_initcall(s5pc11x_gpiolib_init);
+core_initcall(s5pc11x_gpiolib_init);
