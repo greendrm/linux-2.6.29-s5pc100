@@ -141,7 +141,9 @@ struct fimc_capinfo {
 	int			nr_bufs;
 	int			inqueue[FIMC_CAPBUFS];
 	int			outqueue[FIMC_PHYBUFS];
-	enum fimc_irq		irq;
+	//enum fimc_irq		irq;
+	int			irq;
+	int			lastirq;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
@@ -354,7 +356,6 @@ extern int fimc_init_out_queue(struct fimc_control *ctrl);
 extern void fimc_dump_context(struct fimc_control *ctrl);
 extern void fimc_print_signal(struct fimc_control *ctrl);
 
-
 /* overlay device */
 extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
 extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
@@ -363,7 +364,6 @@ extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
 
 /* Register access file */
-extern void fimc_reset_camera(void);
 extern void fimc_reset(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_source(struct fimc_control *ctrl);
 extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int level);

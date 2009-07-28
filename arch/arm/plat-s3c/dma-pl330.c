@@ -1324,7 +1324,7 @@ int __init s3c_dma_init(unsigned int channels, unsigned int irq,
 			dconp->irq = controller + irq;
 		}
 		else {
-			dma_base = ioremap(((S3C_PA_DMA + 0xF00000) + ((controller-1) * 0x200000)), stride);
+			dma_base = ioremap((S3C_PA_PDMA + ((controller-1) * 0x200000)), stride);
 			if (dma_base == NULL) {
 				printk(KERN_ERR "Peri-DMA failed to ioremap register block\n");
 				return -ENOMEM;

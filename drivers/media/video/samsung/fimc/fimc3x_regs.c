@@ -210,36 +210,6 @@ void s3c_fimc_reset(struct s3c_fimc_control *ctrl)
 	s3c_fimc_reset_cfg(ctrl);
 }
 
-void s3c_fimc_reset_camera(void)
-{
-	void __iomem *regs = ioremap(S3C64XX_PA_FIMC, SZ_4K);
-	u32 cfg;
-
-#if (CONFIG_VIDEO_FIMC_CAM_RESET == 1)
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#else
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#endif
-
-	iounmap(regs);
-}
-
 void s3c_fimc_set_polarity(struct s3c_fimc_control *ctrl)
 {
 	struct s3c_fimc_camera *cam = ctrl->in_cam;

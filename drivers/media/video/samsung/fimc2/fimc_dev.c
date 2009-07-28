@@ -144,19 +144,15 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 
 	fimc_hwset_clear_irq(ctrl);
 	fimc_hwget_overflow_state(ctrl);
+	wake_up_interruptible(&ctrl->wq);
 
-	if (cap->irq == FIMC_IRQ_NORMAL) {
-		fimc_hwset_enable_lastirq(ctrl);
-		fimc_hwset_disable_lastirq(ctrl);
-		cap->irq = FIMC_IRQ_LAST;
-	} else if (cap->irq == FIMC_IRQ_LAST) {
-		wake_up_interruptible(&ctrl->wq);
-	}
+	cap->irq = 1;
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) dev_id;
+
 	if (ctrl->cap) {
 		fimc_irq_cap(ctrl);
 	} else if (ctrl->out) {
@@ -343,12 +339,11 @@ static u32 fimc_poll(struct file *filp, poll_table *wait)
 		}
 
 		if (ret) {
-			if (cap->irq == FIMC_IRQ_NONE) {
-				cap->irq = FIMC_IRQ_NORMAL;
-				poll_wait(filp, &ctrl->wq, wait);
-			} else if (cap->irq == FIMC_IRQ_LAST) {
-				cap->irq = FIMC_IRQ_NONE;
+			if (cap->irq) {
 				mask = POLLIN | POLLRDNORM;
+				cap->irq = 0;
+			} else {
+				poll_wait(filp, &ctrl->wq, wait);
 			}
 		}
 	}
@@ -374,37 +369,37 @@ u32 fimc_mapping_rot_flip(u32 rot, u32 flip)
 
 	switch (rot) {
 	case 0:
-		if(flip & V4L2_CID_HFLIP)
+		if (flip & V4L2_CID_HFLIP)
 			ret |= FIMC_XFLIP;
 
-		if(flip & V4L2_CID_VFLIP)
+		if (flip & V4L2_CID_VFLIP)
 			ret |= FIMC_YFLIP;
 		break;
 
 	case 90:
 		ret = FIMC_ROT;
-		if(flip & V4L2_CID_HFLIP)
+		if (flip & V4L2_CID_HFLIP)
 			ret |= FIMC_XFLIP;
 
-		if(flip & V4L2_CID_VFLIP)
+		if (flip & V4L2_CID_VFLIP)
 			ret |= FIMC_YFLIP;
 		break;
 
 	case 180:
 		ret = (FIMC_XFLIP | FIMC_YFLIP);
-		if(flip & V4L2_CID_HFLIP)
+		if (flip & V4L2_CID_HFLIP)
 			ret &= ~FIMC_XFLIP;
 
-		if(flip & V4L2_CID_VFLIP)
+		if (flip & V4L2_CID_VFLIP)
 			ret &= ~FIMC_YFLIP;
 		break;
 
 	case 270:
 		ret = (FIMC_XFLIP | FIMC_YFLIP | FIMC_ROT);
-		if(flip & V4L2_CID_HFLIP)
+		if (flip & V4L2_CID_HFLIP)
 			ret &= ~FIMC_XFLIP;
 
-		if(flip & V4L2_CID_VFLIP)
+		if (flip & V4L2_CID_VFLIP)
 			ret &= ~FIMC_YFLIP;
 		break;
 	}
@@ -565,7 +560,7 @@ static int fimc_open(struct file *filp)
 	if (ret < 0)
 		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_HEIGHT\n");
 
-	ctrl->status		= FIMC_STREAMOFF;
+	ctrl->status = FIMC_STREAMOFF;
 
 #if 0
 	/* To do : have to send ctrl to the fimd driver. */

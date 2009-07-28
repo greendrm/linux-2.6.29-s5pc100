@@ -15,9 +15,6 @@
 #include <linux/videodev2.h>
 #include <asm/io.h>
 #include <mach/map.h>
-#include <plat/gpio-cfg.h>
-#include <plat/regs-gpio.h>
-#include <plat/gpio-bank-h3.h>
 #include <plat/regs-fimc.h>
 #include <plat/fimc2.h>
 
@@ -284,10 +281,10 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;
 		break;
 
-	case V4L2_PIX_FMT_YUYV:	/* fall through */
-	case V4L2_PIX_FMT_UYVY:	/* fall through */
-	case V4L2_PIX_FMT_VYUY:	/* fall through */
-	case V4L2_PIX_FMT_YVYU:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
 		cfg |= S3C_CITRGFMT_OUTFORMAT_YCBCR422_1PLANE;
 		break;
 
@@ -1068,53 +1065,6 @@ int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	writel(cfg, ctrl->regs + S3C_CIEXTEN);
 
 	return 0;
-}
-
-/* FIXME */
-void fimc_reset_camera(void)
-{
-	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
-	u32 cfg;
-
-#if (CONFIG_VIDEO_FIMC_CAM_RESET == 1)
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#else
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(200);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-	udelay(2000);
-#endif
-
-#if (CONFIG_VIDEO_FIMC_CAM_CH == 1)
-	cfg = readl(S5PC1XX_GPH3CON);
-	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
-	cfg |= S5PC1XX_GPH3_OUTPUT(6);
-	writel(cfg, S5PC1XX_GPH3CON);
-
-	cfg = readl(S5PC1XX_GPH3DAT);
-	cfg &= ~(0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
-	udelay(200);
-
-	cfg |= (0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
-	udelay(2000);
-#endif
-
-	iounmap(regs);
 }
 
 static void fimc_reset_cfg(struct fimc_control *ctrl)

@@ -109,15 +109,15 @@
 
 
 /* DMA request sources of Peri-DMAC 1 */
-#define S3C_PDMA1_UART0CH0	0
-#define S3C_PDMA1_UART0CH1	1
-#define S3C_PDMA1_UART1CH0	2
-#define S3C_PDMA1_UART1CH1	3
-#define S3C_PDMA1_UART2CH0	4
-#define S3C_PDMA1_UART2CH1	5
-#define S3C_PDMA1_UART3CH0	6
-#define S3C_PDMA1_UART3CH1	7
-#define S3C_PDMA1_IRDA		8	
+#define S3C_PDMA1_UART0_RX	0
+#define S3C_PDMA1_UART0_TX	1
+#define S3C_PDMA1_UART1_RX	2
+#define S3C_PDMA1_UART1_TX	3
+#define S3C_PDMA1_UART2_RX	4
+#define S3C_PDMA1_UART2_TX	5
+#define S3C_PDMA1_UART3_RX	6
+#define S3C_PDMA1_UART3_TX	7
+#define S3C_PDMA1_Reserved	8	
 #define S3C_PDMA1_I2S0_RX	9
 #define S3C_PDMA1_I2S0_TX	10
 #define S3C_PDMA1_I2S0S_TX	11
@@ -139,27 +139,27 @@
 #define S3C_PDMA1_MSM_REQ1	27
 #define S3C_PDMA1_MSM_REQ2	28
 #define S3C_PDMA1_MSM_REQ3	29
-#define S3C_PDMA1_CG		30
-#define S3C_PDMA1_Reserved	31
+#define S3C_PDMA1_PCM2_RX	30
+#define S3C_PDMA1_PCM2_TX	31
 
 
 /* DMA request sources of Peri-DMAC 0 */
-#define S3C_PDMA0_UART0CH0	0
-#define S3C_PDMA0_UART0CH1	1
-#define S3C_PDMA0_UART1CH0	2
-#define S3C_PDMA0_UART1CH1	3
-#define S3C_PDMA0_UART2CH0	4
-#define S3C_PDMA0_UART2CH1	5
-#define S3C_PDMA0_UART3CH0	6
-#define S3C_PDMA0_UART3CH1	7
-#define S3C_PDMA0_IRDA		8	
+#define S3C_PDMA0_UART0_RX	0
+#define S3C_PDMA0_UART0_TX	1
+#define S3C_PDMA0_UART1_RX	2
+#define S3C_PDMA0_UART1_TX	3
+#define S3C_PDMA0_UART2_RX	4
+#define S3C_PDMA0_UART2_TX	5
+#define S3C_PDMA0_UART3_RX	6
+#define S3C_PDMA0_UART3_TX	7
+#define S3C_PDMA0_Reserved_7	8	
 #define S3C_PDMA0_I2S0_RX	9
 #define S3C_PDMA0_I2S0_TX	10
 #define S3C_PDMA0_I2S0S_TX	11
 #define S3C_PDMA0_I2S1_RX	12
 #define S3C_PDMA0_I2S1_TX	13
-#define S3C_PDMA0_I2S2_RX	14
-#define S3C_PDMA0_I2S2_TX	15
+#define S3C_PDMA0_Reserved_6	14
+#define S3C_PDMA0_Reserved_5	15
 #define S3C_PDMA0_SPI0_RX	16
 #define S3C_PDMA0_SPI0_TX	17
 #define S3C_PDMA0_SPI1_RX	18
@@ -169,19 +169,17 @@
 #define S3C_PDMA0_AC_MICIN	22
 #define S3C_PDMA0_AC_PCMIN	23
 #define S3C_PDMA0_AC_PCMOUT	24
-#define S3C_PDMA0_EXTERNAL	25
+#define S3C_PDMA0_Reserved_4	25
 #define S3C_PDMA0_PWM		26
 #define S3C_PDMA0_SPDIF		27
-#define S3C_PDMA0_HSI_TX	28
-#define S3C_PDMA0_HSI_RX	29
+#define S3C_PDMA0_Reserved_3	28
+#define S3C_PDMA0_Reserved_2	29
 #define S3C_PDMA0_Reserved_1	30
 #define S3C_PDMA0_Reserved	31
 
 
 /* DMA request sources of M2M-DMAC */
-#define S3C_DMA_SEC_TX		0
-#define S3C_DMA_SEC_RX		1
-#define S3C_DMA_M2M		2
+#define S3C_DMA_M2M		0
 
 
 static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
@@ -241,16 +239,6 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels	= MAP1(S3C_PDMA0_AC_MICIN),
 		.hw_addr.from	= S3C_PDMA0_AC_MICIN,
 	},
-	[DMACH_I2S_V40_IN] = {                                                           
-		.name           = "i2s-v40-in",                                          
-		.channels       = MAP1(S3C_PDMA0_HSI_RX),                                 
-		.hw_addr.from   = S3C_PDMA0_HSI_RX,                                       
-	},                                                                               
-	[DMACH_I2S_V40_OUT] = {                                                          
-		.name           = "i2s-v40-out",                                         
-		.channels       = MAP1(S3C_PDMA0_HSI_TX),                                 
-		.hw_addr.to     = S3C_PDMA0_HSI_TX,                                       
-	},
 	[DMACH_I2S_V50_OUT] = {                
 		.name           = "i2s-v50-out",
 		.channels       = MAP1(S3C_PDMA1_I2S0_TX),
@@ -266,8 +254,43 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels	= MAP0(S3C_DMA_M2M),
 		.hw_addr.from	= 0,
 	},
-	[DMACH_3D_M2M] = {
-		.name		= "3D-M2M",
+	[DMACH_3D_M2M0] = {
+		.name		= "3D-M2M0",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M1] = {
+		.name		= "3D-M2M1",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M2] = {
+		.name		= "3D-M2M2",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M3] = {
+		.name		= "3D-M2M3",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M4] = {
+		.name		= "3D-M2M4",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M5] = {
+		.name		= "3D-M2M5",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M6] = {
+		.name		= "3D-M2M6",
+		.channels	= MAP0(S3C_DMA_M2M),
+		.hw_addr.from	= 0,
+	},
+	[DMACH_3D_M2M7] = {
+		.name		= "3D-M2M7",
 		.channels	= MAP0(S3C_DMA_M2M),
 		.hw_addr.from	= 0,
 	},
