@@ -141,9 +141,21 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
+	int done, i;
 
 	fimc_hwset_clear_irq(ctrl);
 	fimc_hwget_overflow_state(ctrl);
+
+	done = (fimc_hwget_frame_count(ctrl) + 2) % 4;
+
+	for (i = 0; i < FIMC_CAPBUFS; i++) {
+		if (cap->bufs[i].state == VIDEOBUF_DONE)
+			cap->bufs[i].state = VIDEOBUF_ACTIVE;
+	}
+
+	cap->bufs[cap->outqueue[done]].state = VIDEOBUF_DONE;
+
+	fimc_update_hwaddr(ctrl);
 	wake_up_interruptible(&ctrl->wq);
 
 	cap->irq = 1;
@@ -153,11 +165,10 @@ static irqreturn_t fimc_irq(int irq, void *dev_id)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) dev_id;
 
-	if (ctrl->cap) {
+	if (ctrl->cap)
 		fimc_irq_cap(ctrl);
-	} else if (ctrl->out) {
+	else if (ctrl->out)
 		fimc_irq_out(ctrl);
-	}
 	
 	return IRQ_HANDLED;
 }
@@ -267,7 +278,7 @@ static struct vm_operations_struct fimc_mmap_ops = {
 	.close	= fimc_mmap_close,
 };
 
-static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
+static inline int fimc_mmap_out(struct file* filp, struct vm_area_struct *vma)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	u32 start_phy_addr = 0;
@@ -275,55 +286,75 @@ static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
 	u32 pfn, idx = vma->vm_pgoff;
 	int pri_data = 0;
 
-	if (ctrl->out) {	/* OUTPUT device */
-		if (size > ctrl->out->buf[idx].length) {
-			dev_err(ctrl->dev, "Requested mmap size is too big\n");
-			return -EINVAL;
-		}
+	if (size > ctrl->out->buf[idx].length) {
+		dev_err(ctrl->dev, "Requested mmap size is too big\n");
+		return -EINVAL;
+	}
 
-		pri_data = (ctrl->id * 0x10) + idx;
-		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-		vma->vm_flags |= VM_RESERVED;
-		vma->vm_ops = &fimc_mmap_ops;
-		vma->vm_private_data = (void *)pri_data;
+	pri_data = (ctrl->id * 0x10) + idx;
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_flags |= VM_RESERVED;
+	vma->vm_ops = &fimc_mmap_ops;
+	vma->vm_private_data = (void *)pri_data;
 
-		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
-			dev_err(ctrl->dev, "writable mapping must be shared\n");
-			return -EINVAL;
-		}
+	if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+		dev_err(ctrl->dev, "writable mapping must be shared\n");
+		return -EINVAL;
+	}
 
-		start_phy_addr = ctrl->out->buf[idx].base;
-		pfn = __phys_to_pfn(start_phy_addr);
+	start_phy_addr = ctrl->out->buf[idx].base;
+	pfn = __phys_to_pfn(start_phy_addr);
 
-		if (remap_pfn_range(vma, vma->vm_start, pfn, size, \
-							vma->vm_page_prot)) {
-			dev_err(ctrl->dev, "mmap fail\n");
-			return -EINVAL;
-		}
+	if (remap_pfn_range(vma, vma->vm_start, pfn, size, \
+						vma->vm_page_prot)) {
+		dev_err(ctrl->dev, "mmap fail\n");
+		return -EINVAL;
+	}
 
-		vma->vm_ops->open(vma);
+	vma->vm_ops->open(vma);
 
-		ctrl->out->buf[idx].flags |= V4L2_BUF_FLAG_MAPPED;
-	} else {		/* CAPTURE device */
-		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-		vma->vm_flags |= VM_RESERVED;
+	ctrl->out->buf[idx].flags |= V4L2_BUF_FLAG_MAPPED;
 
-		/* page frame number of the address for a source frame to be stored at. */
-		pfn = __phys_to_pfn(ctrl->cap->bufs[vma->vm_pgoff].base);
+	return 0;
+}
 
-		if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
-			dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
-				__FUNCTION__);
-			return -EINVAL;
-		}
+static inline int fimc_mmap_cap(struct file* filp, struct vm_area_struct *vma)
+{
+	struct fimc_control *ctrl = filp->private_data;
+	u32 size = vma->vm_end - vma->vm_start;
+	u32 pfn, idx = vma->vm_pgoff;
 
-		if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
-			dev_err(ctrl->dev, "%s: mmap fail\n", __FUNCTION__);
-			return -EINVAL;
-		}
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_flags |= VM_RESERVED;
+
+	/* page frame number of the address for a source frame to be stored at. */
+	pfn = __phys_to_pfn(ctrl->cap->bufs[idx].base);
+
+	if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+		dev_err(ctrl->dev, "%s: writable mapping must be shared\n", \
+			__FUNCTION__);
+		return -EINVAL;
+	}
+
+	if (remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot)) {
+		dev_err(ctrl->dev, "%s: mmap fail\n", __FUNCTION__);
+		return -EINVAL;
 	}
 
 	return 0;
+}
+
+static int fimc_mmap(struct file* filp, struct vm_area_struct *vma)
+{
+	struct fimc_control *ctrl = filp->private_data;
+	int ret;
+
+	if (ctrl->cap)
+		ret = fimc_mmap_cap(filp, vma);
+	else
+		ret = fimc_mmap_out(filp, vma);
+
+	return ret;
 }
 
 static u32 fimc_poll(struct file *filp, poll_table *wait)
@@ -605,15 +636,6 @@ static int fimc_release(struct file *filp)
 
 		/* should be initialized at the next open */
 		ctrl->cam->initialized = 0;
-	} 
-
-	if (ctrl->out) {
-		if (ctrl->status != FIMC_STREAMOFF) {
-			ret = fimc_outdev_stop_streaming(ctrl);
-			if (ret < 0)
-				dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
-			ctrl->status = FIMC_STREAMOFF;
-		}
 	}
 
 	if (ctrl->cap) {
@@ -630,13 +652,21 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->out) {
+		if (ctrl->status != FIMC_STREAMOFF) {
+			ret = fimc_outdev_stop_streaming(ctrl);
+			if (ret < 0)
+				dev_err(ctrl->dev, "Fail: fimc_stop_streaming\n");
+			ctrl->status = FIMC_STREAMOFF;
+		}
+
 		kfree(ctrl->out);
 		ctrl->out = NULL;
 	}
 
 	mutex_unlock(&ctrl->lock);
 	
-	printk(KERN_INFO "successfully released\n");
+	dev_info(ctrl->dev, "%s: successfully released\n", __FUNCTION__);
+
 	return 0;
 }
 
