@@ -200,7 +200,9 @@ static int fimc_count_actual_buffers(struct fimc_control *ctrl)
 
 	count = 0;
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].state == VIDEOBUF_QUEUED)
+		if (cap->bufs[i].state == VIDEOBUF_ACTIVE || \
+			cap->bufs[i].state == VIDEOBUF_DONE || \
+			cap->bufs[i].state == VIDEOBUF_QUEUED)
 			count++;
 	}
 
@@ -216,7 +218,9 @@ static int fimc_update_inqueue(struct fimc_control *ctrl)
 
 	j = 0;
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].state == VIDEOBUF_QUEUED) {
+		if (cap->bufs[i].state == VIDEOBUF_ACTIVE || \
+			cap->bufs[i].state == VIDEOBUF_DONE || \
+			cap->bufs[i].state == VIDEOBUF_QUEUED) {
 			cap->inqueue[j] = i;
 			j++;
 		}
@@ -247,10 +251,20 @@ static int fimc_update_outqueue(struct fimc_control *ctrl)
 		cap->outqueue[0], cap->outqueue[1], \
 		cap->outqueue[2], cap->outqueue[3]);
 
+	dev_dbg(ctrl->dev, "states:   [%2d] [%2d] [%2d] [%2d] [%2d]\n", \
+		cap->bufs[0].state, cap->bufs[1].state, cap->bufs[2].state, \
+		cap->bufs[3].state, cap->bufs[4].state);
+
+	dev_dbg(ctrl->dev, "addr: %08x %08x %08x %08x\n", \
+		cap->bufs[cap->outqueue[0]].base, \
+		cap->bufs[cap->outqueue[1]].base, \
+		cap->bufs[cap->outqueue[2]].base, \
+		cap->bufs[cap->outqueue[3]].base);
+
 	return 0;
 }
 
-static int fimc_update_hwaddr(struct fimc_control *ctrl)
+int fimc_update_hwaddr(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
 	dma_addr_t base;
@@ -527,6 +541,8 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 	b->length = ctrl->cap->bufs[b->index].length;
 	b->m.offset = b->index * PAGE_SIZE;
 
+	ctrl->cap->bufs[b->index].state = VIDEOBUF_IDLE;
+
 	dev_dbg(ctrl->dev, "%s: querybuf %d bytes with offset: %d\n",\
 		__FUNCTION__, b->length, b->m.offset);
 
@@ -742,7 +758,11 @@ int fimc_streamon_capture(void *fh)
 						cap->fmt.height);
 	}
 
+	fimc_update_inqueue(ctrl);
+	fimc_update_outqueue(ctrl);
+	fimc_update_hwaddr(ctrl);
 	fimc_start_capture(ctrl);
+
 	ctrl->status = FIMC_STREAMON;
 	
 	return 0;
@@ -773,8 +793,8 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
-	if (cap->bufs[b->index].state == VIDEOBUF_QUEUED) {
-		dev_err(ctrl->dev, "%s: already in QUEUED state\n", \
+	if (cap->bufs[b->index].state != VIDEOBUF_IDLE) {
+		dev_err(ctrl->dev, "%s: state mismatch\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
@@ -785,23 +805,10 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_QUEUED;
 
-/* we need to start again? */
-#if 1
-	/* do not change the status although stop capture */
-	if (ctrl->status == FIMC_STREAMON)
-		fimc_stop_capture(ctrl);
-#endif
 	fimc_update_inqueue(ctrl);
 	fimc_update_outqueue(ctrl);
-	fimc_update_hwaddr(ctrl);
-
 	wake_up_interruptible(&ctrl->wq);
 
-#if 1
-	/* current ctrl->status means previous status before qbuf */
-	if (ctrl->status == FIMC_STREAMON)
-		fimc_start_capture(ctrl);
-#endif
 	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
@@ -823,28 +830,25 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	ppnum = (fimc_hwget_frame_count(ctrl) + 2) % 4;
 	b->index = cap->outqueue[ppnum];
 
-	dev_dbg(ctrl->dev, "%s: dqbuf index %d\n", __FUNCTION__, b->index);
+	if (cap->bufs[b->index].state != VIDEOBUF_DONE) {
+		dev_err(ctrl->dev, "%s: state mismatch\n", \
+			__FUNCTION__);
+		return -EINVAL;
+	}
 
-	if (b->index < 0) {
+	if (b->index == FIMC_CAPBUFS) {
 		dev_err(ctrl->dev, "%s: no available capture buffer\n", \
 			__FUNCTION__);
 		return -EINVAL;
 	}
 
-	cap->bufs[b->index].state = VIDEOBUF_ACTIVE;
+	dev_dbg(ctrl->dev, "%s: dqbuf index %d, state %d, addr: %08x\n", \
+		__FUNCTION__, b->index, cap->bufs[b->index].state, \
+		cap->bufs[b->index].base);
 
-/* we need to start again? */
-#if 1
-	fimc_stop_capture(ctrl);
-#endif
-	fimc_update_inqueue(ctrl);
+	cap->bufs[b->index].state = VIDEOBUF_IDLE;
 	fimc_update_outqueue(ctrl);
-	fimc_update_hwaddr(ctrl);
 
-/* we need to start again? */
-#if 1
-	fimc_start_capture(ctrl);
-#endif
 	mutex_unlock(&ctrl->v4l2_lock);
 	
 	return 0;
