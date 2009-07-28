@@ -1220,3 +1220,31 @@ v2.6.29.4-dev-1-0-17: Jae-Cheol Lee
 
 	Modified Files:
 		M	arch/arm/plat-s5pc11x/gpiolib.c
+
+v2.6.29.4-dev-1-0-18: Abhilash Kesavan
+	- Added Support for CF-ATA on SMDKC100 (Tested with Microdrive, SSD
+	and Extreme III cards for ramdisk) 
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/include/mach/map.h
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/mach-s5pc110/include/mach/map.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/devs.c
+		M	arch/arm/plat-s5pc1xx/clock.c
+		M	arch/arm/plat-s5pc1xx/devs.c
+		M	drivers/ide/Kconfig
+		M	drivers/ide/Makefile
+		M	drivers/ide/ide-io.c
+		M	drivers/ide/ide-iops.c
+		M	drivers/ide/ide-proc.c
+		M	include/linux/ide.h
+
+	Added Files:
+		A	arch/arm/configs/smdkc100ata_defconfig
+		A	arch/arm/plat-s3c/include/plat/regs-ide.h
+		A	drivers/ide/s3c-ide.c
+		A	drivers/ide/s3c-ide.h
+

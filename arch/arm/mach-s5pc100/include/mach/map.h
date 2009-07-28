@@ -27,6 +27,7 @@
 #define S5PC1XX_PA_VIC1		(0xE4100000)
 #define S5PC1XX_PA_VIC2		(0xE4200000)
 #define S5PC1XX_PA_SROMC	(0xE7000000)
+#define S5PC1XX_PA_CFCON	(0xE7800000)
 #define S5PC1XX_PA_LCD	   	(0xEE000000)
 #define S5PC1XX_PA_SYSTIMER   	(0xEA100000)
 #define S5PC1XX_PA_ADC		(0xF3000000)
@@ -112,6 +113,9 @@
 /* NAND flash controller */
 #define S5PC1XX_VA_NAND		S3C_VA_NAND
 #define S5PC1XX_SZ_NAND         SZ_1M
+
+/* CF controller */
+#define S5PC1XX_SZ_CFCON	SZ_1M
 
 /* place VICs close together */
 #define S3C_VA_VIC0		(S3C_VA_IRQ + 0x0)

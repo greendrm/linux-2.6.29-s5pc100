@@ -227,7 +227,7 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc1xx_clk_d00_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D00_TZIC,
 	}, {
-		.name		= "cf-ata",
+		.name		= "cfcon",
 		.id		= -1,
 		.parent		= &clk_hd0,
 		.enable		= s5pc1xx_clk_d00_ctrl,

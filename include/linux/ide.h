@@ -160,7 +160,7 @@ enum {		ide_unknown,	ide_generic,	ide_pci,
 		ide_cmd640,	ide_dtc2278,	ide_ali14xx,
 		ide_qd65xx,	ide_umc8672,	ide_ht6560b,
 		ide_4drives,	ide_pmac,	ide_acorn,
-		ide_au1xxx,	ide_palm3710
+		ide_au1xxx,	ide_palm3710,	ide_s3c
 };
 
 typedef u8 hwif_chipset_t;
@@ -778,6 +778,10 @@ typedef struct hwif_s {
 	ide_ack_intr_t *ack_intr;
 
 	void (*rw_disk)(ide_drive_t *, struct request *);
+
+#ifdef CONFIG_IDE_HOOK_IRQ
+	int (*ide_irq_hook)(void *);
+#endif
 
 	const struct ide_tp_ops		*tp_ops;
 	const struct ide_port_ops	*port_ops;

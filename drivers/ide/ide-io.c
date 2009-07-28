@@ -55,6 +55,8 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 
+extern int s3c_ide_irq_hook (void * data);
+
 static int __ide_end_request(ide_drive_t *drive, struct request *rq,
 			     int uptodate, unsigned int nr_bytes, int dequeue)
 {
@@ -1071,6 +1073,13 @@ irqreturn_t ide_intr (int irq, void *dev_id)
 
 	if (!ide_ack_intr(hwif))
 		goto out;
+
+#ifdef CONFIG_IDE_HOOK_IRQ
+	if (s3c_ide_irq_hook(hwif)) {
+		spin_unlock_irqrestore(&hwif->lock, flags);
+		return IRQ_HANDLED;
+	}
+#endif
 
 	handler = hwif->handler;
 

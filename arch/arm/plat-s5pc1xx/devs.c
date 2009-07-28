@@ -498,3 +498,25 @@ struct platform_device s5p_device_tvout = {
 	.resource       = s5p_tvout_resources,
 };
 EXPORT_SYMBOL(s5p_device_tvout);
+
+/* CFCON */
+static struct resource s3c_cfcon_resource[] = {
+        [0] = {
+                .start = S5PC1XX_PA_CFCON,
+                .end   = S5PC1XX_PA_CFCON + SZ_1M - 1,
+                .flags = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start = IRQ_CFC,
+                .end   = IRQ_CFC,
+                .flags = IORESOURCE_IRQ,
+        },
+};
+
+struct platform_device s3c_device_cfcon = {
+        .name             = "s3c-ide",
+        .id               = 0,
+        .num_resources    = ARRAY_SIZE(s3c_cfcon_resource),
+        .resource         = s3c_cfcon_resource,
+};
+EXPORT_SYMBOL(s3c_device_cfcon);

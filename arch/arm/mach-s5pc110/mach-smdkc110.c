@@ -408,6 +408,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 
 #endif
 	&s3c_device_usbgadget,
+	&s3c_device_cfcon,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {

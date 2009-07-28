@@ -242,7 +242,13 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h133,
 		.enable		= s5pc11x_clk_ip2_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC3,
-	}, {
+        }, {
+                .name           = "cfcon",
+                .id             = 0,
+                .parent         = &clk_h133,
+                .enable         = s5pc11x_clk_ip1_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP1_CFCON,
+        }, {
 		.name		= "timers",
 		.id		= -1,
 		.parent		= &clk_p66,
