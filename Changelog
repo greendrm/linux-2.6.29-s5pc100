@@ -1197,3 +1197,19 @@ v2.6.29.4-dev-1-0-14: Jongpill Lee
 		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
 		M       arch/arm/plat-s5pc11x/pm.c
 		M       arch/arm/plat-s5pc11x/sleep.S
+
+v2.6.29.4-dev-1-0-15: Kukjin Kim
+	- Modified DMA for S5PC110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/include/mach/map.h
+		M	arch/arm/mach-s5pc110/dma.c
+		M	arch/arm/mach-s5pc110/include/mach/map.h
+		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-dev-1-0-16: Jongpill Lee
+	- Support APM for S5PC110
+		
+	Modified Files:
+                M       arch/arm/plat-s5pc11x/pm.c
+                M       arch/arm/plat-s5pc11x/sleep.S
