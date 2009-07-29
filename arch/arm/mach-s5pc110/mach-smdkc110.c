@@ -521,6 +521,11 @@ static void __init smdkc110_machine_init(void)
 #if defined(CONFIG_PM)
 	s5pc11x_pm_init();
 #endif
+
+#if defined(CONFIG_HAVE_PWM)
+	smdk_backlight_register();
+#endif
+
 }
 
 static void __init smdkc110_fixup(struct machine_desc *desc,
