@@ -1308,4 +1308,14 @@ v2.6.29.4-dev-1-0-21: Sang Pil Moon
 		A       drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
 		A       drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
 		A       drivers/media/video/samsung/tv20/s5pc110/vp_coeff_s5pc110.h
-		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c		
+		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c	
+
+v2.6.29.4-dev-1-0-22: Jae-Hun Jung
+	- RTC support on S5PC110.
+
+	Modified Files
+		M	drivers/rtc/Kconfig
+		M	arch/arm/plat-s3c/include/plat/regs-rtc.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	drivers/rtc/rtc-s3c.c
+
