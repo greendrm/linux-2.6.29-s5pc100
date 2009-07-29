@@ -176,7 +176,7 @@ static struct s3cfb_lcd tl2796 = {
 
 #if 1
 	/* smdkc110 */
-	.freq = 50,
+	.freq = 60,
 	.timing = {
 		.h_fp = 9,
 		.h_bp = 9,
