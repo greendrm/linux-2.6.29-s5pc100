@@ -125,7 +125,7 @@ static int s5k4ba_i2c_write(struct v4l2_subdev *sd, unsigned char i2c_data[],
 	unsigned char buf[length], i;
 	struct i2c_msg msg = {client->addr, 0, length, buf};
 
-	for (i = 0; i<length; i++) {
+	for (i = 0; i < length; i++) {
 		buf[i] = i2c_data[i];
 	}
 	return i2c_transfer(client->adapter, &msg, 1) == 1 ? 0 : -EIO;
@@ -138,8 +138,6 @@ static int s5k4ba_write_regs(struct v4l2_subdev *sd, unsigned char regs[],
 	int i, err;
 
 	for (i = 0; i < size; i++) {
-		if (i == 4)
-			mdelay(5);
 		err = s5k4ba_i2c_write(sd, &regs[i], sizeof(regs[i]));
 		if (err < 0)
 			v4l_info(client, "%s: register set failed\n", \
@@ -357,14 +355,22 @@ static int s5k4ba_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 
 static int s5k4ba_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int err = 0;
+
+	dev_dbg(&client->dev, "%s\n", __FUNCTION__);
 
 	return err;
 }
 
 static int s5k4ba_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int err = 0;
+
+	dev_dbg(&client->dev, "%s: numerator %d, denominator: %d\n", \
+		__FUNCTION__, param->parm.capture.timeperframe.numerator, \
+		param->parm.capture.timeperframe.denominator);
 
 	return err;
 }
@@ -381,34 +387,37 @@ static int s5k4ba_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		ctrl->value = userset.exposure_bias;
 		err = 0;
 		break;
+
 	case V4L2_CID_AUTO_WHITE_BALANCE:
 		ctrl->value = userset.auto_wb;
 		err = 0;
 		break;
+
 	case V4L2_CID_WHITE_BALANCE_PRESET:
 		ctrl->value = userset.manual_wb;
 		err = 0;
 		break;
-	case V4L2_CID_WHITE_BALANCE_TEMPERATURE:
-		ctrl->value = userset.wb_temp;
-		err = 0;
-		break;
+
 	case V4L2_CID_COLORFX:
 		ctrl->value = userset.effect;
 		err = 0;
 		break;
+
 	case V4L2_CID_CONTRAST:
 		ctrl->value = userset.contrast;
 		err = 0;
 		break;
+
 	case V4L2_CID_SATURATION:
 		ctrl->value = userset.saturation;
 		err = 0;
 		break;
+
 	case V4L2_CID_SHARPNESS:
 		ctrl->value = userset.saturation;
 		err = 0;
 		break;
+
 	default:
 		dev_err(&client->dev, "%s: no such ctrl\n", __FUNCTION__);
 		break;
@@ -421,48 +430,62 @@ static int s5k4ba_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 #ifdef S5K4BA_COMPLETE
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct s5k4ba_state *state = to_state(sd);
-	struct s5k4ba_userset userset = state->userset;
 	int err = -EINVAL;
 
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
-		dev_dbg(&client->dev, "%s: V4L2_CID_EXPOSURE\n", ___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_ev_bias[ctrl->value]);
+		dev_dbg(&client->dev, "%s: V4L2_CID_EXPOSURE\n", __FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_ev_bias[ctrl->value], \
+			sizeof(s5k4ba_regs_ev_bias[ctrl->value]));
 		break;
+
 	case V4L2_CID_AUTO_WHITE_BALANCE:
 		dev_dbg(&client->dev, "%s: V4L2_CID_AUTO_WHITE_BALANCE\n", \
-			___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_awb_enable[ctrl->value]);
+			__FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_awb_enable[ctrl->value], \
+			sizeof(s5k4ba_regs_awb_enable[ctrl->value]));
 		break;
+
 	case V4L2_CID_WHITE_BALANCE_PRESET:
 		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_PRESET\n", \
-			___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_wb_preset[ctrl->value]);
+			__FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_wb_preset[ctrl->value], \
+			sizeof(s5k4ba_regs_wb_preset[ctrl->value]));
 		break;
-	case V4L2_CID_WHITE_BALANCE_TEMPERATURE:
-		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_TEMPERATURE\n", \
-			___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_wb_temperature[ctrl->value]);
-		break;
+
 	case V4L2_CID_COLORFX:
-		dev_dbg(&client->dev, "%s: V4L2_CID_COLORFX\n", ___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_color_effect[ctrl->value]);
+		dev_dbg(&client->dev, "%s: V4L2_CID_COLORFX\n", __FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_color_effect[ctrl->value], \
+			sizeof(s5k4ba_regs_color_effect[ctrl->value]));
 		break;
+
 	case V4L2_CID_CONTRAST:
-		dev_dbg(&client->dev, "%s: V4L2_CID_CONTRAST\n", ___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_contrast_bias[ctrl->value]);
+		dev_dbg(&client->dev, "%s: V4L2_CID_CONTRAST\n", __FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_contrast_bias[ctrl->value], \
+			sizeof(s5k4ba_regs_contrast_bias[ctrl->value]));
 		break;
+
 	case V4L2_CID_SATURATION:
-		dev_dbg(&client->dev, "%s: V4L2_CID_SATURATION\n", ___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_saturation_bias[ctrl->value]);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SATURATION\n", __FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_saturation_bias[ctrl->value], \
+			sizeof(s5k4ba_regs_saturation_bias[ctrl->value]));
 		break;
+
 	case V4L2_CID_SHARPNESS:
-		dev_dbg(&client->dev, "%s: V4L2_CID_SHARPNESS\n", ___FUNCTION__);
-		err = s5k4ba_write_regs(sd, s5k4ba_regs_sharpness_bias[ctrl->value]);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SHARPNESS\n", __FUNCTION__);
+		err = s5k4ba_write_regs(sd, \
+			(unsigned char *) s5k4ba_regs_sharpness_bias[ctrl->value], \
+			sizeof(s5k4ba_regs_sharpness_bias[ctrl->value]));
 		break;
+
 	default:
-		dev_err(&client->dev, "%s: no such control\n", ___FUNCTION__);
+		dev_err(&client->dev, "%s: no such control\n", __FUNCTION__);
 		break;
 	}
 
@@ -472,7 +495,7 @@ static int s5k4ba_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		return 0;
 
 out:
-	dev_dbg(&client->dev, "%s: vidioc_s_ctrl failed\n", ___FUNCTION__);
+	dev_dbg(&client->dev, "%s: vidioc_s_ctrl failed\n", __FUNCTION__);
 	return err;
 #else
 	return 0;
@@ -482,12 +505,18 @@ out:
 static int s5k4ba_init(struct v4l2_subdev *sd, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int err = -EINVAL;
+	int err = -EINVAL, i;
 
 	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
 
-	err = s5k4ba_write_regs(sd, (unsigned char *)s5k4ba_init_reg, \
-				S5K4BA_INIT_REGS);
+	for (i = 0; i < S5K4BA_INIT_REGS; i++) {
+		err = s5k4ba_i2c_write(sd, s5k4ba_init_reg[i], \
+					sizeof(s5k4ba_init_reg[i]));
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", \
+			__FUNCTION__);
+	}
+
 	if (err < 0) {
 		v4l_err(client, "%s: camera initialization failed\n", \
 			__FUNCTION__);

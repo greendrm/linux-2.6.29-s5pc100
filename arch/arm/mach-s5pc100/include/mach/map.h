@@ -27,6 +27,7 @@
 #define S5PC1XX_PA_VIC1		(0xE4100000)
 #define S5PC1XX_PA_VIC2		(0xE4200000)
 #define S5PC1XX_PA_SROMC	(0xE7000000)
+#define S5PC1XX_PA_CFCON	(0xE7800000)
 #define S5PC1XX_PA_LCD	   	(0xEE000000)
 #define S5PC1XX_PA_SYSTIMER   	(0xEA100000)
 #define S5PC1XX_PA_ADC		(0xF3000000)
@@ -40,6 +41,7 @@
 #define S5PC1XX_PA_FIMC1	(0xEE300000)
 #define S5PC1XX_PA_FIMC2	(0xEE400000)
 #define S5PC1XX_PA_DMA   	(0xE8100000)
+#define S5PC1XX_PA_PDMA   	(0xE9000000)
 #define S5PC1XX_PA_HSMMC(x)     (0xED800000 + ((x) * 0x100000))
 #define S5PC1XX_PA_SPI0         (0xEC300000)
 #define S5PC1XX_PA_SPI1         (0xEC400000)
@@ -112,6 +114,9 @@
 #define S5PC1XX_VA_NAND		S3C_VA_NAND
 #define S5PC1XX_SZ_NAND         SZ_1M
 
+/* CF controller */
+#define S5PC1XX_SZ_CFCON	SZ_1M
+
 /* place VICs close together */
 #define S3C_VA_VIC0		(S3C_VA_IRQ + 0x0)
 #define S3C_VA_VIC1		(S3C_VA_IRQ + 0x10000)
@@ -157,6 +162,7 @@
 #define S3C_PA_IIS		S5PC1XX_PA_IIS
 #define S3C_PA_ADC		S5PC1XX_PA_ADC
 #define S3C_PA_DMA		S5PC1XX_PA_DMA
+#define S3C_PA_PDMA		S5PC1XX_PA_PDMA
 #define S3C_PA_RTC              S5PC1XX_PA_RTC
 #define S3C_PA_KEYPAD           S5PC1XX_PA_KEYPAD
 #define S3C_SZ_KEYPAD           S5PC1XX_SZ_KEYPAD

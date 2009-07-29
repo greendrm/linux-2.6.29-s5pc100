@@ -24,18 +24,31 @@ config MACH_SMDKC110
 	select CPU_S5PC110
 	select S3C_DMA_PL330
 	select S3C_DEV_I2C1
-        select S3C_DEV_HSMMC
-        select S3C_DEV_HSMMC1
-        select S3C_DEV_HSMMC2
- #       select S3C_DEV_HSMMC3       
-        select S5PC11X_SETUP_SDHCI
+	select S3C_DEV_HSMMC
+	select S3C_DEV_HSMMC1
+	select S3C_DEV_HSMMC2
+	select S3C_DEV_HSMMC3       
+	select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE
 	help
 	  Machine support for the Samsung SMDKC110
 
+choice
+        prompt "Setup CPU Type for S5PC110"
+        depends on PLAT_S5PC11X
+	default S5PC110_H_TYPE
+
 config S5PC110_H_TYPE
-        bool "Support S5PC110 H-Type"
+        bool "Select H-Type"
+        depends on PLAT_S5PC11X
         help
-          Support S5PC110 H-Type
+					Select H-Type of S5PC110
+
+config S5PC110_AC_TYPE
+        bool "select AC-Type"
+        depends on PLAT_S5PC11X
+        help
+					Select AC-Type of S5PC110
+endchoice
 

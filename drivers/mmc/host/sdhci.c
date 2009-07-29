@@ -1461,7 +1461,7 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
 		result = IRQ_NONE;
 		goto out;
 	}
-
+	
 	DBG("*** %s got interrupt: 0x%08x\n",
 		mmc_hostname(host->mmc), intmask);
 

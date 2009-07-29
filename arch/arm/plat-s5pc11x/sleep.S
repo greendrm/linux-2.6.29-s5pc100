@@ -34,14 +34,12 @@
 #include <mach/regs-mem.h>
 #include <plat/regs-serial.h>
 
-#define S5P_INFORM0 0xE0108400
-
 /* CONFIG_DEBUG_RESUME is dangerous if your bootloader does not
  * reset the UART configuration, only enable if you really need this!
 */
 	.text
 
-	/* s5pc100_cpu_save
+	/* s5pc110_cpu_save
 	 *
 	 * save enough of the CPU state to allow us to re-start
 	 * pm.c code. as we store items like the sp/lr, we will
@@ -59,22 +57,8 @@
 	 *	     1 => resumed from sleep
 	*/
 
-ENTRY(s5pc100_cpu_save)
-#if 0
-	stmfd	sp!, { r4 - r12, lr }
+ENTRY(s5pc110_cpu_save)
 
-	@@ store co-processor registers
-
-	mrc	p15, 0, r4, c13, c0, 0	@ Read FCSE PID
-	mrc	p15, 0, r5, c3, c0, 0	@ Read Domain ID
-	mrc	p15, 0, r6, c2, c0, 0	@ Read translation table base address
-	mrc	p15, 0, r7, c1, c0, 0	@ Read control register
-
-	stmia	r0, { r4 - r13 }
-
-	mov	r0, #0
-	ldmfd	sp, { r4 - r12, pc }
-#else
 	stmfd	sp!, { r3 - r12, lr }
 
 	mrc	p15, 0, r4, c13, c0, 0	@ FCSE/PID
@@ -92,7 +76,7 @@ ENTRY(s5pc100_cpu_save)
 
 	mov	r0, #0
 	ldmfd	sp, { r3 - r12, pc }
-#endif
+
 	@@ return to the caller, after having the MMU
 	@@ turned on, this restores the last bits from the
 	@@ stack
@@ -104,15 +88,13 @@ resume_with_mmu:
 	bic	r8, r8, #0xF0000000
 	orr	r8, r8, r9
 	str	r12, [r8]
-#if 0
-	ldmfd	sp!, { r4 - r12, pc }
-#else
+
 	ldmfd	sp!, { r3 - r12, pc }
-#endif
+
 	.ltorg
 
 	@@ the next bits sit in the .data segment, even though they
-	@@ happen to be code... the s5pc100_sleep_save_phys needs to be
+	@@ happen to be code... the s5pc110_sleep_save_phys needs to be
 	@@ accessed by the resume code before it can restore the MMU.
 	@@ This means that the variable has to be close enough for the
 	@@ code to read it... since the .text segment needs to be RO,
@@ -120,19 +102,19 @@ resume_with_mmu:
 
 	.data
 
-	.global	s5pc100_sleep_save_phys
-s5pc100_sleep_save_phys:
+	.global	s5pc110_sleep_save_phys
+s5pc110_sleep_save_phys:
 	.word	0
 
 
 	/* sleep magic, to allow the bootloader to check for an valid
 	 * image to resume to. Must be the first word before the
-	 * s5pc100_cpu_resume entry.
+	 * s5pc110_cpu_resume entry.
 	*/
 
 	.word	0x2bedf00d
 
-	/* s5pc100_cpu_resume
+	/* s5pc110_cpu_resume
 	 *
 	 * resume code entry for bootloader to call
 	 *
@@ -141,7 +123,7 @@ s5pc100_sleep_save_phys:
 	 * must not write to the code segment (code is read-only)
 	*/
 
-ENTRY(s5pc100_cpu_resume)
+ENTRY(s5pc110_cpu_resume)
 	mov	r0, #PSR_I_BIT | PSR_F_BIT | SVC_MODE
 	msr	cpsr_c, r0
 
@@ -152,41 +134,7 @@ ENTRY(s5pc100_cpu_resume)
 	mcr	p15, 0, r1, c8, c7, 0		@@ invalidate TLBs
 	mcr	p15, 0, r1, c7, c5, 0		@@ invalidate I Cache
 
-	ldr	r0, s5pc100_sleep_save_phys	@ address of restore block
-#if 0
-
-	ldmia	r0, { r4 - r13 }
-	mcr	p15, 0, r4, c13, c0, 0		@ PID
-	mcr	p15, 0, r5, c3, c0, 0		@ Domain ID
-	mcr	p15, 0, r6, c2, c0, 0		@ translation table base
-
-	/* calculate first section address into r8 */
-	mov	r8, r6
-	ldr	r10, =0x3fff
-	bic	r8, r8, r10
-	ldr	r11, =S5P_INFORM0
-	ldr	r9, [r11, #0]
-	mov	r9, r9 ,LSR #18
-	bic	r9, r9, #0x3
-	orr	r8, r8, r9
-
-	/* calculate mmu list value into r9 */
-	mov 	r9, r9, LSL #18
-	ldr	r10, =0x40e
-	orr	r9, r9, r10
-
-	/* back up originally data */
-
-	ldr	r12, [r8]
-
-	/* Added list about mmu */
-	str	r9, [r8]
-
-	ldr	r2, =resume_with_mmu
-	mcr	p15, 0, r7, c1, c0, 0		@ turn on MMU, etc
-	nop					@ second-to-last before mmu
-	mov	pc, r2				@ go back to virtual address
-#else
+	ldr	r0, s5pc110_sleep_save_phys	@ address of restore block
 	ldmia	r0, { r3 - r13 }
 
 	mcr	p15, 0, r4, c13, c0, 0	@ FCSE/PID
@@ -212,7 +160,7 @@ ENTRY(s5pc100_cpu_resume)
 	mov	r4, r6
 	ldr	r5, =0x3fff
 	bic	r4, r4, r5
-	ldr	r11, =S5P_INFORM0
+	ldr	r11, =0xe010f000
 	ldr	r10, [r11, #0]
 	mov	r10, r10 ,LSR #18
 	bic	r10, r10, #0x3
@@ -240,5 +188,5 @@ ENTRY(s5pc100_cpu_resume)
         nop					@ second-to-last before mmu
 
 	mov	pc, r2				@ go back to virtual address
-#endif
+
 	.ltorg

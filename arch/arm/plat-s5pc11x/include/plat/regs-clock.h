@@ -555,6 +555,7 @@
 
 #define S5P_OTHERS 		S5P_CLKREG(0xE000)
 #define S5P_OM_STAT		S5P_CLKREG(0xE100)
+#define S5P_USB_PHY_CONTROL	S5P_CLKREG(0xE80C)
 
 #define S5P_INFORM0 		S5P_CLKREG(0xF000)
 #define S5P_INFORM1 		S5P_CLKREG(0xF004)
@@ -568,22 +569,24 @@
 #define S5P_RST_STAT		S5P_CLKREG(0xA000)
 #define S5P_OSC_CON		S5P_CLKREG(0x8000)
 
-#define S5P_CFG_WFI_CLEAN	~(3<<8)
-#define S5P_CFG_WFI_IDLE	(1<<8)
-#define S5P_CFG_WFI_STOP	(2<<8)
-#define S5P_CFG_WFI_SLEEP	(3<<8)
+#define S5P_CFG_WFI_CLEAN		~(3<<8)
+#define S5P_CFG_WFI_IDLE		(1<<8)
+#define S5P_CFG_WFI_STOP		(2<<8)
+#define S5P_CFG_WFI_SLEEP		(3<<8)
 
-#define S5P_OTHER_SYS_INT	24
-#define S5P_OTHER_STA_TYPE	23
-#define STA_TYPE_EXPON		0
-#define STA_TYPE_SFR		1
+#define S5P_OTHER_SYS_INT		24
+#define S5P_OTHER_STA_TYPE		23
+#define S5P_OTHER_SYSC_INTOFF		(1 << 0)
+#define STA_TYPE_EXPON			0
+#define STA_TYPE_SFR			1
 
-#define S5P_PWR_STA_EXP_SCALE	0
-#define S5P_PWR_STA_CNT		4
+#define S5P_PWR_STA_EXP_SCALE		0
+#define S5P_PWR_STA_CNT			4
 
-#define S5P_PWR_STABLE_COUNT	85500
+#define S5P_PWR_STABLE_COUNT		85500
 
-#define S5P_SLEEP_CFG_OSC_EN	0
+#define S5P_SLEEP_CFG_OSC_EN		(1 << 0)
+#define S5P_SLEEP_CFG_USBOSC_EN		(1 << 1)
 
 /* OTHERS Resgister */
 #define S5P_OTHERS_USB_SIG_MASK 	(1 << 16)

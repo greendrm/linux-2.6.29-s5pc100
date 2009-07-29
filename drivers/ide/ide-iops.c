@@ -31,6 +31,13 @@
  *	Conventional PIO operations for ATA devices
  */
 
+extern void s3c_ide_INSW (ulong port, void *addr, u32 count);
+extern void s3c_ide_OUTSW(ulong port, void *addr, u32 count);
+extern u8 s3c_ide_INB (ulong reg);
+extern void s3c_ide_OUTB (u8 addr, ulong reg);
+extern void s3c_ide_OUTW (u16 addr, ulong reg);
+extern u16 s3c_ide_INW (ulong reg);
+
 static u8 ide_inb (unsigned long port)
 {
 	return (u8) inb(port);
@@ -41,18 +48,38 @@ static void ide_outb (u8 val, unsigned long port)
 	outb(val, port);
 }
 
+#if defined(CONFIG_BLK_DEV_IDE_S3C)
+static void tf_writew(u16 data, unsigned long data_addr)
+{
+       s3c_ide_OUTW (data, data_addr);
+}
+
+static u16 tf_readw( unsigned long data_addr)
+{
+       return (u16) s3c_ide_INW (data_addr);
+}
+#endif
+
 /*
  *	MMIO operations, typically used for SATA controllers
  */
 
 static u8 ide_mm_inb (unsigned long port)
 {
+#if defined(CONFIG_BLK_DEV_IDE_S3C)
+	return (u8) s3c_ide_INB(port);
+#else
 	return (u8) readb((void __iomem *) port);
+#endif
 }
 
 static void ide_mm_outb (u8 value, unsigned long port)
 {
+#if defined(CONFIG_BLK_DEV_IDE_S3C)
+        s3c_ide_OUTB (value, port);
+#else
 	writeb(value, (void __iomem *) port);
+#endif
 }
 
 void SELECT_DRIVE (ide_drive_t *drive)
@@ -80,27 +107,39 @@ void SELECT_MASK(ide_drive_t *drive, int mask)
 
 void ide_exec_command(ide_hwif_t *hwif, u8 cmd)
 {
-	if (hwif->host_flags & IDE_HFLAG_MMIO)
-		writeb(cmd, (void __iomem *)hwif->io_ports.command_addr);
-	else
+	if (hwif->host_flags & IDE_HFLAG_MMIO) {
+		#if defined(CONFIG_BLK_DEV_IDE_S3C)
+			ide_mm_outb(cmd, hwif->io_ports.command_addr);
+		#else
+			writeb(cmd, (void __iomem *)hwif->io_ports.command_addr);
+		#endif
+	} else
 		outb(cmd, hwif->io_ports.command_addr);
 }
 EXPORT_SYMBOL_GPL(ide_exec_command);
 
 u8 ide_read_status(ide_hwif_t *hwif)
 {
-	if (hwif->host_flags & IDE_HFLAG_MMIO)
-		return readb((void __iomem *)hwif->io_ports.status_addr);
-	else
+	if (hwif->host_flags & IDE_HFLAG_MMIO) {
+		#if defined(CONFIG_BLK_DEV_IDE_S3C)
+			return ide_mm_inb(hwif->io_ports.status_addr);
+		#else
+			return readb((void __iomem *)hwif->io_ports.status_addr);
+		#endif
+	} else
 		return inb(hwif->io_ports.status_addr);
 }
 EXPORT_SYMBOL_GPL(ide_read_status);
 
 u8 ide_read_altstatus(ide_hwif_t *hwif)
 {
-	if (hwif->host_flags & IDE_HFLAG_MMIO)
-		return readb((void __iomem *)hwif->io_ports.ctl_addr);
-	else
+	if (hwif->host_flags & IDE_HFLAG_MMIO) {
+		#if defined(CONFIG_BLK_DEV_IDE_S3C)
+			return readb((void __iomem *)hwif->io_ports.ctl_addr);
+		#else
+			return ide_mm_inb((void __iomem *)hwif->io_ports.ctl_addr);
+		#endif
+	} else
 		return inb(hwif->io_ports.ctl_addr);
 }
 EXPORT_SYMBOL_GPL(ide_read_altstatus);
@@ -116,9 +155,13 @@ void ide_set_irq(ide_hwif_t *hwif, int on)
 
 	ctl |= on ? 0 : 2;
 
-	if (hwif->host_flags & IDE_HFLAG_MMIO)
-		writeb(ctl, (void __iomem *)hwif->io_ports.ctl_addr);
-	else
+	if (hwif->host_flags & IDE_HFLAG_MMIO) {
+		#if defined(CONFIG_BLK_DEV_IDE_S3C)
+			ide_mm_outb(ctl, hwif->io_ports.ctl_addr);
+		#else
+			writeb(ctl, (void __iomem *)hwif->io_ports.ctl_addr);
+		#endif
+	} else
 		outb(ctl, hwif->io_ports.ctl_addr);
 }
 EXPORT_SYMBOL_GPL(ide_set_irq);
@@ -143,9 +186,13 @@ void ide_tf_load(ide_drive_t *drive, ide_task_t *task)
 	if (task->tf_flags & IDE_TFLAG_OUT_DATA) {
 		u16 data = (tf->hob_data << 8) | tf->data;
 
-		if (mmio)
-			writew(data, (void __iomem *)io_ports->data_addr);
-		else
+		if (mmio) {
+			#if defined(CONFIG_BLK_DEV_IDE_S3C)
+				tf_writew(data, io_ports->data_addr);
+			#else
+				writew(data, (void __iomem *)io_ports->data_addr);
+			#endif
+		} else
 			outw(data, io_ports->data_addr);
 	}
 
@@ -197,9 +244,13 @@ void ide_tf_read(ide_drive_t *drive, ide_task_t *task)
 	if (task->tf_flags & IDE_TFLAG_IN_DATA) {
 		u16 data;
 
-		if (mmio)
-			data = readw((void __iomem *)io_ports->data_addr);
-		else
+		if (mmio) {
+			#if defined(CONFIG_BLK_DEV_IDE_S3C)
+				data = tf_readw(io_ports->data_addr);
+			#else
+				data = readw((void __iomem *)io_ports->data_addr);
+			#endif
+		} else
 			data = inw(io_ports->data_addr);
 
 		tf->data = data & 0xff;
@@ -295,9 +346,13 @@ void ide_input_data(ide_drive_t *drive, struct request *rq, void *buf,
 				insw(data_addr, (u8 *)buf + (len & ~3), 1);
 		}
 	} else {
-		if (mmio)
-			__ide_mm_insw((void __iomem *)data_addr, buf, len / 2);
-		else
+		if (mmio) {
+			#if defined(CONFIG_BLK_DEV_IDE_S3C)
+				s3c_ide_INSW(data_addr, buf, len / 2);
+			#else
+				__ide_mm_insw((void __iomem *)data_addr, buf, len / 2);
+			#endif
+		} else
 			insw(data_addr, buf, len / 2);
 	}
 }
@@ -341,9 +396,13 @@ void ide_output_data(ide_drive_t *drive, struct request *rq, void *buf,
 				outsw(data_addr, (u8 *)buf + (len & ~3), 1);
 		}
 	} else {
-		if (mmio)
-			__ide_mm_outsw((void __iomem *)data_addr, buf, len / 2);
-		else
+		if (mmio) {
+			#if defined(CONFIG_BLK_DEV_IDE_S3C)
+				s3c_ide_OUTSW(data_addr, buf, len / 2);
+			#else
+				__ide_mm_outsw((void __iomem *)data_addr, buf, len / 2);
+			#endif
+		} else
 			outsw(data_addr, buf, len / 2);
 	}
 }

@@ -1,11 +1,9 @@
-/* linux/arch/arm/plat-s3c24xx/pm.c
+/* linux/arch/arm/plat-s5pc11x/pm.c
  *
- * Copyright (c) 2004,2006 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
+ * Copyright (c) 2004,2009 Simtec Electronics
+ *	boyko.lee <boyko.lee@samsung.com>
  *
- * S3C24XX Power Manager (Suspend-To-RAM) support
- *
- * See Documentation/arm/Samsung-S3C24XX/Suspend.txt for more information
+ * S5PC11X Power Manager (Suspend-To-RAM) support
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,35 +45,6 @@
 #include <plat/regs-clock.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-cfg.h>
-#include <plat/gpio-bank-a0.h>
-#include <plat/gpio-bank-a1.h>
-#include <plat/gpio-bank-b.h>
-#include <plat/gpio-bank-c.h>
-#include <plat/gpio-bank-d.h>
-#include <plat/gpio-bank-e0.h>
-#include <plat/gpio-bank-e1.h>
-#include <plat/gpio-bank-f0.h>
-#include <plat/gpio-bank-f1.h>
-#include <plat/gpio-bank-f2.h>
-#include <plat/gpio-bank-f3.h>
-#include <plat/gpio-bank-g0.h>
-#include <plat/gpio-bank-g1.h>
-#include <plat/gpio-bank-g2.h>
-#include <plat/gpio-bank-g3.h>
-#include <plat/gpio-bank-h0.h>
-#include <plat/gpio-bank-h1.h>
-#include <plat/gpio-bank-h2.h>
-#include <plat/gpio-bank-h3.h>
-#include <plat/gpio-bank-i.h>
-#include <plat/gpio-bank-j0.h>
-#include <plat/gpio-bank-j1.h>
-#include <plat/gpio-bank-j2.h>
-#include <plat/gpio-bank-j3.h>
-#include <plat/gpio-bank-j4.h>
-#include <plat/gpio-bank-k0.h>
-#include <plat/gpio-bank-k1.h>
-#include <plat/gpio-bank-k2.h>
-#include <plat/gpio-bank-k3.h>
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
 #include <asm/gpio.h>
@@ -83,147 +52,367 @@
 #include <asm/mach/time.h>
 
 #include <plat/pm.h>
-#include <plat/regs-power.h>
-
-/* for external use */
-
-unsigned long s5pc11x_pm_flags;
-void __iomem *weint_base;
-
-enum PLL_TYPE
-{
-	PM_APLL,
-	PM_MPLL,
-	PM_EPLL,
-	PM_HPLL
-};
 
 #define PFX "s5pc11x-pm: "
 static struct sleep_save core_save[] = {
+/* Clock source */
 	SAVE_ITEM(S5P_CLK_SRC0),
 	SAVE_ITEM(S5P_CLK_SRC1),
 	SAVE_ITEM(S5P_CLK_SRC2),
 	SAVE_ITEM(S5P_CLK_SRC3),
-	
+	SAVE_ITEM(S5P_CLK_SRC4),
+	SAVE_ITEM(S5P_CLK_SRC5),
+	SAVE_ITEM(S5P_CLK_SRC6),
+/* Clock source Mask */
+	SAVE_ITEM(S5P_CLK_SRC_MASK0),
+	SAVE_ITEM(S5P_CLK_SRC_MASK1),
+/* Clock Divider */
 	SAVE_ITEM(S5P_CLK_DIV0),
 	SAVE_ITEM(S5P_CLK_DIV1),
 	SAVE_ITEM(S5P_CLK_DIV2),
 	SAVE_ITEM(S5P_CLK_DIV3),
 	SAVE_ITEM(S5P_CLK_DIV4),
-
+	SAVE_ITEM(S5P_CLK_DIV5),
+	SAVE_ITEM(S5P_CLK_DIV6),
+	SAVE_ITEM(S5P_CLK_DIV7),
+/* Clock Main Main Gate */
+	SAVE_ITEM(S5P_CLKGATE_MAIN0),
+	SAVE_ITEM(S5P_CLKGATE_MAIN1),
+	SAVE_ITEM(S5P_CLKGATE_MAIN2),
+/* Clock source Peri Gate */
+	SAVE_ITEM(S5P_CLKGATE_PERI0),
+	SAVE_ITEM(S5P_CLKGATE_PERI1),
+/* Clock source SCLK Gate */
+	SAVE_ITEM(S5P_CLKGATE_SCLK0),
+	SAVE_ITEM(S5P_CLKGATE_SCLK1),
+/* Clock IP Clock gate */
+	SAVE_ITEM(S5P_CLKGATE_IP0),
+	SAVE_ITEM(S5P_CLKGATE_IP1),
+	SAVE_ITEM(S5P_CLKGATE_IP2),
+	SAVE_ITEM(S5P_CLKGATE_IP3),
+	SAVE_ITEM(S5P_CLKGATE_IP4),
+/* Clock Blcok and Bus gate */
+	SAVE_ITEM(S5P_CLKGATE_BLOCK),
+	SAVE_ITEM(S5P_CLKGATE_BUS0),
+	SAVE_ITEM(S5P_CLKGATE_BUS1),	
+/* Clock ETC */
 	SAVE_ITEM(S5P_CLK_OUT),
-
-	SAVE_ITEM(S5P_CLKGATE_D00),
-	SAVE_ITEM(S5P_CLKGATE_D01),
-	SAVE_ITEM(S5P_CLKGATE_D02),
-
-	SAVE_ITEM(S5P_CLKGATE_D10),
-	SAVE_ITEM(S5P_CLKGATE_D11),
-	SAVE_ITEM(S5P_CLKGATE_D12),
-	SAVE_ITEM(S5P_CLKGATE_D13),
-	SAVE_ITEM(S5P_CLKGATE_D14),
-	SAVE_ITEM(S5P_CLKGATE_D15),
-
-	SAVE_ITEM(S5P_CLKGATE_D20),
-
-	SAVE_ITEM(S5P_SCLKGATE0),
-	SAVE_ITEM(S5P_SCLKGATE1),
-
-	SAVE_ITEM(S5P_MEM_SYS_CFG),
-	SAVE_ITEM(S5P_CAM_MUX_SEL),
-	SAVE_ITEM(S5P_MIXER_OUT_SEL),
-
-	SAVE_ITEM(S5P_LPMP_MODE_SEL),
-	SAVE_ITEM(S5P_MIPI_PHY_CON0),
-	SAVE_ITEM(S5P_MIPI_PHY_CON1),
-	SAVE_ITEM(S5P_HDMI_PHY_CON0),
+	SAVE_ITEM(S5P_MDNIE_SEL),
 };
 
 static struct sleep_save gpio_save[] = {
-	SAVE_ITEM(S5PC11X_GPA0CON),
-	SAVE_ITEM(S5PC11X_GPA0DAT),
-	SAVE_ITEM(S5PC11X_GPA0PUD),
-	SAVE_ITEM(S5PC11X_GPA1CON),
-	SAVE_ITEM(S5PC11X_GPA1DAT),
-	SAVE_ITEM(S5PC11X_GPA1PUD),
-	SAVE_ITEM(S5PC11X_GPBCON),
-	SAVE_ITEM(S5PC11X_GPBDAT),
-	SAVE_ITEM(S5PC11X_GPBPUD),
-	SAVE_ITEM(S5PC11X_GPCCON),
-	SAVE_ITEM(S5PC11X_GPCDAT),
-	SAVE_ITEM(S5PC11X_GPCPUD),
-	SAVE_ITEM(S5PC11X_GPDCON),
-	SAVE_ITEM(S5PC11X_GPDDAT),
-	SAVE_ITEM(S5PC11X_GPDPUD),
-	SAVE_ITEM(S5PC11X_GPE0CON),
-	SAVE_ITEM(S5PC11X_GPE0DAT),
-	SAVE_ITEM(S5PC11X_GPE0PUD),
-	SAVE_ITEM(S5PC11X_GPE1CON),
-	SAVE_ITEM(S5PC11X_GPE1DAT),
-	SAVE_ITEM(S5PC11X_GPE1PUD),
-	SAVE_ITEM(S5PC11X_GPF0CON),
-	SAVE_ITEM(S5PC11X_GPF0DAT),
-	SAVE_ITEM(S5PC11X_GPF0PUD),
-	SAVE_ITEM(S5PC11X_GPF1CON),
-	SAVE_ITEM(S5PC11X_GPF1DAT),
-	SAVE_ITEM(S5PC11X_GPF1PUD),
-	SAVE_ITEM(S5PC11X_GPF2CON),
-	SAVE_ITEM(S5PC11X_GPF2DAT),
-	SAVE_ITEM(S5PC11X_GPF2PUD),
-	SAVE_ITEM(S5PC11X_GPF3CON),
-	SAVE_ITEM(S5PC11X_GPF3DAT),
-	SAVE_ITEM(S5PC11X_GPF3PUD),
-	SAVE_ITEM(S5PC11X_GPG0CON),
-	SAVE_ITEM(S5PC11X_GPG0DAT),
-	SAVE_ITEM(S5PC11X_GPG0PUD),
-	SAVE_ITEM(S5PC11X_GPG1CON),
-	SAVE_ITEM(S5PC11X_GPG1DAT),
-	SAVE_ITEM(S5PC11X_GPG1PUD),
-	SAVE_ITEM(S5PC11X_GPG2CON),
-	SAVE_ITEM(S5PC11X_GPG2DAT),
-	SAVE_ITEM(S5PC11X_GPG2PUD),
-	SAVE_ITEM(S5PC11X_GPG3CON),
-	SAVE_ITEM(S5PC11X_GPG3DAT),
-	SAVE_ITEM(S5PC11X_GPG3PUD),
-	SAVE_ITEM(S5PC11X_GPH0CON),
-	SAVE_ITEM(S5PC11X_GPH0DAT),
-	SAVE_ITEM(S5PC11X_GPH0PUD),
-	SAVE_ITEM(S5PC11X_GPH1CON),
-	SAVE_ITEM(S5PC11X_GPH1DAT),
-	SAVE_ITEM(S5PC11X_GPH1PUD),
-	SAVE_ITEM(S5PC11X_GPH2CON),
-	SAVE_ITEM(S5PC11X_GPH2DAT),
-	SAVE_ITEM(S5PC11X_GPH2PUD),
-	SAVE_ITEM(S5PC11X_GPH3CON),
-	SAVE_ITEM(S5PC11X_GPH3DAT),
-	SAVE_ITEM(S5PC11X_GPH3PUD),
-	SAVE_ITEM(S5PC11X_GPICON),
-	SAVE_ITEM(S5PC11X_GPIDAT),
-	SAVE_ITEM(S5PC11X_GPIPUD),
-	SAVE_ITEM(S5PC11X_GPJ0CON),
-	SAVE_ITEM(S5PC11X_GPJ0DAT),
-	SAVE_ITEM(S5PC11X_GPJ0PUD),
-	SAVE_ITEM(S5PC11X_GPJ1CON),
-	SAVE_ITEM(S5PC11X_GPJ1DAT),
-	SAVE_ITEM(S5PC11X_GPJ1PUD),
-	SAVE_ITEM(S5PC11X_GPJ2CON),
-	SAVE_ITEM(S5PC11X_GPJ2DAT),
-	SAVE_ITEM(S5PC11X_GPJ2PUD),
-	SAVE_ITEM(S5PC11X_GPJ3CON),
-	SAVE_ITEM(S5PC11X_GPJ3DAT),
-	SAVE_ITEM(S5PC11X_GPJ3PUD),
-	SAVE_ITEM(S5PC11X_GPK0CON),
-	SAVE_ITEM(S5PC11X_GPK0DAT),
-	SAVE_ITEM(S5PC11X_GPK0PUD),
-	SAVE_ITEM(S5PC11X_GPK1CON),
-	SAVE_ITEM(S5PC11X_GPK1DAT),
-	SAVE_ITEM(S5PC11X_GPK1PUD),
-	SAVE_ITEM(S5PC11X_GPK2CON),
-	SAVE_ITEM(S5PC11X_GPK2DAT),
-	SAVE_ITEM(S5PC11X_GPK2PUD),
-	SAVE_ITEM(S5PC11X_GPK3CON),
-	SAVE_ITEM(S5PC11X_GPK3DAT),
-	SAVE_ITEM(S5PC11X_GPK3PUD),
+	SAVE_ITEM(S5PC11X_GPA0CON),		
+	SAVE_ITEM(S5PC11X_GPA0DAT),		
+	SAVE_ITEM(S5PC11X_GPA0PUD),		
+	SAVE_ITEM(S5PC11X_GPA0DRV),		
+	SAVE_ITEM(S5PC11X_GPA0CONPDN),
+	SAVE_ITEM(S5PC11X_GPA0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPA1CON),		
+	SAVE_ITEM(S5PC11X_GPA1DAT),		
+	SAVE_ITEM(S5PC11X_GPA1PUD),		
+	SAVE_ITEM(S5PC11X_GPA1DRV),		
+	SAVE_ITEM(S5PC11X_GPA1CONPDN),
+	SAVE_ITEM(S5PC11X_GPA1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPBCON),		
+	SAVE_ITEM(S5PC11X_GPBDAT),		
+	SAVE_ITEM(S5PC11X_GPBPUD),		
+	SAVE_ITEM(S5PC11X_GPBDRV),		
+	SAVE_ITEM(S5PC11X_GPBCONPDN),	
+	SAVE_ITEM(S5PC11X_GPBPUDPDN),	
+	SAVE_ITEM(S5PC11X_GPC0CON),		
+	SAVE_ITEM(S5PC11X_GPC0DAT),		
+	SAVE_ITEM(S5PC11X_GPC0PUD),		
+	SAVE_ITEM(S5PC11X_GPC0DRV),		
+	SAVE_ITEM(S5PC11X_GPC0CONPDN),
+	SAVE_ITEM(S5PC11X_GPC0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPC1CON),		
+	SAVE_ITEM(S5PC11X_GPC1DAT),		
+	SAVE_ITEM(S5PC11X_GPC1PUD),		
+	SAVE_ITEM(S5PC11X_GPC1DRV),		
+	SAVE_ITEM(S5PC11X_GPC1CONPDN),
+	SAVE_ITEM(S5PC11X_GPC1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPD0CON),		
+	SAVE_ITEM(S5PC11X_GPD0DAT),		
+	SAVE_ITEM(S5PC11X_GPD0PUD),		
+	SAVE_ITEM(S5PC11X_GPD0DRV),		
+	SAVE_ITEM(S5PC11X_GPD0CONPDN),
+	SAVE_ITEM(S5PC11X_GPD0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPD1CON),		
+	SAVE_ITEM(S5PC11X_GPD1DAT),		
+	SAVE_ITEM(S5PC11X_GPD1PUD),		
+	SAVE_ITEM(S5PC11X_GPD1DRV),		
+	SAVE_ITEM(S5PC11X_GPD1CONPDN),
+	SAVE_ITEM(S5PC11X_GPD1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPE0CON),		
+	SAVE_ITEM(S5PC11X_GPE0DAT),		
+	SAVE_ITEM(S5PC11X_GPE0PUD),		
+	SAVE_ITEM(S5PC11X_GPE0DRV),		
+	SAVE_ITEM(S5PC11X_GPE0CONPDN),
+	SAVE_ITEM(S5PC11X_GPE0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPE1CON),		
+	SAVE_ITEM(S5PC11X_GPE1DAT),		
+	SAVE_ITEM(S5PC11X_GPE1PUD),		
+	SAVE_ITEM(S5PC11X_GPE1DRV),		
+	SAVE_ITEM(S5PC11X_GPE1CONPDN),
+	SAVE_ITEM(S5PC11X_GPE1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPF0CON),		
+	SAVE_ITEM(S5PC11X_GPF0DAT),		
+	SAVE_ITEM(S5PC11X_GPF0PUD),		
+	SAVE_ITEM(S5PC11X_GPF0DRV),		
+	SAVE_ITEM(S5PC11X_GPF0CONPDN),
+	SAVE_ITEM(S5PC11X_GPF0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPF1CON),		
+	SAVE_ITEM(S5PC11X_GPF1DAT),		
+	SAVE_ITEM(S5PC11X_GPF1PUD),		
+	SAVE_ITEM(S5PC11X_GPF1DRV),		
+	SAVE_ITEM(S5PC11X_GPF1CONPDN),
+	SAVE_ITEM(S5PC11X_GPF1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPF2CON),		
+	SAVE_ITEM(S5PC11X_GPF2DAT),		
+	SAVE_ITEM(S5PC11X_GPF2PUD),		
+	SAVE_ITEM(S5PC11X_GPF2DRV),		
+	SAVE_ITEM(S5PC11X_GPF2CONPDN),
+	SAVE_ITEM(S5PC11X_GPF2PUDPDN),
+	SAVE_ITEM(S5PC11X_GPF3CON),		
+	SAVE_ITEM(S5PC11X_GPF3DAT),		
+	SAVE_ITEM(S5PC11X_GPF3PUD),		
+	SAVE_ITEM(S5PC11X_GPF3DRV),		
+	SAVE_ITEM(S5PC11X_GPF3CONPDN),
+	SAVE_ITEM(S5PC11X_GPF3PUDPDN),
+	SAVE_ITEM(S5PC11X_GPG0CON),		
+	SAVE_ITEM(S5PC11X_GPG0DAT),		
+	SAVE_ITEM(S5PC11X_GPG0PUD),		
+	SAVE_ITEM(S5PC11X_GPG0DRV),		
+	SAVE_ITEM(S5PC11X_GPG0CONPDN),
+	SAVE_ITEM(S5PC11X_GPG0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPG1CON),		
+	SAVE_ITEM(S5PC11X_GPG1DAT),		
+	SAVE_ITEM(S5PC11X_GPG1PUD),		
+	SAVE_ITEM(S5PC11X_GPG1DRV),		
+	SAVE_ITEM(S5PC11X_GPG1CONPDN),
+	SAVE_ITEM(S5PC11X_GPG1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPG2CON),		
+	SAVE_ITEM(S5PC11X_GPG2DAT),		
+	SAVE_ITEM(S5PC11X_GPG2PUD),		
+	SAVE_ITEM(S5PC11X_GPG2DRV),		
+	SAVE_ITEM(S5PC11X_GPG2CONPDN),
+	SAVE_ITEM(S5PC11X_GPG2PUDPDN),
+	SAVE_ITEM(S5PC11X_GPG3CON),		
+	SAVE_ITEM(S5PC11X_GPG3DAT),		
+	SAVE_ITEM(S5PC11X_GPG3PUD),		
+	SAVE_ITEM(S5PC11X_GPG3DRV),		
+	SAVE_ITEM(S5PC11X_GPG3CONPDN),
+	SAVE_ITEM(S5PC11X_GPG3PUDPDN),
+	SAVE_ITEM(S5PC11X_GPH0CON),		
+	SAVE_ITEM(S5PC11X_GPH0DAT),		
+	SAVE_ITEM(S5PC11X_GPH0PUD),		
+	SAVE_ITEM(S5PC11X_GPH0DRV),		
+	SAVE_ITEM(S5PC11X_GPH0CONPDN),
+	SAVE_ITEM(S5PC11X_GPH0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPH1CON),		
+	SAVE_ITEM(S5PC11X_GPH1DAT),		
+	SAVE_ITEM(S5PC11X_GPH1PUD),		
+	SAVE_ITEM(S5PC11X_GPH1DRV),		
+	SAVE_ITEM(S5PC11X_GPH1CONPDN),
+	SAVE_ITEM(S5PC11X_GPH1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPH2CON),		
+	SAVE_ITEM(S5PC11X_GPH2DAT),		
+	SAVE_ITEM(S5PC11X_GPH2PUD),		
+	SAVE_ITEM(S5PC11X_GPH2DRV),		
+	SAVE_ITEM(S5PC11X_GPH2CONPDN),
+	SAVE_ITEM(S5PC11X_GPH2PUDPDN),
+	SAVE_ITEM(S5PC11X_GPH3CON),		
+	SAVE_ITEM(S5PC11X_GPH3DAT),		
+	SAVE_ITEM(S5PC11X_GPH3PUD),		
+	SAVE_ITEM(S5PC11X_GPH3DRV),		
+	SAVE_ITEM(S5PC11X_GPH3CONPDN),
+	SAVE_ITEM(S5PC11X_GPH3PUDPDN),
+	SAVE_ITEM(S5PC11X_GPICON),		
+	SAVE_ITEM(S5PC11X_GPIDAT),		
+	SAVE_ITEM(S5PC11X_GPIPUD),		
+	SAVE_ITEM(S5PC11X_GPIDRV),		
+	SAVE_ITEM(S5PC11X_GPICONPDN),
+	SAVE_ITEM(S5PC11X_GPIPUDPDN),
+	SAVE_ITEM(S5PC11X_GPJ0CON),		
+	SAVE_ITEM(S5PC11X_GPJ0DAT),		
+	SAVE_ITEM(S5PC11X_GPJ0PUD),		
+	SAVE_ITEM(S5PC11X_GPJ0DRV),		
+	SAVE_ITEM(S5PC11X_GPJ0CONPDN),
+	SAVE_ITEM(S5PC11X_GPJ0PUDPDN),
+	SAVE_ITEM(S5PC11X_GPJ1CON),		
+	SAVE_ITEM(S5PC11X_GPJ1DAT),		
+	SAVE_ITEM(S5PC11X_GPJ1PUD),		
+	SAVE_ITEM(S5PC11X_GPJ1DRV),		
+	SAVE_ITEM(S5PC11X_GPJ1CONPDN),
+	SAVE_ITEM(S5PC11X_GPJ1PUDPDN),
+	SAVE_ITEM(S5PC11X_GPJ2CON),		
+	SAVE_ITEM(S5PC11X_GPJ2DAT),		
+	SAVE_ITEM(S5PC11X_GPJ2PUD),		
+	SAVE_ITEM(S5PC11X_GPJ2DRV),		
+	SAVE_ITEM(S5PC11X_GPJ2CONPDN),
+	SAVE_ITEM(S5PC11X_GPJ2PUDPDN),
+	SAVE_ITEM(S5PC11X_GPJ3CON),		
+	SAVE_ITEM(S5PC11X_GPJ3DAT),		
+	SAVE_ITEM(S5PC11X_GPJ3PUD),		
+	SAVE_ITEM(S5PC11X_GPJ3DRV),		
+	SAVE_ITEM(S5PC11X_GPJ3CONPDN),
+	SAVE_ITEM(S5PC11X_GPJ3PUDPDN),
+	SAVE_ITEM(S5PC11X_GPJ4CON),		
+	SAVE_ITEM(S5PC11X_GPJ4DAT),		
+	SAVE_ITEM(S5PC11X_GPJ4PUD),		
+	SAVE_ITEM(S5PC11X_GPJ4DRV),		
+	SAVE_ITEM(S5PC11X_GPJ4CONPDN),
+	SAVE_ITEM(S5PC11X_GPJ4PUDPDN),
+	SAVE_ITEM(S5PC11X_MP01CON),		
+	SAVE_ITEM(S5PC11X_MP01DAT),		
+	SAVE_ITEM(S5PC11X_MP01PUD),		
+	SAVE_ITEM(S5PC11X_MP01DRV),		
+	SAVE_ITEM(S5PC11X_MP01CONPDN),
+	SAVE_ITEM(S5PC11X_MP01PUDPDN),
+	SAVE_ITEM(S5PC11X_MP02CON),		
+	SAVE_ITEM(S5PC11X_MP02DAT),		
+	SAVE_ITEM(S5PC11X_MP02PUD),		
+	SAVE_ITEM(S5PC11X_MP02DRV),		
+	SAVE_ITEM(S5PC11X_MP02CONPDN),
+	SAVE_ITEM(S5PC11X_MP02PUDPDN),
+	SAVE_ITEM(S5PC11X_MP03CON),		
+	SAVE_ITEM(S5PC11X_MP03DAT),		
+	SAVE_ITEM(S5PC11X_MP03PUD),		
+	SAVE_ITEM(S5PC11X_MP03DRV),		
+	SAVE_ITEM(S5PC11X_MP03CONPDN),
+	SAVE_ITEM(S5PC11X_MP03PUDPDN),
+	SAVE_ITEM(S5PC11X_MP04CON),		
+	SAVE_ITEM(S5PC11X_MP04DAT),		
+	SAVE_ITEM(S5PC11X_MP04PUD),		
+	SAVE_ITEM(S5PC11X_MP04DRV),		
+	SAVE_ITEM(S5PC11X_MP04CONPDN),
+	SAVE_ITEM(S5PC11X_MP04PUDPDN),
+	SAVE_ITEM(S5PC11X_MP05CON),		
+	SAVE_ITEM(S5PC11X_MP05DAT),		
+	SAVE_ITEM(S5PC11X_MP05PUD),		
+	SAVE_ITEM(S5PC11X_MP05DRV),		
+	SAVE_ITEM(S5PC11X_MP05CONPDN),
+	SAVE_ITEM(S5PC11X_MP05PUDPDN),
+	SAVE_ITEM(S5PC11X_MP06CON),		
+	SAVE_ITEM(S5PC11X_MP06DAT),		
+	SAVE_ITEM(S5PC11X_MP06PUD),		
+	SAVE_ITEM(S5PC11X_MP06DRV),		
+	SAVE_ITEM(S5PC11X_MP06CONPDN),
+	SAVE_ITEM(S5PC11X_MP06PUDPDN),
+	SAVE_ITEM(S5PC11X_MP07CON),		
+	SAVE_ITEM(S5PC11X_MP07DAT),		
+	SAVE_ITEM(S5PC11X_MP07PUD),		
+	SAVE_ITEM(S5PC11X_MP07DRV),		
+	SAVE_ITEM(S5PC11X_MP07CONPDN),
+	SAVE_ITEM(S5PC11X_MP07PUDPDN),
+	SAVE_ITEM(S5PC11X_MP10CON),		
+	SAVE_ITEM(S5PC11X_MP10DAT),		
+	SAVE_ITEM(S5PC11X_MP10PUD),		
+	SAVE_ITEM(S5PC11X_MP10DRV),		
+	SAVE_ITEM(S5PC11X_MP10CONPDN),
+	SAVE_ITEM(S5PC11X_MP10PUDPDN),
+	SAVE_ITEM(S5PC11X_MP11CON),		
+	SAVE_ITEM(S5PC11X_MP11DAT),		
+	SAVE_ITEM(S5PC11X_MP11PUD),		
+	SAVE_ITEM(S5PC11X_MP11DRV),		
+	SAVE_ITEM(S5PC11X_MP11CONPDN),
+	SAVE_ITEM(S5PC11X_MP11PUDPDN),
+	SAVE_ITEM(S5PC11X_MP12CON),	
+	SAVE_ITEM(S5PC11X_MP12DAT),	
+	SAVE_ITEM(S5PC11X_MP12PUD),	
+	SAVE_ITEM(S5PC11X_MP12DRV),	
+	SAVE_ITEM(S5PC11X_MP12CONPDN),
+	SAVE_ITEM(S5PC11X_MP12PUDPDN),
+	SAVE_ITEM(S5PC11X_MP13CON),
+	SAVE_ITEM(S5PC11X_MP13DAT),
+	SAVE_ITEM(S5PC11X_MP13PUD),
+	SAVE_ITEM(S5PC11X_MP13DRV),
+	SAVE_ITEM(S5PC11X_MP13CONPDN),
+	SAVE_ITEM(S5PC11X_MP13PUDPDN),
+	SAVE_ITEM(S5PC11X_MP14CON),
+	SAVE_ITEM(S5PC11X_MP14DAT),
+	SAVE_ITEM(S5PC11X_MP14PUD),
+	SAVE_ITEM(S5PC11X_MP14DRV),
+	SAVE_ITEM(S5PC11X_MP14CONPDN),
+	SAVE_ITEM(S5PC11X_MP14PUDPDN),
+	SAVE_ITEM(S5PC11X_MP15CON),
+	SAVE_ITEM(S5PC11X_MP15DAT),
+	SAVE_ITEM(S5PC11X_MP15PUD),
+	SAVE_ITEM(S5PC11X_MP15DRV),
+	SAVE_ITEM(S5PC11X_MP15CONPDN),
+	SAVE_ITEM(S5PC11X_MP15PUDPDN),
+	SAVE_ITEM(S5PC11X_MP16CON),
+	SAVE_ITEM(S5PC11X_MP16DAT),
+	SAVE_ITEM(S5PC11X_MP16PUD),
+	SAVE_ITEM(S5PC11X_MP16DRV),
+	SAVE_ITEM(S5PC11X_MP16CONPDN),
+	SAVE_ITEM(S5PC11X_MP16PUDPDN),
+	SAVE_ITEM(S5PC11X_MP17CON),
+	SAVE_ITEM(S5PC11X_MP17DAT),
+	SAVE_ITEM(S5PC11X_MP17PUD),
+	SAVE_ITEM(S5PC11X_MP17DRV),
+	SAVE_ITEM(S5PC11X_MP17CONPDN),
+	SAVE_ITEM(S5PC11X_MP17PUDPDN),
+	SAVE_ITEM(S5PC11X_MP18CON),
+	SAVE_ITEM(S5PC11X_MP18DAT),
+	SAVE_ITEM(S5PC11X_MP18PUD),
+	SAVE_ITEM(S5PC11X_MP18DRV),
+	SAVE_ITEM(S5PC11X_MP18CONPDN),
+	SAVE_ITEM(S5PC11X_MP18PUDPDN),
+	SAVE_ITEM(S5PC11X_MP20CON),
+	SAVE_ITEM(S5PC11X_MP20DAT),
+	SAVE_ITEM(S5PC11X_MP20PUD),
+	SAVE_ITEM(S5PC11X_MP20DRV),
+	SAVE_ITEM(S5PC11X_MP20CONPDN),
+	SAVE_ITEM(S5PC11X_MP20PUDPDN),
+	SAVE_ITEM(S5PC11X_MP21CON),
+	SAVE_ITEM(S5PC11X_MP21DAT),
+	SAVE_ITEM(S5PC11X_MP21PUD),
+	SAVE_ITEM(S5PC11X_MP21DRV),
+	SAVE_ITEM(S5PC11X_MP21CONPDN),
+	SAVE_ITEM(S5PC11X_MP21PUDPDN),
+	SAVE_ITEM(S5PC11X_MP22CON),
+	SAVE_ITEM(S5PC11X_MP22DAT),
+	SAVE_ITEM(S5PC11X_MP22PUD),
+	SAVE_ITEM(S5PC11X_MP22DRV),
+	SAVE_ITEM(S5PC11X_MP22CONPDN),
+	SAVE_ITEM(S5PC11X_MP22PUDPDN),
+	SAVE_ITEM(S5PC11X_MP23CON),
+	SAVE_ITEM(S5PC11X_MP23DAT),
+	SAVE_ITEM(S5PC11X_MP23PUD),
+	SAVE_ITEM(S5PC11X_MP23DRV),
+	SAVE_ITEM(S5PC11X_MP23CONPDN),
+	SAVE_ITEM(S5PC11X_MP23PUDPDN),
+	SAVE_ITEM(S5PC11X_MP24CON),
+	SAVE_ITEM(S5PC11X_MP24DAT),
+	SAVE_ITEM(S5PC11X_MP24PUD),
+	SAVE_ITEM(S5PC11X_MP24DRV),
+	SAVE_ITEM(S5PC11X_MP24CONPDN),
+	SAVE_ITEM(S5PC11X_MP24PUDPDN),
+	SAVE_ITEM(S5PC11X_MP25CON),		
+	SAVE_ITEM(S5PC11X_MP25DAT),		
+	SAVE_ITEM(S5PC11X_MP25PUD),		
+	SAVE_ITEM(S5PC11X_MP25DRV),		
+	SAVE_ITEM(S5PC11X_MP25CONPDN),
+	SAVE_ITEM(S5PC11X_MP25PUDPDN),
+	SAVE_ITEM(S5PC11X_MP26CON),		
+	SAVE_ITEM(S5PC11X_MP26DAT),		
+	SAVE_ITEM(S5PC11X_MP26PUD),		
+	SAVE_ITEM(S5PC11X_MP26DRV),		
+	SAVE_ITEM(S5PC11X_MP26CONPDN),
+	SAVE_ITEM(S5PC11X_MP26PUDPDN),
+	SAVE_ITEM(S5PC11X_MP27CON),		
+	SAVE_ITEM(S5PC11X_MP27DAT),		
+	SAVE_ITEM(S5PC11X_MP27PUD),		
+	SAVE_ITEM(S5PC11X_MP27DRV),		
+	SAVE_ITEM(S5PC11X_MP27CONPDN),
+	SAVE_ITEM(S5PC11X_MP27PUDPDN),
+	SAVE_ITEM(S5PC11X_MP28CON),		
+	SAVE_ITEM(S5PC11X_MP28DAT),		
+	SAVE_ITEM(S5PC11X_MP28PUD),		
+	SAVE_ITEM(S5PC11X_MP28DRV),		
+	SAVE_ITEM(S5PC11X_MP28CONPDN),
+	SAVE_ITEM(S5PC11X_MP28PUDPDN),
 };
 
 /* this lot should be really saved by the IRQ code */
@@ -232,12 +421,15 @@ static struct sleep_save irq_save[] = {
 	SAVE_ITEM(S5PC110_VIC0REG(VIC_INT_SELECT)),
 	SAVE_ITEM(S5PC110_VIC1REG(VIC_INT_SELECT)),
 	SAVE_ITEM(S5PC110_VIC2REG(VIC_INT_SELECT)),
+	SAVE_ITEM(S5PC110_VIC3REG(VIC_INT_SELECT)),
 	SAVE_ITEM(S5PC110_VIC0REG(VIC_INT_ENABLE)),
 	SAVE_ITEM(S5PC110_VIC1REG(VIC_INT_ENABLE)),
 	SAVE_ITEM(S5PC110_VIC2REG(VIC_INT_ENABLE)),
+	SAVE_ITEM(S5PC110_VIC3REG(VIC_INT_ENABLE)),
 	SAVE_ITEM(S5PC110_VIC0REG(VIC_INT_SOFT)),
 	SAVE_ITEM(S5PC110_VIC1REG(VIC_INT_SOFT)),
 	SAVE_ITEM(S5PC110_VIC2REG(VIC_INT_SOFT)),
+	SAVE_ITEM(S5PC110_VIC3REG(VIC_INT_SOFT)),
 };
 
 static struct sleep_save sromc_save[] = {
@@ -248,15 +440,6 @@ static struct sleep_save sromc_save[] = {
 	SAVE_ITEM(S5PC11X_SROM_BC3),
 	SAVE_ITEM(S5PC11X_SROM_BC4),
 	SAVE_ITEM(S5PC11X_SROM_BC5),
-};
-
-/* NAND control registers */
-#define PM_NFCONF             (S3C_VA_NAND + 0x00)        
-#define PM_NFCONT             (S3C_VA_NAND + 0x04)        
-
-static struct sleep_save nand_save[] = {
-        SAVE_ITEM(PM_NFCONF),
-        SAVE_ITEM(PM_NFCONT),
 };
 
 #define SAVE_UART(va) \
@@ -390,110 +573,16 @@ static void s5pc11x_pm_show_resume_irqs(int start, unsigned long which,
 	}
 }
 
-static irqreturn_t s5pc11x_eint11_interrupt(int irq, void *dev_id)
-{
-	printk("EINT11 is occured\n");
-
-	return IRQ_HANDLED;
-}
-
-static void s5pc11x_pm_configure_extint(void)
-{
-/* for each of the external interrupts (EINT0..EINT15) we
- * need to check wether it is an external interrupt source,
- * and then configure it as an input if it is not
- * And SMDKC100 has two External Interrupt Switch EINT11(GPH1_3) and EINT31(GPH3_7)
- * So System can wake up with both External interrupt source.
- */
-
-	u32 tmp;
-
-	weint_base = ioremap(S5P_APM_BASE, 0x350);
-
-	/* Mask all External Interrupt */
-	writel(0xff , weint_base + S5P_APM_WEINT0_MASK);
-	writel(0xfb , weint_base + S5P_APM_WEINT1_MASK);
-	writel(0xff , weint_base + S5P_APM_WEINT2_MASK);
-	writel(0xff , weint_base + S5P_APM_WEINT3_MASK);
-
-	/* Clear all External Interrupt Pending */
-	writel(0xff , weint_base + S5P_APM_WEINT0_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT1_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT2_PEND);
-	writel(0xff , weint_base + S5P_APM_WEINT3_PEND);
-
-	/* GPH1(3) setting */
-	tmp = readl(weint_base + S5P_APM_GPH1CON);
-	tmp &= ~(0xf << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_GPH1CON);
-
-	/* LED Off for test */
-	tmp = readl(weint_base + S5P_APM_GPH1DAT);
-	tmp &= ~(0xf0);
-	writel(tmp , weint_base + S5P_APM_GPH1DAT);
-
-	tmp = readl(weint_base + S5P_APM_GPH1PUD);
-	tmp &= ~(0xf0);
-	writel(tmp , weint_base + S5P_APM_GPH1PUD);
-
-	/* EINT1_CON Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_CON);
-	tmp &= ~(0x7 << 12);
-	tmp |= (0x2 << 12);
-	writel(tmp , weint_base + S5P_APM_WEINT1_CON);
-
-	/* EINT1 MASK Reg setting */
-	tmp = readl(weint_base + S5P_APM_WEINT1_MASK);
-	tmp &= ~(1 << 3);
-	writel(tmp , weint_base + S5P_APM_WEINT1_MASK);
-
-	udelay(50);
-
-	set_irq_type(IRQ_EINT11, IRQ_TYPE_EDGE_FALLING);
-	if (request_irq(IRQ_EINT11, s5pc11x_eint11_interrupt, IRQF_TRIGGER_FALLING, "EINT11", NULL)){
-		printk(KERN_ERR "EINT interrupt can not register\n");
-	}
-
-	tmp = readl(S5P_EINT_WAKEUP_MASK);
-	tmp = ~(1 << (IRQ_EINT11 - IRQ_EINT0));
-	writel(tmp , S5P_EINT_WAKEUP_MASK);
-}
-
 void (*pm_cpu_prep)(void);
 void (*pm_cpu_sleep)(void);
 
 #define any_allowed(mask, allow) (((mask) & (allow)) != (allow))
 
-static int s5pc11x_pm_clk(enum PLL_TYPE pm_pll,u32 mdiv, u32 pdiv, u32 sdiv)
-{
-	u32 pll_value;
-	u32 pll_addr;
-
-	pll_value = (1 << 31) | (mdiv << 16) | (pdiv << 8) | (sdiv << 0);
-
-	switch(pm_pll)
-	{
-		case PM_APLL:
-			pll_addr = S5P_APLL_CON;
-		case PM_MPLL:
-			pll_addr = S5P_MPLL_CON;
-		case PM_EPLL:
-			pll_addr = S5P_EPLL_CON;
-		case PM_HPLL:
-			pll_addr = S5P_HPLL_CON;
-	}
-
-	writel(pll_value , pll_addr);
-
-	while(!((readl(pll_addr) >> 30) & 0x1)){}
-}
 
 /* s5pc11x_pm_enter
  *
  * central control for sleep/resume process
 */
-
 static int s5pc11x_pm_enter(suspend_state_t state)
 {
 	unsigned long regs_save[16];
@@ -509,19 +598,18 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	}
 
 	/* store the physical address of the register recovery block */
-	s5pc100_sleep_save_phys = virt_to_phys(regs_save);
+	s5pc110_sleep_save_phys = virt_to_phys(regs_save);
 
-	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc100_sleep_save_phys);
+	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc110_sleep_save_phys);
 
 	s5pc11x_pm_do_save(gpio_save, ARRAY_SIZE(gpio_save));
 	s5pc11x_pm_do_save(irq_save, ARRAY_SIZE(irq_save));
 	s5pc11x_pm_do_save(core_save, ARRAY_SIZE(core_save));
 	s5pc11x_pm_do_save(sromc_save, ARRAY_SIZE(sromc_save));
-	s5pc11x_pm_do_save(nand_save, ARRAY_SIZE(nand_save));
 	s5pc11x_pm_do_save(uart_save, ARRAY_SIZE(uart_save));
 
 	/* ensure INF_REG0  has the resume address */
-	__raw_writel(virt_to_phys(s5pc100_cpu_resume), S5P_INFORM0);
+	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
 	/* call cpu specific preperation */
 
@@ -530,115 +618,57 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	/* flush cache back to ram */
 	flush_cache_all();
 
-	/* send the cpu to sleep... */
-	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_SOFT_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_SOFT_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_SOFT_CLEAR));
+	/* USB & OSC Clock pad Enable */
+	tmp = __raw_readl(S5P_SLEEP_CFG);
+	tmp |= (S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
+	__raw_writel(tmp , S5P_SLEEP_CFG);
 
-	/* Mask all wake up source */
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= ~(0x1 << 7);
-	tmp |= (0x7ff << 8);
-	/* unmask alarm wakeup source */
-	tmp &= ~(0x1 << 10);
-	__raw_writel(tmp , S5P_PWR_CFG);
-	__raw_writel(0xffffffff , S5P_EINT_WAKEUP_MASK);
-
-	/* Wake up source setting */
-	s5pc11x_pm_configure_extint();
-
-	/* : USB Power Control */
-	/*   - USB PHY Disable */
-	/*   - Make USB Tranceiver PAD to Suspend */
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp &= ~(1<<16);           	/* USB Signal Mask Clear */
-   	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5PC11X_UHOST);
-	tmp |= (1<<0);
-	__raw_writel(tmp, S5PC11X_UHOST);
-
-	/* Sleep Mode Pad Configuration */
-	__raw_writel(0x2, S5PC11X_PDNEN); /* Controlled by SLPEN Bit (You Should Clear SLPEN Bit in Wake Up Process...) */
-    
-	/* Set WFI instruction to SLEEP mode */
+	/* Power mode Config setting */
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
 	tmp |= S5P_CFG_WFI_SLEEP;
-	__raw_writel(tmp, S5P_PWR_CFG);
+	__raw_writel(tmp,S5P_PWR_CFG);
 
-	/* Clear WAKEUP_STAT register for next wakeup */
-	tmp = __raw_readl(S5P_WAKEUP_STAT);
-	__raw_writel(tmp, S5P_WAKEUP_STAT);
+	/* Set wakeup mask regsiter */
+	__raw_writel(0xFFFF , S5P_WAKEUP_MASK);
 
-#if 1
-	/* Set Power Stable Count */
+	tmp = 0xFFFFFFFF;
+	tmp &= ~(1 << 4);
+	tmp &= ~(1 << 31);
+	__raw_writel(tmp, S5P_EINT_WAKEUP_MASK);
+
+	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_SOFT_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_SOFT_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_SOFT_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_SOFT_CLEAR));
+
+	/* SYSC INT Disable */
 	tmp = __raw_readl(S5P_OTHERS);
-	tmp &=~(1 << S5P_OTHER_STA_TYPE);
-	tmp |= (STA_TYPE_SFR << S5P_OTHER_STA_TYPE);
-	__raw_writel(tmp , S5P_OTHERS);
-	
-	__raw_writel(((S5P_PWR_STABLE_COUNT << S5P_PWR_STA_CNT) | (1 << S5P_PWR_STA_EXP_SCALE)), S5P_PWR_STABLE);
-
-	/* Set Syscon Interrupt */
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= (1 << S5P_OTHER_SYS_INT);
-	__raw_writel(tmp, S5P_OTHERS);
-
-	/* Disable OSC_EN (Disable X-tal Osc Pad in Sleep mode) */
-	tmp = __raw_readl(S5P_SLEEP_CFG);
-	tmp &= ~(1 << 0);
-	__raw_writel(tmp, S5P_SLEEP_CFG);
-#endif
+	tmp |= S5P_OTHER_SYSC_INTOFF;
+	__raw_writel(tmp,S5P_OTHERS);
 
 	/* s5pc11x_cpu_save will also act as our return point from when
 	 * we resume as it saves its own register state, so use the return
 	 * code to differentiate return from save and return from sleep */
 
-	if (s5pc100_cpu_save(regs_save) == 0) {
+	if (s5pc110_cpu_save(regs_save) == 0) {
 		flush_cache_all();
 		/* This function for Chip bug on EVT0 */
-#if 0
-		s5pc11x_pm_clk(PM_APLL, 512 , 2 , 5);
-		s5pc11x_pm_clk(PM_MPLL, 128 , 2 , 5);
-		s5pc11x_pm_clk(PM_EPLL, 128 , 2 , 5);
-		s5pc11x_pm_clk(PM_HPLL, 128 , 2 , 5);
-#endif
 		pm_cpu_sleep();
 	}
 
 	/* restore the cpu state */
 	cpu_init();
 
-	/* Sleep Mode Pad Configuration */
-    	__raw_writel(0x2, S5PC11X_PDNEN);	/* Clear SLPEN Bit for Pad back to Normal Mode */
-
-	/* MTC IO OFF |  MTC IO SD-MMC OFF | USB Phy Enable */
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp |= (1<<31);
-	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5P_OTHERS);
-   	tmp |= ((1<<22)|(1<<16));
-	__raw_writel(tmp, S5P_OTHERS);
-
-	tmp = __raw_readl(S5PC11X_UHOST);
-	tmp &= ~(1<<0);
-	__raw_writel(tmp, S5PC11X_UHOST);
-
-	
 	s5pc11x_pm_do_restore(gpio_save, ARRAY_SIZE(gpio_save));
 	s5pc11x_pm_do_restore(irq_save, ARRAY_SIZE(irq_save));
 	s5pc11x_pm_do_restore(core_save, ARRAY_SIZE(core_save));
 	s5pc11x_pm_do_restore(sromc_save, ARRAY_SIZE(sromc_save));
-	s5pc11x_pm_do_restore(nand_save, ARRAY_SIZE(nand_save));
 	s5pc11x_pm_do_restore(uart_save, ARRAY_SIZE(uart_save));
-
-	tmp = readl(weint_base + S5P_APM_WEINT1_PEND);
-	writel(tmp , weint_base + S5P_APM_WEINT1_PEND);
 
 	DBG("post sleep, preparing to return\n");
 

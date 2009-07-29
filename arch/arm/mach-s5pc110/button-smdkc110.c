@@ -47,6 +47,7 @@ static unsigned int s3c_button_gpio_init(void)
 		printk("gpio request error : %d\n",err);
 	}else{
 		s3c_gpio_cfgpin(S5PC11X_GPH0(4),S5PC11X_GPH0_4_EXT_INT30_4);
+		s3c_gpio_setpull(S5PC11X_GPH0(4), S3C_GPIO_PULL_NONE);
 	}
 
 	err = gpio_request(S5PC11X_GPH3(7),"GPH3");
@@ -54,6 +55,7 @@ static unsigned int s3c_button_gpio_init(void)
 		printk("gpio request error : %d\n",err);
 	}else{
 		s3c_gpio_cfgpin(S5PC11X_GPH3(7),S5PC11X_GPH3_7_EXT_INT33_7);
+		s3c_gpio_setpull(S5PC11X_GPH3(7), S3C_GPIO_PULL_NONE);
 	}
 
 	return err;
@@ -63,7 +65,7 @@ static void __init s3c_button_init(void)
 {
 	u32 tmp;
 	
-	printk("########## SMDK6442 Button init function \n");
+	printk("SMDKC110 Button init function \n");
 
 	if (s3c_button_gpio_init()) {
 		printk(KERN_ERR "%s failed\n", __FUNCTION__);

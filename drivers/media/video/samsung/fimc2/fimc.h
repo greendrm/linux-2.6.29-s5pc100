@@ -84,22 +84,9 @@ enum fimc_fimd_state {
 };
 
 enum fimc_rot_flip {
-	FIMC_0_NFLIP	= 0x00,
-	FIMC_0_XFLIP	= 0x01,
-	FIMC_0_YFLIP	= 0x02,
-	FIMC_0_XYFLIP	= 0x03,
-	FIMC_90_NFLIP	= 0x10,
-	FIMC_90_XFLIP	= 0x11,
-	FIMC_90_YFLIP	= 0x12,
-	FIMC_90_XYFLIP	= 0x13,
-	FIMC_180_NFLIP	= 0x03,
-	FIMC_180_XFLIP	= 0x02,
-	FIMC_180_YFLIP	= 0x01,
-	FIMC_180_XYFLIP	= 0x00,
-	FIMC_270_NFLIP	= 0x13,
-	FIMC_270_XFLIP	= 0x12,
-	FIMC_270_YFLIP	= 0x11,
-	FIMC_270_XYFLIP	= 0x10,
+	FIMC_XFLIP	= 0x01,
+	FIMC_YFLIP	= 0x02,
+	FIMC_ROT	= 0x10,	
 };
 
 enum fimc_input {
@@ -115,6 +102,12 @@ enum fimc_output {
 enum fimc_autoload {
 	FIMC_AUTO_LOAD,
 	FIMC_ONE_SHOT,
+};
+
+enum fimc_irq {
+	FIMC_IRQ_NONE,
+	FIMC_IRQ_NORMAL,
+	FIMC_IRQ_LAST,
 };
 
 
@@ -141,10 +134,16 @@ struct fimc_buf_set {
 
 /* for capture device */
 struct fimc_capinfo {
-	struct v4l2_crop	crop;
+	struct v4l2_cropcap	cropcap;
+	struct v4l2_rect	crop;
 	struct v4l2_pix_format	fmt;
-	struct fimc_buf_set	buf[FIMC_CAPBUFS];
+	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
 	int			nr_bufs;
+	int			inqueue[FIMC_CAPBUFS];
+	int			outqueue[FIMC_PHYBUFS];
+	//enum fimc_irq		irq;
+	int			irq;
+	int			lastirq;
 	
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
@@ -159,7 +158,8 @@ struct fimc_buf_idx {
 };
 
 struct fimc_outinfo {
-	struct v4l2_crop 	crop;
+	struct v4l2_cropcap	cropcap;
+	struct v4l2_rect 	crop;
 	struct v4l2_pix_format	pix;
 	struct v4l2_window	win;
 	struct v4l2_framebuffer	fbuf;
@@ -189,15 +189,6 @@ struct s3cfb_window {
 	int			(*resume_fifo)(void);
 };
 
-struct s3cfb_lcd {
-	int	width;
-	int	height;
-	int	bpp;
-	int	freq;
-
-	void 	(*init_ldi)(void);
-};
-
 struct s3cfb_user_window {
 	int x;
 	int y;
@@ -208,14 +199,17 @@ struct s3cfb_user_window {
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
-#define S3CFB_GET_LCDINFO		_IOR ('F', 302, struct s3cfb_lcd)
+#define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
+#define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
+
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
 	struct fb_var_screeninfo	*var;
 	struct s3cfb_window		*win;
-	struct s3cfb_lcd		*lcd;
+	int				lcd_hres;
+	int				lcd_vres;	
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
@@ -240,6 +234,15 @@ struct fimc_scaler {
 	u32 shfactor;
 };
 
+struct fimc_limit {
+	u32 pre_dst_w;
+	u32 bypass_w;
+	u32 trg_h_no_rot;
+	u32 trg_h_rot;
+	u32 real_w_no_rot;
+	u32 real_h_rot;
+};
+
 /* fimc controller abstration */
 struct fimc_control {
 	int				id;		/* controller id */
@@ -260,9 +263,9 @@ struct fimc_control {
 	/* v4l2 related */
 	struct video_device		*vd;
 	struct v4l2_device		v4l2_dev;
-	struct v4l2_cropcap		cropcap;
 
 	/* fimc specific */
+	struct fimc_limit		*limit;		/* H/W limitation */
 	struct s3c_platform_camera	*cam;		/* activated camera */
 	struct fimc_capinfo		*cap;		/* capture dev info */
 	struct fimc_outinfo		*out;		/* output dev info */
@@ -287,6 +290,7 @@ struct fimc_global {
 extern struct fimc_global *fimc_dev;
 extern struct video_device fimc_video_device[FIMC_DEVICES];
 extern const struct v4l2_ioctl_ops fimc_v4l2_ops;
+extern struct fimc_limit fimc_limits[FIMC_DEVICES];
 
 /* FIMD */
 extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
@@ -295,14 +299,15 @@ extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sle
 
 /* general */
 extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
-extern void fimc_dma_free(struct fimc_control *ctrl, u32 bytes);
+extern void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes);
+extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
+extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
 
 /* camera */
-extern int fimc_init_camera(struct fimc_control *ctrl);
-extern void fimc_set_active_camera(struct fimc_control *ctrl, enum fimc_cam_index id);
 extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
+extern int fimc_update_hwaddr(struct fimc_control *ctrl);
 extern int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp);
 extern int fimc_g_input(struct file *file, void *fh, unsigned int *i);
 extern int fimc_s_input(struct file *file, void *fh, unsigned int i);
@@ -315,17 +320,18 @@ extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a);
+extern int fimc_g_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_s_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_streamon_capture(void *fh);
 extern int fimc_streamoff_capture(void *fh);
 extern int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b);
+extern int fimc_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
+extern int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
 
 /* output device */
 extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t base);
-extern int fimc_outdev_stop_camif(void *param);
 extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
-extern int fimc_start_fifo(struct fimc_control *ctrl);
 
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);
@@ -351,7 +357,6 @@ extern int fimc_init_out_queue(struct fimc_control *ctrl);
 extern void fimc_dump_context(struct fimc_control *ctrl);
 extern void fimc_print_signal(struct fimc_control *ctrl);
 
-
 /* overlay device */
 extern int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f);
 extern int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f);
@@ -359,18 +364,7 @@ extern int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_forma
 extern int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
 extern int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb);
 
-/* Configuration */
-extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
-extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
-#if 0
-extern int fimc_set_scaler(struct fimc_control *ctrl);
-extern int fimc_set_src_crop(struct fimc_control *ctrl);
-extern int fimc_set_dst_crop(struct fimc_control *ctrl);
-extern int fimc_set_rot(struct fimc_control *ctrl);
-#endif
-
 /* Register access file */
-extern void fimc_reset_camera(void);
 extern void fimc_reset(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_source(struct fimc_control *ctrl);
 extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int level);
@@ -426,7 +420,6 @@ extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
  *
 */
 #define to_fimc_plat(d)		to_platform_device(d)->dev.platform_data
-#define get_actual_bufnum(n)	(n > 3 ? 4 : (n < 2 ? 1 : 2))
 
 static inline struct fimc_global *get_fimc_dev(void)
 {

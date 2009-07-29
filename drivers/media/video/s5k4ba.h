@@ -1,5 +1,5 @@
 #define S5K4BA_COMPLETE
-#undef S5K4BA_COMPLETE
+//#undef S5K4BA_COMPLETE
 /*
  * Driver for S5K4BA (UXGA camera) from Samsung Electronics
  * 
@@ -16,8 +16,8 @@
 #define __S5K4BA_H__
 
 struct s5k4ba_reg {
-	unsigned short addr;
-	unsigned short val;
+	unsigned char addr;
+	unsigned char val;
 };
 
 struct s5k4ba_regset_type {
@@ -80,7 +80,7 @@ enum s5k4ba_control {
 /*
  * User tuned register setting values
  */
-static const struct s5k4ba_reg s5k4ba_init_reg[] = {
+static unsigned char s5k4ba_init_reg[][2] = {
 	{0xfc,0x07},
 	{0x66,0x01},    /* Watch Dog Time On */
 	{0xfc,0x00},

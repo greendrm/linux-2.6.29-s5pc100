@@ -172,7 +172,7 @@ config S3C_GPIO_CFG_S5P64XX
 config S3C_DEV_HSMMC
 	bool
 	help
-	  Compile in platform device definitions for HSMMC code
+	  Compile in platform device definitions for HSMMC channel 0
 
 config S3C_DEV_HSMMC1
 	bool
@@ -182,12 +182,12 @@ config S3C_DEV_HSMMC1
 config S3C_DEV_HSMMC2
 	bool
 	help
-	  Compile in platform device definitions for HSMMC channel 1
+	  Compile in platform device definitions for HSMMC channel 2
 
 config S3C_DEV_HSMMC3
 	bool
 	help
-	  Compile in platform device definitions for HSMMC channel 1	  
+	  Compile in platform device definitions for HSMMC channel 3	  
 
 config S3C_DEV_I2C1
 	bool

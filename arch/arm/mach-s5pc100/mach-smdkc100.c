@@ -60,11 +60,13 @@
 #include <plat/ts.h>
 #include <plat/adc.h>
 #include <plat/gpio-cfg.h>
+#include <plat/regs-fimc.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-bank-k0.h>
 #include <plat/gpio-bank-a1.h>
 #include <plat/gpio-bank-b.h>
 #include <plat/gpio-bank-d.h>
+#include <plat/gpio-bank-h3.h>
 #include <plat/regs-clock.h>
 #include <plat/spi.h>
 
@@ -400,6 +402,7 @@ static struct platform_device *smdkc100_devices[] __initdata = {
         &s3c_device_timer[1],
 #endif
 	&s5p_device_tvout,
+	&s3c_device_cfcon,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -444,11 +447,11 @@ static struct s5k6aa_platform_data s5k6aa = {
 
 static struct i2c_board_info  __initdata camera_info[] = {
 	{
-		I2C_BOARD_INFO("S5K4BA", 0x5a),
+		I2C_BOARD_INFO("S5K4BA", 0x2d),
 		.platform_data = &s5k4ba,
 	},
 	{
-		I2C_BOARD_INFO("S5K6AA", 0x78),
+		I2C_BOARD_INFO("S5K6AA", 0x3c),
 		.platform_data = &s5k6aa,
 	},
 };
@@ -457,7 +460,7 @@ static struct i2c_board_info  __initdata camera_info[] = {
 static struct s3c_platform_camera __initdata camera_a = {
 	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
-	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 0,
 	.info		= &camera_info[0],
@@ -489,7 +492,7 @@ static struct s3c_platform_camera __initdata camera_c = {
 	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
-	.i2c_busnum	= 1,
+	.i2c_busnum	= 0,
 	.info		= &camera_info[1],
 	.pixelformat	= V4L2_PIX_FMT_YUYV,
 	.clk_name	= "sclk_cam",
@@ -525,6 +528,62 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 		&camera_c,
 	}
 };
+
+/*
+ * External camera reset
+ * Because the most of cameras take i2c bus signal, so that
+ * you have to reset at the boot time for other i2c slave devices.
+ * Do optimization for cameras on your platform.
+*/
+static void smdkc100_reset_camera(void)
+{
+	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
+	u32 cfg;
+
+	/* based on s5k4ba at the channel A */
+#if 0
+	/* high reset */
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#else
+	/* low reset */
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#endif
+
+#if 0
+	/* channel B reset: should be done by following after ch A reset */
+	cfg = readl(S5PC1XX_GPH3CON);
+	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
+	cfg |= S5PC1XX_GPH3_OUTPUT(6);
+	writel(cfg, S5PC1XX_GPH3CON);
+
+	cfg = readl(S5PC1XX_GPH3DAT);
+	cfg &= ~(0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(200);
+
+	cfg |= (0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(2000);
+#endif
+
+	iounmap(regs);
+}
 
 #if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
@@ -621,10 +680,7 @@ static void __init smdkc100_machine_init(void)
 	s3c_fimc1_set_platdata(&fimc_plat);
 	s3c_fimc2_set_platdata(&fimc_plat);
 	s3c_csis_set_platdata(NULL);
-
-#if defined(CONFIG_VIDEO_FIMC) || defined(CONFIG_VIDEO_FIMC2) // jsgood: temp
-	fimc_reset_camera();
-#endif
+	smdkc100_reset_camera();
 
 	/* fb */
 	s3cfb_set_platdata(&fb_data);

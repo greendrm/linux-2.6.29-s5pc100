@@ -42,7 +42,6 @@
 #include <plat/iic-core.h>
 #include <plat/s5pc110.h>
 
-#include <plat/regs-power.h>
 #include <plat/regs-clock.h>
 
 #undef T32_PROBE_DEBUGGING
@@ -76,13 +75,27 @@ static void s5pc110_idle(void)
 {
 	unsigned int tmp;
 /*
- * 1. Set CFG_STANDBYWFI field of PWR_CFG to 2¡¯b01.
- * 2. Set PMU_INT_DISABLE bit of OTHERS register to 1¡¯b1 to prevent interrupts from
+ * 1. Set CFG_DIDLE field of IDLE_CFG. 
+ * (0x0 for IDLE and 0x1 for DEEP-IDLE)
+ * 2. Set TOP_LOGIC field of IDLE_CFG to 0x2
+ * 3. Set CFG_STANDBYWFI field of PWR_CFG to 2'b01.
+ * 4. Set PMU_INT_DISABLE bit of OTHERS register to 1'b01 to prevent interrupts from
  *    occurring while entering IDLE mode.
- * 3. Execute Wait For Interrupt instruction (WFI).
-*/
-}
+ * 5. Execute Wait For Interrupt instruction (WFI).
+ */
 
+	tmp = __raw_readl(S5P_IDLE_CFG);
+	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
+	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
+	__raw_writel(tmp, S5P_IDLE_CFG);
+
+	tmp = __raw_readl(S5P_PWR_CFG);
+	tmp &= S5P_CFG_WFI_CLEAN;
+	tmp |= S5P_CFG_WFI_IDLE;
+	__raw_writel(tmp, S5P_PWR_CFG);
+
+	cpu_do_idle();
+}
 void __init s5pc110_map_io(void)
 {
 	iotable_init(s5pc110_iodesc, ARRAY_SIZE(s5pc110_iodesc));
@@ -104,6 +117,9 @@ void __init s5pc110_init_clocks(int xtal)
 	s5pc11x_register_clocks();
 	s5pc110_register_clocks();
 	s5pc110_setup_clocks();
+#if defined(CONFIG_HAVE_PWM)
+        s3c_pwmclk_init();
+#endif	
 }
 
 void __init s5pc110_init_irq(void)

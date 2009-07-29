@@ -287,6 +287,32 @@ config BLK_DEV_IDEPNP
 	  would like the kernel to automatically detect and activate
 	  it, say Y here.
 
+config BLK_DEV_IDE_S3C
+        tristate "Samsung S3C IDE Controller"
+	depends on ARCH_S5PC1XX || ARCH_S5PC11X
+        help
+          Say Y here if you want to support using CF controller on SMDK(Samsung)
+	  development board. It will be configured for true IDE mode.
+
+config BLK_DEV_IDE_S3C_PIO
+	bool "Use PIO Mode"
+	depends on (BLK_DEV_IDE_S3C && !BLK_DEV_IDE_S3C_UDMA)
+	help
+	  Say Y here if you want to support the DMA in PIO Mode.
+
+config BLK_DEV_IDE_S3C_UDMA
+	bool "Use UDMA Mode"
+	depends on BLK_DEV_IDE_S3C
+	help
+	  Say Y here if you want to support the UDMA.
+	
+config IDE_HOOK_IRQ
+	bool "Hooking ATA Interrupt to manage Device"
+	default y
+	depends on BLK_DEV_IDE_S3C
+	help
+	  Say Y here if you want to use ATA device.
+
 config BLK_DEV_IDEDMA_SFF
 	bool
 
@@ -914,6 +940,6 @@ endif
 
 config BLK_DEV_IDEDMA
 	def_bool BLK_DEV_IDEDMA_SFF || \
-		 BLK_DEV_IDEDMA_ICS || BLK_DEV_IDE_AU1XXX_MDMA2_DBDMA
+		 BLK_DEV_IDEDMA_ICS || BLK_DEV_IDE_AU1XXX_MDMA2_DBDMA || BLK_DEV_IDE_S3C_UDMA
 
 endif # IDE

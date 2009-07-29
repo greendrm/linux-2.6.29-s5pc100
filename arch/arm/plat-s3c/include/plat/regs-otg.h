@@ -185,6 +185,12 @@
 /* S3C_UDC_OTG_DCTL device control register */
 #define NORMAL_OPERATION		(0x1<<0)
 #define SOFT_DISCONNECT			(0x1<<1)
+#define TEST_CONTROL_MASK		(0x7<<4)
+#define TEST_J_MODE			(0x1<<4)
+#define TEST_K_MODE			(0x2<<4)
+#define TEST_SE0_NAK_MODE		(0x3<<4)
+#define TEST_PACKET_MODE		(0x4<<4)
+#define TEST_FORCE_ENABLE_MODE		(0x5<<4)
 
 /* S3C_UDC_OTG_DAINT device all endpoint interrupt register */
 #define DAINT_OUT_BIT			(16)

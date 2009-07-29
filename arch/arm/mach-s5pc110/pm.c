@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Samsung Electronics
  *
  *
- * S3C6410 (and compatible) Power Manager (Suspend-To-RAM) support
+ * S5PC110 (and compatible) Power Manager (Suspend-To-RAM) support
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,7 @@ static struct sysdev_driver s5pc110_pm_driver = {
 
 static __init int s5pc110_pm_drvinit(void)
 {
+	printk("S5PC110 Power driver init\n");
 	return sysdev_driver_register(&s5pc110_sysclass, &s5pc110_pm_driver);
 }
 

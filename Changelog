@@ -871,7 +871,7 @@ v2.6.29.4-r3d2: Jonghun Han
 		M       arch/arm/plat-s5pc1xx/clock.c
 
 +v2.6.29.4-r3d3: Jassi
-	- SPI renaming for TomTom.
+	- SPI renaming
 
 v2.6.29.4-r3d4: Kukjin Kim
 	- Bug fixed for DMAC transfer size
@@ -1100,3 +1100,158 @@ v2.6.29.4-dev-1-0-4: Changhwan Youn
 
 	Added Files:
 		A       arch/arm/plat-s3c/dev-hsmmc3.c
+
+v2.6.29.4-dev-1-0-5: Hyunwoong Kim
+	- Temporary Release for s5pc110(2009.07.22) 
+
+v2.6.29.4-dev-1-0-6: Ohkyoung Kwon
+	- Support onenand rfs for s5pc110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+
+	Added Files:
+		A       arch/arm/configs/smdkc110onenand_defconfig
+
+v2.6.29.4-dev-1-0-7: Kyoungil Kim
+	- Support USB Ethernet Gadget for s5pc110
+
+	Modified Files:
+		M       arch/arm/configs/smdkc110ramdisk_defconfig
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s3c/include/plat/regs-otg.h
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M       drivers/usb/gadget/Kconfig
+		M       drivers/usb/gadget/s3c_udc.h
+		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+
+v2.6.29.4-dev-1-0-8: Jae-Cheol Lee
+	- Support IDLE and CHIPID for s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+		M	arch/arm/plat-s5pc11x/cpu.c
+
+v2.6.29.4-dev-1-0-9: Jae-Cheol Lee
+	- Fix VIC for C110 and 6442
+	- Add PWM device for C110
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/entry-macro.S
+		M	arch/arm/mach-s5pc110/include/mach/entry-macro.S
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/Kconfig
+		M	arch/arm/plat-s5pc11x/Makefile
+		M	arch/arm/plat-s5pc11x/include/plat/gpio-bank-d0.h
+		M	arch/arm/plat-s5pc11x/pwm.c
+
+v2.6.29.4-dev-1-0-10: Jongpill Lee
+	- Support WDT on SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       drivers/watchdog/Kconfig
+
+v2.6.29.4-dev-1-0-11: Jongpill Lee
+	- Added select type of S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+
+v2.6.29.4-dev-1-0-12: Jongpill Lee
+	- temporary update some code for PM on SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/button-smdkc110.c
+		M       arch/arm/mach-s5pc110/cpu.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/mach-s5pc110/pm.c
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc11x/sleep.S
+
+	Deleted Files:
+		D       arch/arm/plat-s3c/s3c-button.c
+		D       arch/arm/plat-s5pc11x/include/plat/regs-power.h
+
+v2.6.29.4-dev-1-0-13: Changhwan Youn
+	- SD/MMC support using MPLL clock for SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/s5pc110-clock.c
+
+v2.6.29.4-dev-1-0-14: Jongpill Lee
+	- temporary update for PM of S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Makefile
+		M       arch/arm/mach-s5pc110/button-smdkc110.c
+		M       arch/arm/mach-s5pc110/include/mach/regs-irq.h
+		M       arch/arm/mach-s5pc110/pm.c
+		M       arch/arm/plat-s3c/include/plat/regs-serial.h
+		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc11x/sleep.S
+
+v2.6.29.4-dev-1-0-15: Kukjin Kim
+	- Modified DMA for S5PC110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/include/mach/map.h
+		M	arch/arm/mach-s5pc110/dma.c
+		M	arch/arm/mach-s5pc110/include/mach/map.h
+		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-dev-1-0-16: Jongpill Lee
+	- Support APM for S5PC110
+		
+	Modified Files:
+                M       arch/arm/plat-s5pc11x/pm.c
+                M       arch/arm/plat-s5pc11x/sleep.S
+
+v2.6.29.4-dev-1-0-17: Jae-Cheol Lee
+	- Changed gpiolib initcall from arch_initcall to core_initcall for
+	s5pc110
+
+	Modified Files:
+		M	arch/arm/plat-s5pc11x/gpiolib.c
+
+v2.6.29.4-dev-1-0-18: Abhilash Kesavan
+	- Added Support for CF-ATA on SMDKC100 (Tested with Microdrive, SSD
+	and Extreme III cards for ramdisk) 
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/include/mach/map.h
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/mach-s5pc110/include/mach/map.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/devs.c
+		M	arch/arm/plat-s5pc1xx/clock.c
+		M	arch/arm/plat-s5pc1xx/devs.c
+		M	drivers/ide/Kconfig
+		M	drivers/ide/Makefile
+		M	drivers/ide/ide-io.c
+		M	drivers/ide/ide-iops.c
+		M	drivers/ide/ide-proc.c
+		M	include/linux/ide.h
+
+	Added Files:
+		A	arch/arm/configs/smdkc100ata_defconfig
+		A	arch/arm/plat-s3c/include/plat/regs-ide.h
+		A	drivers/ide/s3c-ide.c
+		A	drivers/ide/s3c-ide.h
+
+v2.6.29.4-dev-1-0-19: Jae-Cheol Lee
+	- Changed debug port UART0 -> UART1 for smdkc110
+
+	Modified Files:
+		M	arch/arm/configs/smdkc110nfs_defconfig
+		M	arch/arm/configs/smdkc110onenand_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfig

@@ -77,6 +77,12 @@
 #define RegReadErr		5
 #define FAIL_TO_SETUP		6
 
+#define TEST_J_SEL		0x1
+#define TEST_K_SEL		0x2
+#define TEST_SE0_NAK_SEL	0x3
+#define TEST_PACKET_SEL		0x4
+#define TEST_FORCE_ENABLE_SEL	0x5
+
 /* ********************************************************************************************* */
 /* IO
  */
