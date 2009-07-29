@@ -40,6 +40,8 @@ s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_tail[MFC_MAX_PORT_NUM];
 s3c_mfc_free_mem_t *s3c_mfc_free_mem_head[MFC_MAX_PORT_NUM];
 s3c_mfc_free_mem_t *s3c_mfc_free_mem_tail[MFC_MAX_PORT_NUM];
 
+extern int vir_mmap_size;
+
 //extern unsigned int s3c_mfc_phys_data_buf;	// port 1
 //extern volatile unsigned char *s3c_mfc_virt_data_buf;	// port 1
 //extern unsigned int s3c_mfc_phys_dpb_luma_buf;		// port 0
@@ -309,7 +311,9 @@ int s3c_mfc_init_buffer_manager(void)
 	memset(free_node, 0x00, sizeof(s3c_mfc_free_mem_t));
 	free_node->start_addr = (port_no) ? s3c_mfc_get_dpb_luma_buf_phys_addr() : 
 					s3c_mfc_get_data_buf_phys_addr();
-	free_node->size = (port_no) ? MFC_DATA_DRAM1_BUF_SIZE : MFC_DATA_DRAM0_BUF_SIZE;
+	//free_node->size = (port_no) ? MFC_DATA_DRAM1_BUF_SIZE : MFC_DATA_DRAM0_BUF_SIZE;
+	free_node->size = (port_no) ? s3c_get_media_memsize_node(S3C_MDEV_MFC, 1) : 
+					s3c_get_media_memsize(S3C_MDEV_MFC);	
 	// peter, it should be changed
 	s3c_mfc_insert_first_node_to_free_list(free_node, -1, port_no);
 
@@ -320,42 +324,21 @@ int s3c_mfc_init_buffer_manager(void)
 
 
 /* Releae memory */
-MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_alloc_mem_t *node)
 {		
 	int ret;
 
 	s3c_mfc_free_mem_t *free_node;
-	s3c_mfc_alloc_mem_t *node;
-	int port_no = 0;
-	int matched_u_addr = 0;
-
-	for (port_no=0; port_no < MFC_MAX_PORT_NUM; port_no++) {			
-		for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; 
-			node = node->next) {
-			if(node->u_addr == (unsigned char *)args->mem_free.u_addr) {
-				matched_u_addr = 1;
-				break;
-			}	
-		}
-		if (matched_u_addr)
-			break;			
-	}	
-
-	if (node == s3c_mfc_alloc_mem_tail[port_no]) {
-		mfc_err("invalid virtual address(0x%x)\r\n", args->mem_free.u_addr);
-		ret = MFCINST_MEMORY_INVAILD_ADDR;
-		goto out_releaseallocmem;
-	}
 
 	free_node = (s3c_mfc_free_mem_t	*)kmalloc(sizeof(s3c_mfc_free_mem_t), GFP_KERNEL);
 
 	free_node->start_addr = node->p_addr;	
 
 	free_node->size = node->size;
-	s3c_mfc_insert_node_to_free_list(free_node, mfc_ctx->InstNo, port_no);
+	s3c_mfc_insert_node_to_free_list(free_node, mfc_ctx->mem_inst_no, mfc_ctx->port_no);
 
 	/* Delete from AllocMem list */
-	s3c_mfc_del_node_from_alloc_list(node, mfc_ctx->InstNo, port_no);	
+	s3c_mfc_del_node_from_alloc_list(node, mfc_ctx->mem_inst_no, mfc_ctx->port_no);	
 
 	ret = MFCINST_RET_OK;
 
@@ -363,6 +346,49 @@ out_releaseallocmem:
 	return ret;
 }
 
+#if 0
+/* Releae memory for ab-normal close */
+MFC_ERROR_CODE s3c_mfc_force_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx)
+{		
+	int ret;
+
+	s3c_mfc_free_mem_t *free_node;
+	s3c_mfc_alloc_mem_t *node, *tmp_node;
+	int port_no = 0;
+	
+	for (port_no=0; port_no < MFC_MAX_PORT_NUM; port_no++) {			
+		for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; 
+			node = node->next) {
+			if (node->inst_no == mfc_ctx->mem_inst_no) {
+				tmp_node = node;
+				node = node->prev;
+			}	
+		}				
+	}	
+
+	if (tmp_node == s3c_mfc_alloc_mem_tail[port_no]) {
+		mfc_err("invalid virtual address(0x%x)\r\n", args->mem_free.u_addr);
+		ret = MFCINST_MEMORY_INVAILD_ADDR;
+		goto out_releaseallocmem;
+	}
+
+	free_node = (s3c_mfc_free_mem_t	*)kmalloc(sizeof(s3c_mfc_free_mem_t), GFP_KERNEL);
+
+	free_node->start_addr = tmp_node->p_addr;	
+
+	free_node->size = tmp_node->size;
+	s3c_mfc_insert_node_to_free_list(free_node, mfc_ctx->mem_inst_no, port_no);
+
+	/* Delete from AllocMem list */
+	s3c_mfc_del_node_from_alloc_list(tmp_node, mfc_ctx->mem_inst_no, port_no);	
+
+	ret = MFCINST_RET_OK;
+
+out_releaseallocmem:
+	return ret;
+}	
+#endif
+	
 MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args)
 {
 	int ret;
@@ -396,7 +422,7 @@ out_getphysaddr:
 MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	int ret;
-	int inst_no = mfc_ctx->InstNo;
+	int inst_no = mfc_ctx->mem_inst_no;
 	int port_no = mfc_ctx->port_no;
 	unsigned int p_startAddr;
 	s3c_mfc_mem_alloc_arg_t *in_param;	
@@ -423,12 +449,12 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 	if (port_no) {	// port 1
 		p_allocMem->v_addr = s3c_mfc_get_dpb_luma_buf_virt_addr() + 
 				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr());
-		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + 
+		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + vir_mmap_size/2 +
 				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));		
 	} else {	// peter, check whether p_allocMem->v_addr is aligned 4KB
 		p_allocMem->v_addr = s3c_mfc_get_data_buf_virt_addr() + 
 				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr());
-		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + MFC_DATA_DRAM1_BUF_SIZE +
+		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + 
 				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr()));		
 	}	
 

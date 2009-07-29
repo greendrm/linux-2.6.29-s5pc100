@@ -123,7 +123,7 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, u
 	unsigned int fw_phybuf;	
 	unsigned int risc_phy_buf, aligned_risc_phy_buf;
 
-	mfc_debug("inst_no : %d, buf_addr : 0x%08x, buf_size : %d\n", inst_no, buf_addr, buf_size);
+	mfc_debug("inst_no : %d, buf_addr : 0x%08x, buf_size : 0x%08x\n", inst_no, buf_addr, buf_size);
 	
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
 	
@@ -279,8 +279,7 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 	risc_phy_buf = s3c_mfc_get_risc_buf_phys_addr(inst_no);
 	aligned_risc_phy_buf = Align(risc_phy_buf, 2*BUF_L_UNIT) + DESC_BUF_SIZE;
 
-	mfc_debug("inst_no : %d, risc_buf_start : 0x%08x\n", \
-			inst_no, risc_phy_buf);
+	mfc_debug("inst_no : %d, risc_buf_start : 0x%08x\n", inst_no, risc_phy_buf);
 
 
 	switch (codec_type) {
@@ -353,8 +352,7 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 
 	}	
 	
-	mfc_debug("inst_no : %d, risc_buf_end : 0x%08x\n", \
-			inst_no, aligned_risc_phy_buf);
+	mfc_debug("inst_no : %d, risc_buf_end : 0x%08x\n", inst_no, aligned_risc_phy_buf);
 
 	return MFCINST_RET_OK;
 }
@@ -374,7 +372,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 
 	/* Set image size */
 	WRITEL(enc_init_mpeg4_arg->in_width, S3C_FIMV_ENC_HSIZE_PX);	
-	if (enc_init_mpeg4_arg->in_interlace_mode) {
+	if ((mfc_codec_type == H264_ENC) && (enc_init_mpeg4_arg->in_interlace_mode)) {
 		WRITEL(enc_init_mpeg4_arg->in_height>>1, S3C_FIMV_ENC_VSIZE_PX);
 		WRITEL(enc_init_mpeg4_arg->in_interlace_mode, S3C_FIMV_ENC_PIC_STRUCT);
 	}	
@@ -416,7 +414,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	
 	/* Set circular intra refresh MB count */
 	WRITEL(enc_init_mpeg4_arg->in_mb_refresh, S3C_FIMV_ENC_CIR_CTRL);
-	WRITEL(0, S3C_FIMV_ENC_MAP_FOR_CUR);	// linear mode
+	WRITEL(MEM_STRUCT_LINEAR, S3C_FIMV_ENC_MAP_FOR_CUR);	// linear mode
 	/* Set padding control */
 	WRITEL((enc_init_mpeg4_arg->in_pad_ctrl_on<<31)|(enc_init_mpeg4_arg->in_cr_pad_val<<16)|
 		(enc_init_mpeg4_arg->in_cb_pad_val<<8)|(enc_init_mpeg4_arg->in_luma_pad_val<<0),
@@ -424,9 +422,6 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	WRITEL(0, S3C_FIMV_ENC_INT_MASK);	// mask interrupt	
 
 	/* Set Rate Control */
-	WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_mpeg4_arg->in_RC_mb_enable << 8)|
-		(enc_init_mpeg4_arg->in_vop_quant & 0x3F),
-		S3C_FIMV_ENC_RC_CONFIG);
 	if (enc_init_mpeg4_arg->in_RC_framerate != 0)
 		WRITEL(enc_init_mpeg4_arg->in_RC_framerate, S3C_FIMV_ENC_RC_FRAME_RATE);
 	if (enc_init_mpeg4_arg->in_RC_bitrate != 0)
@@ -439,11 +434,14 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	switch (mfc_codec_type) {
 	case H264_ENC:
 		/* if in_RC_mb_enable is '1' */
+		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_h264_arg->in_RC_mb_enable << 8)|
+			(enc_init_mpeg4_arg->in_vop_quant & 0x3F),
+			S3C_FIMV_ENC_RC_CONFIG);
 		if (READL(S3C_FIMV_ENC_RC_CONFIG) & 0x0100) {
-			WRITEL((enc_init_mpeg4_arg->in_RC_mb_dark_disable<<3)|
-				(enc_init_mpeg4_arg->in_RC_mb_smooth_disable<<2)| 
-				(enc_init_mpeg4_arg->in_RC_mb_static_disable<<1)| 
-				(enc_init_mpeg4_arg->in_RC_mb_activity_disable<<0),
+			WRITEL((enc_init_h264_arg->in_RC_mb_dark_disable<<3)|
+				(enc_init_h264_arg->in_RC_mb_smooth_disable<<2)| 
+				(enc_init_h264_arg->in_RC_mb_static_disable<<1)| 
+				(enc_init_h264_arg->in_RC_mb_activity_disable<<0),
 				S3C_FIMV_ENC_RC_MB_CTRL);
 		}	
 		WRITEL((enc_init_mpeg4_arg->in_profile_level)|(1<<2)|
@@ -468,11 +466,15 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 		break;
 		
 	case MPEG4_ENC:
+		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_mpeg4_arg->in_vop_quant & 0x3F),
+			S3C_FIMV_ENC_RC_CONFIG);
 		WRITEL(enc_init_mpeg4_arg->in_profile_level, S3C_FIMV_ENC_PROFILE);
 		WRITEL(enc_init_mpeg4_arg->in_qpelME_enable, S3C_FIMV_ENC_MPEG4_QUART_PXL);		
 		break;
 
 	case H263_ENC:
+		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_mpeg4_arg->in_vop_quant & 0x3F),
+			S3C_FIMV_ENC_RC_CONFIG);
 		WRITEL(0x20, S3C_FIMV_ENC_PROFILE);
 		break;
 
@@ -482,19 +484,18 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 
 }
 
-BOOL s3c_mfc_load_firmware()
+int s3c_mfc_load_firmware()
 {
 	volatile unsigned char *fw_virbuf;
 
 	mfc_debug("s3c_mfc_load_firmware++\n");
 
 	fw_virbuf = Align((unsigned int)s3c_mfc_get_fw_buf_virt_addr(), 128*BUF_L_UNIT);
-	memcpy((void *)fw_virbuf, s3c_mfc_fw_code, sizeof(s3c_mfc_fw_code));
-	
+	memcpy((void *)fw_virbuf, s3c_mfc_fw_code, sizeof(s3c_mfc_fw_code));	
 
 	mfc_debug("s3c_mfc_load_firmware--\n");
 	
-	return TRUE;
+	return 0;
 }
 
 MFC_ERROR_CODE s3c_mfc_init_hw()
@@ -506,13 +507,8 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 
 	mfc_debug("s3c_mfc_init_hw++\n");	
 	
-	printk(">> peter fw_phybuf = 0x%08x, dpb_luma_phybuf = 0x%08x <<\n", 
-		s3c_mfc_get_fw_buf_phys_addr(), s3c_mfc_get_dpb_luma_buf_phys_addr());
-	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
-	dpb_luma_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);
-
-	printk(">> peter fw_phybuf = 0x%08x, dpb_luma_phybuf = 0x%08x <<\n", 
-		fw_phybuf, dpb_luma_phybuf);
+	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
+	dpb_luma_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);		
 	
 	/*
 	 * 0. MFC reset
@@ -522,9 +518,9 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	/*
 	 * 1. Set DRAM base Addr
 	 */
-	WRITEL(fw_phybuf, S3C_FIMV_MC_DRAMBASE_ADR_A); 		// channelA 
-	WRITEL(dpb_luma_phybuf, S3C_FIMV_MC_DRAMBASE_ADR_B); 	// channelB
-	WRITEL(0, S3C_FIMV_MC_RS_IBASE); 			// fw location sel : 0->A, 1->B
+	WRITEL(fw_phybuf, S3C_FIMV_MC_DRAMBASE_ADR_A); 		// channelA, port0 
+	WRITEL(dpb_luma_phybuf, S3C_FIMV_MC_DRAMBASE_ADR_B); 	// channelB, port1
+	WRITEL(0, S3C_FIMV_MC_RS_IBASE); 			// FW location sel : 0->A, 1->B
 	WRITEL(1, S3C_FIMV_NUM_MASTER);				// 0->1master, 1->2master	
 	
 	/*
@@ -562,6 +558,7 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 		(fw_version>>16)&0xff, (fw_version>>8)&0xff, (fw_version)&0xff);
 
 	mfc_debug("FW_PHY_BUFFER : 0x%08x\n", READL(S3C_FIMV_MC_DRAMBASE_ADR_A));
+	mfc_debug("DPB_LUMA_BUFFER : 0x%08x\n", READL(S3C_FIMV_MC_DRAMBASE_ADR_B));
 	mfc_debug("s3c_mfc_init_hw--\n");
 	
 	return MFCINST_RET_OK;
@@ -784,8 +781,8 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	enc_arg = (s3c_mfc_enc_exe_arg *) args;
 	ret = s3c_mfc_encode_one_frame(mfc_ctx, enc_arg);
 
-	if (mfc_ctx->interlace_mode)
-		ret = s3c_mfc_encode_one_frame(mfc_ctx, enc_arg);
+	//if (mfc_ctx->interlace_mode)
+	//	ret = s3c_mfc_encode_one_frame(mfc_ctx, enc_arg);
 
 	mfc_debug("--\n");
 

@@ -24,9 +24,9 @@
 
 #include "s5p_tv.h"
 
-//#ifdef COFIG_TVOUT_DBG
+#ifdef COFIG_TVOUT_DBG
 #define S5P_STDA_TVOUTIF_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_STDA_TVOUTIF_DEBUG
 #define TVOUTIFPRINTK(fmt, args...) \
@@ -732,7 +732,7 @@ bool _s5p_tv_if_init_hd_reg(void)
 {
 	s5p_tv_status *st = &s5ptv_status;
 	
-	TVOUTIFPRINTK("autio type : %d, hdcp : %s)\n\r", 
+	TVOUTIFPRINTK("audio type : %d, hdcp : %s)\n\r", 
 		st->hdmi_audio_type, st->hdcp_en ? "enabled":"disabled");
 
 	if (st->hdcp_en) {
@@ -789,10 +789,12 @@ bool _s5p_tv_if_start(void)
 	* have not to call 
 	* another request function simultaneously
 	*/
+	/*
 	if (!__s5p_tv_power_get_power_status()) { 
 		__s5p_tv_poweron();
 	}
-
+*/
+	__s5p_tv_poweron();
 	__s5p_tv_clk_set_vmixer_hclk_onoff(true);
 	__s5p_tv_clk_set_vmixer_sclk_onoff(true);
 
@@ -865,8 +867,8 @@ bool _s5p_tv_if_start(void)
 
 		__s5p_tv_clk_hpll_onoff(true);
 
-		__s5p_tv_poweroff();
-		__s5p_tv_poweron();
+		//__s5p_tv_poweroff();
+		//__s5p_tv_poweron();
 
 		break;
 
@@ -937,6 +939,8 @@ bool _s5p_tv_if_stop(void)
 	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
 	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
 
+	TVOUTIFPRINTK("tvout sub sys. stopped!!\n");
+
 	switch (out_mode) {
 
 	case TVOUT_OUTPUT_COMPOSITE:
@@ -954,7 +958,9 @@ bool _s5p_tv_if_stop(void)
 	case TVOUT_OUTPUT_HDMI:
 		__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,disp_mode,
 					false);
-		__s5p_hdmi_stop();
+
+		if(st->tvout_output_enable)
+			__s5p_hdmi_stop();
 		break;
 
 	default:
@@ -965,10 +971,10 @@ bool _s5p_tv_if_stop(void)
 
 	__s5p_vm_stop();
 
-	if (__s5p_tv_power_get_power_status()) {
-		__s5p_tv_clk_stop();
-		__s5p_tv_poweroff();
-	}
+//	if (__s5p_tv_power_get_power_status()) {
+//		__s5p_tv_clk_stop();
+//		__s5p_tv_poweroff();
+//	}
 
 	st->tvout_output_enable = false;
 	st->tvout_param_available = false;

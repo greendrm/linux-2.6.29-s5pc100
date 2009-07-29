@@ -1248,3 +1248,74 @@ v2.6.29.4-dev-1-0-18: Abhilash Kesavan
 		A	drivers/ide/s3c-ide.c
 		A	drivers/ide/s3c-ide.h
 
+v2.6.29.4-dev-1-0-19: Jae-Cheol Lee
+	- Changed debug port UART0 -> UART1 for smdkc110
+
+	Modified Files:
+		M	arch/arm/configs/smdkc110nfs_defconfig
+		M	arch/arm/configs/smdkc110onenand_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfigi
+
+v2.6.29.4-dev-1-0-20: Jae-Cheol Lee
+	- Support PWM driver on smdkc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		
+v2.6.29.4-dev-1-0-21: Sang Pil Moon
+	- added hdmi kernel resource for hdmi/tvuot drv.
+	- added s5pc110 hdmi drv. module
+
+	Modified Files:
+		M       Changelog
+		M       arch/arm/mach-s5pc100/include/mach/map.h
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M       arch/arm/plat-s5pc1xx/devs.c
+		M       drivers/media/video/samsung/Kconfig
+		M       drivers/media/video/samsung/tv20/Kconfig
+		M       drivers/media/video/samsung/tv20/Makefile
+		M       drivers/media/video/samsung/tv20/s5p_stda_tvout_if.c
+		M       drivers/media/video/samsung/tv20/s5p_tv.h
+		M       drivers/media/video/samsung/tv20/s5p_tv_base.c
+		M       drivers/media/video/samsung/tv20/s5p_tv_v4l2.c
+		M       drivers/media/video/samsung/tv20/s5pc100/hdcp_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/hdmi_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-hdmi.h
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-vmx.h
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-vprocessor.h
+		M       drivers/media/video/samsung/tv20/s5pc100/sdout_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_power_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/vprocessor_s5pc100.c
+
+	Added Files:		
+		A       drivers/media/video/samsung/tv20/s5pc110/hdcp_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_param.h
+		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-clock_extra.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-hdmi.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-sdaout.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-vmx.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-vprocessor.h
+		A       drivers/media/video/samsung/tv20/s5pc110/sdout_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_clock_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_out_s5pc110.h
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/vp_coeff_s5pc110.h
+		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c	
+
+v2.6.29.4-dev-1-0-22: Jae-Hun Jung
+	- RTC support on S5PC110.
+
+	Modified Files
+		M	drivers/rtc/Kconfig
+		M	arch/arm/plat-s3c/include/plat/regs-rtc.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	drivers/rtc/rtc-s3c.c
+

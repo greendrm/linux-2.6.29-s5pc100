@@ -460,31 +460,46 @@ EXPORT_SYMBOL(s3c_device_rotator);
 /* TVOUT interface */
 static struct resource s5p_tvout_resources[] = {
 	[0] = {
-		.start  = S5PC1XX_PA_TVOUT,
-		.end    = S5PC1XX_PA_TVOUT + S5PC1XX_SZ_TVOUT - 1,
+		.start  = S5PC1XX_PA_TVENC,
+		.end    = S5PC1XX_PA_TVENC + S5PC1XX_SZ_TVENC - 1,
 		.flags  = IORESOURCE_MEM,
 	},
 	[1] = {
+		.start  = S5PC1XX_PA_VP,
+		.end    = S5PC1XX_PA_VP + S5PC1XX_SZ_VP - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	[2] = {
+		.start  = S5PC1XX_PA_MIXER,
+		.end    = S5PC1XX_PA_MIXER + S5PC1XX_SZ_MIXER - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	[3] = {
+		.start  = S5PC1XX_PA_HDMI,
+		.end    = S5PC1XX_PA_HDMI + S5PC1XX_SZ_HDMI - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	[4] = {
 		.start  = S5PC1XX_PA_CLK_OTHER,
 		.end    = S5PC1XX_PA_CLK_OTHER + S5PC1XX_SZ_CLK_OTHER - 1,
 		.flags  = IORESOURCE_MEM,
 	},
-	[2] = {
+	[5] = {
 		.start  = IRQ_MIXER,
 		.end    = IRQ_MIXER,
 		.flags  = IORESOURCE_IRQ,
 	},
-	[3] = {
+	[6] = {
 		.start  = IRQ_HDMI,
 		.end    = IRQ_HDMI,
 		.flags  = IORESOURCE_IRQ,
 	},
-	[4] = {
+	[7] = {
 		.start  = IRQ_TVENC,
 		.end    = IRQ_TVENC,
 		.flags  = IORESOURCE_IRQ,
 	},
-	[5] = {
+	[8] = {
 		.start  = IRQ_EINT5,
 		.end    = IRQ_EINT5,
 		.flags  = IORESOURCE_IRQ,

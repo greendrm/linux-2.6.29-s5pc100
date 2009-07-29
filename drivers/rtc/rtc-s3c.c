@@ -125,14 +125,22 @@ static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm)
 {
 	unsigned int have_retried = 0;
 	void __iomem *base = s3c_rtc_base;
+	int year_110;
 
  retry_get_time:
+	rtc_tm->tm_sec  = readb(base + S3C2410_RTCSEC);
 	rtc_tm->tm_min  = readb(base + S3C2410_RTCMIN);
 	rtc_tm->tm_hour = readb(base + S3C2410_RTCHOUR);
 	rtc_tm->tm_mday = readb(base + S3C2410_RTCDATE);
 	rtc_tm->tm_mon  = readb(base + S3C2410_RTCMON);
+	
+#if defined (CONFIG_CPU_S5PC110)
+	year_110 = readl(base + S3C2410_RTCYEAR);	// read long type
+	rtc_tm->tm_year = (0x00000fff & year_110);
+#else
 	rtc_tm->tm_year = readb(base + S3C2410_RTCYEAR);
-	rtc_tm->tm_sec  = readb(base + S3C2410_RTCSEC);
+#endif
+	
 
 	/* the only way to work out wether the system was mid-update
 	 * when we read it is to check the second counter, and if it
@@ -156,6 +164,8 @@ static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm)
 	rtc_tm->tm_year = bcd2bin(rtc_tm->tm_year);
 
 	rtc_tm->tm_year += 100;
+
+
 	rtc_tm->tm_mon -= 1;
 
 	return 0;
@@ -164,14 +174,16 @@ static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm)
 static int s3c_rtc_settime(struct device *dev, struct rtc_time *tm)
 {
 	void __iomem *base = s3c_rtc_base;
+
 	int year = tm->tm_year - 100;
 
+	
 	pr_debug("set time %02d.%02d.%02d %02d/%02d/%02d\n",
 		 tm->tm_year, tm->tm_mon, tm->tm_mday,
 		 tm->tm_hour, tm->tm_min, tm->tm_sec);
 
 	/* we get around y2k by simply not supporting it */
-
+	
 	if (year < 0 || year >= 100) {
 		dev_err(dev, "rtc only supports 100 years\n");
 		return -EINVAL;
@@ -182,7 +194,14 @@ static int s3c_rtc_settime(struct device *dev, struct rtc_time *tm)
 	writeb(bin2bcd(tm->tm_hour), base + S3C2410_RTCHOUR);
 	writeb(bin2bcd(tm->tm_mday), base + S3C2410_RTCDATE);
 	writeb(bin2bcd(tm->tm_mon + 1), base + S3C2410_RTCMON);
+	
+#if defined (CONFIG_CPU_S5PC110)
+	year = (0x00000fff & year);
+	writel(bin2bcd(year), base + S3C2410_RTCYEAR);
+#else
 	writeb(bin2bcd(year), base + S3C2410_RTCYEAR);
+#endif
+
 
 	return 0;
 }
@@ -198,7 +217,13 @@ static int s3c_rtc_getalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	alm_tm->tm_hour = readb(base + S3C2410_ALMHOUR);
 	alm_tm->tm_mon  = readb(base + S3C2410_ALMMON);
 	alm_tm->tm_mday = readb(base + S3C2410_ALMDATE);
+#if defined (CONFIG_CPU_S5PC110)
+	alm_tm->tm_year = readl(base + S3C2410_ALMYEAR);
+	alm_tm->tm_year = (0x00000fff & alm_tm->tm_year);
+#else
 	alm_tm->tm_year = readb(base + S3C2410_ALMYEAR);
+#endif
+
 
 	alm_en = readb(base + S3C2410_RTCALM);
 
@@ -252,9 +277,10 @@ static int s3c_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	struct rtc_time *tm = &alrm->time;
 	void __iomem *base = s3c_rtc_base;
 	unsigned int alrm_en;
-
+	
 	int year = tm->tm_year - 100;
 
+	
 	pr_debug("s3c_rtc_setalarm: %d, %02x/%02x/%02x %02x.%02x.%02x\n",
 		 alrm->enabled,
 		 tm->tm_mday & 0xff, tm->tm_mon & 0xff, tm->tm_year & 0xff,
@@ -288,11 +314,19 @@ static int s3c_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 		alrm_en |= S3C2410_RTCALM_MONEN;
 		writeb(bin2bcd(tm->tm_mon + 1), base + S3C2410_ALMMON);
 	}
-
+	
+#if defined (CONFIG_CPU_S5PC110)
+	if (year < 100 && year >= 0) {
+		alrm_en |= S3C2410_RTCALM_YEAREN;
+		year = (0x00000fff & year);
+		writel(bin2bcd(year), base + S3C2410_ALMYEAR);
+	}
+#else
 	if (year < 100 && year >= 0) {
 		alrm_en |= S3C2410_RTCALM_YEAREN;
 		writeb(bin2bcd(year), base + S3C2410_ALMYEAR);
 	}
+#endif
 
 	pr_debug("setting S3C2410_RTCALM to %08x\n", alrm_en);
 

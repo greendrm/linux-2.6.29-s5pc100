@@ -400,6 +400,10 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_wdt,
 #endif
 
+#ifdef CONFIG_RTC_DRV_S3C
+	&s3c_device_wdt,
+#endif
+
 #ifdef CONFIG_HAVE_PWM
 	&s3c_device_timer[0],
 	&s3c_device_timer[1],
@@ -409,6 +413,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #endif
 	&s3c_device_usbgadget,
 	&s3c_device_cfcon,
+	&s5p_device_tvout,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -521,6 +526,11 @@ static void __init smdkc110_machine_init(void)
 #if defined(CONFIG_PM)
 	s5pc11x_pm_init();
 #endif
+
+#if defined(CONFIG_HAVE_PWM)
+	smdk_backlight_register();
+#endif
+
 }
 
 static void __init smdkc110_fixup(struct machine_desc *desc,

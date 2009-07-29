@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
+/* linux/drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc110.h
  *
  * tv out header file for Samsung TVOut driver
  *
@@ -14,6 +14,14 @@
 // common
 
 #define HDMI_START_NUM 0x1000
+
+#define bit_add_l(val, addr)	writel(readl(addr) | val, addr)
+#define bit_add_s(val, addr)	writes(reads(addr) | val, addr)
+#define bit_add_b(val, addr)	writeb(readb(addr) | val, addr)
+#define bit_del_l(val, addr)	writel(readl(addr) & ~val, addr)
+#define bit_del_s(val, addr)	writes(reads(addr) & ~val, addr)
+#define bit_del_b(val, addr)	writeb(readb(addr) & ~val, addr)
+
 
 typedef enum {
 	PCM = 1, AC3, MP3, WMA
@@ -448,39 +456,80 @@ typedef enum {
 	HDMI_BYPASS
 }s5p_tv_hdmi_csc_type;
 
-typedef enum {
-	H_BLANK = 0,
-	V2_BLANK,
-	V1_BLANK,
-	V_LINE,
-	H_LINE,
-	VSYNC_POL,
-	V_BOT_ST,
-	V_BOT_END,
-	HSYNC_START,
-	HSYNC_END,
-	HSYNC_POL,
-	VSYNC_T_END,
-	VSYNC_T_START,
-	VSYNC_B_END,
-	VSYNC_B_START,
-	VSYNC_h_POS_END,
-	VSYNC_h_POS_START,
-	TG_H_FSZ,
-	TG_HACT_START,
-	TG_HACT_SZ,
-	TG_V_FSZ,
-	TG_VSYNC,
-	TG_VSYNC2,
-	TG_VACT_START,
-	TG_VACT_SZ,
-	TG_FIELD_CHG,
-	TG_VACT_START2,
-	TG_VSYNC_TOP_HDMI,
-	TG_VSYNC_BOTTOM_HDMI,
-	TG_FIELD_TOP_HDMI,
-	TG_FIELD_BOTTOM_HDMI
-}s5p_tv_hdmi_tg_param;
+/* 
+ * Color Depth for HDMI HW (settings and GCP packet), 
+ * EDID and PHY HW 
+ */
+typedef enum 
+{    
+	HDMI_CD_48,
+	HDMI_CD_36,
+	HDMI_CD_30,
+	HDMI_CD_24
+}s5p_hdmi_color_depth;
+
+typedef enum  
+{
+    ePHY_FREQ_25_200,
+    ePHY_FREQ_25_175,
+    ePHY_FREQ_27,
+    ePHY_FREQ_27_027,
+    ePHY_FREQ_54,
+    ePHY_FREQ_54_054,
+    ePHY_FREQ_74_250,
+    ePHY_FREQ_74_176,
+    ePHY_FREQ_148_500,
+    ePHY_FREQ_148_352,
+    ePHY_FREQ_108_108,
+    ePHY_FREQ_72,
+    ePHY_FREQ_25,
+    ePHY_FREQ_65,
+    ePHY_FREQ_108,
+    ePHY_FREQ_162
+}phy_freq;
+
+/* video format for HDMI HW (timings and AVI) and EDID */
+typedef enum 
+{
+	v640x480p_60Hz = 0,  
+	v720x480p_60Hz,
+	v1280x720p_60Hz,
+	v1920x1080i_60Hz,
+	v720x480i_60Hz,   
+	v720x240p_60Hz,   
+	v2880x480i_60Hz,   
+	v2880x240p_60Hz,   
+	v1440x480p_60Hz,
+	v1920x1080p_60Hz,
+	v720x576p_50Hz,
+	v1280x720p_50Hz,
+	v1920x1080i_50Hz,
+	v720x576i_50Hz,
+	v720x288p_50Hz,
+	v2880x576i_50Hz,
+	v2880x288p_50Hz,
+	v1440x576p_50Hz,
+	v1920x1080p_50Hz,
+	v1920x1080p_24Hz,
+	v1920x1080p_25Hz,
+	v1920x1080p_30Hz,
+	v2880x480p_60Hz,
+	v2880x576p_50Hz,
+	v1920x1080i_50Hz_1250,
+	v1920x1080i_100Hz,
+	v1280x720p_100Hz,
+	v720x576p_100Hz,
+	v720x576i_100Hz,
+	v1920x1080i_120Hz,
+	v1280x720p_120Hz,
+	v720x480p_120Hz,
+	v720x480i_120Hz,
+	v720x576p_200Hz,
+	v720x576i_200Hz,
+	v720x480p_240Hz,
+	v720x480i_240Hz,   
+}s5p_hdmi_v_fmt;                               
+
 
 typedef enum {
 	S5P_TV_HDMI_DISP_MODE_480P_60 = 0,
@@ -492,4 +541,11 @@ typedef enum {
 	S5P_TV_HDMI_DISP_MODE_VGA_60 = 6,
 	S5P_TV_HDMI_DISP_MODE_NUM = 7
 }s5p_tv_hdmi_disp_mode;
+
+/* pixel aspect ratio for HDMI HW (AVI packet and EDID) */
+typedef enum
+{
+    HDMI_PIXEL_RATIO_4_3,
+    HDMI_PIXEL_RATIO_16_9
+}s5p_tv_hdmi_pxl_aspect;
 
