@@ -22,9 +22,9 @@
 #endif
 
 /* Reserved memory area */
-#define MFC_RESERVED_DRAM0_START 	0x25000000 	// 0x2000_0000 ~ 0x2800_0000 (128MB in FPGA) 
+#define MFC_RESERVED_DRAM0_START 	0x35000000 	// 0x3000_0000 ~ 0x3800_0000 (128MB) 
 #define MFC_DATA_DRAM0_BUF_SIZE 	0x3000000	// 0x300_0000 (48MB)  	
-#define MFC_RESERVED_DRAM1_START 	0x40000000	// 0x4000_0000 ~ 0x4800_0000 (128MB in FPGA)
+#define MFC_RESERVED_DRAM1_START 	0x40000000	// 0x4000_0000 ~ 0x4800_0000 (128MB)
 #define MFC_DATA_DRAM1_BUF_SIZE 	0x3000000	// 0x300_0000 (48MB) 
 
 /* All buffer size have to be aligned to 64K */
@@ -40,7 +40,7 @@
 #define MV_BUF_SIZE		(0x10000) /* 64KB : 64x1024 for encoder */
 
 
-volatile unsigned char *s3c_mfc_get_fw_buf_virt_addr(void);		/* port1 base address */
+volatile unsigned char *s3c_mfc_get_fw_buf_virt_addr(void);		
 volatile unsigned char *s3c_mfc_get_data_buf_virt_addr(void);
 volatile unsigned char *s3c_mfc_get_dpb_luma_buf_virt_addr(void);
 

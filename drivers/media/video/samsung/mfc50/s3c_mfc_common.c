@@ -23,8 +23,9 @@
 #include "s3c_mfc_errorno.h"
 
 
-//static int s3c_mfc_inst_no[MFC_MAX_INSTANCE_NUM];
+static int s3c_mfc_mem_inst_no[MFC_MAX_INSTANCE_NUM];
 
+/* Allocate buffers for decoder */
 MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size)
 {
 	s3c_mfc_dec_init_arg_t *init_arg;
@@ -114,6 +115,7 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 
 }
 
+/* Allocate buffers for encoder */
 MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
 {
 	s3c_mfc_enc_init_mpeg4_arg_t *init_arg;
@@ -129,7 +131,7 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 	buf_width = (mfc_ctx->img_width+15)/16*16;
 	buf_height = (mfc_ctx->img_height+31)/32*32;
 	
-	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 2*BUF_L_UNIT)*2;
+	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2;
 	
 	memset(&local_param, 0, sizeof(local_param));
 	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.strm_ref_y, 2*BUF_S_UNIT);
@@ -153,10 +155,12 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 	/* 
 	 * Allocate ref C0,C2,YC1,YC3 & MV buf 
 	 */
-	init_arg->out_buf_size.mv_ref_yc = MV_BUF_SIZE + Align(buf_width*buf_height, 2*BUF_L_UNIT)*4;	
+	init_arg->out_buf_size.mv_ref_yc = MV_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2
+							+ Align(buf_width*buf_height/2, 64*BUF_L_UNIT)*4;	
 	
 	memset(&local_param, 0, sizeof(local_param));
-	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.mv_ref_yc, 2*BUF_S_UNIT);
+	/* In IOCTL_MFC_GET_IN_BUF(), Cur Y/C buf start addr should be 64KB aligned */
+	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.mv_ref_yc, 64*BUF_L_UNIT);
 	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; // peter, it chould be checked in related to luma cases			
 
 	mfc_ctx->port_no = 1;		
@@ -178,41 +182,39 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 
 }
 
-/*
-void  s3c_mfc_init_inst_no(void)
+void  s3c_mfc_init_mem_inst_no(void)
 {
-	memset(&s3c_mfc_inst_no, 0x00, sizeof(s3c_mfc_inst_no));
+	memset(&s3c_mfc_mem_inst_no, 0x00, sizeof(s3c_mfc_mem_inst_no));
 }
 
-
-int s3c_mfc_get_inst_no(void)
+int s3c_mfc_get_mem_inst_no(void)
 {
 	unsigned int i;
 
 	for(i = 0; i < MFC_MAX_INSTANCE_NUM; i++)
-		if (s3c_mfc_inst_no[i] == 0) {
-			s3c_mfc_inst_no[i] = 1;
+		if (s3c_mfc_mem_inst_no[i] == 0) {
+			s3c_mfc_mem_inst_no[i] = 1;
 			return i;
 		}
 
 	return -1;   
 }
 
-void s3c_mfc_return_inst_no(int inst_no)
+void s3c_mfc_return_mem_inst_no(int inst_no)
 {
 	if ((inst_no >= 0) && (inst_no < MFC_MAX_INSTANCE_NUM))
-		s3c_mfc_inst_no[inst_no] = 0;
+		s3c_mfc_mem_inst_no[inst_no] = 0;
 
 }
 
-
+/*
 BOOL s3c_mfc_is_running(void)
 {
 	unsigned int    i;
 	BOOL ret = FALSE;
 
 	for(i = 1; i < MFC_MAX_INSTANCE_NUM; i++)
-		if(s3c_mfc_inst_no[i] == 1)
+		if(s3c_mfc_mem_inst_no[i] == 1)
 			ret = TRUE;
 
 	return ret;  
@@ -223,10 +225,10 @@ int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state)
 {
 
 	if(ctx->MfcState > state)
-		return 0;
+		return -1;
 
 	ctx->MfcState = state;
-	return  1;
+	return  0;
 
 }
 

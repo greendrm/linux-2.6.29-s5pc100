@@ -38,17 +38,20 @@
 #include "s3c_mfc_memory.h"
 #include "s3c_mfc_buffer_manager.h"
 
-//int isMFCRunning = 0;
-
+static int s3c_mfc_openhandle_count = 0;
 static struct resource	*s3c_mfc_mem;
 void __iomem		*s3c_mfc_sfr_virt_base;
-//volatile unsigned char	*s3c_mfc_virt_fw_buf= NULL;
+
 unsigned int  		s3c_mfc_int_type = 0;
 
 static struct mutex	s3c_mfc_mutex;
 
 unsigned int		s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
 volatile unsigned char	*s3c_mfc_virt_buf, *s3c_mfc_virt_dpb_luma_buf;
+int vir_mmap_size;
+
+extern s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_head[MFC_MAX_PORT_NUM];
+extern s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_tail[MFC_MAX_PORT_NUM];
 
 DECLARE_WAIT_QUEUE_HEAD(s3c_mfc_wait_queue);
 
@@ -59,43 +62,44 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 
 	mutex_lock(&s3c_mfc_mutex);
 
+	s3c_mfc_openhandle_count++;
+	if (s3c_mfc_openhandle_count == 1) {
+		/* MFC Hardware Initialization */	
+		if (s3c_mfc_init_hw() == FALSE)
+			return -ENODEV;
+	}
+	
 	mfc_ctx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
 	if (mfc_ctx == NULL) {
 		mfc_err("MFCINST_MEMORY_ALLOC_FAIL\n");
 		ret = -ENOMEM;
 		goto out_open;
 	}
-	// peter, check whether mfc_ctx->MfcState becomes 'MFCINST_STATE_NULL'
-	memset(mfc_ctx, 0, sizeof(s3c_mfc_inst_ctx)); 
+	
+	memset(mfc_ctx, 0, sizeof(s3c_mfc_inst_ctx)); 	
 
-	/*
-	 * MFC Hardware Initialization
-	 */
-	if (s3c_mfc_init_hw() == FALSE)
-		return -ENODEV;
-/*
-	// peter, MFC_InitProcessForDecoding()
-	mfc_ctx->InstNo = s3c_mfc_get_inst_no();
-	if (mfc_ctx->InstNo < 0) {
-		kfree(MfcCtx);
+	/* get the inst no allocating some part of memory among reserved memory */
+	mfc_ctx->mem_inst_no = s3c_mfc_get_mem_inst_no();
+	if (mfc_ctx->mem_inst_no < 0) {
+		kfree(mfc_ctx);
 		mfc_err("MFCINST_INST_NUM_EXCEEDED\n");
 		ret = -EPERM;
 		goto out_open;
 	}
-*/
-	mfc_ctx->InstNo = 9999;
-
-	if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_OPENED) == 0) {
+	
+	if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_OPENED) < 0) {
 		mfc_err("MFCINST_ERR_STATE_INVALID\n");
 		kfree(mfc_ctx);
 		ret = -ENODEV;
 		goto out_open;
 	}
 
-	mfc_ctx->extraDPB = MFC_MAX_EXTRA_DPB;		// peter, decoder only
-	mfc_ctx->FrameType = MFC_RET_FRAME_NOT_SET;	// peter, decoder only
+	/* Decoder only */
+	mfc_ctx->extraDPB = MFC_MAX_EXTRA_DPB;		
+	mfc_ctx->FrameType = MFC_RET_FRAME_NOT_SET;	
 
 	file->private_data = (s3c_mfc_inst_ctx *)mfc_ctx;
+	
 	ret = 0;
 
 out_open:
@@ -106,6 +110,8 @@ out_open:
 static int s3c_mfc_release(struct inode *inode, struct file *file)
 {
 	s3c_mfc_inst_ctx *mfc_ctx;
+	s3c_mfc_alloc_mem_t *node, *tmp_node;
+	int port_no = 0;
 	int ret;
 
 	mfc_debug("MFC Release..\n");
@@ -116,11 +122,24 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 		mfc_err("MFCINST_ERR_INVALID_PARAM\n");
 		ret = -EIO;
 		goto out_release;
-	}
-
-	s3c_mfc_merge_frag(mfc_ctx->InstNo);
+	}			
+	for (port_no=0; port_no < MFC_MAX_PORT_NUM; port_no++) {			
+		for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; 
+			node = node->next) {
+			if (node->inst_no == mfc_ctx->mem_inst_no) {
+				tmp_node = node;
+				node = node->prev;
+				mfc_ctx->port_no = port_no;
+				s3c_mfc_release_alloc_mem(mfc_ctx, tmp_node);		
+			}	
+		}				
+	}	
+	s3c_mfc_merge_frag(mfc_ctx->mem_inst_no);
 	
+	s3c_mfc_return_mem_inst_no(mfc_ctx->mem_inst_no);
 	s3c_mfc_return_inst_no(mfc_ctx->InstNo, mfc_ctx->MfcCodecType);
+
+	s3c_mfc_openhandle_count--;
 	kfree(mfc_ctx);
 
 	ret = 0;
@@ -136,7 +155,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	s3c_mfc_frame_buf_arg_t frame_buf_size;
 	s3c_mfc_inst_ctx	*mfc_ctx = NULL;
 	s3c_mfc_common_args	in_param;
-		
+	s3c_mfc_alloc_mem_t *node;
+	int port_no = 0;
+	int matched_u_addr = 0;		
 
 	mutex_lock(&s3c_mfc_mutex);
 
@@ -156,7 +177,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_ENC_INIT\n");
-		if (!s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE)) {
+		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE) < 0) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
@@ -193,7 +214,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_ENC_EXE:
 		
 		mutex_lock(&s3c_mfc_mutex);
-		if (!s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE)) {
+		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE) < 0) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
@@ -211,7 +232,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_INIT\n");
-		if (!s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE)) {
+		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE) < 0) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
@@ -251,7 +272,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
-		if (!s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE)) {
+		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE) < 0) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
@@ -320,9 +341,26 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			ret = -EINVAL;
 
 			break;
+		}	
+
+		for (port_no=0; port_no < MFC_MAX_PORT_NUM; port_no++) {			
+			for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; 
+				node = node->next) {
+				if(node->u_addr == (unsigned char *)in_param.args.mem_free.u_addr) {
+					matched_u_addr = 1;
+					break;
+				}	
+			}
+			if (matched_u_addr)
+				break;			
+		}	
+		if (node == s3c_mfc_alloc_mem_tail[port_no]) {
+			mfc_err("invalid virtual address(0x%x)\r\n", in_param.args.mem_free.u_addr);
+			ret = MFCINST_MEMORY_INVAILD_ADDR;			
 		}
+		mfc_ctx->port_no = port_no;
 		
-		in_param.ret_code = s3c_mfc_release_alloc_mem(mfc_ctx, &(in_param.args));
+		in_param.ret_code = s3c_mfc_release_alloc_mem(mfc_ctx, node);
 		ret = in_param.ret_code;
 
 		break;
@@ -358,88 +396,60 @@ out_ioctl:
 		ret = -EIO;
 	}
 
-	mfc_debug("---------------IOCTL return--------------------------%d\n", ret);
+	mfc_debug("---------------IOCTL return = %d ---------------\n", ret);
+	
 	return ret;
 }
 
 static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	unsigned long size	= vma->vm_end - vma->vm_start;
-	unsigned long max_size, offset;
+	unsigned long vir_size	= vma->vm_end - vma->vm_start;
+	unsigned long phy_size, offset;
 	unsigned long mem0_size, mem1_size;
 	unsigned long pageFrameNo = 0;
 
-	mfc_debug("vma->vm_end - vma->vm_start = %d\n", size);
+	mfc_debug("vma->vm_start = 0x%08x, vma->vm_end = 0x%08x\n", vma->vm_start, vma->vm_end);
+	mfc_debug("vma->vm_end - vma->vm_start = %d\n", vir_size);
 
 	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
 	offset = Align(offset, 4*BUF_L_UNIT);
 
-	max_size = (unsigned long)(MFC_DATA_DRAM0_BUF_SIZE - offset + MFC_DATA_DRAM1_BUF_SIZE); 
+	phy_size = (unsigned long)(s3c_get_media_memsize(S3C_MDEV_MFC) - offset
+					+ s3c_get_media_memsize_node(S3C_MDEV_MFC, 1)); 
 					
 	/* if memory size required from appl. mmap() is bigger than max data memory 
  	 * size allocated in the driver
 	 */ 
-	//if (size > max_size) {
-	//	return -EINVAL; 
-	//}
-	printk(">> peter, vma->vm_start = 0x%08x, vma->vm_end = 0x%08x <<\n", vma->vm_start, vma->vm_end);
-	printk(">> peter, size = 0x%08x, offset = 0x%08x <<\n", size, offset);
-
+	if (vir_size > phy_size) {
+		mfc_err("virtual requested mem(%d) is bigger than physical mem(%d)\n", 
+			vir_size, phy_size);
+		return -EINVAL; 
+	}
+	vir_mmap_size = vir_size;
+	
 	vma->vm_flags |= VM_RESERVED | VM_IO;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);	
-#if 0	
+	
 	/*
 	 * port0 mapping for stream buf & frame buf (chroma + MV)
 	 */
-	pageFrameNo = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());	
-	mem0_size = (unsigned long)(MFC_DATA_DRAM0_BUF_SIZE - offset);
-	printk(">> peter, pageFrameNo = 0x%08x, mem0_size = 0x%08x <<\n", pageFrameNo, mem0_size);
-	
-	if( remap_pfn_range(vma, vma->vm_start, pageFrameNo, mem0_size, vma->vm_page_prot) ) {
+	pageFrameNo = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());		
+	if( remap_pfn_range(vma, vma->vm_start, pageFrameNo, vir_size/2, vma->vm_page_prot) ) {
 		mfc_err("mfc remap port0 error\n");
 		return -EAGAIN;
 	}	
-	
+
 	/*
 	 * port1 mapping for frame buf (luma)
 	 */
 	pageFrameNo = __phys_to_pfn(s3c_mfc_get_dpb_luma_buf_phys_addr());
-	mem1_size = MFC_DATA_DRAM1_BUF_SIZE;
-
-	printk(">> peter, pageFrameNo = 0x%08x, mem1_size = 0x%08x <<\n", pageFrameNo, mem1_size);
-
-	if( remap_pfn_range(vma, vma->vm_start+mem0_size, pageFrameNo, mem1_size, vma->vm_page_prot) ) {
+	if( remap_pfn_range(vma, vma->vm_start+vir_size/2, pageFrameNo, vir_size/2, vma->vm_page_prot) ) {
 		mfc_err("mfc remap port1 error\n");
 		return -EAGAIN;
-	}
-#else
-	/*
-	 * port1 mapping for frame buf (luma)
-	 */
-	pageFrameNo = __phys_to_pfn(s3c_mfc_get_dpb_luma_buf_phys_addr());
-	mem1_size = MFC_DATA_DRAM1_BUF_SIZE;
+	}	
 
-	printk(">> peter, pageFrameNo = 0x%08x, mem1_size = 0x%08x <<\n", pageFrameNo, mem1_size);
+	mfc_debug("virtual requested mem = %d, physical reserved data mem = %d\n", vir_size, phy_size);
 
-	if( remap_pfn_range(vma, vma->vm_start, pageFrameNo, mem1_size, vma->vm_page_prot) ) {
-		mfc_err("mfc remap port1 error\n");
-		return -EAGAIN;
-	}
-	
-	/*
-	 * port0 mapping for stream buf & frame buf (chroma + MV)
-	 */
-	pageFrameNo = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());	
-	mem0_size = (unsigned long)(MFC_DATA_DRAM0_BUF_SIZE - offset);
-
-	printk(">> peter, pageFrameNo = 0x%08x, mem0_size = 0x%08x <<\n", pageFrameNo, mem0_size);
-	
-	if( remap_pfn_range(vma, vma->vm_start+mem1_size, pageFrameNo, mem0_size, vma->vm_page_prot) ) {
-		mfc_err("mfc remap port0 error\n");
-		return -EAGAIN;
-	}
-
-#endif
 	return 0;
 
 }
@@ -464,8 +474,8 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 	unsigned int	intReason;
 
 	intReason = readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD) & 0x1FFFF;
-	printk(">> peter Interrupt !! : %d <<\n", intReason);	// peter for debug
-
+	mfc_debug("Interrupt !! : %d\n", intReason);
+	
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
 		||((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
 		||((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)
@@ -475,16 +485,13 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
 		s3c_mfc_int_type = intReason;
 		wake_up_interruptible(&s3c_mfc_wait_queue);
-		mfc_debug("Interrupt !! : %d\n", intReason);
-	} else
-		mfc_err("Undefined interrupt : %d\n", intReason);
-
+	}		
 	writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC_HOST_INT);
 	writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
 
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
 		||((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
-		||((intReason & R2H_CMD_ERROR_RET) == R2H_CMD_ERROR_RET)) {
+		||((intReason & R2H_CMD_DECODE_ERR_RET) == R2H_CMD_DECODE_ERR_RET)) {
 		
 		writel(0xffff, s3c_mfc_sfr_virt_base + S3C_FIMV_SI_RTN_CHID);
 		
@@ -500,8 +507,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	size_t		size;
 	int 		ret;
 
-	/* mfc clock enable should be here */
-	
+	/* mfc clock enable should be here */	
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res == NULL) {
@@ -510,7 +516,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 		goto probe_out;
 	}
 
-	// peter, 60K is required for mfc register (0x0 ~ 0xe008)
+	// 60K is required for mfc register (0x0 ~ 0xe008)
 	size = (res->end - res->start) + 1;
 	s3c_mfc_mem = request_mem_region(res->start, size, pdev->name);
 	if (s3c_mfc_mem == NULL) {
@@ -544,42 +550,44 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	/* 
 	 * buffer memory secure 
 	 */
-	// peter, it should be changed
-	s3c_mfc_phys_buf = MFC_RESERVED_DRAM0_START;
-	s3c_mfc_virt_buf = ioremap_nocache(s3c_mfc_phys_buf, MFC_DATA_DRAM0_BUF_SIZE);
+	s3c_mfc_phys_buf = s3c_get_media_memory(S3C_MDEV_MFC);
+	s3c_mfc_phys_buf = Align(s3c_mfc_phys_buf, 128*BUF_L_UNIT);
+	s3c_mfc_virt_buf = phys_to_virt(s3c_mfc_phys_buf);
 	if (s3c_mfc_virt_buf == NULL) {
 		mfc_err("fail to mapping port0 buffer\n");
 		ret = -EPERM;
 		goto probe_out;
 	}
 	
-	s3c_mfc_phys_dpb_luma_buf = MFC_RESERVED_DRAM1_START;
-	s3c_mfc_virt_dpb_luma_buf = ioremap_nocache(s3c_mfc_phys_dpb_luma_buf, MFC_DATA_DRAM1_BUF_SIZE);
+	s3c_mfc_phys_dpb_luma_buf = s3c_get_media_memory_node(S3C_MDEV_MFC, 1);
+	s3c_mfc_phys_dpb_luma_buf = Align(s3c_mfc_phys_dpb_luma_buf, 128*BUF_L_UNIT);
+	s3c_mfc_virt_dpb_luma_buf = phys_to_virt(s3c_mfc_phys_dpb_luma_buf);
 	if (s3c_mfc_virt_dpb_luma_buf == NULL) {
 		mfc_err("fail to mapping port1 buffer\n");
 		ret = -EPERM;
 		goto probe_out;
 	}
 
-	printk(">> peter s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n", 
+	printk("s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n", 
 		s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf);
-	printk(">> peter s3c_mfc_virt_buf = 0x%08x, s3c_mfc_virt_dpb_luma_buf = 0x%08x <<\n", 
+	printk("s3c_mfc_virt_buf = 0x%08x, s3c_mfc_virt_dpb_luma_buf = 0x%08x <<\n", 
 		s3c_mfc_virt_buf, s3c_mfc_virt_dpb_luma_buf);
 	
 	/*
 	 * MFC FW downloading
 	 */	
-	if (s3c_mfc_load_firmware() == FALSE) {
+	if (s3c_mfc_load_firmware() < 0) {
 		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n");
 		ret = -EPERM;
 		goto probe_out;
 	}	
 
-	//s3c_mfc_init_inst_no();
+	s3c_mfc_init_mem_inst_no();
 
 	s3c_mfc_init_buffer_manager();
 
 	ret = misc_register(&s3c_mfc_miscdev);
+	
 	return 0;
 
 probe_out:
@@ -655,6 +663,6 @@ module_init( s3c_mfc_init );
 module_exit( s3c_mfc_exit );
 
 MODULE_AUTHOR("Jaeryul, Oh");
-MODULE_DESCRIPTION("S3C MFC (Multi Function Codec - FIMV) Device Driver");
+MODULE_DESCRIPTION("S3C MFC (Multi Function Codec - FIMV5.0) Device Driver");
 MODULE_LICENSE("GPL");
 

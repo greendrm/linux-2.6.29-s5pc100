@@ -45,8 +45,8 @@ typedef enum
 	DIVX502_DEC,
 	DIVX503_DEC,
 	
-	VC1AP_DEC,	
-	VC1RCV_DEC,
+	VC1AP_DEC,	/* VC1 advaced Profile decoding  */	
+	VC1RCV_DEC,	/* VC1 simple/main profile decoding  */
 	
 	MPEG1_DEC,
 	MPEG2_DEC,	
@@ -103,20 +103,10 @@ typedef struct {
 
 	/* [IN]  RC enable */
 	int in_RC_frm_enable;	/* [IN]	RC enable (0:disable, 1:frame level RC) */
-	int in_RC_mb_enable;	/* [IN]	RC enable (0:disable, 1:MB level RC) */
 	int in_RC_framerate; /* [IN]  RC parameter (framerate) */
 	int in_RC_bitrate;   /* [IN]  RC parameter (bitrate in kbps) */
 	int in_RC_qbound;    /* [IN]  RC parameter (Q bound) */
-	int in_RC_rpara;     /* [IN]  RC parameter (Reaction Coefficient) */
-
-	/* [IN] MB level rate control dark region adaptive feature */
-	int in_RC_mb_dark_disable;	/* (0:enable,1:disable) */ 
-	/* [IN] MB level rate control smooth region adaptive feature */ 
-	int in_RC_mb_smooth_disable;	/* (0:enable,1:disable) */
-	/* [IN] MB level rate control static region adaptive feature */
-	int in_RC_mb_static_disable;	/* (0:enable,1:disable) */
-	/* [IN] MB level rate control activity region adaptive feature */
-	int in_RC_mb_activity_disable;	/* (0:enable,1:disable) */
+	int in_RC_rpara;     /* [IN]  RC parameter (Reaction Coefficient) */	
 
 	int in_MS_mode;	     /* [IN] Multi-slice mode (0:single, 1:multiple) */
 	int in_MS_size;      /* [IN] Multi-slice size (in num. of mb or byte) */
@@ -124,17 +114,9 @@ typedef struct {
 	int in_mb_refresh;     		/* [IN]  Macroblock refresh */
 	int in_interlace_mode; /* [IN] interlace mode(0:progressive, 1:interlace) */	
 
-	/* [IN]  ( 0 : CAVLC, 1 : CABAC ) */
-	int in_symbolmode;
 	/* [IN]  B frame number */
 	int in_BframeNum; 		
-	/* [IN]  disable deblocking filter idc */
-	int in_deblock_filt; /* (0: enable,1: disable) */
-	/* [IN]  slice alpha C0 offset of deblocking filter */
-	int in_deblock_alpha_C0;
-	/* [IN]  slice beta offset of deblocking filter */
-	int in_deblock_beta;	
-	
+		
 	/* [IN] Enable (1) / Disable (0) padding with the specified values */
 	int in_pad_ctrl_on;	
 	/* [IN] pad value if pad_ctrl_on is Enable */
@@ -147,8 +129,9 @@ typedef struct {
 	s3c_mfc_strm_ref_buf_arg_t out_p_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_buf_size;
 
-	int in_qpelME_enable;	/* [IN] Quarter-pel MC enable (1:enabled, 0:disabled) */
-	
+	/* MPEG4 Only
+	 */
+	int in_qpelME_enable;	/* [IN] Quarter-pel MC enable (1:enabled, 0:disabled) */	
 
 } s3c_mfc_enc_init_mpeg4_arg_t;
 
@@ -163,38 +146,20 @@ typedef struct {
 	int in_vop_quant;	/* [IN] VOP quant */
 
 	/* [IN]  RC enable */
-	int in_RC_frm_enable;	/* [IN]	RC enable (0:disable, 1:frame level RC) */
-	int in_RC_mb_enable;	/* [IN]	RC enable (0:disable, 1:MB level RC) */
+	int in_RC_frm_enable;	/* [IN]	RC enable (0:disable, 1:frame level RC) */	
 	int in_RC_framerate;	/* [IN]  RC parameter (framerate) */
 	int in_RC_bitrate;	/* [IN]  RC parameter (bitrate in kbps) */
 	int in_RC_qbound;	/* [IN]  RC parameter (Q bound) */
 	int in_RC_rpara;	/* [IN]  RC parameter (Reaction Coefficient) */
-
-	/* [IN] MB level rate control dark region adaptive feature */
-	int in_RC_mb_dark_disable;	/* (0:enable, 1:disable) */
-	/* [IN] MB level rate control smooth region adaptive feature */
-	int in_RC_mb_smooth_disable;	/* (0:enable, 1:disable) */
-	/* [IN] MB level rate control static region adaptive feature */
-	int in_RC_mb_static_disable;	/* (0:enable, 1:disable) */
-	/* [IN] MB level rate control activity region adaptive feature */
-	int in_RC_mb_activity_disable;	/* (0:enable, 1:disable) */
-
+	
 	int in_MS_mode;      /* [IN] Multi-slice mode (0:single, 1:multiple) */
 	int in_MS_size;      /* [IN] Multi-slice size (in num. of mb or byte) */
 
 	int in_mb_refresh;   /* [IN] Macroblock refresh */
 	int in_interlace_mode; /* [IN] interlace mode(0:progressive, 1:interlace */
-
-	/* [IN]  ( 0 : CAVLC, 1 : CABAC ) */
-	int in_symbolmode;
+	
 	/* [IN]  B frame number */	
-	int in_BframeNum; 
-	/* [IN]  disable deblocking filter idc */
-	int in_deblock_filt; /* (0: enable,1: disable) */
-	/* [IN]  slice alpha C0 offset of deblocking filter */
-	int in_deblock_alpha_C0;
-	/* [IN]  slice beta offset of deblocking filter */
-	int in_deblock_beta;
+	int in_BframeNum; 	
 
 	/* [IN] Enable (1) / Disable (0) padding with the specified values */
 	int in_pad_ctrl_on;	
@@ -207,12 +172,34 @@ typedef struct {
 	s3c_mfc_strm_ref_buf_arg_t out_u_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_p_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_buf_size;
+
+	/* H264 Only
+	 */
+	int in_RC_mb_enable;	/* [IN]	RC enable (0:disable, 1:MB level RC) */
 	
 	/* [IN]  reference number */
 	int in_reference_num;
 	/* [IN]  reference number of P frame */
 	int in_ref_num_p;
-		
+
+	/* [IN] MB level rate control dark region adaptive feature */
+	int in_RC_mb_dark_disable;	/* (0:enable, 1:disable) */
+	/* [IN] MB level rate control smooth region adaptive feature */
+	int in_RC_mb_smooth_disable;	/* (0:enable, 1:disable) */
+	/* [IN] MB level rate control static region adaptive feature */
+	int in_RC_mb_static_disable;	/* (0:enable, 1:disable) */
+	/* [IN] MB level rate control activity region adaptive feature */
+	int in_RC_mb_activity_disable;	/* (0:enable, 1:disable) */
+
+	/* [IN]  disable deblocking filter idc */
+	int in_deblock_filt; /* (0: enable,1: disable) */
+	/* [IN]  slice alpha C0 offset of deblocking filter */
+	int in_deblock_alpha_C0;
+	/* [IN]  slice beta offset of deblocking filter */
+	int in_deblock_beta;
+
+	/* [IN]  ( 0 : CAVLC, 1 : CABAC ) */
+	int in_symbolmode;	
 	/* [IN] (0: only 4x4 transform, 1: allow using 8x8 transform)*/
 	int in_transform8x8_mode;
 	/* [IN] Inter weighted parameter for mode decision */

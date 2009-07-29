@@ -103,12 +103,12 @@ if ARCH_S5PC11X
 config VIDEO_SAMSUNG_MEMSIZE_MFC0
 	int "Memory size in kbytes for MFC port0"
 	depends on VIDEO_MFC50
-	default "49152"
+	default "32768"
 
 config VIDEO_SAMSUNG_MEMSIZE_MFC1
 	int "Memory size in kbytes for MFC port1"
 	depends on VIDEO_MFC50
-	default "49152"
+	default "32768"
 endif
 
 

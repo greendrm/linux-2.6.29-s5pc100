@@ -42,7 +42,7 @@
 #define		NUM_POST_DPB		(3)
 #define		NUM_VC1_DPB		(4)
 
-BOOL s3c_mfc_load_firmware(void);
+int s3c_mfc_load_firmware(void);
 MFC_ERROR_CODE s3c_mfc_init_hw(void);
 MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);

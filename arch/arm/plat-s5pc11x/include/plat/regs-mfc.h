@@ -201,7 +201,7 @@
 /* H264 decoding */
 #define S3C_FIMV_VERT_NB_MV_ADR		S3C_FIMVREG(0x060c) /* vertical neighbor motion vector */
 #define S3C_FIMV_VERT_NB_IP_ADR		S3C_FIMVREG(0x0610) /* neighbor pixels for intra pred */
-#define S3C_FIMV_H264_LUMA_ADR		S3C_FIMVREG(0x0700) /* Luma0 ~ Lumna18 */
+#define S3C_FIMV_H264_LUMA_ADR		S3C_FIMVREG(0x0700) /* Luma0 ~ Luma18 */
 #define S3C_FIMV_H264_CHROMA_ADR	S3C_FIMVREG(0x0614) /* Chroma0 ~ Chroma18 */
 #define S3C_FIMV_MV_ADR			S3C_FIMVREG(0x0660) /* H264 motion vector */
 /* H263/MPEG4/MPEG2/VC-1/ decoding */

@@ -118,6 +118,7 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int dwAccess;  // for Power Management.
 	unsigned int IsPackedPB;
 	unsigned int interlace_mode;
+	int mem_inst_no;
 	int port_no;	
 	s3c_mfc_frame_type FrameType;
 	MFC_CODEC_TYPE MfcCodecType;
@@ -130,6 +131,9 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 //int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
 void s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
+void  s3c_mfc_init_mem_inst_no(void);
+int s3c_mfc_get_mem_inst_no(void);
+void s3c_mfc_return_mem_inst_no(int inst_no);
 
 #endif /* _S3C_MFC_COMMON_H_ */
 
