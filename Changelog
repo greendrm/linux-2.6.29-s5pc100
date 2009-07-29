@@ -1248,3 +1248,10 @@ v2.6.29.4-dev-1-0-18: Abhilash Kesavan
 		A	drivers/ide/s3c-ide.c
 		A	drivers/ide/s3c-ide.h
 
+v2.6.29.4-dev-1-0-19: Jae-Cheol Lee
+	- Changed debug port UART0 -> UART1 for smdkc110
+
+	Modified Files:
+		M	arch/arm/configs/smdkc110nfs_defconfig
+		M	arch/arm/configs/smdkc110onenand_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfig
