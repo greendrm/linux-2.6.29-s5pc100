@@ -25,15 +25,15 @@
 #include <asm/io.h>
 #include <mach/gpio.h>
 
-#include "tv_out_s5pc100.h"
+#include "tv_out_s5pc110.h"
 #include "regs/regs-hdmi.h"
 
 /* for Operation check */
-//#ifdef COFIG_TVOUT_RAW_DBG
+#ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDCP_DEBUG 1
 //#define S5P_HDCP_I2C_DEBUG 1
 //#define S5P_HDCP_AUTH_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
@@ -225,7 +225,7 @@ extern u8 hdcp_protocol_status; // 0 - hdcp stopped, 1 - hdcp started, 2 - hdcp 
 void __s5p_hdcp_reset(void);
 bool __s5p_stop_hdcp(void);
 bool __s5p_start_hdcp(void);
-/*
+
 void debug_register(void)
 {
 	printk("S5P_HDMI_CON_0  : 0x%08x\n",readl(hdmi_base+S5P_HDMI_CON_0 ));
@@ -395,6 +395,7 @@ case 68:	writel(0x1,hdmi_base+S5P_HAES_DATA_SIZE_H);
 }
 */
 
+#if 0 /* MUSTBECHECKED : C110 hdcp sfr was changed */
 
 /*
  * Read the HDCP data from Rx by using IIC
@@ -404,16 +405,26 @@ static int hdcp_i2c_read(struct i2c_client *client, u8 subaddr, u8 *data, u16 le
 	u8 addr = subaddr;
 	int ret = 0;
 
+	struct i2c_msg msg[] = {
+		[0] = { 
+			.addr = client->addr, 
+			.flags = 0,
+			.len = 1, 
+			.buf = &addr
+		}, 
+		[1] = { 
+			.addr = client->addr, 
+			.flags = I2C_M_RD,
+			.len = len,
+			.buf = data 
+		}
+	};
+
 	if (!hdcp_info.client) {
 		HDCPPRINTK("DDC port is not available!!"
 		       "Check hdmi receiver's DDC Port \n");
 		return -EIO;
 	}
-
-	struct i2c_msg msg[] = {
-		{ client->addr, 0, 1, &addr}, 
-		{ client->addr, I2C_M_RD,len,data }
-	};
 
 	I2CPRINTK("sub addr = 0x%08x, data len = %d\n", subaddr, len);
 
@@ -1834,6 +1845,7 @@ void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
 
 }
 
+#endif
 /*
  * HDCP ISR.
  * If HDCP IRQ occurs, set hdcp_event and wake up the waitqueue.
@@ -1933,3 +1945,4 @@ bool __s5p_set_hpd_detection(bool detection, bool hdcp_enabled,
 
 	return true;
 }
+

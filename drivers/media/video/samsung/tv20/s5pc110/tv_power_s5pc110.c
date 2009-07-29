@@ -19,9 +19,9 @@
 
 #include <mach/map.h>
 #include <plat/regs-clock.h>
-#include <plat/regs-power.h>
 
-#include "tv_out_s5pc100.h"
+
+#include "tv_out_s5pc110.h"
 
 #if defined USE_POWERCON_FUNCTION
 #undef USE_POWERCON_FUNCTION
@@ -109,9 +109,12 @@ unsigned short __s5p_tv_power_get_dac_power_status(void)
 	return (TVPWR_DAC_STATUS(readl(S5P_OTHERS)) ? 1 : 0);
 }
 
+//C110: for test. PMU modifying needed.
 void __s5p_tv_poweron(void)
 {
-	TVPMPRINTK("()\n\r");
+	TVPMPRINTK("0x%08x\n\r",readl(S3C_VA_SYS + 0xE804));
+	
+	writel(readl(S3C_VA_SYS + 0xE804) | 0x1, S3C_VA_SYS + 0xE804);
 
 	writel(readl(S5P_NORMAL_CFG) | TVPWR_SUBSYSTEM_ACTIVE, S5P_NORMAL_CFG);
 

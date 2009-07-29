@@ -22,8 +22,6 @@
 
 #include "s5p_tv.h"
 
-//#define COFIG_TVOUT_DBG
-
 #ifdef COFIG_TVOUT_DBG
 #define S5P_V4L2_DEBUG 1
 #endif
@@ -546,7 +544,7 @@ static int s5p_tv_v4l2_g_fbuf(struct file *file, void *fh, struct v4l2_framebuff
 {
 
 	struct v4l2_framebuffer *fbuf = a;
-	s5p_tv_vo *layer = (struct s5p_tv_vo *)fh;
+	s5p_tv_vo *layer = (s5p_tv_vo *)fh;
 
 	fbuf->base = (void *)s5ptv_overlay[layer->index].base_addr;
 	fbuf->fmt.pixelformat = s5ptv_overlay[layer->index].fb.fmt.pixelformat;
@@ -1069,7 +1067,7 @@ static int s5p_tv_v4l2_s_crop(struct file *file, void *fh, struct v4l2_crop *a)
 
 /* Stream type-dependent parameter ioctls */
 
-static int s5p_tv_v4l2_g_parm_v(int fp, void *fh, struct v4l2_streamparm *a)
+static int s5p_tv_v4l2_g_parm_v(struct file *file, void *fh, struct v4l2_streamparm *a)
 {
 
 	struct v4l2_streamparm *param = a;
@@ -1100,6 +1098,7 @@ static int s5p_tv_v4l2_s_parm_v(struct file *file, void *fh, struct v4l2_streamp
 	struct v4l2_streamparm *param = a;
 
 	struct v4l2_window_s5p_tvout vparam;
+
 	memcpy(&vparam, param->parm.raw_data, sizeof(struct v4l2_window_s5p_tvout));
 
 	s5ptv_status.vl_basic_param.win_blending 	= (vparam.flags & V4L2_FBUF_FLAG_GLOBAL_ALPHA) ? 1 : 0;
@@ -1141,7 +1140,9 @@ static int s5p_tv_v4l2_g_parm_vo(struct file *file, void *fh, struct v4l2_stream
 	struct v4l2_streamparm *param = a;
 
 	struct v4l2_window_s5p_tvout vparam;
-	s5p_tv_vo *layer = (struct s5p_tv_vo *)fh;
+	s5p_tv_vo *layer = (s5p_tv_vo *)fh;
+
+	V4L2PRINTK("entered\n");
 
 	if (s5ptv_overlay[layer->index].win_blending) {
 		vparam.flags 		= V4L2_FBUF_FLAG_GLOBAL_ALPHA;
@@ -1190,7 +1191,7 @@ static int s5p_tv_v4l2_s_parm_vo(struct file *file, void *fh, struct v4l2_stream
 
 	struct v4l2_window_s5p_tvout vparam;
 
-	s5p_tv_vo *layer = (struct s5p_tv_vo *)fh;
+	s5p_tv_vo *layer = (s5p_tv_vo *)fh;
 	memcpy(&vparam, param->parm.raw_data, sizeof(struct v4l2_window_s5p_tvout));
 
 	s5ptv_overlay[layer->index].win_blending = (vparam.flags & V4L2_FBUF_FLAG_GLOBAL_ALPHA) ? 1 : 0;
@@ -1212,17 +1213,6 @@ static int s5p_tv_v4l2_s_parm_vo(struct file *file, void *fh, struct v4l2_stream
 	return 0;
 }
 
-static int s5p_tv_v4l2_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
-{
-	return 0;
-}
-
-/*
-static int s5p_tv_v4l2_s_parm( struct file *file, void *fh, struct v4l2_streamparm *a)
-{
-	return 0;
-}
-*/
 /* Log status ioctl */
 static int s5p_tv_v4l2_log_status(struct file *file, void *fh)
 {
@@ -1234,25 +1224,12 @@ static int s5p_tv_v4l2_s_hw_freq_seek(struct file *file, void *fh, struct v4l2_h
 	return 0;
 }
 
-static int s5p_tv_v4l2_g_chip_ident(struct file *file, void *fh, struct v4l2_chip_ident *chip)
-{
-	return 0;
-}
-
-/* For other private ioctls */
-static int s5p_tv_v4l2_default(struct file *file, void *fh, int cmd, void *arg)
-{
-	return 0;
-}
-
 #define VIDIOC_HDCP_ENABLE _IOWR('V', 100, unsigned int)
 #define VIDIOC_HDCP_STATUS _IOR('V', 101, unsigned int)
 #define VIDIOC_HDCP_PROT_STATUS _IOR('V', 102, unsigned int)
 
 int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-//	void *fh = file->private_data;
-
 	switch (cmd) {
 		// TODO: must be changed into v4l2 external control.
 
@@ -1264,7 +1241,7 @@ int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		
 	case VIDIOC_HDCP_STATUS: {
 		
-		unsigned int * status = arg;
+		unsigned int *status = (unsigned int *)&arg;
 
 		*status = s5ptv_status.hpd_status;
 		
@@ -1275,7 +1252,7 @@ int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	case VIDIOC_HDCP_PROT_STATUS: {
 		
-		unsigned int * prot = arg;
+		unsigned int *prot = (unsigned int *)&arg;
 
 		*prot = hdcp_protocol_status;
 		
@@ -1365,9 +1342,9 @@ const struct v4l2_ioctl_ops s5p_tv_v4l2_v_ops = {
 	.vidioc_enum_fmt_vid_out		= s5p_tv_v4l2_enum_fmt_vid_out,
 	.vidioc_g_fmt_vid_out			= s5p_tv_v4l2_g_fmt_vid_out,
 	.vidioc_s_fmt_vid_out			= s5p_tv_v4l2_s_fmt_vid_out,
-	.vidioc_g_fmt_vid_out_overlay		= s5p_tv_v4l2_g_fmt_vid_out_overlay,		
-	.vidioc_s_fmt_vid_out_overlay		= s5p_tv_v4l2_s_fmt_vid_out_overlay,		
-	.vidioc_try_fmt_vid_out_overlay	= s5p_tv_v4l2_try_fmt_vid_out_overlay,			
+//	.vidioc_g_fmt_vid_out_overlay		= s5p_tv_v4l2_g_fmt_vid_out_overlay,		
+//	.vidioc_s_fmt_vid_out_overlay		= s5p_tv_v4l2_s_fmt_vid_out_overlay,		
+//	.vidioc_try_fmt_vid_out_overlay	= s5p_tv_v4l2_try_fmt_vid_out_overlay,			
 	.vidioc_streamon		= s5p_tv_v4l2_streamon,
 	.vidioc_streamoff		= s5p_tv_v4l2_streamoff,
 	.vidioc_g_std			= s5p_tv_v4l2_g_std,
@@ -1400,15 +1377,15 @@ const struct v4l2_ioctl_ops s5p_tv_v4l2_v_ops = {
 	.vidioc_s_hw_freq_seek		= s5p_tv_v4l2_s_hw_freq_seek,
 	//		.vidioc_g_register		=s5p_tv_v4l2_g_register,
 	//		.vidioc_s_register		=s5p_tv_v4l2_s_register,
-	.vidioc_g_chip_ident		= s5p_tv_v4l2_g_chip_ident,
-	.vidioc_default			= s5p_tv_v4l2_default,
+	//.vidioc_g_chip_ident		= s5p_tv_v4l2_g_chip_ident,
+	//.vidioc_default			= s5p_tv_v4l2_default,
 };
 
 const struct v4l2_ioctl_ops s5p_tv_v4l2_vo_ops = {
 	.vidioc_querycap			= s5p_tv_v4l2_querycap,
-	//.vidioc_g_fmt_vid_out_overlay		=s5p_tv_v4l2_g_fmt_vid_out_overlay,
-	//.vidioc_s_fmt_vid_out_overlay		=s5p_tv_v4l2_s_fmt_vid_out_overlay,
-	//.vidioc_try_fmt_vid_out_overlay	=s5p_tv_v4l2_try_fmt_vid_out_overlay,
+	.vidioc_g_fmt_vid_out_overlay		=s5p_tv_v4l2_g_fmt_vid_out_overlay,
+	.vidioc_s_fmt_vid_out_overlay		=s5p_tv_v4l2_s_fmt_vid_out_overlay,
+	.vidioc_try_fmt_vid_out_overlay	= s5p_tv_v4l2_try_fmt_vid_out_overlay,
 	.vidioc_reqbufs			= s5p_tv_v4l2_reqbufs,
 	.vidioc_querybuf		= s5p_tv_v4l2_querybuf,
 	.vidioc_qbuf			= s5p_tv_v4l2_qbuf,
@@ -1433,7 +1410,7 @@ const struct v4l2_ioctl_ops s5p_tv_v4l2_vo_ops = {
 	.vidioc_s_hw_freq_seek	= s5p_tv_v4l2_s_hw_freq_seek,
 	//		.vidioc_g_register		=s5p_tv_v4l2_g_register,
 	//		.vidioc_s_register		=s5p_tv_v4l2_s_register,
-	.vidioc_g_chip_ident		= s5p_tv_v4l2_g_chip_ident,
-	.vidioc_default			= s5p_tv_v4l2_default,
+//	.vidioc_g_chip_ident		= s5p_tv_v4l2_g_chip_ident,
+//	.vidioc_default			= s5p_tv_v4l2_default,
 };
 

@@ -18,10 +18,10 @@
 
 #include <asm/io.h>
 
-#include "tv_out_s5pc100.h"
+#include "tv_out_s5pc110.h"
 
 #include "regs/regs-vprocessor.h"
-#include "vp_coeff_s5pc100.h"
+#include "vp_coeff_s5pc110.h"
 
 #ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_VP_DEBUG 1

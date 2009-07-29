@@ -18,13 +18,13 @@
 #include <asm/sizes.h>
 #include <asm/memory.h>
 
-#include "tv_out_s5pc100.h"
+#include "tv_out_s5pc110.h"
 
 #include "regs/regs-sdaout.h"
 
-//#ifdef COFIG_TVOUT_RAW_DBG
+#ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_SDAOUT_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_SDAOUT_DEBUG
 #define SDPRINTK(fmt, args...)	\

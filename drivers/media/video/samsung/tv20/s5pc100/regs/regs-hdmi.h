@@ -14,7 +14,7 @@
 
 #include <mach/map.h>
 
-#define S5P_HDMI_BASE(x) (x+0x00300000)
+#define S5P_HDMI_BASE(x) (x)
 
 //////////////
 // Registers   //

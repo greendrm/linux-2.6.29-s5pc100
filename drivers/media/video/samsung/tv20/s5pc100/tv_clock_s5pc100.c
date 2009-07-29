@@ -36,7 +36,8 @@
 #define TVCLKPRINTK(fmt, args...)
 #endif
 
-extern void __iomem *tvout_base_clk;
+static struct resource	*tvclk_mem;
+void __iomem		*tvclk_base;
 
 /*
 * initialization
@@ -210,13 +211,13 @@ void __s5p_tv_clk_set_sdout_hclk_onoff(bool clk_on)
 
 	if (clk_on) {
 		writel((readl(S5P_CLKGATE_D12) | CLK_HCLK_SDOUT_PASS), S5P_CLKGATE_D12);
-		writel(readl(tvout_base_clk + 0x304) | VMIXER_OUT_SEL_SDOUT, tvout_base_clk + 0x304);
+		writel(readl(tvclk_base + 0x304) | VMIXER_OUT_SEL_SDOUT, tvclk_base + 0x304);
 	} else {
 		writel((readl(S5P_CLKGATE_D12) & ~CLK_HCLK_SDOUT_PASS), S5P_CLKGATE_D12);
 
 	}
 
-	TVCLKPRINTK("physical %p (0x%08x)\n\r", tvout_base_clk, readl(tvout_base_clk + 0x304));
+	TVCLKPRINTK("physical %p (0x%08x)\n\r", tvclk_base, readl(tvclk_base + 0x304));
 
 	TVCLKPRINTK("after (0x%08x)\n\r", readl(S5P_CLKGATE_D12));
 }
@@ -242,12 +243,12 @@ void __s5p_tv_clk_set_hdmi_hclk_onoff(bool clk_on)
 
 	if (clk_on) {
 		writel((readl(S5P_CLKGATE_D12) | CLK_HCLK_HDMI_PASS), S5P_CLKGATE_D12);
-		writel(readl(tvout_base_clk + 0x304) | VMIXER_OUT_SEL_HDMI, tvout_base_clk + 0x304);
+		writel(readl(tvclk_base + 0x304) | VMIXER_OUT_SEL_HDMI, tvclk_base + 0x304);
 	} else {
 		writel((readl(S5P_CLKGATE_D12) & ~CLK_HCLK_HDMI_PASS), S5P_CLKGATE_D12) ;
 	}
 
-	TVCLKPRINTK("physical %p (0x%08x)\n\r", tvout_base_clk, readl(tvout_base_clk + 0x304));
+	TVCLKPRINTK("physical %p (0x%08x)\n\r", tvclk_base, readl(tvclk_base + 0x304));
 
 	TVCLKPRINTK("after (0x%08x)\n\r", readl(S5P_CLKGATE_D12));
 }
@@ -317,4 +318,57 @@ void __s5p_tv_clk_stop(void)
 	__s5p_tv_clk_hpll_onoff(false);
 }
 
+int __init __s5p_tvclk_probe(struct platform_device *pdev, u32 res_num)
+{
+	struct resource *res;
+	size_t	size;
+	int 	ret;
 
+	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
+
+	if (res == NULL) {
+		dev_err(&pdev->dev, 
+			"failed to get memory region resource\n");
+		ret = -ENOENT;
+		
+	}
+
+	size = (res->end - res->start) + 1;
+
+	tvclk_mem = request_mem_region(res->start, size, pdev->name);
+
+	if (tvclk_mem == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to get memory region\n");
+		ret = -ENOENT;
+		
+	}
+
+	tvclk_base = ioremap(res->start, size);
+
+	if (tvclk_base == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to ioremap address region\n");
+		ret = -ENOENT;
+		
+	}
+	return ret;
+}
+
+int __init __s5p_tvclk_release(struct platform_device *pdev)
+{
+	iounmap(tvclk_base);
+
+	/* remove memory region */
+	if (tvclk_mem != NULL) {
+		if (release_resource(tvclk_mem))
+			dev_err(&pdev->dev,
+				"Can't remove tvout drv !!\n");
+
+		kfree(tvclk_mem);
+
+		tvclk_mem = NULL;
+	}
+
+	return 0;
+}

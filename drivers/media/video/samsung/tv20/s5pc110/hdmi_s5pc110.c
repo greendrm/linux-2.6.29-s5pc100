@@ -17,11 +17,13 @@
 
 #include <asm/io.h>
 
-#include "tv_out_s5pc100.h"
+#include "tv_out_s5pc110.h"
 
 #include "regs/regs-hdmi.h"
 
 #include "plat/regs-clock.h"
+
+#include "hdmi_param.h"
 
 #ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDMI_DEBUG 1
@@ -37,51 +39,266 @@
 static struct resource	*hdmi_mem;
 void __iomem		*hdmi_base;
 
-static unsigned short g_hdmi_video_parm_tbl[] = {
-	/*  480P_60, 576P_50, 720P_60, 720P_50, 1080I_60, 1080I_50, VGAP_60*/
-	138,    144,    370,    700,    280,    720,    160,    //H_BLANK
-	525,    625,    750,    750,    562,    562,    525,    //V2_BLANK
-	45,     49,     30,     30,     22,     22,    45,     	//V1_BLANK
-	525,    625,    750,    750,    1125,   1125,   525,    //V_LINE
-	858,    864,    1650,   1980,   2200,   2640,    800,   //H_LINE
-	1,      1,      0,      0,      0,      0,     1,       //VSYNC_POL
-	0,      0,      0,      0,     585,    585,    0,       //V_BOT_ST
-	0,      0,      0,      0,     1125,   1125,   0,       //V_BOT_END
-	14,     10,     108,    438,    86,     526,    14,     //HSYNC_START ?
-	76,     74,     148,    478,    130,    570,    110,    //HSYNC_END ?
-	1,      1,      0,      0,      0,      0,     1,       //HSYNC_POL
-	15,     10,     10,     10,     7,      7,     12,      //VSYNC_T_END
-	9,      5,      5,      5,      2,      2,     10,      //VSYNC_T_START
-	0,      0,      0,      0,     569,    569,    0,      	//VSYNC_B_END
-	0,      0,      0,      0,     564,    564,    0,      	//VSYNC_B_START
-	0,      0,      0,      0,     1187,   1847,   0,       //VSYNC_h_POS_END ?
-	0,      0,      0,      0,     1187,   1847,   0,       //VSYNC_h_POS_START ?
-	858,    864,    1650,   1980,   2200,   2640,    800,   //TG_H_FSZ
-	138,    144,    370,    700,    280,    720,    160,    //TG_HACT_START
-	720,    720,    1280,   1280,   1920,   1920,   640,    //TG_HACT_SZ
-	525,    625,    750,    750,    1125,   1125,   525,    //TG_V_FSZ
-	7,      1,      1,      1,      1,      1,     1,       //TG_VSYNC ?
-	0,      0,      0,      0,     563,    563,    0,      	//TG_VSYNC2
-	45,     49,     30,     30,     22,     22,    45,     	//TG_VACT_START ?
-	480,    576,    720,    720,    540,    540,    480,    //TG_VACT_SZ
-	0,      0,      0,      0,     563,    563,    0,      	//TG_FILED_CHG
-	0,      0,      0,      0,     584,    584,    0,      	//TG_VACT_START2 ?
-	7,      1,      1,      1,      1,      1,     1,       //TG_VSYNC_TOP_HDMI ?
-	7,      1,      1,      1,     563,    563,    1,      	//TG_VSYNC_BOTTOM_HDMI ?
-	7,      1,      1,      1,      1,      1,     1,       //TG_FIELD_TOP_HDMI ?
-	7,      1,      1,      1,     563,    563,     1       //TG_FIELD_BOTTOM_HDMI ?
-};
-
-
 extern bool __s5p_start_hdcp(void);
 extern void __s5p_stop_hdcp(void);
 extern void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port);
+
+s32 hdmi_set_tg(s5p_hdmi_v_fmt mode)
+{
+	u16 temp_reg;
+	u8 tc_cmd;
+	
+	temp_reg = hdmi_tg_param[mode].h_fsz;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_H_FSZ_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_H_FSZ_H );
+
+	/* set Horizontal Active Start Position */
+	temp_reg = hdmi_tg_param[mode].hact_st ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_HACT_ST_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_HACT_ST_H );
+
+	/* set Horizontal Active Size */    
+	temp_reg = hdmi_tg_param[mode].hact_sz ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_HACT_SZ_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_HACT_SZ_H );
+
+	/* set Vertical Full Size */    
+	temp_reg = hdmi_tg_param[mode].v_fsz ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_V_FSZ_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_V_FSZ_H );
+
+	/* set VSYNC Position */    
+	temp_reg = hdmi_tg_param[mode].vsync ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VSYNC_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VSYNC_H );
+
+	/* set Bottom Field VSYNC Position */    
+	temp_reg = hdmi_tg_param[mode].vsync2;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VSYNC2_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VSYNC2_H );
+
+	/* set Vertical Active Start Position */    
+	temp_reg = hdmi_tg_param[mode].vact_st ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VACT_ST_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VACT_ST_H );
+
+	/* set Vertical Active Size */    
+	temp_reg = hdmi_tg_param[mode].vact_sz ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VACT_SZ_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VACT_SZ_H );
+
+	/* set Field Change Position */    
+	temp_reg = hdmi_tg_param[mode].field_chg ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_FIELD_CHG_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_FIELD_CHG_H );
+
+	/* set Bottom Field Vertical Active Start Position */    
+	temp_reg = hdmi_tg_param[mode].vact_st2;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VACT_ST2_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VACT_ST2_H );
+
+	/* set VSYNC Position for HDMI */    
+	temp_reg = hdmi_tg_param[mode].vsync_top_hdmi;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VSYNC_TOP_HDMI_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VSYNC_TOP_HDMI_H );
+
+	/* set Bottom Field VSYNC Position */    
+	temp_reg = hdmi_tg_param[mode].vsync_bot_hdmi;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_VSYNC_BOT_HDMI_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_VSYNC_BOT_HDMI_H );
+
+	/* set Top Field Change Position for HDMI */     
+	temp_reg = hdmi_tg_param[mode].field_top_hdmi ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_FIELD_TOP_HDMI_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_FIELD_TOP_HDMI_H );
+
+	/* set Bottom Field Change Position for HDMI */    
+	temp_reg = hdmi_tg_param[mode].field_bot_hdmi ;     
+	writeb((u8)(temp_reg&0xff) , hdmi_base + S5P_TG_FIELD_BOT_HDMI_L );
+	writeb((u8)(temp_reg >> 8) , hdmi_base + S5P_TG_FIELD_BOT_HDMI_H );
+
+	tc_cmd = readb(hdmi_base + S5P_TG_CMD);   
+
+	if(video_params[mode].interlaced == 1)
+		/* Field Mode enable(interlace mode) */
+		tc_cmd |= (1<<1);			
+	else
+		/* Field Mode disable */
+		tc_cmd &= ~(1<<1);			
+
+	/* TG global enable */
+//	tc_cmd |= (1<<0);
+//	writeb(tc_cmd, hdmi_base + S5P_TG_CMD);
+		
+	return 0;
+}
+
+s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd, s5p_tv_hdmi_pxl_aspect pxl_ratio)
+{
+	u8  temp_reg8;
+	u16 temp_reg16;
+	u32 temp_reg32, temp_sync2, temp_sync3;
+
+	/* check if HDMI code support that mode */
+	if (mode > (sizeof(video_params)/sizeof(struct hdmi_v_params)) || (s32)mode < 0 )
+	{
+		HDMIPRINTK("This video mode is not Supported\n");
+		return -EINVAL;
+	}
+	
+	hdmi_set_tg(mode);
+
+	/* set HBlank */
+	temp_reg16 = video_params[mode].h_blank;
+	writeb((u8)(temp_reg16&0xff), hdmi_base + S5P_H_BLANK_0 );
+	writeb((u8)(temp_reg16 >> 8), hdmi_base + S5P_H_BLANK_1 );
+
+	/* set VBlank */
+	temp_reg32 = video_params[mode].v_blank;
+	writeb((u8)(temp_reg32&0xff), hdmi_base + S5P_V_BLANK_0 );
+	writeb((u8)(temp_reg32 >> 8), hdmi_base + S5P_V_BLANK_1 );
+	writeb((u8)(temp_reg32 >> 16), hdmi_base + S5P_V_BLANK_2 );
+
+	/* set HVLine */
+	temp_reg32 = video_params[mode].hvline;
+	writeb((u8)(temp_reg32&0xff), hdmi_base + S5P_H_V_LINE_0 );
+	writeb((u8)(temp_reg32 >> 8), hdmi_base + S5P_H_V_LINE_1 );
+	writeb((u8)(temp_reg32 >> 16),hdmi_base + S5P_H_V_LINE_2 );
+	
+	/* set VSYNC polarity */
+	writeb(video_params[mode].polarity, hdmi_base + S5P_SYNC_MODE);
+
+	/* set HSyncGen */
+	temp_reg32 = video_params[mode].h_sync_gen;
+	writeb((u8)(temp_reg32&0xff), hdmi_base + S5P_H_SYNC_GEN_0);
+	writeb((u8)(temp_reg32 >> 8), hdmi_base + S5P_H_SYNC_GEN_1);
+	writeb((u8)(temp_reg32 >> 16), hdmi_base + S5P_H_SYNC_GEN_2);
+
+	/* set VSyncGen1 */
+	temp_reg32 = video_params[mode].v_sync_gen;
+	writeb((u8)(temp_reg32&0xff), hdmi_base + S5P_V_SYNC_GEN_1_0);
+	writeb((u8)(temp_reg32 >> 8), hdmi_base + S5P_V_SYNC_GEN_1_1);
+	writeb((u8)(temp_reg32 >> 16), hdmi_base + S5P_V_SYNC_GEN_1_2);
+
+	if (video_params[mode].interlaced)
+	{
+		/* set up v_blank_f, v_sync_gen2, v_sync_gen3 */
+		temp_reg32 = video_params[mode].v_blank_f;
+		temp_sync2 = video_params[mode].v_sync_gen2;
+		temp_sync3 = video_params[mode].v_sync_gen3;
+
+		writeb((u8)(temp_reg32 & 0xff), hdmi_base + S5P_V_BLANK_F_0);
+		writeb((u8)(temp_reg32 >> 8), hdmi_base + S5P_V_BLANK_F_1);
+		writeb((u8)(temp_reg32 >> 16), hdmi_base + S5P_V_BLANK_F_2);
+
+		writeb((u8)(temp_sync2 & 0xff), hdmi_base + S5P_V_SYNC_GEN_2_0);
+		writeb((u8)(temp_sync2 >> 8), hdmi_base + S5P_V_SYNC_GEN_2_1);
+		writeb((u8)(temp_sync2 >> 16), hdmi_base + S5P_V_SYNC_GEN_2_2);
+
+		writeb((u8)(temp_sync3 & 0xff), hdmi_base + S5P_V_SYNC_GEN_3_0);
+		writeb((u8)(temp_sync3 >> 8), hdmi_base + S5P_V_SYNC_GEN_3_1);
+		writeb((u8)(temp_sync3 >> 16), hdmi_base + S5P_V_SYNC_GEN_3_2);
+	}
+	else
+	{
+		/* progressive mode */
+		writeb(0x00, hdmi_base + S5P_V_BLANK_F_0);
+		writeb(0x00, hdmi_base + S5P_V_BLANK_F_1);
+		writeb(0x00, hdmi_base + S5P_V_BLANK_F_2);
+
+		writeb(0x01, hdmi_base + S5P_V_SYNC_GEN_2_0);
+		writeb(0x10, hdmi_base + S5P_V_SYNC_GEN_2_1);
+		writeb(0x00, hdmi_base + S5P_V_SYNC_GEN_2_2);
+
+		writeb(0x01, hdmi_base + S5P_V_SYNC_GEN_3_0);
+		writeb(0x10, hdmi_base + S5P_V_SYNC_GEN_3_1);
+		writeb(0x00, hdmi_base + S5P_V_SYNC_GEN_3_2);
+	}
+	
+	/* set interlaced mode */
+	writeb(video_params[mode].interlaced, hdmi_base + S5P_INT_PRO_MODE);
+
+	/* pixel repetition */
+	temp_reg8 = readb(hdmi_base + S5P_HDMI_CON_1);
+
+	/* clear */
+	temp_reg8 &= ~ HDMI_CON_PXL_REP_RATIO_MASK;
+
+	if (video_params[mode].repetition)
+	{
+		/* set pixel repetition */
+		temp_reg8 |= HDMI_DOUBLE_PIXEL_REPETITION;
+		/* AVI Packet */
+		writeb(AVI_PIXEL_REPETITION_DOUBLE, hdmi_base + S5P_AVI_BYTE5);
+	}
+	else /* clear pixel repetition */
+	{
+		/* AVI Packet */
+		writeb(0x00, hdmi_base + S5P_AVI_BYTE5);
+	}
+	
+	/* set pixel repetition */
+	writeb(temp_reg8, hdmi_base + S5P_HDMI_CON_1 );
+
+	/* set AVI packet VIC */
+	if (pxl_ratio == HDMI_PIXEL_RATIO_16_9)
+		writeb(video_params[mode].avi_vic_16_9, hdmi_base + S5P_AVI_BYTE4);
+	else
+		writeb(video_params[mode].avi_vic, hdmi_base + S5P_AVI_BYTE4);
+
+	/* clear */
+	temp_reg8 = readb(hdmi_base + S5P_AVI_BYTE2) &
+			~(AVI_PICTURE_ASPECT_4_3 | AVI_PICTURE_ASPECT_16_9);
+	
+	if (pxl_ratio == HDMI_PIXEL_RATIO_16_9)
+	{
+		temp_reg8 |= AVI_PICTURE_ASPECT_16_9;
+	}
+	else
+	{
+		temp_reg8 |= AVI_PICTURE_ASPECT_4_3;
+	}
+
+	/* set AVI packet MM */
+	writeb(temp_reg8, hdmi_base + S5P_AVI_BYTE2);
+
 /*
-* set  - set functions are only called under running HDMI
+	// set color depth
+	if (HDMI_Sets5p_hdmi_color_depth(cd) != OK)
+	{
+		return ERROR;
+	}
 */
+	// config Phy
+#if 0	
+	if (PHYConfig(video_params[mode].pixel_clock, cd) == ERROR)
+	{
+		UART_Printf("PHYConfig() failed.\n");
+		return ERROR;
+	}	
+	else
+	{
+		u32 i;
+
+		// CMU Block : HDMI_SEL(SCLK_HDMI) - 0 : SCLK_PIXEL, 1 : SCLK_HDMIPHY
+		temp_reg32 = Inp32(S3C_VA_SYS+0x0204);
+		temp_reg32 |= (1<<0);
+		Outp32(S3C_VA_SYS+0x0204, temp_reg32);
+
+		// CMU Block : MIXER_SEL(SCLK_MIXER) - 0 : SCLK_DAC,  1 : SCLK_HDMI
+		temp_reg32 = Inp32(S3C_VA_SYS+0x0204);
+		temp_reg32 |= (1<<4);
+		Outp32(S3C_VA_SYS+0x0204, temp_reg32);
+	}
+#endif
+
+	return 0;
+}
+
+
 void __s5p_hdmi_set_hpd_onoff(bool on_off)
 {
-	HDMIPRINTK("%d\n\r", on_off);
+	HDMIPRINTK("hpd is %s\n\r", on_off ? "on":"off");
 
 	if (on_off) {
 		writel(SW_HPD_PLUGGED, hdmi_base + S5P_HPD);
@@ -99,7 +316,11 @@ void __s5p_hdmi_audio_set_config(s5p_tv_audio_codec_type audio_codec)
 	u32 data_type = (audio_codec == PCM) ? CONFIG_LINEAR_PCM_TYPE :
 			(audio_codec == AC3) ? CONFIG_NON_LINEAR_PCM_TYPE : 0xff;
 
-	HDMIPRINTK("(%d)\n\r", audio_codec);
+	HDMIPRINTK("audio codec type = %s\n\r", 
+		(audio_codec&PCM) ? "PCM":
+		(audio_codec&AC3) ? "AC3":
+		(audio_codec&MP3) ? "MP3":
+		(audio_codec&WMA) ? "WMA":"Unknown");
 
 	writel(CONFIG_FILTER_2_SAMPLE | data_type
 	       | CONFIG_PCPD_MANUAL_SET | CONFIG_WORD_LENGTH_MANUAL_SET
@@ -107,7 +328,6 @@ void __s5p_hdmi_audio_set_config(s5p_tv_audio_codec_type audio_codec)
 	       | CONFIG_DATA_ALIGN_32BIT
 	       , hdmi_base + S5P_SPDIFIN_CONFIG_1);
 	writel(0, hdmi_base + S5P_SPDIFIN_CONFIG_2);
-	HDMIPRINTK("()\n\r");
 }
 
 void __s5p_hdmi_audio_set_acr(u32 sample_rate)
@@ -128,7 +348,8 @@ void __s5p_hdmi_audio_set_acr(u32 sample_rate)
 		      (sample_rate == 96000) ? 27000 :
 		      (sample_rate == 192000) ? 27000 : 0;
 
-	HDMIPRINTK("(%d)\n\r", sample_rate);
+	HDMIPRINTK("sample rate = %d\n\r", sample_rate);
+	HDMIPRINTK("cts = %d\n\r", cts);
 
 	writel(value_n & 0xff, hdmi_base + S5P_ACR_N0);
 	writel((value_n >> 8) & 0xff, hdmi_base + S5P_ACR_N1);
@@ -143,49 +364,44 @@ void __s5p_hdmi_audio_set_acr(u32 sample_rate)
 	writel((cts >> 16) & 0xff, hdmi_base + S5P_ACR_CTS2);
 
 	writel(4, hdmi_base + S5P_ACR_CON); //TO-DO : what it is?
-
-	HDMIPRINTK("()\n\r");
 }
 
 void __s5p_hdmi_audio_set_asp(void)
 {
-	HDMIPRINTK("()\n\r");
 	writel(0x0, hdmi_base + S5P_ASP_CON);
-	// All Subpackets contain audio samples
+	/* All Subpackets contain audio samples */
 	writel(0x0, hdmi_base + S5P_ASP_SP_FLAT); 
 
 	writel(1 << 3 | 0, hdmi_base + S5P_ASP_CHCFG0);
 	writel(1 << 3 | 0, hdmi_base + S5P_ASP_CHCFG1);
 	writel(1 << 3 | 0, hdmi_base + S5P_ASP_CHCFG2);
 	writel(1 << 3 | 0, hdmi_base + S5P_ASP_CHCFG3);
-	HDMIPRINTK("()\n\r");
 }
 
 void  __s5p_hdmi_audio_clock_enable(void)
 {
-	HDMIPRINTK("()\n\r");
 	writel(0x1, hdmi_base + S5P_SPDIFIN_CLK_CTRL);
-	writel(0x3, hdmi_base + S5P_SPDIFIN_OP_CTRL); // HDMI operation mode
-	HDMIPRINTK("()\n\r");
+	/* HDMI operation mode */
+	writel(0x3, hdmi_base + S5P_SPDIFIN_OP_CTRL); 
 }
 
 void __s5p_hdmi_audio_set_repetition_time(s5p_tv_audio_codec_type audio_codec, 
 					u32 bits, u32 frame_size_code)
 {
-	u32 wl = 5 << 1 | 1; // Only 4'b1011 // 24bit
+	/* Only 4'b1011  24bit */
+	u32 wl = 5 << 1 | 1; 
 	u32 rpt_cnt = (audio_codec == AC3) ? 1536 * 2 - 1 : 0;
 
-	HDMIPRINTK("()\n\r");
+	HDMIPRINTK("repetition count = %d\n\r", rpt_cnt);
 
-	// 24bit and manual mode
+	/* 24bit and manual mode */
 	writel(((rpt_cnt&0xf) << 4) | wl, hdmi_base + S5P_SPDIFIN_USER_VALUE_1); 
-	// if PCM this value is 0
+	/* if PCM this value is 0 */
 	writel((rpt_cnt >> 4)&0xff, hdmi_base + S5P_SPDIFIN_USER_VALUE_2);
-	// if PCM this value is 0
+	/* if PCM this value is 0 */
 	writel(frame_size_code&0xff, hdmi_base + S5P_SPDIFIN_USER_VALUE_3);	
-	// if PCM this value is 0
+	/* if PCM this value is 0 */
 	writel((frame_size_code >> 8)&0xff, hdmi_base + S5P_SPDIFIN_USER_VALUE_4);
-	HDMIPRINTK("()\n\r");
 }
 
 
@@ -202,12 +418,13 @@ void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
 {
 	u8 sum_of_bits, bytes1, bytes2, bytes3, check_sum;
 	u32 bit_rate;
-	u32 bps = (audio_codec == PCM) ? bits : 16; // Ac3 16bit only
+	/* Ac3 16bit only */
+	u32 bps = (audio_codec == PCM) ? bits : 16; 
 
-	// AUI Packet set.
-	u32 type = (audio_codec == PCM) ? 1 :  // PCM
-			(audio_codec == AC3) ? 2 : 0; //AC3 or Refer stream header
-	u32 ch = (audio_codec == PCM) ? 1 : 0; // 2ch or refer to stream header
+	/* AUI Packet set. */
+	u32 type = (audio_codec == PCM) ? 1 :  		/* PCM */
+			(audio_codec == AC3) ? 2 : 0; 	/* AC3 or Refer stream header */
+	u32 ch = (audio_codec == PCM) ? 1 : 0; 		/* 2ch or refer to stream header */
 
 	u32 sample = (sample_rate == 32000) ? 1 :
 			(sample_rate == 44100) ? 2 :
@@ -221,8 +438,7 @@ void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
 			(bps == 20) ? 2 :
 			(bps == 24) ? 3 : 0;
 
-	HDMIPRINTK("()\n\r");
-
+	
 	bpsType = (audio_codec == PCM) ? bpsType : 0;
 
 	sum_of_bits = (0x84 + 0x1 + 10);//header
@@ -239,23 +455,24 @@ void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
 	sum_of_bits += (bytes1 + bytes2 + bytes3);
 	check_sum = 256 - sum_of_bits;
 
-	// AUI Packet set.
+	/* AUI Packet set. */
 	writel(check_sum , hdmi_base + S5P_AUI_CHECK_SUM);
 	writel(bytes1 , hdmi_base + S5P_AUI_BYTE1);
 	writel(bytes2 , hdmi_base + S5P_AUI_BYTE2);
-	writel(bytes3 , hdmi_base + S5P_AUI_BYTE3); // Pcm or stream
-	writel(0x00 , hdmi_base + S5P_AUI_BYTE4); // 2ch pcm or Stream
-	writel(0x00 , hdmi_base + S5P_AUI_BYTE5); // 2ch pcm or Stream
+	writel(bytes3 , hdmi_base + S5P_AUI_BYTE3); 	/* Pcm or stream */
+	writel(0x00 , hdmi_base + S5P_AUI_BYTE4); 	/* 2ch pcm or Stream */
+	writel(0x00 , hdmi_base + S5P_AUI_BYTE5); 	/* 2ch pcm or Stream */
 
 
 	writel(2 , hdmi_base + S5P_ACP_CON);
 	writel(1 , hdmi_base + S5P_ACP_TYPE);
 
 	writel(0x10 , hdmi_base + S5P_GCP_BYTE1);
-	// packet will be transmitted within 384 cycles after active sync.
+	/* 
+	 * packet will be transmitted within 384 cycles 
+	 * after active sync. 
+	 */
 	writel(0x2 , hdmi_base + S5P_GCP_CON);  
-
-	HDMIPRINTK("()\n\r");
 
 }
 
@@ -288,12 +505,9 @@ void __s5p_hdmi_video_set_bluescreen(bool en,
 }
 
 
-/*
-* initialization  - iniization functions are only called under stopping HDMI
-*/
 s5p_tv_hdmi_err __s5p_hdmi_init_spd_infoframe(s5p_hdmi_transmit trans_type,
-						    u8 *spd_header,
-						    u8 *spd_data)
+					u8 *spd_header,
+					u8 *spd_data)
 {
 	HDMIPRINTK("%d,%d,%d\n\r", (u32)trans_type,
 		   (u32)spd_header,
@@ -512,222 +726,10 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 		break;
 	}
 
-	writel(0x2b, hdmi_base + S5P_VACT_ST_MG);
-
-	writel(0x30, hdmi_base + S5P_VACT_END_MG);
-
-	writel(SET_H_BLANK_L(g_hdmi_video_parm_tbl[H_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_H_BLANK_0);
-	writel(SET_H_BLANK_H(g_hdmi_video_parm_tbl[H_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_H_BLANK_1);
-
-	writel(SET_V2_BLANK_L(g_hdmi_video_parm_tbl[V2_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_BLANK_0);
-	writel(SET_V2_BLANK_H(g_hdmi_video_parm_tbl[V2_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_V1_BLANK_L(g_hdmi_video_parm_tbl[V1_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_BLANK_1);
-	writel(SET_V1_BLANK_H(g_hdmi_video_parm_tbl[V1_BLANK*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_BLANK_2);
-
-	writel(SET_V_LINE_L(g_hdmi_video_parm_tbl[V_LINE*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_H_V_LINE_0);
-	writel(SET_V_LINE_H(g_hdmi_video_parm_tbl[V_LINE*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_H_LINE_L(g_hdmi_video_parm_tbl[H_LINE*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_H_V_LINE_1);
-	writel(SET_H_LINE_H(g_hdmi_video_parm_tbl[H_LINE*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_H_V_LINE_2);
-
-	writel(g_hdmi_video_parm_tbl[VSYNC_POL*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num] , hdmi_base + S5P_SYNC_MODE);
-
-	writel(0xfd, hdmi_base + S5P_SEND_PER_START0);
-	writel(0x01, hdmi_base + S5P_SEND_PER_START1);
-	writel(0x0d, hdmi_base + S5P_SEND_PER_END0);
-	writel(0x3a, hdmi_base + S5P_SEND_PER_END1);
-	writel(0x08, hdmi_base + S5P_SEND_PER_END2);
-
-	writel(SET_V_BOT_ST_L(g_hdmi_video_parm_tbl[V_BOT_ST*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_BLANK_F_0);
-	writel(SET_V_BOT_ST_H(g_hdmi_video_parm_tbl[V_BOT_ST*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_V_BOT_END_L(g_hdmi_video_parm_tbl[V_BOT_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_BLANK_F_1);
-	writel(SET_V_BOT_END_H(g_hdmi_video_parm_tbl[V_BOT_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_BLANK_F_2);
-
-
-	writel(SET_HSYNC_START_L(g_hdmi_video_parm_tbl[HSYNC_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_H_SYNC_GEN_0);
-	writel(SET_HSYNC_START_H(g_hdmi_video_parm_tbl[HSYNC_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_HSYNC_END_L(g_hdmi_video_parm_tbl[HSYNC_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_H_SYNC_GEN_1);
-	writel(SET_HSYNC_END_H(g_hdmi_video_parm_tbl[HSYNC_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       ((g_hdmi_video_parm_tbl[HSYNC_POL*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ? SET_HSYNC_POL_ACT_LOW : SET_HSYNC_POL_ACT_HIGH) ,
-	       hdmi_base + S5P_H_SYNC_GEN_2);
-
-
-	writel(SET_VSYNC_T_END_L(g_hdmi_video_parm_tbl[VSYNC_T_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_1_0);
-	writel(SET_VSYNC_T_END_H(g_hdmi_video_parm_tbl[VSYNC_T_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_VSYNC_T_ST_L(g_hdmi_video_parm_tbl[VSYNC_T_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-
-	       hdmi_base + S5P_V_SYNC_GEN_1_1);
-	writel(SET_VSYNC_T_ST_H(g_hdmi_video_parm_tbl[VSYNC_T_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_1_2);
-
-	writel(SET_VSYNC_B_END_L(g_hdmi_video_parm_tbl[VSYNC_B_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_2_0);
-	writel(SET_VSYNC_B_END_H(g_hdmi_video_parm_tbl[VSYNC_B_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_VSYNC_B_ST_L(g_hdmi_video_parm_tbl[VSYNC_B_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_2_1);
-	writel(SET_VSYNC_B_ST_H(g_hdmi_video_parm_tbl[VSYNC_B_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_2_2);
-
-	writel(SET_VSYNC_H_POST_END_L(g_hdmi_video_parm_tbl[VSYNC_h_POS_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_3_0);
-
-	writel(SET_VSYNC_H_POST_END_H(g_hdmi_video_parm_tbl[VSYNC_h_POS_END*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) |
-	       SET_VSYNC_H_POST_ST_L(g_hdmi_video_parm_tbl[VSYNC_h_POS_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_V_SYNC_GEN_3_1);
-
-	writel(SET_VSYNC_H_POST_ST_H(g_hdmi_video_parm_tbl[VSYNC_h_POS_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_V_SYNC_GEN_3_2);
-
-
-	writel(0 , hdmi_base + S5P_TG_CMD); // default is not 0x00 but 0x87
-	writel(SET_TG_H_FSZ_L(g_hdmi_video_parm_tbl[TG_H_FSZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_TG_H_FSZ_L);
-	writel(SET_TG_H_FSZ_H(g_hdmi_video_parm_tbl[TG_H_FSZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_TG_H_FSZ_H);
-
-	writel(SET_TG_HACT_ST_L(g_hdmi_video_parm_tbl[TG_HACT_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_TG_HACT_ST_L);
-	writel(SET_TG_HACT_ST_H(g_hdmi_video_parm_tbl[TG_HACT_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_HACT_ST_H);
-	writel(SET_TG_HACT_SZ_L(g_hdmi_video_parm_tbl[TG_HACT_SZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_HACT_SZ_L);
-	writel(SET_TG_HACT_SZ_H(g_hdmi_video_parm_tbl[TG_HACT_SZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_HACT_SZ_H);
-
-
-	writel(SET_TG_V_FSZ_L(g_hdmi_video_parm_tbl[TG_V_FSZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_V_FSZ_L);
-	writel(SET_TG_V_FSZ_H(g_hdmi_video_parm_tbl[TG_V_FSZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_V_FSZ_H);
-	writel(SET_TG_VSYNC_L(g_hdmi_video_parm_tbl[TG_VSYNC*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC_L);
-	writel(SET_TG_VSYNC_H(g_hdmi_video_parm_tbl[TG_VSYNC*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC_H);
-	writel(SET_TG_VSYNC2_L(g_hdmi_video_parm_tbl[TG_VSYNC2*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC2_L);
-	writel(SET_TG_VSYNC2_H(g_hdmi_video_parm_tbl[TG_VSYNC2*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC2_H);
-
-	writel(SET_TG_VACT_ST_L(g_hdmi_video_parm_tbl[TG_VACT_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_ST_L);
-	writel(SET_TG_VACT_ST_H(g_hdmi_video_parm_tbl[TG_VACT_START*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_ST_H);
-	writel(SET_TG_VACT_SZ_L(g_hdmi_video_parm_tbl[TG_VACT_SZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_SZ_L);
-	writel(SET_TG_VACT_SZ_H(g_hdmi_video_parm_tbl[TG_VACT_SZ*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_SZ_H);
-
-	writel(SET_TG_FIELD_CHG_L(g_hdmi_video_parm_tbl[TG_FIELD_CHG*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_CHG_L);
-	writel(SET_TG_FIELD_CHG_H(g_hdmi_video_parm_tbl[TG_FIELD_CHG*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_CHG_H);
-
-	writel(SET_TG_VACT_ST2_L(g_hdmi_video_parm_tbl[TG_VACT_START2*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_ST2_L);
-	writel(SET_TG_VACT_ST2_H(g_hdmi_video_parm_tbl[TG_VACT_START2*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VACT_ST2_H);
-
-	writel(SET_TG_VSYNC_TOP_HDMI_L(g_hdmi_video_parm_tbl[TG_VSYNC_TOP_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]) ,
-	       hdmi_base + S5P_TG_VSYNC_TOP_HDMI_L);
-	writel(SET_TG_VSYNC_TOP_HDMI_H(g_hdmi_video_parm_tbl[TG_VSYNC_TOP_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC_TOP_HDMI_H);
-	writel(SET_TG_VSYNC_BOT_HDMI_L(g_hdmi_video_parm_tbl[TG_VSYNC_BOTTOM_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC_BOT_HDMI_L);
-	writel(SET_TG_VSYNC_BOT_HDMI_H(g_hdmi_video_parm_tbl[TG_VSYNC_BOTTOM_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_VSYNC_BOT_HDMI_H);
-
-	writel(SET_TG_FIELD_TOP_HDMI_L(g_hdmi_video_parm_tbl[TG_FIELD_TOP_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_TOP_HDMI_L);
-	writel(SET_TG_FIELD_TOP_HDMI_H(g_hdmi_video_parm_tbl[TG_FIELD_TOP_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_TOP_HDMI_H);
-	writel(SET_TG_FIELD_BOT_HDMI_L(g_hdmi_video_parm_tbl[TG_FIELD_BOTTOM_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_BOT_HDMI_L);
-	writel(SET_TG_FIELD_BOT_HDMI_H(g_hdmi_video_parm_tbl[TG_FIELD_BOTTOM_HDMI*S5P_TV_HDMI_DISP_MODE_NUM + hdmi_disp_num]),
-	       hdmi_base + S5P_TG_FIELD_BOT_HDMI_H);
-
-	HDMIPRINTK("HDMI_CON_1 = 0x%08x \n\r", readl(hdmi_base + S5P_HDMI_CON_1));
-	HDMIPRINTK("HDMI_CON_2 = 0x%08x \n\r", readl(hdmi_base + S5P_HDMI_CON_2));
-	HDMIPRINTK("MODE_SEL = 0x%08x \n\r", readl(hdmi_base + S5P_MODE_SEL));
-	HDMIPRINTK("BLUE_SCREEN_0 = 0x%08x \n\r", readl(hdmi_base + S5P_BLUE_SCREEN_0));
-	HDMIPRINTK("BLUE_SCREEN_1 = 0x%08x \n\r", readl(hdmi_base + S5P_BLUE_SCREEN_1));
-	HDMIPRINTK("BLUE_SCREEN_2 = 0x%08x \n\r", readl(hdmi_base + S5P_BLUE_SCREEN_2));
-	HDMIPRINTK("VBI_ST_MG = 0x%08x \n\r", readl(hdmi_base + S5P_VBI_ST_MG));
-	HDMIPRINTK("VBI_END_MG = 0x%08x \n\r", readl(hdmi_base + S5P_VBI_END_MG));
-	HDMIPRINTK("VACT_ST_MG = 0x%08x \n\r", readl(hdmi_base + S5P_VACT_ST_MG));
-	HDMIPRINTK("VACT_END_MG = 0x%08x \n\r", readl(hdmi_base + S5P_VACT_END_MG));
-	HDMIPRINTK("H_BLANK_0 = 0x%08x \n\r", readl(hdmi_base + S5P_H_BLANK_0));
-	HDMIPRINTK("H_BLANK_1 = 0x%08x \n\r", readl(hdmi_base + S5P_H_BLANK_1));
-	HDMIPRINTK("V_BLANK_0 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_0));
-	HDMIPRINTK("V_BLANK_1 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_1));
-	HDMIPRINTK("V_BLANK_2 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_2));
-	HDMIPRINTK("H_V_LINE_0 = 0x%08x \n\r", readl(hdmi_base + S5P_H_V_LINE_0));
-	HDMIPRINTK("H_V_LINE_1 = 0x%08x \n\r", readl(hdmi_base + S5P_H_V_LINE_1));
-	HDMIPRINTK("H_V_LINE_2 = 0x%08x \n\r", readl(hdmi_base + S5P_H_V_LINE_2));
-	HDMIPRINTK("SYNC_MODE = 0x%08x \n\r", readl(hdmi_base + S5P_SYNC_MODE));
-	HDMIPRINTK("INT_PRO_MODE = 0x%08x \n\r", readl(hdmi_base + S5P_INT_PRO_MODE));
-	HDMIPRINTK("SEND_PER_START0 = 0x%08x \n\r", readl(hdmi_base + S5P_SEND_PER_START0));
-	HDMIPRINTK("SEND_PER_START1 = 0x%08x \n\r", readl(hdmi_base + S5P_SEND_PER_START1));
-	HDMIPRINTK("SEND_PER_END0 = 0x%08x \n\r", readl(hdmi_base + S5P_SEND_PER_END0));
-	HDMIPRINTK("SEND_PER_END1 = 0x%08x \n\r", readl(hdmi_base + S5P_SEND_PER_END1));
-	HDMIPRINTK("SEND_PER_END2 = 0x%08x \n\r", readl(hdmi_base + S5P_SEND_PER_END2));
-	HDMIPRINTK("V_BLANK_F_0 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_F_0));
-	HDMIPRINTK("V_BLANK_F_1 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_F_1));
-	HDMIPRINTK("V_BLANK_F_2 = 0x%08x \n\r", readl(hdmi_base + S5P_V_BLANK_F_2));
-	HDMIPRINTK("H_SYNC_GEN_0 = 0x%08x \n\r", readl(hdmi_base + S5P_H_SYNC_GEN_0));
-	HDMIPRINTK("H_SYNC_GEN_1 = 0x%08x \n\r", readl(hdmi_base + S5P_H_SYNC_GEN_1));
-	HDMIPRINTK("H_SYNC_GEN_2 = 0x%08x \n\r", readl(hdmi_base + S5P_H_SYNC_GEN_2));
-	HDMIPRINTK("V_SYNC_GEN_1_0 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_1_0));
-	HDMIPRINTK("V_SYNC_GEN_1_1 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_1_1));
-	HDMIPRINTK("V_SYNC_GEN_1_2 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_1_2));
-	HDMIPRINTK("V_SYNC_GEN_2_0 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_2_0));
-	HDMIPRINTK("V_SYNC_GEN_2_1 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_2_1));
-	HDMIPRINTK("V_SYNC_GEN_2_2 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_2_2));
-	HDMIPRINTK("V_SYNC_GEN_3_0 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_3_0));
-	HDMIPRINTK("V_SYNC_GEN_3_1 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_3_1));
-	HDMIPRINTK("V_SYNC_GEN_3_2 = 0x%08x \n\r", readl(hdmi_base + S5P_V_SYNC_GEN_3_2));
-	HDMIPRINTK("TG_CMD = 0x%08x \n\r", readl(hdmi_base + S5P_TG_CMD));
-	HDMIPRINTK("TG_H_FSZ_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_H_FSZ_L));
-	HDMIPRINTK("TG_H_FSZ_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_H_FSZ_H));
-	HDMIPRINTK("TG_HACT_ST_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_HACT_ST_L));
-	HDMIPRINTK("TG_HACT_ST_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_HACT_ST_H));
-	HDMIPRINTK("TG_HACT_SZ_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_HACT_SZ_L));
-	HDMIPRINTK("TG_HACT_SZ_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_HACT_SZ_H));
-	HDMIPRINTK("TG_V_FSZ_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_V_FSZ_L));
-	HDMIPRINTK("TG_V_FSZ_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_V_FSZ_H));
-	HDMIPRINTK("TG_VSYNC_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_L));
-	HDMIPRINTK("TG_VSYNC_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_H));
-	HDMIPRINTK("TG_VSYNC2_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC2_L));
-	HDMIPRINTK("TG_VSYNC2_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC2_H));
-	HDMIPRINTK("TG_VACT_ST_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_ST_L));
-	HDMIPRINTK("TG_VACT_ST_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_ST_H));
-	HDMIPRINTK("TG_VACT_SZ_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_SZ_L));
-	HDMIPRINTK("TG_VACT_SZ_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_SZ_H));
-	HDMIPRINTK("TG_FIELD_CHG_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_CHG_L));
-	HDMIPRINTK("TG_FIELD_CHG_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_CHG_H));
-	HDMIPRINTK("TG_VACT_ST2_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_ST2_L));
-	HDMIPRINTK("TG_VACT_ST2_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VACT_ST2_H));
-	HDMIPRINTK("TG_VSYNC_TOP_HDMI_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_TOP_HDMI_L));
-	HDMIPRINTK("TG_VSYNC_TOP_HDMI_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_TOP_HDMI_H));
-	HDMIPRINTK("TG_VSYNC_BOT_HDMI_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_BOT_HDMI_L));
-	HDMIPRINTK("TG_VSYNC_BOT_HDMI_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_VSYNC_BOT_HDMI_H));
-	HDMIPRINTK("TG_FIELD_TOP_HDMI_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_TOP_HDMI_L));
-	HDMIPRINTK("TG_FIELD_TOP_HDMI_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_TOP_HDMI_H));
-	HDMIPRINTK("TG_FIELD_BOT_HDMI_L = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_BOT_HDMI_L));
-	HDMIPRINTK("TG_FIELD_BOT_HDMI_H = 0x%08x \n\r", readl(hdmi_base + S5P_TG_FIELD_BOT_HDMI_H));
-
+//FPGA: FOR C110 HDMI TEST
+	hdmi_set_video_mode(v1280x720p_60Hz, HDMI_CD_24,HDMI_PIXEL_RATIO_16_9);
+//FPGA: FOR C110 HDMI TEST
+	
 	return HDMI_NO_ERROR;
 }
 
@@ -736,11 +738,8 @@ void __s5p_hdmi_video_init_bluescreen(bool en,
 				    u8 y_g,
 				    u8 cr_r)
 {
-	HDMIPRINTK("()\n\r");
-
 	__s5p_hdmi_video_set_bluescreen(en, cb_b, y_g, cr_r);
 
-	HDMIPRINTK("()\n\r");
 }
 
 void __s5p_hdmi_video_init_color_range(u8 y_min,
@@ -892,7 +891,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_csc(s5p_tv_hdmi_csc_type csc_type)
 		break;
 	}
 
-	writel(us_csc_coeff[0], hdmi_base + S5P_HDMI_CSC_CON);;
+/*	writel(us_csc_coeff[0], hdmi_base + S5P_HDMI_CSC_CON);;
 
 	writel(SET_HDMI_CSC_COEF_L(us_csc_coeff[1]), 
 		hdmi_base + S5P_HDMI_Y_G_COEF_L);
@@ -969,7 +968,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_csc(s5p_tv_hdmi_csc_type csc_type)
 		readl(hdmi_base + S5P_HDMI_CR_R_COEF_L));
 	HDMIPRINTK("HDMI_CR_R_COEF_H = 0x%08x \n\r", 
 		readl(hdmi_base + S5P_HDMI_CR_R_COEF_H));
-
+*/
 	return HDMI_NO_ERROR;
 }
 
@@ -1030,32 +1029,6 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_avi_infoframe(s5p_hdmi_transmit trans_type
 	HDMIPRINTK("AVI_BYTE11 = 0x%08x \n\r", readl(hdmi_base + S5P_AVI_BYTE11));
 	HDMIPRINTK("AVI_BYTE12 = 0x%08x \n\r", readl(hdmi_base + S5P_AVI_BYTE12));
 	HDMIPRINTK("AVI_BYTE13 = 0x%08x \n\r", readl(hdmi_base + S5P_AVI_BYTE13));
-
-	/*
-	* for test color bar
-	*/
-	/*
-	{
-
-		writel( 0xff&32,HDMI_TPGEN_1);
-		writel( (32>>8)&0xff,HDMI_TPGEN_2);
-		writel( 0xff&480,HDMI_TPGEN_3);
-		writel( (480>>8)&0xff,HDMI_TPGEN_4);
-		writel( 0xff&720,HDMI_TPGEN_5);
-		writel( (720>>8)&0xff,HDMI_TPGEN_6);
-
-		u8 uTpGen0Reg =	0x1 | (0x1<<3) | (1<<4);
-		writel( uTpGen0Reg, HDMI_TPGEN_0);
-
-		HDMIPRINTK("HDMI_TPGEN_0 0x%08x\n",readl(HDMI_TPGEN_0));
-		HDMIPRINTK("HDMI_TPGEN_1 0x%08x\n",readl(HDMI_TPGEN_1));
-		HDMIPRINTK("HDMI_TPGEN_2 0x%08x\n",readl(HDMI_TPGEN_2));
-		HDMIPRINTK("HDMI_TPGEN_3 0x%08x\n",readl(HDMI_TPGEN_3));
-		HDMIPRINTK("HDMI_TPGEN_5 0x%08x\n",readl(HDMI_TPGEN_4));
-		HDMIPRINTK("HDMI_TPGEN_0 0x%08x\n",readl(HDMI_TPGEN_5));
-		HDMIPRINTK("HDMI_TPGEN_1 0x%08x\n",readl(HDMI_TPGEN_6));
-	}
-	*/
 
 	return HDMI_NO_ERROR;
 }
@@ -1145,14 +1118,12 @@ void __s5p_hdmi_video_init_tg_cmd(bool timing_correction_en,
 }
 
 
-/*
-* start  - start functions are only called under stopping HDMI
-*/
 bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 				bool hdcp_en,
 				struct i2c_client *ddc_port)
 {
-	u32 temp_reg = PWDN_ENB_NORMAL | HDMI_EN;;
+//	u32 temp_reg = PWDN_ENB_NORMAL | HDMI_EN;
+	u32 temp_reg = HDMI_EN;
 
 	HDMIPRINTK("aud type : %d, hdcp enable : %d\n\r",
 		   hdmi_audio_type, hdcp_en);
@@ -1175,7 +1146,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | temp_reg,
 	       hdmi_base + S5P_HDMI_CON_0);
-
+/*
 	if (hdcp_en) {
 		__s5p_init_hdcp(true, ddc_port);
 		
@@ -1183,9 +1154,9 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 			HDMIPRINTK("HDCP start failed\n");
 		}
 	}
-
-	HDMIPRINTK("HDCP_CTRL : 0x%08x, HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
-		   readl(hdmi_base + S5P_HDCP_CTRL),
+*/
+	HDMIPRINTK("HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
+	//	   readl(hdmi_base + S5P_HDCP_CTRL),
 		   readl(hdmi_base + S5P_HPD),
 		   readl(hdmi_base + S5P_HDMI_CON_0));
 
@@ -1199,21 +1170,30 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 */
 void __s5p_hdmi_stop(void)
 {
+	u32 temp=0, result=0;
 	HDMIPRINTK("\n\r");
 
-	__s5p_stop_hdcp();
-
+//	__s5p_stop_hdcp();
+/*
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) &
-	       ~(PWDN_ENB_NORMAL | HDMI_EN | ASP_EN),
+//MANUAL:	       ~(PWDN_ENB_NORMAL | HDMI_EN | ASP_EN),
+	       ~(HDMI_EN | ASP_EN),
 	       hdmi_base + S5P_HDMI_CON_0);
+	    
+*/
+	temp = readl(hdmi_base + S5P_HDMI_CON_0);
+	result = temp & HDMI_EN;
+	
+	if( result )
+		writel(temp &  ~(HDMI_EN | ASP_EN), hdmi_base + S5P_HDMI_CON_0);
 
-	HDMIPRINTK("HDCP_CTRL 0x%08x, HPD 0x%08x,HDMI_CON_0 0x%08x\n\r",
-		   readl(hdmi_base + S5P_HDCP_CTRL),
-		   readl(hdmi_base + S5P_HPD),
-		   readl(hdmi_base + S5P_HDMI_CON_0));
+//	HDMIPRINTK("HPD 0x%08x,HDMI_CON_0 0x%08x\n\r",
+//		   readl(hdmi_base + S5P_HDCP_CTRL),
+//		   readl(hdmi_base + S5P_HPD),
+//		   readl(hdmi_base + S5P_HDMI_CON_0));
 }
 
-int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num)
+int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_num2)
 {
 	struct resource *res;
 	size_t	size;

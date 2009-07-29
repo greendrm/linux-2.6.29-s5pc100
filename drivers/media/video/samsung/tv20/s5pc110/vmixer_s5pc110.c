@@ -18,7 +18,7 @@
 
 #include <asm/io.h>
 
-#include "tv_out_s5pc100.h"
+#include "tv_out_s5pc110.h"
 
 #include "regs/regs-vmx.h"
 
@@ -482,6 +482,10 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		return S5P_TV_VMX_ERR_INVALID_PARAM;
 		break;
 	}
+
+//FPGA: FOR C110 HDMI TEST
+	temp_reg |= (0x1<<7);
+//FPGA: FOR C110 HDMI TEST
 
 	writel(temp_reg, mixer_base + S5P_MXR_CFG);
 
