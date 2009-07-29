@@ -104,12 +104,6 @@ enum fimc_autoload {
 	FIMC_ONE_SHOT,
 };
 
-enum fimc_irq {
-	FIMC_IRQ_NONE,
-	FIMC_IRQ_NORMAL,
-	FIMC_IRQ_LAST,
-};
-
 
 /*
  * S T R U C T U R E S
@@ -139,9 +133,6 @@ struct fimc_capinfo {
 	struct v4l2_pix_format	fmt;
 	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
 	int			nr_bufs;
-	int			inqueue[FIMC_CAPBUFS];
-	int			outqueue[FIMC_PHYBUFS];
-	//enum fimc_irq		irq;
 	int			irq;
 	int			lastirq;
 	
@@ -307,7 +298,6 @@ extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
 extern int fimc_select_camera(struct fimc_control *ctrl);
 
 /* capture device */
-extern int fimc_update_hwaddr(struct fimc_control *ctrl);
 extern int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp);
 extern int fimc_g_input(struct file *file, void *fh, unsigned int *i);
 extern int fimc_s_input(struct file *file, void *fh, unsigned int i);

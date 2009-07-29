@@ -554,13 +554,7 @@ int fimc_hwset_disable_lcdfifo(struct fimc_control *ctrl)
 
 int fimc_hwget_frame_count(struct fimc_control *ctrl)
 {
-	int num;
-
-	num = S3C_CISTATUS_GET_FRAME_COUNT(readl(ctrl->regs + S3C_CISTATUS));
-
-	dev_dbg(ctrl->dev, "%s: frame count: %d\n", __FUNCTION__, num);
-	
-	return num;
+	return S3C_CISTATUS_GET_FRAME_COUNT(readl(ctrl->regs + S3C_CISTATUS));
 }
 
 int fimc_hwget_frame_end(struct fimc_control *ctrl)
