@@ -1254,4 +1254,10 @@ v2.6.29.4-dev-1-0-19: Jae-Cheol Lee
 	Modified Files:
 		M	arch/arm/configs/smdkc110nfs_defconfig
 		M	arch/arm/configs/smdkc110onenand_defconfig
-		M	arch/arm/configs/smdkc110ramdisk_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfigi
+
+v2.6.29.4-dev-1-0-20: Jae-Cheol Lee
+	- Support PWM driver on smdkc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
