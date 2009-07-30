@@ -1394,3 +1394,10 @@ v2.6.29.4-dev-1-0-26: Kukjin Kim
 		M	arch/arm/plat-s3c/dma-pl330-mcode.h
 		M	arch/arm/plat-s3c/dma-pl330.c
 
+v2.6.29.4-dev-1-0-27: Thomas Abraham
+	- Disable USB OTG Phy suspend signal when enabling OTG Phy for
+	S5PC110
+
+	Modified Files
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+
