@@ -1319,3 +1319,56 @@ v2.6.29.4-dev-1-0-22: Jae-Hun Jung
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 		M	drivers/rtc/rtc-s3c.c
 
+v2.6.29.4-dev-1-0-23: Jinsung Yang
+	- add support for s5pc100 fimc driver
+	- remove old fimc files
+	- add base s5pc110 fimc platform files
+
+	Added files:
+		A       drivers/media/video/samsung/fimc/fimc40_regs.c
+		A       drivers/media/video/samsung/fimc/fimc43_regs.c
+		A       drivers/media/video/samsung/fimc/fimc_capture.c
+		A       drivers/media/video/samsung/fimc/fimc_dev.c
+		A       drivers/media/video/samsung/fimc/fimc_output.c
+		A       drivers/media/video/samsung/fimc/fimc_overlay.c
+
+	Deleted files:
+		D       drivers/media/video/samsung/fimc/fimc3x_regs.c
+		D       arch/arm/plat-s5pc1xx/include/plat/fimc2.h
+		D       drivers/media/video/samsung/fimc/Kconfig-camera
+		D       drivers/media/video/samsung/fimc/fimc4x_regs.c
+		D       drivers/media/video/samsung/fimc/fimc_cfg.c
+		D       drivers/media/video/samsung/fimc/fimc_core.c
+		D       drivers/media/video/samsung/fimc2/Kconfig
+		D       drivers/media/video/samsung/fimc2/Makefile
+		D       drivers/media/video/samsung/fimc2/csis.c
+		D       drivers/media/video/samsung/fimc2/csis.h
+		D       drivers/media/video/samsung/fimc2/fimc.h
+		D       drivers/media/video/samsung/fimc2/fimc4x_regs.c
+		D       drivers/media/video/samsung/fimc2/fimc_capture.c
+		D       drivers/media/video/samsung/fimc2/fimc_dev.c
+		D       drivers/media/video/samsung/fimc2/fimc_output.c
+		D       drivers/media/video/samsung/fimc2/fimc_overlay.c
+		D       drivers/media/video/samsung/fimc2/fimc_v4l2.c
+
+	Modified files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/plat-s5pc11x/dev-fimc0.c
+		M       arch/arm/plat-s5pc11x/dev-fimc1.c
+		M       arch/arm/plat-s5pc11x/dev-fimc2.c
+		M       arch/arm/plat-s5pc11x/include/plat/fimc.h
+		M       arch/arm/plat-s5pc11x/include/plat/regs-fimc.h
+		M       arch/arm/plat-s5pc11x/setup-fimc0.c
+		M       arch/arm/plat-s5pc11x/setup-fimc1.c
+		M       arch/arm/plat-s5pc1xx/Makefile
+		M       arch/arm/plat-s5pc1xx/dev-fimc0.c
+		M       arch/arm/plat-s5pc1xx/dev-fimc1.c
+		M       arch/arm/plat-s5pc1xx/dev-fimc2.c
+		M       arch/arm/plat-s5pc1xx/include/plat/fimc.h
+		M       drivers/media/video/samsung/Kconfig
+		M       drivers/media/video/samsung/Makefile
+		M       drivers/media/video/samsung/fimc/Kconfig
+		M       drivers/media/video/samsung/fimc/Makefile
+		M       drivers/media/video/samsung/fimc/csis.c
+		M       drivers/media/video/samsung/fimc/fimc.h
+		M       drivers/media/video/samsung/fimc/fimc_v4l2.c
