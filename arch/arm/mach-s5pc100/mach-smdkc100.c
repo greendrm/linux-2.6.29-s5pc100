@@ -47,7 +47,7 @@
 #include <plat/regs-serial.h>
 #include <plat/regs-rtc.h>
 #include <plat/iic.h>
-#include <plat/fimc2.h>
+#include <plat/fimc.h>
 #include <plat/fb.h>
 #include <plat/csis.h>
 

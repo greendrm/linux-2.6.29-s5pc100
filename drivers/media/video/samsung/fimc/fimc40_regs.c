@@ -16,7 +16,7 @@
 #include <asm/io.h>
 #include <mach/map.h>
 #include <plat/regs-fimc.h>
-#include <plat/fimc2.h>
+#include <plat/fimc.h>
 
 #include "fimc.h"
 

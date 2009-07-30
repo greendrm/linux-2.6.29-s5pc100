@@ -35,7 +35,7 @@ obj-$(CONFIG_S5PC1XX_SETUP_I2C1) += setup-i2c1.o
 obj-$(CONFIG_S5PC1XX_ADC)        += adc.o
 obj-$(CONFIG_HAVE_PWM)		 += pwm.o
 
-obj-$(CONFIG_SPI_S5PC100)   += dev-spi.o
+obj-$(CONFIG_SPI_S5PC100)   	 += dev-spi.o
 
 # Device setup - FIMC
 obj-$(CONFIG_S5PC1XX_DEV_FIMC0)	  += dev-fimc0.o

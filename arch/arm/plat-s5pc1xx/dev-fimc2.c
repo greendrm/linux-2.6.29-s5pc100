@@ -14,16 +14,9 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/platform_device.h>
-
 #include <mach/map.h>
 #include <asm/irq.h>
-
-#ifdef CONFIG_VIDEO_FIMC2 // jsgood: temp
-#include <plat/fimc2.h>
-#else
 #include <plat/fimc.h>
-#endif
-
 #include <plat/devs.h>
 #include <plat/cpu.h>
 
@@ -47,25 +40,12 @@ struct platform_device s3c_device_fimc2 = {
 	.resource	  = s3c_fimc_resource,
 };
 
-#ifdef CONFIG_VIDEO_FIMC2 // jsgood: temp
 static struct s3c_platform_fimc default_fimc2_data __initdata = {
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 133000000,
 	.default_cam	= CAMERA_PAR_A,
 };
-#else
-static struct s3c_platform_fimc default_fimc2_data __initdata = {
-	.srclk_name	= "dout_mpll",
-	.clk_name	= "sclk_fimc",
-	.clockrate	= 133000000,
-#if 0
-	.line_length	= 1280,
-#endif
-	.nr_frames	= 4,
-	.shared_io	= 0,
-};
-#endif
 
 void __init s3c_fimc2_set_platdata(struct s3c_platform_fimc *pd)
 {

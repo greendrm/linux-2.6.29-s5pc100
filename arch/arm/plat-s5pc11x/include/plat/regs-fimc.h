@@ -77,8 +77,8 @@
 #define S3C_CIWDOFST2_WINHOROFST2(x)		((x) << 16)
 #define S3C_CIWDOFST2_WINVEROFST2(x)		((x) << 0)
 
-#define S3C_CITRGFMT_TARGETHSIZE(x)		((x) << 16)
-#define S3C_CITRGFMT_TARGETVSIZE(x)		((x) << 0)
+#define S3C_CITRGFMT_TARGETHSIZE(x)		(((x) & 0x1fff) << 16)
+#define S3C_CITRGFMT_TARGETVSIZE(x)		(((x) & 0x1fff) << 0)
 
 #define S3C_CISCPRERATIO_SHFACTOR(x)		((x) << 28)
 #define S3C_CISCPRERATIO_PREHORRATIO(x)		((x) << 16)
@@ -94,6 +94,7 @@
 
 #define S3C_CISTATUS_GET_FRAME_COUNT(x)		(((x) >> 26) & 0x3)
 #define S3C_CISTATUS_GET_FRAME_END(x)		(((x) >> 17) & 0x1)
+#define S3C_CISTATUS_GET_LAST_CAPTURE_END(x)	(((x) >> 16) & 0x1)
 
 #define S3C_CIIMGEFF_PAT_CB(x)			((x) << 13)
 #define S3C_CIIMGEFF_PAT_CR(x)			((x) << 0)
@@ -127,6 +128,8 @@
 #define S3C_ORGOSIZE_VERTICAL(x)		((x) << 16)
 #define S3C_ORGOSIZE_HORIZONTAL(x)		((x) << 0)
 
+#define S3C_CIEXTEN_TARGETH_EXT(x)		(((x) & 0x2000) << 26)
+#define S3C_CIEXTEN_TARGETV_EXT(x)		(((x) & 0x2000) << 24)
 
 /*************************************************************************
  * Bit definition part
@@ -176,6 +179,7 @@
 #define S3C_CIGCTRL_INVPOLHSYNC			(1 << 4)
 #define S3C_CIGCTRL_SELCAM_ITU			(0 << 3)
 #define S3C_CIGCTRL_SELCAM_MIPI			(1 << 3)
+#define S3C_CIGCTRL_SELCAM_MASK			(1 << 3)
 #define S3C_CIGCTRL_PROGRESSIVE			(0 << 0)
 #define S3C_CIGCTRL_INTERLACE			(1 << 0)
 
@@ -189,6 +193,7 @@
 #define S3C_CITRGFMT_OUTFORMAT_YCBCR422		(1 << 29)
 #define S3C_CITRGFMT_OUTFORMAT_YCBCR422_1PLANE	(2 << 29)
 #define S3C_CITRGFMT_OUTFORMAT_RGB		(3 << 29)
+#define S3C_CITRGFMT_OUTFORMAT_MASK		(3 << 29)
 #define S3C_CITRGFMT_FLIP_SHIFT			(14)
 #define S3C_CITRGFMT_FLIP_NORMAL		(0 << 14)
 #define S3C_CITRGFMT_FLIP_X_MIRROR		(1 << 14)
@@ -196,14 +201,24 @@
 #define S3C_CITRGFMT_FLIP_180			(3 << 14)
 #define S3C_CITRGFMT_FLIP_MASK			(3 << 14)
 #define S3C_CITRGFMT_OUTROT90_CLOCKWISE		(1 << 13)
+#define S3C_CITRGFMT_TARGETV_MASK		(0x1fff << 0)
+#define S3C_CITRGFMT_TARGETH_MASK		(0x1fff << 16)
 
 /* Output DMA control register */
+#define S3C_CIOCTRL_ORDER2P_LSB_CBCR		(0 << 24)
+#define S3C_CIOCTRL_ORDER2P_LSB_CRCB		(1 << 24)
+#define S3C_CIOCTRL_ORDER2P_MSB_CBCR		(2 << 24)
+#define S3C_CIOCTRL_ORDER2P_MSB_CRCB		(3 << 24)
 #define S3C_CIOCTRL_ORDER2P_SHIFT		(24)
 #define S3C_CIOCTRL_ORDER2P_MASK		(3 << 24)
 #define S3C_CIOCTRL_YCBCR_3PLANE		(0 << 3)
 #define S3C_CIOCTRL_YCBCR_2PLANE		(1 << 3)
 #define S3C_CIOCTRL_YCBCR_PLANE_MASK		(1 << 3)
 #define S3C_CIOCTRL_LASTIRQ_ENABLE		(1 << 2)
+#define S3C_CIOCTRL_ORDER422_YCBYCR		(0 << 0)
+#define S3C_CIOCTRL_ORDER422_YCRYCB		(1 << 0)
+#define S3C_CIOCTRL_ORDER422_CBYCRY		(2 << 0)
+#define S3C_CIOCTRL_ORDER422_CRYCBY		(3 << 0)
 #define S3C_CIOCTRL_ORDER422_MASK		(3 << 0)
 
 /* Main scaler control register */
@@ -221,12 +236,16 @@
 #define S3C_CISCCTRL_INRGB_FMT_RGB565		(0 << 13)
 #define S3C_CISCCTRL_INRGB_FMT_RGB666		(1 << 13)
 #define S3C_CISCCTRL_INRGB_FMT_RGB888		(2 << 13)
+#define S3C_CISCCTRL_INRGB_FMT_RGB_MASK		(3 << 13)
 #define S3C_CISCCTRL_OUTRGB_FMT_RGB565		(0 << 11)
 #define S3C_CISCCTRL_OUTRGB_FMT_RGB666		(1 << 11)
 #define S3C_CISCCTRL_OUTRGB_FMT_RGB888		(2 << 11)
+#define S3C_CISCCTRL_OUTRGB_FMT_RGB_MASK	(3 << 11)
 #define S3C_CISCCTRL_EXTRGB_NORMAL		(0 << 10)
 #define S3C_CISCCTRL_EXTRGB_EXTENSION		(1 << 10)
 #define S3C_CISCCTRL_ONE2ONE			(1 << 9)
+#define S3C_CISCCTRL_MAIN_V_RATIO_MASK		(0x1ff << 0)
+#define S3C_CISCCTRL_MAIN_H_RATIO_MASK		(0x1ff << 16)
 
 /* Status register */
 #define S3C_CISTATUS_OVFIY			(1 << 31)
@@ -268,9 +287,14 @@
 /* Real input DMA size register */
 #define S3C_CIREAL_ISIZE_AUTOLOAD_ENABLE	(1 << 31)
 #define S3C_CIREAL_ISIZE_ADDR_CH_DISABLE	(1 << 30)
+#define S3C_CIREAL_ISIZE_HEIGHT_MASK		(0x3FFF << 16)
+#define S3C_CIREAL_ISIZE_WIDTH_MASK		(0x3FFF << 0)
 
 /* Input DMA control register */
+#define S3C_MSCTRL_BURST_CNT			(24)
+#define S3C_MSCTRL_BURST_CNT_MASK		(0xf << 24)
 #define S3C_MSCTRL_2PLANE_SHIFT			(16)
+#define S3C_MSCTRL_2PLANE_SHIFT_MASK		(0x3 << 16)
 #define S3C_MSCTRL_C_INT_IN_3PLANE		(0 << 15)
 #define S3C_MSCTRL_C_INT_IN_2PLANE		(1 << 15)
 #define S3C_MSCTRL_FLIP_SHIFT			(13)
@@ -278,6 +302,7 @@
 #define S3C_MSCTRL_FLIP_X_MIRROR		(1 << 13)
 #define S3C_MSCTRL_FLIP_Y_MIRROR		(2 << 13)
 #define S3C_MSCTRL_FLIP_180			(3 << 13)
+#define S3C_MSCTRL_FLIP_MASK			(3 << 13)
 #define S3C_MSCTRL_ORDER422_CRYCBY		(0 << 4)
 #define S3C_MSCTRL_ORDER422_YCRYCB		(1 << 4)
 #define S3C_MSCTRL_ORDER422_CBYCRY		(2 << 4)
@@ -326,5 +351,9 @@
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_8		(3 << 4)
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_16		(4 << 4)
 #define S3C_CIDMAPARAM_W_TILE_VSIZE_32		(5 << 4)
+
+/* Gathering Extension register */
+#define S3C_CIEXTEN_TARGETH_EXT_MASK		(1 << 26)
+#define S3C_CIEXTEN_TARGETV_EXT_MASK		(1 << 24)
 
 #endif /* _REGS_FIMC_H */

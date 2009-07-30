@@ -1,10 +1,10 @@
-/* linux/arch/arm/plat-s5pc11x/setup-fimc1.c
+/* linux/arch/arm/plat-s5pc1xx/setup-fimc1.c
  *
  * Copyright 2009 Samsung Electronics
  *	Jinsung Yang <jsgood.yang@samsung.com>
  *	http://samsungsemi.com/
  *
- * Base S5PC11X FIMC controller 1 gpio configuration
+ * Base S5PC1XX FIMC controller 1 gpio configuration
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

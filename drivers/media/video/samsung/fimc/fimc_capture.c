@@ -20,7 +20,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <plat/media.h>
-#include <plat/fimc2.h>
+#include <plat/fimc.h>
 
 #ifdef CONFIG_VIDEO_SAMSUNG_V4L2
 #include <linux/videodev2_samsung.h>

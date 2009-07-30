@@ -33,7 +33,7 @@
 #include <asm/memory.h>
 #include <plat/clock.h>
 #include <plat/media.h>
-#include <plat/fimc2.h>
+#include <plat/fimc.h>
 
 #include "fimc.h"
 
