@@ -239,22 +239,48 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 {
 	struct fimc_global *fimc = get_fimc_dev();
 	struct fimc_control *ctrl = fh;
-	struct s3c_platform_camera *cam;
+	struct s3c_platform_camera *cam = NULL;
+	int i, cam_count = 0;
 
 	if (inp->index >= FIMC_MAXCAMS) {
 		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
 		return -EINVAL;
 	}
 
-	dev_dbg(ctrl->dev, "%s: index %d\n", \
-		__FUNCTION__, inp->index);
-
-	cam = fimc->camera[inp->index];
+	dev_dbg(ctrl->dev, "%s: index %d\n", __FUNCTION__, inp->index);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	strcpy(inp->name, cam->info->type);
-	inp->type = V4L2_INPUT_TYPE_CAMERA;
+	/*
+	 * External camera input devices are managed in fimc->camera[]
+	 * but it aligned in the order of H/W camera interface's (A/B/C)
+	 * Therefor it could be NULL if there is no actual camera to take
+	 * place the index
+	 * ie. if index is 1, that means that one camera has been selected before
+	 * so choose second object it reaches
+	 */
+	for (i = 0; i < FIMC_MAXCAMS; i++) {
+		/* increase index until get not NULL and upto FIMC_MAXCAMS */
+		if (!fimc->camera[i])
+			continue;
+
+		if (fimc->camera[i]) {
+			++cam_count;
+			if (cam_count == inp->index + 1)
+				cam = fimc->camera[i];
+			else
+				continue;
+		}
+	}
+
+	if (cam) {
+		strcpy(inp->name, cam->info->type);
+		inp->type = V4L2_INPUT_TYPE_CAMERA;
+	} else {
+		dev_err(ctrl->dev, "%s: no camera\n", __FUNCTION__);
+		mutex_unlock(&ctrl->v4l2_lock);
+		return -EINVAL;
+	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
@@ -338,6 +364,7 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
+	int ret = 0;
 
 	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
 
@@ -370,9 +397,11 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 		cap->lastirq = 1;
 	}
 
+	ret = subdev_call(ctrl, video, s_fmt, f);
+
 	mutex_unlock(&ctrl->v4l2_lock);
 
-	return 0;
+	return ret;
 }
 
 int fimc_try_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
