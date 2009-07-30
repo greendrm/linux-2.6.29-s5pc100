@@ -788,16 +788,6 @@ static int config_DMA_transfer_size(u8 * mcode_ptr, pl330_DMA_parameters_t dma_p
 				mcode_size+= msize;
 				msize = encodeDmaWriteMemBarrier(mcode_ptr+mcode_size);
 				mcode_size+= msize;					
-#if 0
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-#endif
 				break;
 
 			case PL330_M2P_DMA:
@@ -860,16 +850,6 @@ mcode_size+= msize;
 			mcode_size+= msize;
 			msize = encodeDmaWriteMemBarrier(mcode_ptr+mcode_size);
 			mcode_size+= msize;					
-#if 0
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-msize = encodeDmaNop(mcode_ptr+mcode_size);
-mcode_size+= msize;
-#endif
 			break;
 
 		case PL330_M2P_DMA:
