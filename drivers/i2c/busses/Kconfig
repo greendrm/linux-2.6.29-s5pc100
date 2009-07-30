@@ -456,10 +456,10 @@ config I2C_PXA_SLAVE
 
 config I2C_S3C2410
 	tristate "Samsung SoC I2C Driver (S3C2410, S5PC1XX)"
-	depends on ARCH_S3C2410 || ARCH_S5PC1XX
+	depends on ARCH_S3C2410 || CPU_S5PC100 || CPU_S5PC110
 	help
 	  Say Y here to include support for I2C controller in the
-	  Samsung SoC devices such as the S3C2410, S5PC100.
+	  Samsung SoC devices such as the S3C2410, S5PC100 and S5PC110.
 
 config I2C_SH7760
 	tristate "Renesas SH7760 I2C Controller"

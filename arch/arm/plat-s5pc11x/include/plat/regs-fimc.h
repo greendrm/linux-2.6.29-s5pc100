@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-fimc.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/regs-fimc.h
  *
  * Register definition file for Samsung Camera Interface (FIMC) driver
  *

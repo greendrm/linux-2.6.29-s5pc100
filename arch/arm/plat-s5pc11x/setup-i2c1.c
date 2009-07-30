@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/setup-i2c0.c
+/* linux/arch/arm/plat-s5pc11x/setup-i2c0.c
  *
  * Copyright 2008 Openmoko, Inc.
  * Copyright 2008 Simtec Electronics
@@ -19,13 +19,14 @@ struct platform_device; /* don't need the contents */
 
 #include <mach/gpio.h>
 #include <plat/iic.h>
-#include <plat/gpio-bank-d.h>
+#include <plat/gpio-bank-d1.h>
 #include <plat/gpio-cfg.h>
 
 void s3c_i2c1_cfg_gpio(struct platform_device *dev)
 {
-	s3c_gpio_cfgpin(S5PC11X_GPD(5), S5PC11X_GPD5_I2C1_SDA);
-	s3c_gpio_cfgpin(S5PC11X_GPD(6), S5PC11X_GPD6_I2C1_SCL);
-	s3c_gpio_setpull(S5PC11X_GPD(5), S3C_GPIO_PULL_UP);
-	s3c_gpio_setpull(S5PC11X_GPD(6), S3C_GPIO_PULL_UP);
+	s3c_gpio_cfgpin(S5PC11X_GPD1(2), S5PC11X_GPD_1_2_I2C1_SDA);
+	s3c_gpio_cfgpin(S5PC11X_GPD1(3), S5PC11X_GPD_1_3_I2C1_SCL);
+	s3c_gpio_setpull(S5PC11X_GPD1(2), S3C_GPIO_PULL_UP);
+	s3c_gpio_setpull(S5PC11X_GPD1(3), S3C_GPIO_PULL_UP);
+
 }

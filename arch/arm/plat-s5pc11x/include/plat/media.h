@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/media.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/media.h
  *
  * Copyright 2009 Samsung Electronics
  *	Jinsung Yang <jsgood.yang@samsung.com>

@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/csis.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/csis.h
  *
  * Platform header file for MIPI-CSI2 driver
  *
@@ -15,16 +15,16 @@
 
 struct platform_device;
 
-struct s5p_platform_csis {
+struct s3c_platform_csis {
 	const char	clk_name[16];
 
 	void		(*cfg_gpio)(struct platform_device *dev);
 	void		(*cfg_phy_global)(struct platform_device *dev, int on);
 };
 
-extern void s5p_csis_set_platdata(struct s3c_platform_csis *csis);
-extern void s5p_csis_cfg_gpio(struct platform_device *dev);
-extern void s5p_csis_cfg_phy_global(struct platform_device *dev, int on);
+extern void s3c_csis_set_platdata(struct s3c_platform_csis *csis);
+extern void s3c_csis_cfg_gpio(struct platform_device *dev);
+extern void s3c_csis_cfg_phy_global(struct platform_device *dev, int on);
 
 #endif /* _CSIS_H */
 
