@@ -1372,3 +1372,9 @@ v2.6.29.4-dev-1-0-23: Jinsung Yang
 		M       drivers/media/video/samsung/fimc/csis.c
 		M       drivers/media/video/samsung/fimc/fimc.h
 		M       drivers/media/video/samsung/fimc/fimc_v4l2.c
+
+v2.6.29.4-dev-1-0-24: Jae-Cheol Lee
+	- Fixed idle code for s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
