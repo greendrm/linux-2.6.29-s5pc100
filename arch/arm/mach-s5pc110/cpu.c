@@ -94,6 +94,10 @@ static void s5pc110_idle(void)
 	tmp |= S5P_CFG_WFI_IDLE;
 	__raw_writel(tmp, S5P_PWR_CFG);
 
+	tmp = __raw_readl(S5P_OTHERS);
+	tmp |=(1<<0);
+	__raw_writel(tmp, S5P_OTHERS);
+
 	cpu_do_idle();
 }
 void __init s5pc110_map_io(void)
