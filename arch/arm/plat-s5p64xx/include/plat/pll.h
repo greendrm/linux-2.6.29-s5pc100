@@ -49,7 +49,11 @@ static inline unsigned long s5p64xx_get_pll(unsigned long baseclk,
 
 	switch(base_pll_type){
 	case S5P64XX_PLL_APLL:
+#if 1
 		do_div(fvco, (pdiv << (sdiv-1)));
+#else
+		do_div(fvco, (pdiv << (sdiv)));
+#endif
 		break;
 	default:
 		do_div(fvco, (pdiv << sdiv));
