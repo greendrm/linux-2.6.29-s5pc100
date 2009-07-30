@@ -116,6 +116,23 @@ extern int s5pc1xx_clk_d20_ctrl(struct clk *clk, int enable);
 extern void s5pc11x_register_clocks(void);
 extern int s5pc11x_sclk0_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_sclk1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_main0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_main1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_main2_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_peri0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_peri1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_sclk0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_sclk1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_sclk0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_sclk1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_ip0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_ip1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_ip2_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_ip3_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_block_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable);
 #elif defined(CONFIG_ARCH_S5P64XX)
 extern void s5p64xx_register_clocks(void);
 #endif

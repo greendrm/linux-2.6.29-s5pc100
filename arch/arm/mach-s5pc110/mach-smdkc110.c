@@ -639,9 +639,9 @@ static void __init smdkc110_map_io(void)
 
 static void __init smdkc110_dm9000_set(void)
 {
+#if 0
 	unsigned int tmp;
 
-#if 0
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
