@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/fimc.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/fimc.h
  *
  * Platform header file for Samsung Camera Interface (FIMC) driver
  *

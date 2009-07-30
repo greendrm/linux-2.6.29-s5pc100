@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/setup-fimc1.c
+/* linux/arch/arm/plat-s5pc11x/setup-fimc1.c
  *
  * Copyright 2009 Samsung Electronics
  *	Jinsung Yang <jsgood.yang@samsung.com>

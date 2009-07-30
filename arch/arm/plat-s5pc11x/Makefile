@@ -30,23 +30,23 @@ obj-$(CONFIG_PM)                += sleep.o
 #obj-$(CONFIG_CPU_FREQ)		+= s5pc1xx-cpufreq.o ltc3714.o
 
 # Device setup
-#obj-$(CONFIG_S5PC11X_SETUP_I2C0) += setup-i2c0.o
-#obj-$(CONFIG_S5PC11X_SETUP_I2C1) += setup-i2c1.o
+obj-$(CONFIG_S5PC11X_SETUP_I2C0) += setup-i2c0.o
+obj-$(CONFIG_S5PC11X_SETUP_I2C1) += setup-i2c1.o
 #obj-$(CONFIG_S5PC11X_ADC)        += adc.o
 obj-$(CONFIG_HAVE_PWM)		 += pwm.o
 
 # Device setup - FIMC
-#obj-$(CONFIG_S5PC11X_DEV_FIMC0)	  += dev-fimc0.o
-#obj-$(CONFIG_S5PC11X_DEV_FIMC1)	  += dev-fimc1.o
-#obj-$(CONFIG_S5PC11X_DEV_FIMC2)	  += dev-fimc2.o
-#obj-$(CONFIG_S5PC11X_SETUP_FIMC0) += setup-fimc0.o
-#obj-$(CONFIG_S5PC11X_SETUP_FIMC1) += setup-fimc1.o
-#obj-$(CONFIG_S5PC11X_SETUP_FIMC2) += setup-fimc2.o
+obj-$(CONFIG_S5PC11X_DEV_FIMC0)	  += dev-fimc0.o
+obj-$(CONFIG_S5PC11X_DEV_FIMC1)	  += dev-fimc1.o
+obj-$(CONFIG_S5PC11X_DEV_FIMC2)	  += dev-fimc2.o
+obj-$(CONFIG_S5PC11X_SETUP_FIMC0) += setup-fimc0.o
+obj-$(CONFIG_S5PC11X_SETUP_FIMC1) += setup-fimc1.o
+obj-$(CONFIG_S5PC11X_SETUP_FIMC2) += setup-fimc2.o
 
 # Device setup - FIMD
 obj-$(CONFIG_S5PC11X_DEV_FB)	  += dev-fb.o
 
 # Device setup - MIPI-CSI2
-#obj-$(CONFIG_S5PC11X_DEV_CSIS)	  += dev-csis.o
-#obj-$(CONFIG_S5PC11X_SETUP_CSIS)  += setup-csis.o
+obj-$(CONFIG_S5PC11X_DEV_CSIS)	  += dev-csis.o
+obj-$(CONFIG_S5PC11X_SETUP_CSIS)  += setup-csis.o
 

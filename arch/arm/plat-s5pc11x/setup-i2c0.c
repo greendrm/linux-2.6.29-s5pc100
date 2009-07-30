@@ -19,14 +19,14 @@ struct platform_device; /* don't need the contents */
 
 #include <mach/gpio.h>
 #include <plat/iic.h>
-#include <plat/gpio-bank-d.h>
+#include <plat/gpio-bank-d1.h>
 #include <plat/gpio-cfg.h>
 
 void s3c_i2c0_cfg_gpio(struct platform_device *dev)
 {
-	s3c_gpio_cfgpin(S5PC11X_GPD(3), S5PC11X_GPD3_I2C0_SDA);
-	s3c_gpio_cfgpin(S5PC11X_GPD(4), S5PC11X_GPD4_I2C0_SCL);
-	s3c_gpio_setpull(S5PC11X_GPD(3), S3C_GPIO_PULL_UP);
-	s3c_gpio_setpull(S5PC11X_GPD(4), S3C_GPIO_PULL_UP);
+	s3c_gpio_cfgpin(S5PC11X_GPD1(0), S5PC11X_GPD_1_0_I2C0_SDA);
+	s3c_gpio_cfgpin(S5PC11X_GPD1(1), S5PC11X_GPD_1_1_I2C0_SCL);
+	s3c_gpio_setpull(S5PC11X_GPD1(0), S3C_GPIO_PULL_UP);
+	s3c_gpio_setpull(S5PC11X_GPD1(1), S3C_GPIO_PULL_UP);
 
 }
