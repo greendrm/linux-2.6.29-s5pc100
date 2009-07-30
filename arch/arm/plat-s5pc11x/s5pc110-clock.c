@@ -823,8 +823,8 @@ static struct clksrc_clk clk_lcd = {
 
 static struct clksrc_clk clk_cam0 = {
 	.clk	= {
-		.name		= "sclk_cam",
-		.id		= 0,
+		.name		= "sclk_cam0",
+		.id		= -1,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_CAM0,
 		.enable		= s5pc11x_sclk0_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
@@ -842,8 +842,8 @@ static struct clksrc_clk clk_cam0 = {
 
 static struct clksrc_clk clk_cam1 = {
 	.clk	= {
-		.name		= "sclk_cam",
-		.id		= 1,
+		.name		= "sclk_cam1",
+		.id		= -1,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_CAM1,
 		.enable		= s5pc11x_sclk0_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
