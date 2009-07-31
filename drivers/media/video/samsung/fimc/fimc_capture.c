@@ -20,6 +20,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <plat/media.h>
+#include <plat/clock.h>
 #include <plat/fimc.h>
 
 #ifdef CONFIG_VIDEO_SAMSUNG_V4L2
@@ -112,6 +113,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
 	struct s3c_platform_fimc *pdata;
+	struct s3c_platform_camera *cam;
 	int ret;
 
 	pdata = to_fimc_plat(ctrl->dev);
@@ -132,24 +134,32 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	if (!ctrl->cam)
 		ctrl->cam = fimc->camera[pdata->default_cam];
 
-	if (ctrl->cam->initialized)
+	cam = ctrl->cam;
+
+	/* do nothing if already initialized */
+	if (cam->initialized)
 		return 0;
 
-	clk_set_rate(ctrl->cam->clk, ctrl->cam->clk_rate);
-	clk_enable(ctrl->cam->clk);
+	/* set rate for mclk */
+	if (cam->clk->set_rate) {
+		cam->clk->set_rate(cam->clk, cam->clk_rate);
+		clk_enable(cam->clk);
+		printk("clock for camera: %d\n", cam->clk_rate);
+	}
 
-	if (ctrl->cam->cam_power)
-		ctrl->cam->cam_power(1);
+	/* enable camera power if needed */
+	if (cam->cam_power)
+		cam->cam_power(1);
 
 	/* subdev call for init */
-	ret = v4l2_subdev_call(ctrl->cam->sd, core, init, 0);
+	ret = v4l2_subdev_call(cam->sd, core, init, 0);
 	if (ret == -ENOIOCTLCMD) {
 		dev_err(ctrl->dev, "%s: init subdev api not supported\n",
 			__FUNCTION__);
 		return ret;
 	}
 
-	ctrl->cam->initialized = 1;
+	cam->initialized = 1;
 
 	return 0;
 }

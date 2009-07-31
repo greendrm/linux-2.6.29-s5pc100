@@ -68,6 +68,7 @@ struct s3c_platform_camera {
 	struct i2c_board_info		*info;
 	struct v4l2_subdev		*sd;
 
+	const char			srclk_name[16];	/* source of mclk name */
 	const char			clk_name[16];	/* mclk name */
 	u32				clk_rate;	/* mclk ratio */
 	struct clk			*clk;		/* mclk */
