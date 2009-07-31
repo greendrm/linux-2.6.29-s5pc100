@@ -833,8 +833,10 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* set parent clock */
-	if (ctrl->clk->set_parent)
-		ctrl->clk->set_parent(ctrl->clk, srclk);
+	if (ctrl->clk->set_parent) {
+		ctrl->clk->parent = srclk;
+		ret = ctrl->clk->set_parent(ctrl->clk, srclk);
+	}
 
 	/* set clockrate for fimc interface block */
 	if (ctrl->clk->set_rate) {

@@ -41,7 +41,7 @@ struct platform_device s3c_device_fimc1 = {
 };
 
 static struct s3c_platform_fimc default_fimc1_data __initdata = {
-	.srclk_name	= "mpll",
+	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 166000000,
 	.default_cam	= CAMERA_PAR_A,

@@ -521,6 +521,8 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_fimc0,
 	&s3c_device_fimc1,
 	&s3c_device_fimc2,
+	&s3c_device_i2c0,
+	&s3c_device_i2c1,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -637,9 +639,9 @@ static struct s3c_platform_camera __initdata camera_c = {
 
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
-	.srclk_name	= "dout_mpll",
+	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_fimc",
-	.clk_rate	= 133000000,
+	.clk_rate	= 166000000,
 	.default_cam	= CAMERA_PAR_A,
 	.camera		= { 
 		&camera_a, 
@@ -775,6 +777,12 @@ static void __init smdkc110_dm9000_set(void)
 static void __init smdkc110_machine_init(void)
 {
 	smdkc110_dm9000_set();
+
+	/* i2c */
+	s3c_i2c0_set_platdata(NULL);
+	s3c_i2c1_set_platdata(NULL);
+	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 
 #ifdef CONFIG_FB_S3C_LTE480WV
 	s3cfb_set_platdata(&lte480wv_data);
