@@ -577,8 +577,6 @@ static int s5pc11x_setrate_clksrc(struct clk *clk, unsigned long rate)
 	val |= (div - 1) << sclk->shift;
 	__raw_writel(val, reg);
 
-	printk("div %d, rate %lu", div, rate);
-
 	return 0;
 }
 
