@@ -843,7 +843,7 @@ MACHINE_END
 /* Initializes OTG Phy. */
 void otg_phy_init(void) {
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<0), S5P_USB_PHY_CONTROL); /*USB PHY0 Enable */
-	writel((readl(S3C_USBOTG_PHYPWR)&~(0x3<<3))|(0x1<<5), S3C_USBOTG_PHYPWR);
+	writel((readl(S3C_USBOTG_PHYPWR)&~(0x3<<3)&~(0x1<<0))|(0x1<<5), S3C_USBOTG_PHYPWR);
 	writel((readl(S3C_USBOTG_PHYCLK)&~(0x5<<2))|(0x3<<0), S3C_USBOTG_PHYCLK);
 	writel((readl(S3C_USBOTG_RSTCON)&~(0x3<<1))|(0x1<<0), S3C_USBOTG_RSTCON);
 	udelay(10);

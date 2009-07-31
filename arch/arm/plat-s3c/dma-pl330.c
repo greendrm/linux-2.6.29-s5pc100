@@ -410,8 +410,18 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
 		chan->irq_enabled = 1;
 	}
 
+#ifndef CONFIG_CPU_S5PC110
 	start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_NON_SECURE_DMA);
+#else	/* S5PC110 */
+	if (chan->dma_con->number == 0) {
+		start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+					chan->curr->mcptr, PL330_SECURE_DMA);
+	} else {
+		start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+					chan->curr->mcptr, PL330_NON_SECURE_DMA);
+	}
+#endif
 
 	/* Start the DMA operation on Peripheral */
 	s3c_dma_call_op(chan, S3C2410_DMAOP_START);
@@ -715,9 +725,18 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 
 				local_irq_save(flags);
 				s3c_dma_loadbuffer(chan, chan->next);
+#ifndef CONFIG_CPU_S5PC110
 				start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_NON_SECURE_DMA);
-
+#else	/* S5PC110 */
+				if (chan->dma_con->number == 0) {
+					start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+								chan->curr->mcptr, PL330_SECURE_DMA);
+				} else {
+					start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+								chan->curr->mcptr, PL330_NON_SECURE_DMA);
+				}
+#endif
 				local_irq_restore(flags);
 
 			} else {
@@ -780,7 +799,8 @@ int s3c2410_dma_request(unsigned int channel,
 		chan->irq_claimed = 1;
 		local_irq_restore(flags);
 
-		err = request_irq(chan->irq, s3c_dma_irq, IRQF_SHARED | IRQF_DISABLED,
+		//err = request_irq(chan->irq, s3c_dma_irq, IRQF_SHARED | IRQF_DISABLED,
+		err = request_irq(chan->irq, s3c_dma_irq, IRQF_SHARED,
 				  client->name, (void *) chan->dma_con);
 
 		local_irq_save(flags);
@@ -1190,9 +1210,15 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = 0;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
+#ifndef CONFIG_CPU_S5PC110
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;
+#else	/* S5PC110 */
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_INC|
+				      hwcfg;
+#endif
 		//chan->control_flags = hwcfg;
 		return 0;
 
@@ -1201,9 +1227,15 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = 0;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
+#ifndef CONFIG_CPU_S5PC110
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_FIXED|
 				      hwcfg;
+#else	/* S5PC110 */
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_FIXED|
+				      hwcfg;
+#endif
 		//chan->control_flags = hwcfg;
 		return 0;
 
@@ -1322,8 +1354,7 @@ int __init s3c_dma_init(unsigned int channels, unsigned int irq,
 
 			/* dma controller's irqs are in order.. */
 			dconp->irq = controller + irq;
-		}
-		else {
+		} else {
 			dma_base = ioremap((S3C_PA_PDMA + ((controller-1) * 0x200000)), stride);
 			if (dma_base == NULL) {
 				printk(KERN_ERR "Peri-DMA failed to ioremap register block\n");
