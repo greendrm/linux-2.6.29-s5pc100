@@ -1400,4 +1400,5 @@ v2.6.29.4-dev-1-0-27: Thomas Abraham
 
 	Modified Files
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
-
+v2.6.29.4-s5pc110-alpha:Hyunwoong Kim
+	- Official Release for s5pc110(2009.07.31)
