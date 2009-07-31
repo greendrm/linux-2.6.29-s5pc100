@@ -1,4 +1,4 @@
-/* linux/arch/arm/mach-s5pc100/mach-smdkc110.c
+/* linux/arch/arm/mach-s5pc110/mach-smdkc110.c
  *
  * Copyright 2008 Openmoko, Inc.
  * Copyright 2008 Simtec Electronics
@@ -227,6 +227,7 @@ static struct s3c_platform_fb lte480wv_data __initdata = {
 #endif
 
 #ifdef CONFIG_FB_S3C_TL2796
+#if 1
 static void tl2796_cfg_gpio(struct platform_device *pdev)
 {
 	int i;
@@ -327,6 +328,105 @@ static int tl2796_reset_lcd(struct platform_device *pdev)
 
 	return 0;
 }
+#else
+static void tl2796_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF0(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF1(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF2(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF3(i), S3C_GPIO_PULL_NONE);
+	}
+
+	/* mDNIe SEL: why we shall write 0x2 ? */
+	writel(0x2, S5P_MDNIE_SEL);
+
+	/* drive strength to max */
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x12c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x14c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
+	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
+
+#if 1
+	s3c_gpio_cfgpin(S5PC11X_GPB(4), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(5), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(6), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(7), S3C_GPIO_SFN(1));
+#else
+	/* why the followings do not work? */
+	gpio_request(S5PC11X_GPB(4), "GPB");
+	gpio_request(S5PC11X_GPB(5), "GPB");
+	gpio_request(S5PC11X_GPB(6), "GPB");
+	gpio_request(S5PC11X_GPB(7), "GPB");
+	gpio_direction_output(S5PC11X_GPB(4), 0);
+	gpio_direction_output(S5PC11X_GPB(5), 0);
+	gpio_direction_output(S5PC11X_GPB(6), 0);
+	gpio_direction_output(S5PC11X_GPB(7), 0);
+#endif
+	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);
+
+	gpio_request(S5PC11X_GPH0(5), "GPH0");
+	gpio_direction_output(S5PC11X_GPH0(5), 1);
+}
+
+static int tl2796_backlight_on(struct platform_device *pdev)
+{
+	gpio_request(S5PC11X_GPH1(7), "MLCD_RST");
+	gpio_request(S5PC11X_GPJ1(3), "MLCD_ON");
+	
+	/* set gpio data for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	/* set gpio data for MLCD_ON to HIGH */
+	gpio_direction_output(S5PC11X_GPJ1(3), 1);
+	mdelay(25);
+
+	/* set gpio data for MLCD_RST to LOW */
+	gpio_direction_output(S5PC11X_GPH1(7), 0);
+	udelay(20);
+	/* set gpio data for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	mdelay(20);
+
+	gpio_free(S5PC11X_GPH1(7));
+	gpio_free(S5PC11X_GPJ1(3));
+
+	return 0;
+}
+
+static int tl2796_reset_lcd(struct platform_device *pdev)
+{
+	gpio_request(S5PC11X_GPH1(7), "MLCD_RST");
+
+	/* set gpio pin for MLCD_RST to LOW */
+	gpio_direction_output(S5PC11X_GPH1(7), 0);
+	udelay(1);	/* Shorter than 5 usec */
+	/* set gpio pin for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	mdelay(10);
+
+	gpio_free(S5PC11X_GPH1(7));
+
+	return 0;
+}
+#endif
 
 static struct s3c_platform_fb tl2796_data __initdata = {
 	.hw_ver	= 0x60,
@@ -585,18 +685,18 @@ static void smdkc110_reset_camera(void)
 
 #if 0
 	/* channel B reset: should be done by following after ch A reset */
-	cfg = readl(S5PC1XX_GPH3CON);
-	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
-	cfg |= S5PC1XX_GPH3_OUTPUT(6);
-	writel(cfg, S5PC1XX_GPH3CON);
+	cfg = readl(S5PC11X_GPH3CON);
+	cfg &= ~S5PC11X_GPH3_CONMASK(6);
+	cfg |= S5PC11X_GPH3_OUTPUT(6);
+	writel(cfg, S5PC11X_GPH3CON);
 
-	cfg = readl(S5PC1XX_GPH3DAT);
+	cfg = readl(S5PC11X_GPH3DAT);
 	cfg &= ~(0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
+	writel(cfg, S5PC11X_GPH3DAT);
 	udelay(200);
 
 	cfg |= (0x1 << 6);
-	writel(cfg, S5PC1XX_GPH3DAT);
+	writel(cfg, S5PC11X_GPH3DAT);
 	udelay(2000);
 #endif
 
