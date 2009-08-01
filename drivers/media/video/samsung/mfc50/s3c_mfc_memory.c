@@ -46,7 +46,7 @@ volatile unsigned char *s3c_mfc_get_data_buf_virt_addr()
 	volatile unsigned char *virt_addr;
 
 	virt_addr = s3c_mfc_virt_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE + 
-			MFC_MAX_INSTANCE_NUM*MFC_FW_BUF_SIZE;
+			MFC_MAX_INSTANCE_NUM*RISC_BUF_SIZE;
 	//virt_addr = Align(virt_addr, 4*BUF_L_UNIT);
 		
 	return virt_addr; 
@@ -76,7 +76,7 @@ unsigned int s3c_mfc_get_risc_buf_phys_addr(int inst_no)
 {
 	unsigned int phys_addr;
 	
-	phys_addr = s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE + inst_no*MFC_FW_BUF_SIZE;
+	phys_addr = s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE + inst_no*RISC_BUF_SIZE;
 	
 	return phys_addr; 
 }
