@@ -137,5 +137,3 @@ void __s5p_tv_poweroff(void)
 
 	TVPMPRINTK("0x%08x,0x%08x)\n\r", readl(S5P_NORMAL_CFG), readl(S5P_BLK_PWR_STAT));
 }
-
-

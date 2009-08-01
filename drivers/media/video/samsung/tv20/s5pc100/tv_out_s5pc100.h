@@ -11,7 +11,6 @@
 */
 //#define COFIG_TVOUT_RAW_DBG
 
-extern void __iomem		*tvout_base;
 // common
 
 #define HDMI_START_NUM 0x1000

@@ -41,9 +41,9 @@
 
 #include "s5p_tv.h"
 
-//#ifdef COFIG_TVOUT_DBG
+#ifdef COFIG_TVOUT_DBG
 #define S5P_TV_BASE_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_TV_BASE_DEBUG
 #define BASEPRINTK(fmt, args...) \
@@ -77,12 +77,6 @@
 
 static struct mutex	*mutex_for_fo = NULL;
 static struct mutex	*mutex_for_i2c= NULL;	
-
-static struct resource	*tvout_mem;
-void __iomem		*tvout_base;
-
-static struct resource	*tvout_mem_clk;
-void __iomem		*tvout_base_clk;
 
 s5p_tv_status 	s5ptv_status;
 s5p_tv_vo 	s5ptv_overlay[2];
@@ -214,10 +208,12 @@ static void set_ddc_port(void)
 static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 {
 	spin_lock_irq(&slock_hpd);
-
+	
+#ifdef CONFIG_CPU_S5PC110
+#else
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
-	
+#endif	
 	if(s5ptv_status.hpd_status){
 		
 		set_irq_type(IRQ_EINT5, IRQ_TYPE_EDGE_RISING);
@@ -481,70 +477,18 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
  */
 static int __init s5p_tv_probe(struct platform_device *pdev)
 {
-	struct resource *res;
 	int 	irq_num;
-	size_t	size;
 	int 	ret;
 	int 	i;
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	__s5p_sdout_probe(pdev, 0);
+	__s5p_vp_probe(pdev, 1);	
+	__s5p_mixer_probe(pdev, 2);
+	__s5p_hdmi_probe(pdev, 3);
 
-	if (res == NULL) {
-		dev_err(&pdev->dev, 
-			"failed to get memory region resource\n");
-		ret = -ENOENT;
-		goto out;
-	}
-
-	size = (res->end - res->start) + 1;
-
-	tvout_mem = request_mem_region(res->start, size, pdev->name);
-
-	if (tvout_mem == NULL) {
-		dev_err(&pdev->dev,  
-			"failed to get memory region\n");
-		ret = -ENOENT;
-		goto out;
-	}
-
-	tvout_base = ioremap(res->start, size);
-
-	if (tvout_base == NULL) {
-		dev_err(&pdev->dev,  
-			"failed to ioremap address region\n");
-		ret = -ENOENT;
-		goto out;
-
-	}
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-
-	if (res == NULL) {
-		dev_err(&pdev->dev,  
-			"failed to get memory region resource\n");
-		ret = -ENOENT;
-		goto out;
-	}
-
-	size = (res->end - res->start) + 1;
-
-	tvout_mem_clk = request_mem_region(res->start, size, pdev->name);
-
-	if (tvout_mem_clk == NULL) {
-		dev_err(&pdev->dev,  
-			"failed to get memory region\n");
-		ret = -ENOENT;
-		goto out;
-	}
-
-	tvout_base_clk = ioremap(res->start, size);
-
-	if (tvout_base_clk == NULL) {
-		dev_err(&pdev->dev, 
-			"failed to ioremap address region\n");
-		ret = -ENOENT;
-		goto out;
-	}
+#ifdef CONFIG_CPU_S5PC100	
+	__s5p_tvclk_probe(pdev, 4);
+#endif
 
 	/* for dev_dbg err. */
 	spin_lock_init(&slock_hpd);
@@ -560,18 +504,21 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.sclk_mixer, "sclk_mixer");
 	
 
-#ifdef FIX_27M_UNSTABLE_ISSUE
+#ifdef FIX_27M_UNSTABLE_ISSUE /* for smdkc100 pop */
 	writel(0x1, S5PC1XX_GPA0_BASE + 0x56c);
 #endif
 	/* for bh */
 	INIT_WORK(&ws_hpd, (void *)set_ddc_port);
 
 	/* check EINT init state */
+#ifdef CONFIG_CPU_S5PC110
+#else
 	s3c_gpio_cfgpin(S5PC1XX_GPH0(5), S3C_GPIO_SFN(2));
 	s3c_gpio_setpull(S5PC1XX_GPH0(5), S3C_GPIO_PULL_UP);
 
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
+#endif
 
 	dev_info(&pdev->dev, "hpd status is cable %s\n", 
 		s5ptv_status.hpd_status ? "inserted":"removed");
@@ -638,33 +585,14 @@ out:
  */
 static int s5p_tv_remove(struct platform_device *pdev)
 {
+	__s5p_hdmi_release(pdev);
+	__s5p_sdout_release(pdev);
+	__s5p_mixer_release(pdev);
+	__s5p_vp_release(pdev);
+#ifdef CONFIG_CPU_S5PC100	
+	__s5p_tvclk_release(pdev);
+#endif
 	i2c_del_driver(&hdcp_i2c_driver);
-
-	iounmap(tvout_base);
-
-	/* remove memory region */
-	if (tvout_mem != NULL) {
-		if (release_resource(tvout_mem))
-			dev_err(&pdev->dev,
-				"Can't remove tvout drv !!\n");
-
-		kfree(tvout_mem);
-
-		tvout_mem = NULL;
-	}
-
-	iounmap(tvout_base_clk);
-
-	/* remove memory region */
-	if (tvout_mem_clk != NULL) {
-		if (release_resource(tvout_mem_clk))
-			dev_err(&pdev->dev, 
-			"Can't remove tvout drv !!\n");
-
-		kfree(tvout_mem_clk);
-
-		tvout_mem_clk = NULL;
-	}
 
 	clk_disable(s5ptv_status.tvenc_clk);
 	clk_disable(s5ptv_status.vp_clk);

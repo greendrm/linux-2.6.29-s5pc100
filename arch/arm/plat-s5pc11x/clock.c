@@ -52,59 +52,37 @@ static int inline s5pc11x_clk_gate(void __iomem *reg,
 	return 0;
 }
 
-static int s5pc11x_setrate_sclk_cam(struct clk *clk, unsigned long rate)
-{
-	u32 shift = 24;
-	u32 cam_div, cfg;
-	unsigned long src_clk = clk_get_rate(clk->parent);
-
-	cam_div = src_clk / rate;
-
-	if (cam_div > 32)
-		cam_div = 32;
-
-	cfg = __raw_readl(S5P_CLK_DIV1);
-	cfg &= ~(0x1f << shift);
-	cfg |= ((cam_div - 1) << shift);
-	__raw_writel(cfg, S5P_CLK_DIV1);
-
-	printk("parent clock for camera: %ld.%03ld MHz, divisor: %d\n", \
-		print_mhz(src_clk), cam_div);
-
-	return 0;
-}
-
-static int s5pc11x_clk_main0_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_main0_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_MAIN0, clk, enable);
 }
 
-static int s5pc11x_clk_main1_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_main1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_MAIN1, clk, enable);
 }
 
-static int s5pc11x_clk_main2_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_main2_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_MAIN2, clk, enable);
 }
 
-static int s5pc11x_clk_peri0_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_peri0_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_PERI0, clk, enable);
 }
 
-static int s5pc11x_clk_peri1_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_peri1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_PERI1, clk, enable);
 }
 
-static int s5pc11x_clk_sclk0_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_sclk0_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_SCLK0, clk, enable);
 }
 
-static int s5pc11x_clk_sclk1_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_sclk1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_SCLK1, clk, enable);
 }
@@ -119,42 +97,42 @@ int s5pc11x_sclk1_ctrl(struct clk *clk, int enable)
 	return s5pc11x_clk_gate(S5P_SCLKGATE1, clk, enable);
 }
 
-static int s5pc11x_clk_ip0_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_ip0_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP0, clk, enable);
 }
 
-static int s5pc11x_clk_ip1_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_ip1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP1, clk, enable);
 }
 
-static int s5pc11x_clk_ip2_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_ip2_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP2, clk, enable);
 }
 
-static int s5pc11x_clk_ip3_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_ip3_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP3, clk, enable);
 }
 
-static int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP4, clk, enable);
 }
 
-static int s5pc11x_clk_block_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_block_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_BLOCK, clk, enable);
 }
 
-static int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_BUS0, clk, enable);
 }
 
-static int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable)
+int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_BUS1, clk, enable);
 }
@@ -212,6 +190,24 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_UART3,
+	}, {
+		.name		= "i2c",
+		.id		= 0,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C0,
+	}, {
+		.name		= "i2c",
+		.id		= 1,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
+	}, {
+		.name		= "i2c",
+		.id		= 2,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
 	}, {
 		.name		= "lcd",
 		.id		= -1,

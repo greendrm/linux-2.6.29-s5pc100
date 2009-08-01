@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/setup-csis.c
+/* linux/arch/arm/plat-s5pc11x/setup-csis.c
  *
  * Copyright 2009 Samsung Electronics
  *	Jinsung Yang <jsgood.yang@samsung.com>
@@ -19,14 +19,13 @@
 
 struct platform_device; /* don't need the contents */
 
-void s5p_csis_cfg_gpio(struct platform_device *dev)
+void s3c_csis_cfg_gpio(struct platform_device *dev)
 {
 	return;
 }
 
-void s5p_csis_cfg_phy_global(struct platform_device *dev, int on)
+void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
 {
-#if defined(CONFIG_CPU_S5PC110)	
 	u32 cfg;
 
 	if (on) {
@@ -45,6 +44,5 @@ void s5p_csis_cfg_phy_global(struct platform_device *dev, int on)
 		cfg &= ~S5P_OTHERS_MIPI_DPHY_EN;
 		__raw_writel(cfg, S5P_OTHERS);
 	}
-#endif	
 }
 

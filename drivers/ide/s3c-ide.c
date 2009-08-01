@@ -68,25 +68,48 @@ static struct clk *s3cide_clock;
 
 static inline int bus_fifo_status_check (BUS_STATE status)
 {
-	u32 temp;
-	uint i;
+        u32 temp;
+        uint i = 0x10000000;
 
-	for (i=0; i<10000000; i++) {
-		temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
-		/* wait for IDLE */
-		if ((temp == 0) && (status == IDLE)) {
-			return 0;
-		}
-		/* wait for PAUSEW */
-		else if (((temp >> 16) == 0x5) && (status == PAUSEW)) {
-			return 0;
-		}
-		/* wait for PAUSER2 and read/write pointer 0 */
-		else if ((temp == 0x60000) && (status == PAUSER2)) {
-			return 0;
-		}
-	}
-	return temp;
+        switch (status) {
+        case IDLE:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if (temp == 0)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        /* write case */
+        case PAUSER2:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if ((temp>>16) == 0x6)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        /* read case */
+        case PAUSEW:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if ((temp>>16) == 0x5)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        default:
+                printk("unknown case to go\n");
+                return -1;
+        }
+
+        printk("i = %d\n", i);
+        if (i == 0)
+                printk("we got a problem in bus_fifo\n");
+        return temp;
 }
 
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
@@ -127,7 +150,7 @@ static inline int ata_status_check (ide_drive_t * drive, u8 startend)
 
 
 /* Set ATA Mode */
-#if defined(CONFIG_BLK_DEV_IDE_S3C_UDMA) 
+#if defined(CONFIG_BLK_DEV_IDE_S3C_UDMA)
 static void set_config_mode (ATA_MODE mode, int rw)
 {
         u32 reg = readl(s3c_ide_regbase + S5P_ATA_CFG) & ~(0x39c);
@@ -447,7 +470,7 @@ static void s3c_ide_dma_lostirq (ide_drive_t * drive)
 int s3c_ide_irq_hook (void * data)
 {
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	u32 stat = 0;
+	u32 stat = 0, i;
 	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
 #endif
 
@@ -456,6 +479,8 @@ int s3c_ide_irq_hook (void * data)
 	DbgAta("##### %s, %08x\n", __FUNCTION__, reg);
 
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
+	/* keep transfering data
+	 * thus general ide_intr will be ignored. */
 	if (s3c_hwif->pseudo_dma) {
 		uint i;
 		i = s3c_hwif->index;
@@ -472,11 +497,7 @@ int s3c_ide_irq_hook (void * data)
 				s3c_hwif->table[i].addr,
 				s3c_hwif->table[i].len);
 
-			stat = bus_fifo_status_check(PAUSEW);
-			if (stat == 0x60000) {
-				writel(s3c_hwif->table[i].len-0x1, s3c_ide_regbase + S5P_ATA_SBUF_SIZE);
-				writel(s3c_hwif->table[i].addr, s3c_ide_regbase + S5P_ATA_SBUF_START);
-			}
+			bus_fifo_status_check(PAUSEW);
 
 			writel(s3c_hwif->table[i].len-0x1, s3c_ide_regbase + S5P_ATA_TBUF_SIZE);
 			writel(s3c_hwif->table[i].addr, s3c_ide_regbase + S5P_ATA_TBUF_START);
@@ -495,14 +516,14 @@ int s3c_ide_irq_hook (void * data)
 		return 1;
 	}
 
-	stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
-
-	if ( (stat >> 16) == 0x6 ) { /* in case of PAUSER2. */
-		writel(ATA_CMD_CONTINUE, s3c_ide_regbase + S5P_ATA_CMD);
-		return 1;
-	} else if ( (stat >> 16) == 0x5 ) { /* in case of PAUSEW. */
-		writel(ATA_CMD_CONTINUE, s3c_ide_regbase + S5P_ATA_CMD);
+	for (i=0; i<100000; i++) {
+		stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+		if (stat == 0)
+			break;
 	}
+	if (i == 100000)
+		printk("BUS has a problem\n");
+
 #endif
 	return 0;
 }
@@ -551,70 +572,11 @@ static void __devinit s3c_ide_setup_ports (hw_regs_t *hw, s3c_ide_hwif_t *s3c_hw
 
         for (i = 0; i < 9; i++)
 		#if defined (CONFIG_CPU_S5PC100)
-                *ata_regs++ = s3c_ide_regbase + 0x1954 + (i << 2);
+                *ata_regs++ = (ulong)s3c_ide_regbase + 0x1954 + (i << 2);
 		#elif defined (CONFIG_CPU_S5PC110)
                 *ata_regs++ = s3c_ide_regbase + 0x54 + (i << 2);
 		#endif
 }
-
-/*=========================================================================
- *          	       ata controller register I/O fuctions
- *=========================================================================
- */
-void s3c_ide_OUTB (u8 addr, ulong reg)
-{
-	writeb(addr, reg);
-}
-EXPORT_SYMBOL(s3c_ide_OUTB);
-
-void s3c_ide_OUTW (u16 addr, ulong reg)
-{
-	writew(addr, reg);
-}
-EXPORT_SYMBOL(s3c_ide_OUTW);
-
-u8 s3c_ide_INB (ulong reg)
-{
-	u8 temp;
-
-	temp = readb(reg);
-	temp = readb(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	return temp;
-}
-EXPORT_SYMBOL(s3c_ide_INB);
-
-u16 s3c_ide_INW (ulong reg)
-{
-	u16 temp;
-
-	temp = readw(reg);
-	temp = readw(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	return temp;
-}
-EXPORT_SYMBOL(s3c_ide_INW );
-
-void s3c_ide_OUTSW(ulong port, void *addr, u32 count)
-{
-	uint i;
-	volatile u16 *temp_addr = (u16*)addr;
-
-	for (i=0; i<count; i++, temp_addr++) {
-		writel(*temp_addr, port);
-	}
-}
-EXPORT_SYMBOL(s3c_ide_OUTSW);
-
-void s3c_ide_INSW (ulong port, void *addr, u32 count)
-{
-	uint i;
-	volatile u16 *temp_addr = (u16*)addr;
-
-	for (i=0; i<count; i++, temp_addr++) {
-		*temp_addr = readw(port);
-		*temp_addr = readw(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	}
-}
-EXPORT_SYMBOL(s3c_ide_INSW);
 
 #if defined (CONFIG_CPU_S5PC100)
 static void change_mode_to_ata (void)
@@ -726,7 +688,8 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 		goto out;
 	}
 
-	if (ret = clk_enable(s3cide_clock)) {
+	ret = clk_enable(s3cide_clock);
+	if (ret) {
 		printk("failed to enable clock source.\n");
 		goto out;
 	}

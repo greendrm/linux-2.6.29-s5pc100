@@ -223,6 +223,7 @@ static int s3c_csis_probe(struct platform_device *pdev)
 
 	s3c_csis_start(pdev);
 	info("Samsung MIPI-CSI2 operation started\n");
+	
 	return 0;	
 }
 

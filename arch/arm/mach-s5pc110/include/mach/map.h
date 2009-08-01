@@ -190,11 +190,14 @@
 #define S5PC11X_SZ_CSIS		SZ_1M
 
 /* TVOUT */
-#define S5PC11X_PA_TVOUT	(0xF0000000)
-#define S5PC11X_SZ_TVOUT	SZ_4M
-#define S5PC11X_PA_CLK_OTHER	(S5PC11X_PA_SYSCON + 0x100000)
-#define S5PC11X_SZ_CLK_OTHER	SZ_4K
-
+#define S5PC11X_PA_TVENC        (0xF9000000)
+#define S5PC11X_SZ_TVENC        SZ_1M
+#define S5PC11X_PA_VP           (0xF9100000)
+#define S5PC11X_SZ_VP           SZ_1M
+#define S5PC11X_PA_MIXER        (0xF9200000)
+#define S5PC11X_SZ_MIXER        SZ_1M
+#define S5PC11X_PA_HDMI         (0xFA100000)
+#define S5PC11X_SZ_HDMI         SZ_1M
 
 /* compatibiltiy defines. */
 #define S3C_SZ_HSMMC		S5PC11X_SZ_HSMMC

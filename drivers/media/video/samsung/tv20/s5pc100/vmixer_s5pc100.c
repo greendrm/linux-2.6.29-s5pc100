@@ -14,6 +14,7 @@
 #include <linux/errno.h>
 #include <linux/string.h>
 #include <linux/interrupt.h>
+#include <linux/platform_device.h>
 
 #include <asm/io.h>
 
@@ -32,6 +33,8 @@
 #define VMPRINTK(fmt, args...)
 #endif
 
+static struct resource	*mixer_mem;
+void __iomem		*mixer_base;
 
 /* 
 *set  - set functions are only called under running vmixer
@@ -47,20 +50,20 @@ s5p_tv_vmx_err __s5p_vm_set_layer_show(s5p_tv_vmx_layer layer, bool show)
 
 	case VM_VIDEO_LAYER:
 		mxr_config = (show) ?
-				(readl(tvout_base + S5P_MXR_CFG) | S5P_MXR_VIDEO_LAYER_SHOW) :
-				(readl(tvout_base + S5P_MXR_CFG) & ~S5P_MXR_VIDEO_LAYER_SHOW);
+				(readl(mixer_base + S5P_MXR_CFG) | S5P_MXR_VIDEO_LAYER_SHOW) :
+				(readl(mixer_base + S5P_MXR_CFG) & ~S5P_MXR_VIDEO_LAYER_SHOW);
 		break;
 
 	case VM_GPR0_LAYER:
 		mxr_config = (show) ?
-				(readl(tvout_base + S5P_MXR_CFG) | S5P_MXR_GRAPHIC0_LAYER_SHOW) :
-				(readl(tvout_base + S5P_MXR_CFG) & ~S5P_MXR_GRAPHIC0_LAYER_SHOW);
+				(readl(mixer_base + S5P_MXR_CFG) | S5P_MXR_GRAPHIC0_LAYER_SHOW) :
+				(readl(mixer_base + S5P_MXR_CFG) & ~S5P_MXR_GRAPHIC0_LAYER_SHOW);
 		break;
 
 	case VM_GPR1_LAYER:
 		mxr_config = (show) ?
-				(readl(tvout_base + S5P_MXR_CFG) | S5P_MXR_GRAPHIC1_LAYER_SHOW) :
-				(readl(tvout_base + S5P_MXR_CFG) & ~S5P_MXR_GRAPHIC1_LAYER_SHOW);
+				(readl(mixer_base + S5P_MXR_CFG) | S5P_MXR_GRAPHIC1_LAYER_SHOW) :
+				(readl(mixer_base + S5P_MXR_CFG) & ~S5P_MXR_GRAPHIC1_LAYER_SHOW);
 		break;
 
 	default:
@@ -69,9 +72,9 @@ s5p_tv_vmx_err __s5p_vm_set_layer_show(s5p_tv_vmx_layer layer, bool show)
 		break;
 	}
 
-	writel(mxr_config, tvout_base + S5P_MXR_CFG);
+	writel(mxr_config, mixer_base + S5P_MXR_CFG);
 
-	VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_CFG));
+	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_CFG));
 
 	return VMIXER_NO_ERROR;
 }
@@ -85,17 +88,17 @@ s5p_tv_vmx_err __s5p_vm_set_layer_priority(s5p_tv_vmx_layer layer, u32 priority)
 	switch (layer) {
 
 	case VM_VIDEO_LAYER:
-		layer_cfg = S5P_MXR_VP_LAYER_PRIORITY_CLEAR(readl(tvout_base + S5P_MXR_LAYER_CFG)) |
+		layer_cfg = S5P_MXR_VP_LAYER_PRIORITY_CLEAR(readl(mixer_base + S5P_MXR_LAYER_CFG)) |
 				S5P_MXR_VP_LAYER_PRIORITY(priority);
 		break;
 
 	case VM_GPR0_LAYER:
-		layer_cfg = S5P_MXR_GRP0_LAYER_PRIORITY_CLEAR(readl(tvout_base + S5P_MXR_LAYER_CFG)) |
+		layer_cfg = S5P_MXR_GRP0_LAYER_PRIORITY_CLEAR(readl(mixer_base + S5P_MXR_LAYER_CFG)) |
 				S5P_MXR_GRP0_LAYER_PRIORITY(priority);
 		break;
 
 	case VM_GPR1_LAYER:
-		layer_cfg = S5P_MXR_GRP1_LAYER_PRIORITY_CLEAR(readl(tvout_base + S5P_MXR_LAYER_CFG)) |
+		layer_cfg = S5P_MXR_GRP1_LAYER_PRIORITY_CLEAR(readl(mixer_base + S5P_MXR_LAYER_CFG)) |
 				S5P_MXR_GRP1_LAYER_PRIORITY(priority);
 		break;
 
@@ -105,7 +108,7 @@ s5p_tv_vmx_err __s5p_vm_set_layer_priority(s5p_tv_vmx_layer layer, u32 priority)
 		break;
 	}
 
-	writel(layer_cfg, tvout_base + S5P_MXR_LAYER_CFG);
+	writel(layer_cfg, mixer_base + S5P_MXR_LAYER_CFG);
 
 	return VMIXER_NO_ERROR;
 }
@@ -118,7 +121,7 @@ s5p_tv_vmx_err __s5p_vm_set_win_blend(s5p_tv_vmx_layer layer, bool enable)
 	switch (layer) {
 
 	case VM_VIDEO_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_VIDEO_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_VIDEO_CFG)
 			   & (~S5P_MXR_VP_BLEND_ENABLE) ;
 
 		if (enable)
@@ -126,12 +129,12 @@ s5p_tv_vmx_err __s5p_vm_set_win_blend(s5p_tv_vmx_layer layer, bool enable)
 		else
 			temp_reg |= S5P_MXR_VP_BLEND_DISABLE;
 
-		writel(temp_reg, tvout_base + S5P_MXR_VIDEO_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_VIDEO_CFG);
 
 		break;
 
 	case VM_GPR0_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_GRAPHIC0_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC0_CFG)
 			   & (~S5P_MXR_WIN_BLEND_ENABLE) ;
 
 		if (enable)
@@ -139,12 +142,12 @@ s5p_tv_vmx_err __s5p_vm_set_win_blend(s5p_tv_vmx_layer layer, bool enable)
 		else
 			temp_reg |= S5P_MXR_WIN_BLEND_DISABLE;
 
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC0_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC0_CFG);
 
 		break;
 
 	case VM_GPR1_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_GRAPHIC1_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC1_CFG)
 			   & (~S5P_MXR_WIN_BLEND_ENABLE) ;
 
 		if (enable)
@@ -152,7 +155,7 @@ s5p_tv_vmx_err __s5p_vm_set_win_blend(s5p_tv_vmx_layer layer, bool enable)
 		else
 			temp_reg |= S5P_MXR_WIN_BLEND_DISABLE;
 
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC1_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC1_CFG);
 
 		break;
 
@@ -164,9 +167,9 @@ s5p_tv_vmx_err __s5p_vm_set_win_blend(s5p_tv_vmx_layer layer, bool enable)
 		break;
 	}
 
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_VIDEO_CFG));
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_CFG));
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_VIDEO_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_CFG));
 
 	return VMIXER_NO_ERROR;
 }
@@ -180,24 +183,24 @@ s5p_tv_vmx_err __s5p_vm_set_layer_alpha(s5p_tv_vmx_layer layer, u32 alpha)
 	switch (layer) {
 
 	case VM_VIDEO_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_VIDEO_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_VIDEO_CFG)
 			   & (~S5P_MXR_ALPHA) ;
 		temp_reg |= S5P_MXR_VP_ALPHA_VALUE(alpha);
-		writel(temp_reg, tvout_base + S5P_MXR_VIDEO_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_VIDEO_CFG);
 		break;
 
 	case VM_GPR0_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_GRAPHIC0_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC0_CFG)
 			   & (~S5P_MXR_ALPHA) ;
 		temp_reg |= S5P_MXR_GRP_ALPHA_VALUE(alpha);
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC0_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC0_CFG);
 		break;
 
 	case VM_GPR1_LAYER:
-		temp_reg = readl(tvout_base + S5P_MXR_GRAPHIC1_CFG)
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC1_CFG)
 			   & (~S5P_MXR_ALPHA) ;
 		temp_reg |= S5P_MXR_GRP_ALPHA_VALUE(alpha);
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC1_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC1_CFG);
 		break;
 
 	default:
@@ -206,9 +209,9 @@ s5p_tv_vmx_err __s5p_vm_set_layer_alpha(s5p_tv_vmx_layer layer, u32 alpha)
 		break;
 	}
 
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_VIDEO_CFG));
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_CFG));
-	VMPRINTK("0x08%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_VIDEO_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_CFG));
+	VMPRINTK("0x08%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_CFG));
 
 	return VMIXER_NO_ERROR;
 }
@@ -226,13 +229,13 @@ s5p_tv_vmx_err __s5p_vm_set_grp_base_address(s5p_tv_vmx_layer layer, u32 base_ad
 	switch (layer) {
 
 	case VM_GPR0_LAYER:
-		writel(S5P_MXR_GPR_BASE(base_addr), tvout_base + S5P_MXR_GRAPHIC0_BASE);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_BASE));
+		writel(S5P_MXR_GPR_BASE(base_addr), mixer_base + S5P_MXR_GRAPHIC0_BASE);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_BASE));
 		break;
 
 	case VM_GPR1_LAYER:
-		writel(S5P_MXR_GPR_BASE(base_addr), tvout_base + S5P_MXR_GRAPHIC1_BASE);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_BASE));
+		writel(S5P_MXR_GPR_BASE(base_addr), mixer_base + S5P_MXR_GRAPHIC1_BASE);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_BASE));
 		break;
 
 	default:
@@ -253,14 +256,14 @@ s5p_tv_vmx_err __s5p_vm_set_grp_layer_position(s5p_tv_vmx_layer layer, u32 dst_o
 
 	case VM_GPR0_LAYER:
 		writel(S5P_MXR_GRP_DESTX(dst_offs_x) | S5P_MXR_GRP_DESTY(dst_offs_y), 
-			tvout_base + S5P_MXR_GRAPHIC0_DXY);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_DXY));
+			mixer_base + S5P_MXR_GRAPHIC0_DXY);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_DXY));
 		break;
 
 	case VM_GPR1_LAYER:
 		writel(S5P_MXR_GRP_DESTX(dst_offs_x) | S5P_MXR_GRP_DESTY(dst_offs_y), 
-			tvout_base + S5P_MXR_GRAPHIC1_DXY);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_DXY));
+			mixer_base + S5P_MXR_GRAPHIC1_DXY);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_DXY));
 		break;
 
 	default:
@@ -285,25 +288,25 @@ s5p_tv_vmx_err __s5p_vm_set_grp_layer_size(s5p_tv_vmx_layer layer,
 	switch (layer) {
 
 	case VM_GPR0_LAYER:
-		writel(S5P_MXR_GRP_SPAN(span), tvout_base + S5P_MXR_GRAPHIC0_SPAN);
+		writel(S5P_MXR_GRP_SPAN(span), mixer_base + S5P_MXR_GRAPHIC0_SPAN);
 		writel(S5P_MXR_GRP_WIDTH(width) | S5P_MXR_GRP_HEIGHT(height),
-		       tvout_base + S5P_MXR_GRAPHIC0_WH);
+		       mixer_base + S5P_MXR_GRAPHIC0_WH);
 		writel(S5P_MXR_GRP_STARTX(src_offs_x) | S5P_MXR_GRP_STARTY(src_offs_y),
-		       tvout_base + S5P_MXR_GRAPHIC0_SXY);
-		VMPRINTK("0x%x,0x%x,0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_SPAN), 
-			readl(tvout_base + S5P_MXR_GRAPHIC0_WH), 
-			readl(tvout_base + S5P_MXR_GRAPHIC0_SXY));
+		       mixer_base + S5P_MXR_GRAPHIC0_SXY);
+		VMPRINTK("0x%x,0x%x,0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_SPAN), 
+			readl(mixer_base + S5P_MXR_GRAPHIC0_WH), 
+			readl(mixer_base + S5P_MXR_GRAPHIC0_SXY));
 		break;
 
 	case VM_GPR1_LAYER:
-		writel(S5P_MXR_GRP_SPAN(span), tvout_base + S5P_MXR_GRAPHIC1_SPAN);
+		writel(S5P_MXR_GRP_SPAN(span), mixer_base + S5P_MXR_GRAPHIC1_SPAN);
 		writel(S5P_MXR_GRP_WIDTH(width) | S5P_MXR_GRP_HEIGHT(height),
-		       tvout_base + S5P_MXR_GRAPHIC1_WH);
+		       mixer_base + S5P_MXR_GRAPHIC1_WH);
 		writel(S5P_MXR_GRP_STARTX(src_offs_x) | S5P_MXR_GRP_STARTY(src_offs_y),
-		       tvout_base + S5P_MXR_GRAPHIC1_SXY);
-		VMPRINTK("0x%x,0x%x,0x%x\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_SPAN), 
-			readl(tvout_base + S5P_MXR_GRAPHIC1_WH), 
-			readl(tvout_base + S5P_MXR_GRAPHIC1_SXY));
+		       mixer_base + S5P_MXR_GRAPHIC1_SXY);
+		VMPRINTK("0x%x,0x%x,0x%x\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_SPAN), 
+			readl(mixer_base + S5P_MXR_GRAPHIC1_WH), 
+			readl(mixer_base + S5P_MXR_GRAPHIC1_SXY));
 		break;
 
 	default:
@@ -329,18 +332,18 @@ s5p_tv_vmx_err __s5p_vm_set_bg_color(s5p_tv_vmx_bg_color_num colornum,
 	switch (colornum) {
 
 	case VMIXER_BG_COLOR_0:
-		writel(reg_value, tvout_base + S5P_MXR_BG_COLOR0);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_BG_COLOR0));
+		writel(reg_value, mixer_base + S5P_MXR_BG_COLOR0);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_BG_COLOR0));
 		break;
 
 	case VMIXER_BG_COLOR_1:
-		writel(reg_value, tvout_base + S5P_MXR_BG_COLOR1);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_BG_COLOR1));
+		writel(reg_value, mixer_base + S5P_MXR_BG_COLOR1);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_BG_COLOR1));
 		break;
 
 	case VMIXER_BG_COLOR_2:
-		writel(reg_value, tvout_base + S5P_MXR_BG_COLOR2);
-		VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_BG_COLOR2));
+		writel(reg_value, mixer_base + S5P_MXR_BG_COLOR2);
+		VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_BG_COLOR2));
 		break;
 
 	default:
@@ -397,9 +400,9 @@ s5p_tv_vmx_err __s5p_vm_init_status_reg(s5p_vmx_burst_mode burst, s5p_endian_typ
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_MXR_STATUS);
+	writel(temp_reg, mixer_base + S5P_MXR_STATUS);
 
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_STATUS));
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_STATUS));
 
 	return VMIXER_NO_ERROR;
 }
@@ -480,9 +483,9 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_MXR_CFG);
+	writel(temp_reg, mixer_base + S5P_MXR_CFG);
 
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CFG));
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CFG));
 
 	return VMIXER_NO_ERROR;
 }
@@ -518,7 +521,7 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 	case VM_VIDEO_LAYER:
 		temp_reg = (win_blending) ? S5P_MXR_VP_BLEND_ENABLE : S5P_MXR_VP_BLEND_DISABLE;
 		temp_reg |= S5P_MXR_VP_ALPHA_VALUE(alpha);
-		writel(temp_reg, tvout_base + S5P_MXR_VIDEO_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_VIDEO_CFG);
 		break;
 
 	case VM_GPR0_LAYER:
@@ -532,11 +535,11 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 			    S5P_MXR_PIXEL_BLEND_DISABLE;
 		temp_reg |= S5P_MXR_EG_COLOR_FORMAT(color);
 		temp_reg |= S5P_MXR_GRP_ALPHA_VALUE(alpha);
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC0_CFG);
-		writel(S5P_MXR_GPR_BLANK_COLOR(blank_color), tvout_base + S5P_MXR_GRAPHIC0_BLANK);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC0_CFG);
+		writel(S5P_MXR_GPR_BLANK_COLOR(blank_color), mixer_base + S5P_MXR_GRAPHIC0_BLANK);
 
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_CFG));
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_GRAPHIC0_BLANK));
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_CFG));
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_GRAPHIC0_BLANK));
 
 		__s5p_vm_set_grp_layer_size(layer, span, width, height,
 					    src_offs_x, src_offs_y);
@@ -557,12 +560,12 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		temp_reg |= S5P_MXR_EG_COLOR_FORMAT(color);
 		temp_reg |= S5P_MXR_GRP_ALPHA_VALUE(alpha);
 
-		writel(temp_reg, tvout_base + S5P_MXR_GRAPHIC1_CFG);
+		writel(temp_reg, mixer_base + S5P_MXR_GRAPHIC1_CFG);
 		writel(S5P_MXR_GPR_BLANK_COLOR(blank_color), 
-			tvout_base + S5P_MXR_GRAPHIC1_BLANK);
+			mixer_base + S5P_MXR_GRAPHIC1_BLANK);
 
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_CFG));
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_GRAPHIC1_BLANK));
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_CFG));
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_GRAPHIC1_BLANK));
 
 		__s5p_vm_set_grp_layer_size(layer, span, width, height,
 					    src_offs_x, src_offs_y);
@@ -602,8 +605,8 @@ void __s5p_vm_init_bg_dither_enable(bool cr_dither_enable,
 		   (temp_reg | S5P_MXR_BG_Y_DIHER_EN) :
 		   (temp_reg & ~S5P_MXR_BG_Y_DIHER_EN);
 
-	writel(temp_reg, tvout_base + S5P_MXR_BG_CFG);
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_BG_CFG));
+	writel(temp_reg, mixer_base + S5P_MXR_BG_CFG);
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_BG_CFG));
 
 }
 
@@ -634,16 +637,16 @@ s5p_tv_vmx_err __s5p_vm_init_csc_coef(s5p_yuv_fmt_component component,
 		mxr_cm |= S5P_MXR_BG_COEFF_0(coeff0) |
 			     S5P_MXR_BG_COEFF_1(coeff1) |
 			     S5P_MXR_BG_COEFF_2(coeff2);
-		writel(mxr_cm, tvout_base + S5P_MXR_CM_COEFF_Y);
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_Y));
+		writel(mxr_cm, mixer_base + S5P_MXR_CM_COEFF_Y);
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_Y));
 		break;
 
 	case TVOUT_YUV_CB:
 		mxr_cm 	= S5P_MXR_BG_COEFF_0(coeff0) |
 			     S5P_MXR_BG_COEFF_1(coeff1) |
 			     S5P_MXR_BG_COEFF_2(coeff2);
-		writel(mxr_cm, tvout_base + S5P_MXR_CM_COEFF_CB);
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_CB));
+		writel(mxr_cm, mixer_base + S5P_MXR_CM_COEFF_CB);
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_CB));
 		break;
 
 	case TVOUT_YUV_CR:
@@ -651,7 +654,7 @@ s5p_tv_vmx_err __s5p_vm_init_csc_coef(s5p_yuv_fmt_component component,
 			     S5P_MXR_BG_COEFF_1(coeff1) |
 			     S5P_MXR_BG_COEFF_2(coeff2);
 		writel(mxr_cm, S5P_MXR_CM_COEFF_CR);
-		VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_CR));
+		VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_CR));
 		break;
 
 	default:
@@ -671,38 +674,38 @@ void __s5p_vm_init_csc_coef_default(s5p_tv_vmx_csc_type csc_type)
 
 	case VMIXER_CSC_RGB_TO_YUV601_LR:
 		writel((0 << 30) | (153 << 20) | (300 << 10) | (58 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_Y);
+			mixer_base + S5P_MXR_CM_COEFF_Y);
 		writel((936 << 20) | (851 << 10) | (262 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CB);
+			mixer_base + S5P_MXR_CM_COEFF_CB);
 		writel((262 << 20) | (805 << 10) | (982 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CR);
+			mixer_base + S5P_MXR_CM_COEFF_CR);
 		break;
 
 	case VMIXER_CSC_RGB_TO_YUV601_FR:
 		writel((1 << 30) | (132 << 20) | (258 << 10) | (50 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_Y);
+			mixer_base + S5P_MXR_CM_COEFF_Y);
 		writel((948 << 20) | (875 << 10) | (225 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CB);
+			mixer_base + S5P_MXR_CM_COEFF_CB);
 		writel((225 << 20) | (836 << 10) | (988 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CR);
+			mixer_base + S5P_MXR_CM_COEFF_CR);
 		break;
 
 	case VMIXER_CSC_RGB_TO_YUV709_LR:
 		writel((0 << 30) | (109 << 20) | (366 << 10) | (36 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_Y);
+			mixer_base + S5P_MXR_CM_COEFF_Y);
 		writel((964 << 20) | (822 << 10) | (216 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CB);
+			mixer_base + S5P_MXR_CM_COEFF_CB);
 		writel((262 << 20) | (787 << 10) | (1000 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CR);
+			mixer_base + S5P_MXR_CM_COEFF_CR);
 		break;
 
 	case VMIXER_CSC_RGB_TO_YUV709_FR:
 		writel((1 << 30) | (94 << 20) | (314 << 10) | (32 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_Y);
+			mixer_base + S5P_MXR_CM_COEFF_Y);
 		writel((972 << 20) | (851 << 10) | (225 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CB);
+			mixer_base + S5P_MXR_CM_COEFF_CB);
 		writel((225 << 20) | (820 << 10) | (1004 << 0), 
-			tvout_base + S5P_MXR_CM_COEFF_CR);
+			mixer_base + S5P_MXR_CM_COEFF_CR);
 		break;
 
 	default:
@@ -710,10 +713,10 @@ void __s5p_vm_init_csc_coef_default(s5p_tv_vmx_csc_type csc_type)
 		break;
 	}
 
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_Y));
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_Y));
 
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_CB));
-	VMPRINTK("--(0x%x)\n\r", readl(tvout_base + S5P_MXR_CM_COEFF_CR));
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_CB));
+	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CM_COEFF_CR));
 }
 
 /*
@@ -728,18 +731,18 @@ s5p_tv_vmx_err __s5p_vm_get_layer_info(s5p_tv_vmx_layer layer,
 	switch (layer) {
 
 	case VM_VIDEO_LAYER:
-		*show = (readl(tvout_base + S5P_MXR_LAYER_CFG) & S5P_MXR_VIDEO_LAYER_SHOW) ? 1 : 0;
-		*priority = S5P_MXR_VP_LAYER_PRIORITY_INFO(readl(tvout_base + S5P_MXR_LAYER_CFG));
+		*show = (readl(mixer_base + S5P_MXR_LAYER_CFG) & S5P_MXR_VIDEO_LAYER_SHOW) ? 1 : 0;
+		*priority = S5P_MXR_VP_LAYER_PRIORITY_INFO(readl(mixer_base + S5P_MXR_LAYER_CFG));
 		break;
 
 	case VM_GPR0_LAYER:
-		*show = (readl(tvout_base + S5P_MXR_LAYER_CFG) & S5P_MXR_GRAPHIC0_LAYER_SHOW) ? 1 : 0;
-		*priority = S5P_MXR_GRP0_LAYER_PRIORITY_INFO(readl(tvout_base + S5P_MXR_LAYER_CFG));
+		*show = (readl(mixer_base + S5P_MXR_LAYER_CFG) & S5P_MXR_GRAPHIC0_LAYER_SHOW) ? 1 : 0;
+		*priority = S5P_MXR_GRP0_LAYER_PRIORITY_INFO(readl(mixer_base + S5P_MXR_LAYER_CFG));
 		break;
 
 	case VM_GPR1_LAYER:
-		*show = (readl(tvout_base + S5P_MXR_LAYER_CFG) & S5P_MXR_GRAPHIC1_LAYER_SHOW) ? 1 : 0;
-		*priority = S5P_MXR_GRP1_LAYER_PRIORITY_INFO(readl(tvout_base + S5P_MXR_LAYER_CFG));
+		*show = (readl(mixer_base + S5P_MXR_LAYER_CFG) & S5P_MXR_GRAPHIC1_LAYER_SHOW) ? 1 : 0;
+		*priority = S5P_MXR_GRP1_LAYER_PRIORITY_INFO(readl(mixer_base + S5P_MXR_LAYER_CFG));
 		break;
 
 	default:
@@ -760,37 +763,37 @@ s5p_tv_vmx_err __s5p_vm_get_layer_info(s5p_tv_vmx_layer layer,
 void __s5p_vm_start(void)
 {
 	VMPRINTK("()\n\r");
-	writel((readl(tvout_base + S5P_MXR_STATUS) | S5P_MXR_MIXER_START), tvout_base + S5P_MXR_STATUS);
-	VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_STATUS));
+	writel((readl(mixer_base + S5P_MXR_STATUS) | S5P_MXR_MIXER_START), mixer_base + S5P_MXR_STATUS);
+	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_STATUS));
 
 
-	VMPRINTK("S5P_MXR_STATUS \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_STATUS));
-	VMPRINTK("S5P_MXR_INT_EN \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_INT_EN));
-	VMPRINTK("S5P_MXR_BG_CFG \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_BG_CFG));
-	VMPRINTK("S5P_MXR_BG_COLOR0 \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_BG_COLOR0));
-	VMPRINTK("S5P_MXR_BG_COLOR1 \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_BG_COLOR1));
-	VMPRINTK("S5P_MXR_BG_COLOR2 \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_BG_COLOR2));
-	VMPRINTK("S5P_MXR_CM_COEFF_Y \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_Y));
-	VMPRINTK("S5P_MXR_CM_COEFF_CB \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_CB));
-	VMPRINTK("S5P_MXR_CM_COEFF_CR \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_CR));
-	VMPRINTK("S5P_MXR_CM_COEFF_Y \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_Y));
-	VMPRINTK("S5P_MXR_CM_COEFF_CB \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_CB));
-	VMPRINTK("S5P_MXR_CM_COEFF_CR \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CM_COEFF_CR));
-	VMPRINTK("S5P_MXR_GRAPHIC0_CFG \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_CFG));
-	VMPRINTK("S5P_MXR_GRAPHIC0_BASE \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_BASE));
-	VMPRINTK("S5P_MXR_GRAPHIC0_SPAN \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_SPAN));
-	VMPRINTK("S5P_MXR_GRAPHIC0_WH \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_WH));
-	VMPRINTK("S5P_MXR_GRAPHIC0_SXY \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_SXY));
-	VMPRINTK("S5P_MXR_GRAPHIC0_DXY \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_DXY));
-	VMPRINTK("S5P_MXR_GRAPHIC0_BLANK \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC0_BLANK));
-	VMPRINTK("S5P_MXR_GRAPHIC1_BASE \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_BASE));
-	VMPRINTK("S5P_MXR_GRAPHIC1_SPAN \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_SPAN));
-	VMPRINTK("S5P_MXR_GRAPHIC1_WH \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_WH));
-	VMPRINTK("S5P_MXR_GRAPHIC1_SXY \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_SXY));
-	VMPRINTK("S5P_MXR_GRAPHIC1_DXY \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_DXY));
-	VMPRINTK("S5P_MXR_GRAPHIC1_BLANK \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_GRAPHIC1_BLANK));
-	VMPRINTK("S5P_MXR_CFG \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_CFG));
-	VMPRINTK("S5P_MXR_LAYER_CFG \t\t 0x%08x\n ", readl(tvout_base + S5P_MXR_LAYER_CFG));
+	VMPRINTK("S5P_MXR_STATUS \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_STATUS));
+	VMPRINTK("S5P_MXR_INT_EN \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_INT_EN));
+	VMPRINTK("S5P_MXR_BG_CFG \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_BG_CFG));
+	VMPRINTK("S5P_MXR_BG_COLOR0 \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_BG_COLOR0));
+	VMPRINTK("S5P_MXR_BG_COLOR1 \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_BG_COLOR1));
+	VMPRINTK("S5P_MXR_BG_COLOR2 \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_BG_COLOR2));
+	VMPRINTK("S5P_MXR_CM_COEFF_Y \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_Y));
+	VMPRINTK("S5P_MXR_CM_COEFF_CB \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_CB));
+	VMPRINTK("S5P_MXR_CM_COEFF_CR \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_CR));
+	VMPRINTK("S5P_MXR_CM_COEFF_Y \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_Y));
+	VMPRINTK("S5P_MXR_CM_COEFF_CB \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_CB));
+	VMPRINTK("S5P_MXR_CM_COEFF_CR \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CM_COEFF_CR));
+	VMPRINTK("S5P_MXR_GRAPHIC0_CFG \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_CFG));
+	VMPRINTK("S5P_MXR_GRAPHIC0_BASE \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_BASE));
+	VMPRINTK("S5P_MXR_GRAPHIC0_SPAN \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_SPAN));
+	VMPRINTK("S5P_MXR_GRAPHIC0_WH \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_WH));
+	VMPRINTK("S5P_MXR_GRAPHIC0_SXY \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_SXY));
+	VMPRINTK("S5P_MXR_GRAPHIC0_DXY \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_DXY));
+	VMPRINTK("S5P_MXR_GRAPHIC0_BLANK \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC0_BLANK));
+	VMPRINTK("S5P_MXR_GRAPHIC1_BASE \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_BASE));
+	VMPRINTK("S5P_MXR_GRAPHIC1_SPAN \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_SPAN));
+	VMPRINTK("S5P_MXR_GRAPHIC1_WH \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_WH));
+	VMPRINTK("S5P_MXR_GRAPHIC1_SXY \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_SXY));
+	VMPRINTK("S5P_MXR_GRAPHIC1_DXY \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_DXY));
+	VMPRINTK("S5P_MXR_GRAPHIC1_BLANK \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_GRAPHIC1_BLANK));
+	VMPRINTK("S5P_MXR_CFG \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_CFG));
+	VMPRINTK("S5P_MXR_LAYER_CFG \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_LAYER_CFG));
 
 }
 
@@ -801,9 +804,9 @@ void __s5p_vm_start(void)
 void __s5p_vm_stop(void)
 {
 	VMPRINTK("()\n\r");
-	writel((readl(tvout_base + S5P_MXR_STATUS) & ~S5P_MXR_MIXER_START), 
-		tvout_base + S5P_MXR_STATUS);
-	VMPRINTK("0x%x\n\r", readl(tvout_base + S5P_MXR_STATUS));
+	writel((readl(mixer_base + S5P_MXR_STATUS) & ~S5P_MXR_MIXER_START), 
+		mixer_base + S5P_MXR_STATUS);
+	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_STATUS));
 }
 
 /*
@@ -837,14 +840,14 @@ s5p_tv_vmx_err __s5p_vm_set_underflow_interrupt_enable(s5p_tv_vmx_layer layer, b
 	}
 
 	if (en) {
-		writel((readl(tvout_base + S5P_MXR_INT_EN) | enablemaks), 
-			tvout_base + S5P_MXR_INT_EN);
+		writel((readl(mixer_base + S5P_MXR_INT_EN) | enablemaks), 
+			mixer_base + S5P_MXR_INT_EN);
 	} else {
-		writel((readl(tvout_base + S5P_MXR_INT_EN) & ~enablemaks), 
-			tvout_base + S5P_MXR_INT_EN);
+		writel((readl(mixer_base + S5P_MXR_INT_EN) & ~enablemaks), 
+			mixer_base + S5P_MXR_INT_EN);
 	}
 
-	VMPRINTK("0x%x)\n\r", readl(tvout_base + S5P_MXR_INT_EN));
+	VMPRINTK("0x%x)\n\r", readl(mixer_base + S5P_MXR_INT_EN));
 
 	return VMIXER_NO_ERROR;
 }
@@ -853,7 +856,7 @@ void __s5p_vm_clear_pend_all(void)
 {
 	writel(S5P_MXR_INT_FIRED | S5P_MXR_VP_INT_FIRED |
 	       S5P_MXR_GRP0_INT_FIRED | S5P_MXR_GRP1_INT_FIRED,
-	       tvout_base + S5P_MXR_INT_EN);
+	       mixer_base + S5P_MXR_INT_EN);
 }
 
 irqreturn_t __s5p_mixer_irq(int irq, void *dev_id)
@@ -864,13 +867,13 @@ irqreturn_t __s5p_mixer_irq(int irq, void *dev_id)
 	bool mxr_i_f;
 	u32 temp_reg = 0;
 
-	v_i_f = (readl(tvout_base + S5P_MXR_INT_STATUS) 
+	v_i_f = (readl(mixer_base + S5P_MXR_INT_STATUS) 
 			& S5P_MXR_VP_INT_FIRED) ? true : false;
-	g0_i_f = (readl(tvout_base + S5P_MXR_INT_STATUS) 
+	g0_i_f = (readl(mixer_base + S5P_MXR_INT_STATUS) 
 			& S5P_MXR_GRP0_INT_FIRED) ? true : false;
-	g1_i_f = (readl(tvout_base + S5P_MXR_INT_STATUS) 
+	g1_i_f = (readl(mixer_base + S5P_MXR_INT_STATUS) 
 			& S5P_MXR_GRP1_INT_FIRED) ? true : false;
-	mxr_i_f = (readl(tvout_base + S5P_MXR_INT_STATUS) 
+	mxr_i_f = (readl(mixer_base + S5P_MXR_INT_STATUS) 
 			& S5P_MXR_INT_FIRED) ? true : false;
 
 	if (mxr_i_f) {
@@ -891,9 +894,65 @@ irqreturn_t __s5p_mixer_irq(int irq, void *dev_id)
 			printk("GRP1 fifo under run!!\n\r");
 		}
 
-		writel(temp_reg, tvout_base + S5P_MXR_INT_STATUS);
+		writel(temp_reg, mixer_base + S5P_MXR_INT_STATUS);
 	}
 
 	return IRQ_HANDLED;
 }
 
+int __init __s5p_mixer_probe(struct platform_device *pdev, u32 res_num)
+{
+	struct resource *res;
+	size_t	size;
+	int 	ret;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
+
+	if (res == NULL) {
+		dev_err(&pdev->dev, 
+			"failed to get memory region resource\n");
+		ret = -ENOENT;
+		
+	}
+
+	size = (res->end - res->start) + 1;
+
+	mixer_mem = request_mem_region(res->start, size, pdev->name);
+
+	if (mixer_mem == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to get memory region\n");
+		ret = -ENOENT;
+		
+	}
+
+	mixer_base = ioremap(res->start, size);
+
+	if (mixer_base == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to ioremap address region\n");
+		ret = -ENOENT;
+		
+
+	}
+	return ret;
+
+}
+
+int __init __s5p_mixer_release(struct platform_device *pdev)
+{
+	iounmap(mixer_base);
+
+	/* remove memory region */
+	if (mixer_mem != NULL) {
+		if (release_resource(mixer_mem))
+			dev_err(&pdev->dev,
+				"Can't remove tvout drv !!\n");
+
+		kfree(mixer_mem);
+
+		mixer_mem = NULL;
+	}
+
+	return 0;
+}

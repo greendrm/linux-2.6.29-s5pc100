@@ -11,6 +11,7 @@
 */
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/platform_device.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -31,6 +32,9 @@
 #else
 #define SDPRINTK(fmt, args...)
 #endif
+
+static struct resource	*sdout_mem;
+void __iomem		*sdout_base;
 
 /*
 * initialization  - iniization functions are only called under stopping SDOUT
@@ -113,9 +117,9 @@ s5p_tv_sd_err __s5p_sdout_init_video_scale_cfg(s5p_sd_level component_level,
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_SCALE);
+	writel(temp_reg, sdout_base + S5P_SDO_SCALE);
 
-	SDPRINTK("0x%08x)\n\r", readl(tvout_base + S5P_SDO_SCALE));
+	SDPRINTK("0x%08x)\n\r", readl(sdout_base + S5P_SDO_SCALE));
 
 	return SDOUT_NO_ERROR;
 }
@@ -127,15 +131,15 @@ s5p_tv_sd_err __s5p_sdout_init_sync_signal_pin(s5p_sd_sync_sig_pin pin)
 	switch (pin) {
 
 	case SDOUT_SYNC_SIG_NO:
-		writel(SDO_COMPONENT_SYNC_ABSENT, tvout_base + S5P_SDO_SYNC);
+		writel(SDO_COMPONENT_SYNC_ABSENT, sdout_base + S5P_SDO_SYNC);
 		break;
 
 	case SDOUT_SYNC_SIG_YG:
-		writel(SDO_COMPONENT_SYNC_YG, tvout_base + S5P_SDO_SYNC);
+		writel(SDO_COMPONENT_SYNC_YG, sdout_base + S5P_SDO_SYNC);
 		break;
 
 	case SDOUT_SYNC_SIG_ALL:
-		writel(SDO_COMPONENT_SYNC_ALL, tvout_base + S5P_SDO_SYNC);
+		writel(SDO_COMPONENT_SYNC_ALL, sdout_base + S5P_SDO_SYNC);
 		break;
 
 	default:
@@ -144,7 +148,7 @@ s5p_tv_sd_err __s5p_sdout_init_sync_signal_pin(s5p_sd_sync_sig_pin pin)
 		break;
 	}
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_SYNC));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_SYNC));
 
 	return SDOUT_NO_ERROR;
 }
@@ -302,9 +306,9 @@ s5p_tv_sd_err __s5p_sdout_init_vbi(bool wss_cvbs,
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_VBI);
+	writel(temp_reg, sdout_base + S5P_SDO_VBI);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_VBI));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_VBI));
 
 	return SDOUT_NO_ERROR;
 }
@@ -319,20 +323,20 @@ s5p_tv_sd_err __s5p_sdout_init_offset_gain(s5p_sd_channel_sel channel,
 
 	case SDOUT_CHANNEL_0:
 		writel(SDO_SCALE_CONV_OFFSET(offset) | SDO_SCALE_CONV_GAIN(gain),
-		       tvout_base + S5P_SDO_SCALE_CH0);
-		SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_SCALE_CH0));
+		       sdout_base + S5P_SDO_SCALE_CH0);
+		SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_SCALE_CH0));
 		break;
 
 	case SDOUT_CHANNEL_1:
 		writel(SDO_SCALE_CONV_OFFSET(offset) | SDO_SCALE_CONV_GAIN(gain),
-		       tvout_base + S5P_SDO_SCALE_CH1);
-		SDPRINTK(" 0x%08x\n\r", readl(tvout_base + S5P_SDO_SCALE_CH1));
+		       sdout_base + S5P_SDO_SCALE_CH1);
+		SDPRINTK(" 0x%08x\n\r", readl(sdout_base + S5P_SDO_SCALE_CH1));
 		break;
 
 	case SDOUT_CHANNEL_2:
 		writel(SDO_SCALE_CONV_OFFSET(offset) | SDO_SCALE_CONV_GAIN(gain),
-		       tvout_base + S5P_SDO_SCALE_CH2);
-		SDPRINTK(" 0x%08x\n\r", readl(tvout_base + S5P_SDO_SCALE_CH2));
+		       sdout_base + S5P_SDO_SCALE_CH2);
+		SDPRINTK(" 0x%08x\n\r", readl(sdout_base + S5P_SDO_SCALE_CH2));
 		break;
 
 	default:
@@ -351,9 +355,9 @@ void __s5p_sdout_init_delay(u32 delay_y,
 	SDPRINTK("%d,%d,%d\n\r", delay_y, offset_video_start, offset_video_end);
 
 	writel(SDO_DELAY_YTOC(delay_y) | SDO_ACTIVE_START_OFFSET(offset_video_start) |
-	       SDO_ACTIVE_END_OFFSET(offset_video_end),	tvout_base + S5P_SDO_YCDELAY);
+	       SDO_ACTIVE_END_OFFSET(offset_video_end),	sdout_base + S5P_SDO_YCDELAY);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_YCDELAY));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_YCDELAY));
 }
 
 void __s5p_sdout_init_schlock(bool color_sucarrier_pha_adj)
@@ -361,12 +365,12 @@ void __s5p_sdout_init_schlock(bool color_sucarrier_pha_adj)
 	SDPRINTK("%d\n\r", color_sucarrier_pha_adj);
 
 	if (color_sucarrier_pha_adj) {
-		writel(SDO_COLOR_SC_PHASE_ADJ, tvout_base + S5P_SDO_SCHLOCK);
+		writel(SDO_COLOR_SC_PHASE_ADJ, sdout_base + S5P_SDO_SCHLOCK);
 	} else {
-		writel(SDO_COLOR_SC_PHASE_NOADJ, tvout_base + S5P_SDO_SCHLOCK);
+		writel(SDO_COLOR_SC_PHASE_NOADJ, sdout_base + S5P_SDO_SCHLOCK);
 	}
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_SCHLOCK));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_SCHLOCK));
 }
 
 s5p_tv_sd_err __s5p_sdout_init_dac_power_onoff(s5p_sd_channel_sel channel,bool dac_on)
@@ -396,14 +400,14 @@ s5p_tv_sd_err __s5p_sdout_init_dac_power_onoff(s5p_sd_channel_sel channel,bool d
 	}
 
 	if (dac_on) {
-		writel(readl(tvout_base + S5P_SDO_DAC) | temp_on_off, 
-			tvout_base + S5P_SDO_DAC);
+		writel(readl(sdout_base + S5P_SDO_DAC) | temp_on_off, 
+			sdout_base + S5P_SDO_DAC);
 	} else {
-		writel(readl(tvout_base + S5P_SDO_DAC) & ~temp_on_off, 
-			tvout_base + S5P_SDO_DAC);
+		writel(readl(sdout_base + S5P_SDO_DAC) & ~temp_on_off, 
+			sdout_base + S5P_SDO_DAC);
 	}
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_DAC));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_DAC));
 
 	return SDOUT_NO_ERROR;
 }
@@ -418,166 +422,166 @@ s5p_tv_sd_err __s5p_sdout_init_macrovision(s5p_sd_macrovision_val macro,
 
 	case SDOUT_MV_OFF:
 		/* Off */
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLINE_SPACING);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_STRIPES_NUMBER);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_STRIPES_THICKNESS);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_PSP_DURATION);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_PSP_FIRST);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_PSP_SPACING);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BACK_PORCH);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_ON);                        
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLINE_SPACING);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_STRIPES_NUMBER);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_STRIPES_THICKNESS);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_PSP_DURATION);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_PSP_FIRST);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_PSP_SPACING);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BACK_PORCH);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_ON);                        
 		break;
 
 	case SDOUT_MV_NTSC_AGC_ONLY:
 		/* NTSC : AGC Only */
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_DURATION);
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_FIRST);
-		writel(0x00000024,  tvout_base + S5P_SDO_MV_PSP_SPACING);
-		writel(0x000007f8,  tvout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_DURATION);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_FIRST);
+		writel(0x00000024,  sdout_base + S5P_SDO_MV_PSP_SPACING);
+		writel(0x000007f8,  sdout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
 		/* <<<@: R130XEU-xxx.Dongwoo Kim 060325: N13 and N14 should be 1E for PAL60 */
 
 		if (disp_mode == TVOUT_PAL_60) {
-			writel(0x0000001e,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
-			writel(0x0000001e,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+			writel(0x0000001e,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+			writel(0x0000001e,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
 		} else {
-			writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
-			writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+			writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+			writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
 		}
 
 		/* >>>@: R130XEU-xxx.Dongwoo Kim 060325: N13 and N14 should be 1E for PAL60 */
-		writel(0x00000060,  tvout_base + S5P_SDO_MV_BACK_PORCH);
+		writel(0x00000060,  sdout_base + S5P_SDO_MV_BACK_PORCH);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
 
-		writel(0x00000036,  tvout_base + S5P_SDO_MV_ON);                        
+		writel(0x00000036,  sdout_base + S5P_SDO_MV_ON);                        
 
 		break;
 
 	case SDOUT_MV_NTSC_AGC_2L:
 		/* NTSC : AGC + 2Line */
 		/* NTSC : AGC Split */
-		writel(0x0000001d,  tvout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
+		writel(0x0000001d,  sdout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
 
-		writel(0x00000011,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
+		writel(0x00000011,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
 
-		writel(0x00000025,  tvout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
+		writel(0x00000025,  sdout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
 
-		writel(0x00000011,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
+		writel(0x00000011,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_SLINE_SPACING);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_SLINE_SPACING);
 
-		writel(0x00000007,  tvout_base + S5P_SDO_MV_STRIPES_NUMBER);
+		writel(0x00000007,  sdout_base + S5P_SDO_MV_STRIPES_NUMBER);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_STRIPES_THICKNESS);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_STRIPES_THICKNESS);
 
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_DURATION);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_DURATION);
 
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_FIRST);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_FIRST);
 
-		writel(0x00000024,  tvout_base + S5P_SDO_MV_PSP_SPACING);
+		writel(0x00000024,  sdout_base + S5P_SDO_MV_PSP_SPACING);
 
-		writel(0x000007f8,  tvout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
+		writel(0x000007f8,  sdout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
 
-		writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+		writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
 
-		writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+		writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
 
-		writel(0x00000060,  tvout_base + S5P_SDO_MV_BACK_PORCH);
+		writel(0x00000060,  sdout_base + S5P_SDO_MV_BACK_PORCH);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
-
-		// _USE_5001_MACROVISION
-		writel(0x0000000a + 2,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
-
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
 
 		// _USE_5001_MACROVISION
-		writel(0x00000005 + 1,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
+		writel(0x0000000a + 2,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
 
-		writel(0x00000004,  tvout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
 
-		writel(0x000003ff,  tvout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
+		// _USE_5001_MACROVISION
+		writel(0x00000005 + 1,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_RGB_PROTECTION_ON);        
+		writel(0x00000004,  sdout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x000003ff,  sdout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
 
-		writel(0x0000003e,             tvout_base + S5P_SDO_MV_ON);                
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_RGB_PROTECTION_ON);        
+
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+
+		writel(0x0000003e,             sdout_base + S5P_SDO_MV_ON);                
 
 		break;
 
 	case SDOUT_MV_NTSC_AGC_4L:
 		/* NTSC : AGC + 4Line */
-		writel(0x00000017,  tvout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
+		writel(0x00000017,  sdout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
 
-		writel(0x00000015,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
+		writel(0x00000015,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
 
-		writel(0x00000021,  tvout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
+		writel(0x00000021,  sdout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
 
-		writel(0x00000015,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
+		writel(0x00000015,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
 
-		writel(0x00000005,  tvout_base + S5P_SDO_MV_SLINE_SPACING);
+		writel(0x00000005,  sdout_base + S5P_SDO_MV_SLINE_SPACING);
 
-		writel(0x00000005,  tvout_base + S5P_SDO_MV_STRIPES_NUMBER);
+		writel(0x00000005,  sdout_base + S5P_SDO_MV_STRIPES_NUMBER);
 
-		writel(0x00000002,  tvout_base + S5P_SDO_MV_STRIPES_THICKNESS);
+		writel(0x00000002,  sdout_base + S5P_SDO_MV_STRIPES_THICKNESS);
 
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_DURATION);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_DURATION);
 
-		writel(0x0000001B,  tvout_base + S5P_SDO_MV_PSP_FIRST);
+		writel(0x0000001B,  sdout_base + S5P_SDO_MV_PSP_FIRST);
 
-		writel(0x00000024,  tvout_base + S5P_SDO_MV_PSP_SPACING);
+		writel(0x00000024,  sdout_base + S5P_SDO_MV_PSP_SPACING);
 
-		writel(0x000007f8,  tvout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
+		writel(0x000007f8,  sdout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
 
-		writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+		writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
 
-		writel(0x0000000f,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+		writel(0x0000000f,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
 
-		writel(0x00000060,  tvout_base + S5P_SDO_MV_BACK_PORCH);
+		writel(0x00000060,  sdout_base + S5P_SDO_MV_BACK_PORCH);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
 
 		//_USE_5001_MACROVISION
-		writel(0x0000000a + 2,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
+		writel(0x0000000a + 2,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
 
 		// _USE_5001_MACROVISION
-		writel(0x00000005 + 1,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
+		writel(0x00000005 + 1,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
 
-		writel(0x00000004,  tvout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
+		writel(0x00000004,  sdout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
 
-		writel(0x000003ff,  tvout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
+		writel(0x000003ff,  sdout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_RGB_PROTECTION_ON);         
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_RGB_PROTECTION_ON);         
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
 
-		writel(0x0000003e,  tvout_base + S5P_SDO_MV_ON);                
+		writel(0x0000003e,  sdout_base + S5P_SDO_MV_ON);                
 
 		break;
 
@@ -586,53 +590,53 @@ s5p_tv_sd_err __s5p_sdout_init_macrovision(s5p_sd_macrovision_val macro,
 	case SDOUT_MV_PAL_AGC_2L:
 
 	case SDOUT_MV_PAL_AGC_4L:
-		writel(0x0000001a,  tvout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
+		writel(0x0000001a,  sdout_base + S5P_SDO_MV_SLINE_FIRST_EVEN);
 
-		writel(0x00000022,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
+		writel(0x00000022,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_EVEN);
 
-		writel(0x0000002a,  tvout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
+		writel(0x0000002a,  sdout_base + S5P_SDO_MV_SLINE_FIRST_ODD);
 
-		writel(0x00000022,  tvout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
+		writel(0x00000022,  sdout_base + S5P_SDO_MV_SLINE_FIRST_SPACE_ODD);
 
-		writel(0x00000005,  tvout_base + S5P_SDO_MV_SLINE_SPACING);
+		writel(0x00000005,  sdout_base + S5P_SDO_MV_SLINE_SPACING);
 
-		writel(0x00000002,  tvout_base + S5P_SDO_MV_STRIPES_NUMBER);
+		writel(0x00000002,  sdout_base + S5P_SDO_MV_STRIPES_NUMBER);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_STRIPES_THICKNESS);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_STRIPES_THICKNESS);
 
-		writel(0x0000001c,  tvout_base + S5P_SDO_MV_PSP_DURATION);
+		writel(0x0000001c,  sdout_base + S5P_SDO_MV_PSP_DURATION);
 
-		writel(0x0000003d,  tvout_base + S5P_SDO_MV_PSP_FIRST);
+		writel(0x0000003d,  sdout_base + S5P_SDO_MV_PSP_FIRST);
 
-		writel(0x00000014,  tvout_base + S5P_SDO_MV_PSP_SPACING);
+		writel(0x00000014,  sdout_base + S5P_SDO_MV_PSP_SPACING);
 
-		writel(0x000003fe,  tvout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
+		writel(0x000003fe,  sdout_base + S5P_SDO_MV_SEL_LINE_PSP_AGC);
 
-		writel(0x00000154,  tvout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
+		writel(0x00000154,  sdout_base + S5P_SDO_MV_SEL_FORMAT_PSP_AGC);
 
-		writel(0x000000fe,  tvout_base + S5P_SDO_MV_PSP_AGC_A_ON);
+		writel(0x000000fe,  sdout_base + S5P_SDO_MV_PSP_AGC_A_ON);
 
-		writel(0x0000007e,  tvout_base + S5P_SDO_MV_PSP_AGC_B_ON);
+		writel(0x0000007e,  sdout_base + S5P_SDO_MV_PSP_AGC_B_ON);
 
-		writel(0x00000060,  tvout_base + S5P_SDO_MV_BACK_PORCH);
+		writel(0x00000060,  sdout_base + S5P_SDO_MV_BACK_PORCH);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_ADVANCED_ON);
 
-		writel(0x00000008 + 2,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
+		writel(0x00000008 + 2,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE1);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE2);
 
-		writel(0x00000004 + 1,  tvout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
+		writel(0x00000004 + 1,  sdout_base + S5P_SDO_MV_BURST_DURATION_ZONE3);
 
-		writel(0x00000007,  tvout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
+		writel(0x00000007,  sdout_base + S5P_SDO_MV_BURST_PHASE_ZONE);
 
-		writel(0x00000155,  tvout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
+		writel(0x00000155,  sdout_base + S5P_SDO_MV_SLICE_PHASE_LINE);
 
-		writel(0x00000000,  tvout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
+		writel(0x00000000,  sdout_base + S5P_SDO_MV_RGB_PROTECTION_ON);
 
-		writel(0x00000001,  tvout_base + S5P_SDO_MV_480P_PROTECTION_ON);
+		writel(0x00000001,  sdout_base + S5P_SDO_MV_480P_PROTECTION_ON);
 
-		writel(0x00000036,  tvout_base + S5P_SDO_MV_ON);
+		writel(0x00000036,  sdout_base + S5P_SDO_MV_ON);
 
 		break;
 
@@ -691,9 +695,9 @@ void __s5p_sdout_init_color_compensaton_onoff(bool bright_hue_saturation_adj,
 		temp_reg |= SDO_COMPONENT_CVBS_COMP_OFF;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_CCCON);
+	writel(temp_reg, sdout_base + S5P_SDO_CCCON);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_CCCON));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_CCCON));
 }
 
 void __s5p_sdout_init_brightness_hue_saturation(u32 gain_brightness,
@@ -713,25 +717,25 @@ void __s5p_sdout_init_brightness_hue_saturation(u32 gain_brightness,
 
 	writel(SDO_BRIGHTNESS_GAIN(gain_brightness) | 
 		SDO_BRIGHTNESS_OFFSET(offset_brightness),
-		tvout_base + S5P_SDO_YSCALE);
+		sdout_base + S5P_SDO_YSCALE);
 	
 	writel(SDO_HS_CB_GAIN0(gain0_cb_hue_saturation) | 
 		SDO_HS_CB_GAIN1(gain1_cb_hue_saturation),
-		tvout_base + S5P_SDO_CBSCALE);
+		sdout_base + S5P_SDO_CBSCALE);
 	
 	writel(SDO_HS_CR_GAIN0(gain0_cr_hue_saturation) |
 		SDO_HS_CR_GAIN1(gain1_cr_hue_saturation),
-		tvout_base + S5P_SDO_CRSCALE);
+		sdout_base + S5P_SDO_CRSCALE);
 	
 	writel(SDO_HS_CR_OFFSET(offset_cr_hue_saturation) | 
 		SDO_HS_CB_OFFSET(offset_cb_hue_saturation),
-		tvout_base + S5P_SDO_CB_CR_OFFSET);
+		sdout_base + S5P_SDO_CB_CR_OFFSET);
 
 	SDPRINTK("0x%08x,0x%08x,0x%08x,0x%08x)\n\r", 
-		readl(tvout_base + S5P_SDO_YSCALE), 
-		readl(tvout_base + S5P_SDO_CBSCALE),
-		readl(tvout_base + S5P_SDO_CRSCALE), 
-		readl(tvout_base + S5P_SDO_CB_CR_OFFSET));
+		readl(sdout_base + S5P_SDO_YSCALE), 
+		readl(sdout_base + S5P_SDO_CBSCALE),
+		readl(sdout_base + S5P_SDO_CRSCALE), 
+		readl(sdout_base + S5P_SDO_CB_CR_OFFSET));
 }
 
 void	__s5p_sdout_init_rgb_color_compensation(u32 max_rgbcube,
@@ -740,9 +744,9 @@ void	__s5p_sdout_init_rgb_color_compensation(u32 max_rgbcube,
 	SDPRINTK("0x%08x,0x%08x\n\r", max_rgbcube, min_rgbcube);
 
 	writel(SDO_MAX_RGB_CUBE(max_rgbcube) | SDO_MIN_RGB_CUBE(min_rgbcube),
-	       tvout_base + S5P_SDO_RGB_CC);
+	       sdout_base + S5P_SDO_RGB_CC);
 
-	SDPRINTK("0x%08x)\n\r", readl(tvout_base + S5P_SDO_RGB_CC));
+	SDPRINTK("0x%08x)\n\r", readl(sdout_base + S5P_SDO_RGB_CC));
 }
 
 void __s5p_sdout_init_cvbs_color_compensation(u32 y_lower_mid,
@@ -754,15 +758,15 @@ void __s5p_sdout_init_cvbs_color_compensation(u32 y_lower_mid,
 	SDPRINTK("%d,%d,%d,%d,%d\n\r", y_lower_mid, y_bottom, y_top, y_upper_mid, radius);
 
 	writel(SDO_Y_LOWER_MID_CVBS_CORN(y_lower_mid) | SDO_Y_BOTTOM_CVBS_CORN(y_bottom),
-	       tvout_base + S5P_SDO_CVBS_CC_Y1);
+	       sdout_base + S5P_SDO_CVBS_CC_Y1);
 	writel(SDO_Y_TOP_CVBS_CORN(y_top) | SDO_Y_UPPER_MID_CVBS_CORN(y_upper_mid),
-	       tvout_base + S5P_SDO_CVBS_CC_Y2);
-	writel(SDO_RADIUS_CVBS_CORN(radius), tvout_base + S5P_SDO_CVBS_CC_C);
+	       sdout_base + S5P_SDO_CVBS_CC_Y2);
+	writel(SDO_RADIUS_CVBS_CORN(radius), sdout_base + S5P_SDO_CVBS_CC_C);
 
 	SDPRINTK("0x%08x,0x%08x,0x%08x)\n\r", 
-		readl(tvout_base + S5P_SDO_CVBS_CC_Y1),
-		readl(tvout_base + S5P_SDO_CVBS_CC_Y2), 
-		readl(tvout_base + S5P_SDO_CVBS_CC_C));
+		readl(sdout_base + S5P_SDO_CVBS_CC_Y1),
+		readl(sdout_base + S5P_SDO_CVBS_CC_Y2), 
+		readl(sdout_base + S5P_SDO_CVBS_CC_C));
 }
 
 void __s5p_sdout_init_svideo_color_compensation(u32 y_top,
@@ -772,11 +776,11 @@ void __s5p_sdout_init_svideo_color_compensation(u32 y_top,
 	SDPRINTK(" %d,%d,%d)\n\r", y_top, y_bottom, y_c_cylinder);
 
 	writel(SDO_Y_TOP_YC_CYLINDER(y_top) | SDO_Y_BOTOM_YC_CYLINDER(y_bottom),
-	       tvout_base + S5P_SDO_YC_CC_Y);
-	writel(SDO_RADIUS_YC_CYLINDER(y_c_cylinder), tvout_base + S5P_SDO_YC_CC_C);
+	       sdout_base + S5P_SDO_YC_CC_Y);
+	writel(SDO_RADIUS_YC_CYLINDER(y_c_cylinder), sdout_base + S5P_SDO_YC_CC_C);
 
-	SDPRINTK("0x%08x,0x%08x)\n\r", readl(tvout_base + S5P_SDO_YC_CC_Y), 
-		readl(tvout_base + S5P_SDO_YC_CC_C));
+	SDPRINTK("0x%08x,0x%08x)\n\r", readl(sdout_base + S5P_SDO_YC_CC_Y), 
+		readl(sdout_base + S5P_SDO_YC_CC_C));
 }
 
 void __s5p_sdout_init_component_porch(u32 back_525,
@@ -787,12 +791,12 @@ void __s5p_sdout_init_component_porch(u32 back_525,
 	SDPRINTK(" %d,%d,%d,%d)\n\r", back_525, front_525, back_625, front_625);
 
 	writel(SDO_COMPONENT_525_BP(back_525) | SDO_COMPONENT_525_FP(front_525),
-	       tvout_base + S5P_SDO_CSC_525_PORCH);
+	       sdout_base + S5P_SDO_CSC_525_PORCH);
 	writel(SDO_COMPONENT_625_BP(back_625) | SDO_COMPONENT_625_FP(front_625),
-	       tvout_base + S5P_SDO_CSC_625_PORCH);
+	       sdout_base + S5P_SDO_CSC_625_PORCH);
 
-	SDPRINTK(" 0x%08x,0x%08x)\n\r", readl(tvout_base + S5P_SDO_CSC_525_PORCH), 
-		readl(tvout_base + S5P_SDO_CSC_625_PORCH));
+	SDPRINTK(" 0x%08x,0x%08x)\n\r", readl(sdout_base + S5P_SDO_CSC_525_PORCH), 
+		readl(sdout_base + S5P_SDO_CSC_625_PORCH));
 }
 
 s5p_tv_sd_err __s5p_sdout_init_vesa_rgb_sync(s5p_sd_vesa_rgb_sync_type sync_type,
@@ -851,9 +855,9 @@ s5p_tv_sd_err __s5p_sdout_init_vesa_rgb_sync(s5p_sd_vesa_rgb_sync_type sync_type
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_RGBSYNC);
+	writel(temp_reg, sdout_base + S5P_SDO_RGBSYNC);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_RGBSYNC));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_RGBSYNC));
 
 	return SDOUT_NO_ERROR;
 }
@@ -869,17 +873,17 @@ void __s5p_sdout_init_oversampling_filter_coeff(u32 size,
 		(u32)coeff2);
 
 	if (coeff != NULL) {
-		temp_reg = (u32*)readl(tvout_base + S5P_SDO_OSFC00_0);
+		temp_reg = (u32*)readl(sdout_base + S5P_SDO_OSFC00_0);
 		memcpy((void *)temp_reg, (const void *)coeff, size*4);
 	}
 
 	if (coeff1 != NULL) {
-		temp_reg = (u32*)readl(tvout_base + S5P_SDO_OSFC00_1);
+		temp_reg = (u32*)readl(sdout_base + S5P_SDO_OSFC00_1);
 		memcpy((void *)temp_reg, (const void *)coeff1, size*4);
 	}
 
 	if (coeff2 != NULL) {
-		temp_reg = (u32*)readl(tvout_base + S5P_SDO_OSFC00_2);
+		temp_reg = (u32*)readl(sdout_base + S5P_SDO_OSFC00_2);
 		memcpy((void *)temp_reg, (const void *)coeff2, size*4);
 	}
 
@@ -896,20 +900,20 @@ s5p_tv_sd_err __s5p_sdout_init_ch_xtalk_cancel_coef(s5p_sd_channel_sel channel,
 
 	case SDOUT_CHANNEL_0:
 		writel(SDO_XTALK_COEF02(coeff2) | SDO_XTALK_COEF01(coeff1), 
-			tvout_base + S5P_SDO_XTALK0);
-		SDPRINTK(" 0x%08x)\n\r", readl(tvout_base + S5P_SDO_XTALK0));
+			sdout_base + S5P_SDO_XTALK0);
+		SDPRINTK(" 0x%08x)\n\r", readl(sdout_base + S5P_SDO_XTALK0));
 		break;
 
 	case SDOUT_CHANNEL_1:
 		writel(SDO_XTALK_COEF02(coeff2) | SDO_XTALK_COEF01(coeff1), 
-			tvout_base + S5P_SDO_XTALK1);
-		SDPRINTK(" 0x%08x)\n\r", readl(tvout_base + S5P_SDO_XTALK1));
+			sdout_base + S5P_SDO_XTALK1);
+		SDPRINTK(" 0x%08x)\n\r", readl(sdout_base + S5P_SDO_XTALK1));
 		break;
 
 	case SDOUT_CHANNEL_2:
 		writel(SDO_XTALK_COEF02(coeff2) | SDO_XTALK_COEF01(coeff1), 
-			tvout_base + S5P_SDO_XTALK2);
-		SDPRINTK("0x%08x)\n\r", readl(tvout_base + S5P_SDO_XTALK2));
+			sdout_base + S5P_SDO_XTALK2);
+		SDPRINTK("0x%08x)\n\r", readl(sdout_base + S5P_SDO_XTALK2));
 		break;
 
 	default:
@@ -926,9 +930,9 @@ void __s5p_sdout_init_closed_caption(u32 display_cc, u32 non_display_cc)
 	SDPRINTK("%d,%d\n\r", display_cc, non_display_cc);
 
 	writel(SDO_DISPLAY_CC_CAPTION(display_cc) | SDO_NON_DISPLAY_CC_CAPTION(non_display_cc),
-	       tvout_base + S5P_SDO_ARMCC);
+	       sdout_base + S5P_SDO_ARMCC);
 
-	SDPRINTK("0x%x\n\r", readl(tvout_base + S5P_SDO_ARMCC));
+	SDPRINTK("0x%x\n\r", readl(sdout_base + S5P_SDO_ARMCC));
 }
 
 
@@ -1068,9 +1072,9 @@ s5p_tv_sd_err __s5p_sdout_init_wss525_data(s5p_sd_525_copy_permit copy_permit,
 
 	writel(temp_reg | SDO_CRC_WSS525(__s5p_sdout_init_wss_cgms_crc(temp_reg)),
 
-	       tvout_base + S5P_SDO_WSS525);
+	       sdout_base + S5P_SDO_WSS525);
 
-	SDPRINTK("0x%08x)\n\r", readl(tvout_base + S5P_SDO_WSS525));
+	SDPRINTK("0x%08x)\n\r", readl(sdout_base + S5P_SDO_WSS525));
 
 	return SDOUT_NO_ERROR;
 }
@@ -1214,9 +1218,9 @@ s5p_tv_sd_err __s5p_sdout_init_wss625_data(bool surround_sound,
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_WSS625);
+	writel(temp_reg, sdout_base + S5P_SDO_WSS625);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_WSS625));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_WSS625));
 
 	return SDOUT_NO_ERROR;
 }
@@ -1319,9 +1323,9 @@ s5p_tv_sd_err __s5p_sdout_init_cgmsa525_data(s5p_sd_525_copy_permit copy_permit,
 
 	writel(temp_reg |	SDO_CRC_CGMS525(__s5p_sdout_init_wss_cgms_crc(temp_reg)),
 
-	       tvout_base + S5P_SDO_CGMS525);
+	       sdout_base + S5P_SDO_CGMS525);
 
-	SDPRINTK(" 0x%08x)\n\r", readl(tvout_base + S5P_SDO_CGMS525));
+	SDPRINTK(" 0x%08x)\n\r", readl(sdout_base + S5P_SDO_CGMS525));
 
 	return SDOUT_NO_ERROR;
 }
@@ -1464,9 +1468,9 @@ s5p_tv_sd_err __s5p_sdout_init_cgmsa625_data(bool surround_sound,
 		break;
 	}
 
-	writel(temp_reg, tvout_base + S5P_SDO_CGMS625);
+	writel(temp_reg, sdout_base + S5P_SDO_CGMS625);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_CGMS625));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_CGMS625));
 
 	return SDOUT_NO_ERROR;
 }
@@ -1491,38 +1495,38 @@ static s5p_tv_sd_err __s5p_sdout_init_antialias_filter_coeff_default(s5p_sd_leve
 			case TVOUT_OUTPUT_COMPOSITE:
 
 			case TVOUT_OUTPUT_SVIDEO:
-				writel(0x00000000 , tvout_base + S5P_SDO_Y3);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y4);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y5);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y6);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y7);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y8);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y9);
-				writel(0x00000000 , tvout_base + S5P_SDO_Y10);
-				writel(0x0000029a , tvout_base + S5P_SDO_Y11);
-				writel(0x00000000 , tvout_base + S5P_SDO_CB0);
-				writel(0x00000000 , tvout_base + S5P_SDO_CB1);
-				writel(0x00000000 , tvout_base + S5P_SDO_CB2);
-				writel(0x00000000 , tvout_base + S5P_SDO_CB3);
-				writel(0x00000000 , tvout_base + S5P_SDO_CB4);
-				writel(0x00000001 , tvout_base + S5P_SDO_CB5);
-				writel(0x00000007 , tvout_base + S5P_SDO_CB6);
-				writel(0x00000015 , tvout_base + S5P_SDO_CB7);
-				writel(0x0000002b , tvout_base + S5P_SDO_CB8);
-				writel(0x00000045 , tvout_base + S5P_SDO_CB9);
-				writel(0x00000059 , tvout_base + S5P_SDO_CB10);
-				writel(0x00000061 , tvout_base + S5P_SDO_CB11);
-				writel(0x00000000 , tvout_base + S5P_SDO_CR1);
-				writel(0x00000000 , tvout_base + S5P_SDO_CR2);
-				writel(0x00000000 , tvout_base + S5P_SDO_CR3);
-				writel(0x00000000 , tvout_base + S5P_SDO_CR4);
-				writel(0x00000002 , tvout_base + S5P_SDO_CR5);
-				writel(0x0000000a , tvout_base + S5P_SDO_CR6);
-				writel(0x0000001e , tvout_base + S5P_SDO_CR7);
-				writel(0x0000003d , tvout_base + S5P_SDO_CR8);
-				writel(0x00000061 , tvout_base + S5P_SDO_CR9);
-				writel(0x0000007a , tvout_base + S5P_SDO_CR10);
-				writel(0x0000008f , tvout_base + S5P_SDO_CR11);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y3);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y4);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y5);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y6);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y7);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y8);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y9);
+				writel(0x00000000 , sdout_base + S5P_SDO_Y10);
+				writel(0x0000029a , sdout_base + S5P_SDO_Y11);
+				writel(0x00000000 , sdout_base + S5P_SDO_CB0);
+				writel(0x00000000 , sdout_base + S5P_SDO_CB1);
+				writel(0x00000000 , sdout_base + S5P_SDO_CB2);
+				writel(0x00000000 , sdout_base + S5P_SDO_CB3);
+				writel(0x00000000 , sdout_base + S5P_SDO_CB4);
+				writel(0x00000001 , sdout_base + S5P_SDO_CB5);
+				writel(0x00000007 , sdout_base + S5P_SDO_CB6);
+				writel(0x00000015 , sdout_base + S5P_SDO_CB7);
+				writel(0x0000002b , sdout_base + S5P_SDO_CB8);
+				writel(0x00000045 , sdout_base + S5P_SDO_CB9);
+				writel(0x00000059 , sdout_base + S5P_SDO_CB10);
+				writel(0x00000061 , sdout_base + S5P_SDO_CB11);
+				writel(0x00000000 , sdout_base + S5P_SDO_CR1);
+				writel(0x00000000 , sdout_base + S5P_SDO_CR2);
+				writel(0x00000000 , sdout_base + S5P_SDO_CR3);
+				writel(0x00000000 , sdout_base + S5P_SDO_CR4);
+				writel(0x00000002 , sdout_base + S5P_SDO_CR5);
+				writel(0x0000000a , sdout_base + S5P_SDO_CR6);
+				writel(0x0000001e , sdout_base + S5P_SDO_CR7);
+				writel(0x0000003d , sdout_base + S5P_SDO_CR8);
+				writel(0x00000061 , sdout_base + S5P_SDO_CR9);
+				writel(0x0000007a , sdout_base + S5P_SDO_CR10);
+				writel(0x0000008f , sdout_base + S5P_SDO_CR11);
 				break;
 
 			case TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED:
@@ -1530,41 +1534,41 @@ static s5p_tv_sd_err __s5p_sdout_init_antialias_filter_coeff_default(s5p_sd_leve
 			case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
 
 			case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
-				writel(0x00000000, tvout_base + S5P_SDO_Y0);
-				writel(0x00000000, tvout_base + S5P_SDO_Y1);
-				writel(0x00000000, tvout_base + S5P_SDO_Y2);
-				writel(0x00000000, tvout_base + S5P_SDO_Y3);
-				writel(0x00000000, tvout_base + S5P_SDO_Y4);
-				writel(0x00000000, tvout_base + S5P_SDO_Y5);
-				writel(0x00000000, tvout_base + S5P_SDO_Y6);
-				writel(0x00000000, tvout_base + S5P_SDO_Y7);
-				writel(0x00000000, tvout_base + S5P_SDO_Y8);
-				writel(0x00000000, tvout_base + S5P_SDO_Y9);
-				writel(0x00000000, tvout_base + S5P_SDO_Y10);
-				writel(0x0000029a, tvout_base + S5P_SDO_Y11);
-				writel(0x00000000, tvout_base + S5P_SDO_CB0);
-				writel(0x00000000, tvout_base + S5P_SDO_CB1);
-				writel(0x00000000, tvout_base + S5P_SDO_CB2);
-				writel(0x00000000, tvout_base + S5P_SDO_CB3);
-				writel(0x00000000, tvout_base + S5P_SDO_CB4);
-				writel(0x00000001, tvout_base + S5P_SDO_CB5);
-				writel(0x00000007, tvout_base + S5P_SDO_CB6);
-				writel(0x00000015, tvout_base + S5P_SDO_CB7);
-				writel(0x0000002b, tvout_base + S5P_SDO_CB8);
-				writel(0x00000045, tvout_base + S5P_SDO_CB9);
-				writel(0x00000059, tvout_base + S5P_SDO_CB10);
-				writel(0x00000061, tvout_base + S5P_SDO_CB11);
-				writel(0x00000000, tvout_base + S5P_SDO_CR1);
-				writel(0x00000000, tvout_base + S5P_SDO_CR2);
-				writel(0x00000000, tvout_base + S5P_SDO_CR3);
-				writel(0x00000000, tvout_base + S5P_SDO_CR4);
-				writel(0x00000002, tvout_base + S5P_SDO_CR5);
-				writel(0x0000000a, tvout_base + S5P_SDO_CR6);
-				writel(0x0000001e, tvout_base + S5P_SDO_CR7);
-				writel(0x0000003d, tvout_base + S5P_SDO_CR8);
-				writel(0x00000061, tvout_base + S5P_SDO_CR9);
-				writel(0x0000007a, tvout_base + S5P_SDO_CR10);
-				writel(0x0000008f, tvout_base + S5P_SDO_CR11);
+				writel(0x00000000, sdout_base + S5P_SDO_Y0);
+				writel(0x00000000, sdout_base + S5P_SDO_Y1);
+				writel(0x00000000, sdout_base + S5P_SDO_Y2);
+				writel(0x00000000, sdout_base + S5P_SDO_Y3);
+				writel(0x00000000, sdout_base + S5P_SDO_Y4);
+				writel(0x00000000, sdout_base + S5P_SDO_Y5);
+				writel(0x00000000, sdout_base + S5P_SDO_Y6);
+				writel(0x00000000, sdout_base + S5P_SDO_Y7);
+				writel(0x00000000, sdout_base + S5P_SDO_Y8);
+				writel(0x00000000, sdout_base + S5P_SDO_Y9);
+				writel(0x00000000, sdout_base + S5P_SDO_Y10);
+				writel(0x0000029a, sdout_base + S5P_SDO_Y11);
+				writel(0x00000000, sdout_base + S5P_SDO_CB0);
+				writel(0x00000000, sdout_base + S5P_SDO_CB1);
+				writel(0x00000000, sdout_base + S5P_SDO_CB2);
+				writel(0x00000000, sdout_base + S5P_SDO_CB3);
+				writel(0x00000000, sdout_base + S5P_SDO_CB4);
+				writel(0x00000001, sdout_base + S5P_SDO_CB5);
+				writel(0x00000007, sdout_base + S5P_SDO_CB6);
+				writel(0x00000015, sdout_base + S5P_SDO_CB7);
+				writel(0x0000002b, sdout_base + S5P_SDO_CB8);
+				writel(0x00000045, sdout_base + S5P_SDO_CB9);
+				writel(0x00000059, sdout_base + S5P_SDO_CB10);
+				writel(0x00000061, sdout_base + S5P_SDO_CB11);
+				writel(0x00000000, sdout_base + S5P_SDO_CR1);
+				writel(0x00000000, sdout_base + S5P_SDO_CR2);
+				writel(0x00000000, sdout_base + S5P_SDO_CR3);
+				writel(0x00000000, sdout_base + S5P_SDO_CR4);
+				writel(0x00000002, sdout_base + S5P_SDO_CR5);
+				writel(0x0000000a, sdout_base + S5P_SDO_CR6);
+				writel(0x0000001e, sdout_base + S5P_SDO_CR7);
+				writel(0x0000003d, sdout_base + S5P_SDO_CR8);
+				writel(0x00000061, sdout_base + S5P_SDO_CR9);
+				writel(0x0000007a, sdout_base + S5P_SDO_CR10);
+				writel(0x0000008f, sdout_base + S5P_SDO_CR11);
 				break;
 
 			default:
@@ -1576,41 +1580,41 @@ static s5p_tv_sd_err __s5p_sdout_init_antialias_filter_coeff_default(s5p_sd_leve
 			break;
 
 		case SDOUT_VTOS_RATIO_7_3:
-			writel(0x00000000, tvout_base + S5P_SDO_Y0);
-			writel(0x00000000, tvout_base + S5P_SDO_Y1);
-			writel(0x00000000, tvout_base + S5P_SDO_Y2);
-			writel(0x00000000, tvout_base + S5P_SDO_Y3);
-			writel(0x00000000, tvout_base + S5P_SDO_Y4);
-			writel(0x00000000, tvout_base + S5P_SDO_Y5);
-			writel(0x00000000, tvout_base + S5P_SDO_Y6);
-			writel(0x00000000, tvout_base + S5P_SDO_Y7);
-			writel(0x00000000, tvout_base + S5P_SDO_Y8);
-			writel(0x00000000, tvout_base + S5P_SDO_Y9);
-			writel(0x00000000, tvout_base + S5P_SDO_Y10);
-			writel(0x00000281, tvout_base + S5P_SDO_Y11);
-			writel(0x00000000, tvout_base + S5P_SDO_CB0);
-			writel(0x00000000, tvout_base + S5P_SDO_CB1);
-			writel(0x00000000, tvout_base + S5P_SDO_CB2);
-			writel(0x00000000, tvout_base + S5P_SDO_CB3);
-			writel(0x00000000, tvout_base + S5P_SDO_CB4);
-			writel(0x00000001, tvout_base + S5P_SDO_CB5);
-			writel(0x00000007, tvout_base + S5P_SDO_CB6);
-			writel(0x00000015, tvout_base + S5P_SDO_CB7);
-			writel(0x0000002a, tvout_base + S5P_SDO_CB8);
-			writel(0x00000044, tvout_base + S5P_SDO_CB9);
-			writel(0x00000057, tvout_base + S5P_SDO_CB10);
-			writel(0x0000005f, tvout_base + S5P_SDO_CB11);
-			writel(0x00000000, tvout_base + S5P_SDO_CR1);
-			writel(0x00000000, tvout_base + S5P_SDO_CR2);
-			writel(0x00000000, tvout_base + S5P_SDO_CR3);
-			writel(0x00000000, tvout_base + S5P_SDO_CR4);
-			writel(0x00000002, tvout_base + S5P_SDO_CR5);
-			writel(0x0000000a, tvout_base + S5P_SDO_CR6);
-			writel(0x0000001d, tvout_base + S5P_SDO_CR7);
-			writel(0x0000003c, tvout_base + S5P_SDO_CR8);
-			writel(0x0000005f, tvout_base + S5P_SDO_CR9);
-			writel(0x0000007b, tvout_base + S5P_SDO_CR10);
-			writel(0x00000086, tvout_base + S5P_SDO_CR11);
+			writel(0x00000000, sdout_base + S5P_SDO_Y0);
+			writel(0x00000000, sdout_base + S5P_SDO_Y1);
+			writel(0x00000000, sdout_base + S5P_SDO_Y2);
+			writel(0x00000000, sdout_base + S5P_SDO_Y3);
+			writel(0x00000000, sdout_base + S5P_SDO_Y4);
+			writel(0x00000000, sdout_base + S5P_SDO_Y5);
+			writel(0x00000000, sdout_base + S5P_SDO_Y6);
+			writel(0x00000000, sdout_base + S5P_SDO_Y7);
+			writel(0x00000000, sdout_base + S5P_SDO_Y8);
+			writel(0x00000000, sdout_base + S5P_SDO_Y9);
+			writel(0x00000000, sdout_base + S5P_SDO_Y10);
+			writel(0x00000281, sdout_base + S5P_SDO_Y11);
+			writel(0x00000000, sdout_base + S5P_SDO_CB0);
+			writel(0x00000000, sdout_base + S5P_SDO_CB1);
+			writel(0x00000000, sdout_base + S5P_SDO_CB2);
+			writel(0x00000000, sdout_base + S5P_SDO_CB3);
+			writel(0x00000000, sdout_base + S5P_SDO_CB4);
+			writel(0x00000001, sdout_base + S5P_SDO_CB5);
+			writel(0x00000007, sdout_base + S5P_SDO_CB6);
+			writel(0x00000015, sdout_base + S5P_SDO_CB7);
+			writel(0x0000002a, sdout_base + S5P_SDO_CB8);
+			writel(0x00000044, sdout_base + S5P_SDO_CB9);
+			writel(0x00000057, sdout_base + S5P_SDO_CB10);
+			writel(0x0000005f, sdout_base + S5P_SDO_CB11);
+			writel(0x00000000, sdout_base + S5P_SDO_CR1);
+			writel(0x00000000, sdout_base + S5P_SDO_CR2);
+			writel(0x00000000, sdout_base + S5P_SDO_CR3);
+			writel(0x00000000, sdout_base + S5P_SDO_CR4);
+			writel(0x00000002, sdout_base + S5P_SDO_CR5);
+			writel(0x0000000a, sdout_base + S5P_SDO_CR6);
+			writel(0x0000001d, sdout_base + S5P_SDO_CR7);
+			writel(0x0000003c, sdout_base + S5P_SDO_CR8);
+			writel(0x0000005f, sdout_base + S5P_SDO_CR9);
+			writel(0x0000007b, sdout_base + S5P_SDO_CR10);
+			writel(0x00000086, sdout_base + S5P_SDO_CR11);
 			break;
 
 		default:
@@ -1626,79 +1630,79 @@ static s5p_tv_sd_err __s5p_sdout_init_antialias_filter_coeff_default(s5p_sd_leve
 		switch (composite_ratio) {
 
 		case SDOUT_VTOS_RATIO_10_4:
-			writel(0x00000000, tvout_base + S5P_SDO_Y0);
-			writel(0x00000000, tvout_base + S5P_SDO_Y1);
-			writel(0x00000000, tvout_base + S5P_SDO_Y2);
-			writel(0x00000000, tvout_base + S5P_SDO_Y3);
-			writel(0x00000000, tvout_base + S5P_SDO_Y4);
-			writel(0x00000000, tvout_base + S5P_SDO_Y5);
-			writel(0x00000000, tvout_base + S5P_SDO_Y6);
-			writel(0x00000000, tvout_base + S5P_SDO_Y7);
-			writel(0x00000000, tvout_base + S5P_SDO_Y8);
-			writel(0x00000000, tvout_base + S5P_SDO_Y9);
-			writel(0x00000000, tvout_base + S5P_SDO_Y10);
-			writel(0x0000025d, tvout_base + S5P_SDO_Y11);
-			writel(0x00000000, tvout_base + S5P_SDO_CB0);
-			writel(0x00000000, tvout_base + S5P_SDO_CB1);
-			writel(0x00000000, tvout_base + S5P_SDO_CB2);
-			writel(0x00000000, tvout_base + S5P_SDO_CB3);
-			writel(0x00000000, tvout_base + S5P_SDO_CB4);
-			writel(0x00000001, tvout_base + S5P_SDO_CB5);
-			writel(0x00000007, tvout_base + S5P_SDO_CB6);
-			writel(0x00000014, tvout_base + S5P_SDO_CB7);
-			writel(0x00000028, tvout_base + S5P_SDO_CB8);
-			writel(0x0000003f, tvout_base + S5P_SDO_CB9);
-			writel(0x00000052, tvout_base + S5P_SDO_CB10);
-			writel(0x0000005a, tvout_base + S5P_SDO_CB11);
-			writel(0x00000000, tvout_base + S5P_SDO_CR1);
-			writel(0x00000000, tvout_base + S5P_SDO_CR2);
-			writel(0x00000000, tvout_base + S5P_SDO_CR3);
-			writel(0x00000000, tvout_base + S5P_SDO_CR4);
-			writel(0x00000001, tvout_base + S5P_SDO_CR5);
-			writel(0x00000009, tvout_base + S5P_SDO_CR6);
-			writel(0x0000001c, tvout_base + S5P_SDO_CR7);
-			writel(0x00000039, tvout_base + S5P_SDO_CR8);
-			writel(0x0000005a, tvout_base + S5P_SDO_CR9);
-			writel(0x00000074, tvout_base + S5P_SDO_CR10);
-			writel(0x0000007e, tvout_base + S5P_SDO_CR11);
+			writel(0x00000000, sdout_base + S5P_SDO_Y0);
+			writel(0x00000000, sdout_base + S5P_SDO_Y1);
+			writel(0x00000000, sdout_base + S5P_SDO_Y2);
+			writel(0x00000000, sdout_base + S5P_SDO_Y3);
+			writel(0x00000000, sdout_base + S5P_SDO_Y4);
+			writel(0x00000000, sdout_base + S5P_SDO_Y5);
+			writel(0x00000000, sdout_base + S5P_SDO_Y6);
+			writel(0x00000000, sdout_base + S5P_SDO_Y7);
+			writel(0x00000000, sdout_base + S5P_SDO_Y8);
+			writel(0x00000000, sdout_base + S5P_SDO_Y9);
+			writel(0x00000000, sdout_base + S5P_SDO_Y10);
+			writel(0x0000025d, sdout_base + S5P_SDO_Y11);
+			writel(0x00000000, sdout_base + S5P_SDO_CB0);
+			writel(0x00000000, sdout_base + S5P_SDO_CB1);
+			writel(0x00000000, sdout_base + S5P_SDO_CB2);
+			writel(0x00000000, sdout_base + S5P_SDO_CB3);
+			writel(0x00000000, sdout_base + S5P_SDO_CB4);
+			writel(0x00000001, sdout_base + S5P_SDO_CB5);
+			writel(0x00000007, sdout_base + S5P_SDO_CB6);
+			writel(0x00000014, sdout_base + S5P_SDO_CB7);
+			writel(0x00000028, sdout_base + S5P_SDO_CB8);
+			writel(0x0000003f, sdout_base + S5P_SDO_CB9);
+			writel(0x00000052, sdout_base + S5P_SDO_CB10);
+			writel(0x0000005a, sdout_base + S5P_SDO_CB11);
+			writel(0x00000000, sdout_base + S5P_SDO_CR1);
+			writel(0x00000000, sdout_base + S5P_SDO_CR2);
+			writel(0x00000000, sdout_base + S5P_SDO_CR3);
+			writel(0x00000000, sdout_base + S5P_SDO_CR4);
+			writel(0x00000001, sdout_base + S5P_SDO_CR5);
+			writel(0x00000009, sdout_base + S5P_SDO_CR6);
+			writel(0x0000001c, sdout_base + S5P_SDO_CR7);
+			writel(0x00000039, sdout_base + S5P_SDO_CR8);
+			writel(0x0000005a, sdout_base + S5P_SDO_CR9);
+			writel(0x00000074, sdout_base + S5P_SDO_CR10);
+			writel(0x0000007e, sdout_base + S5P_SDO_CR11);
 			break;
 
 		case SDOUT_VTOS_RATIO_7_3:
-			writel(0x00000000, tvout_base + S5P_SDO_Y0);
-			writel(0x00000000, tvout_base + S5P_SDO_Y1);
-			writel(0x00000000, tvout_base + S5P_SDO_Y2);
-			writel(0x00000000, tvout_base + S5P_SDO_Y3);
-			writel(0x00000000, tvout_base + S5P_SDO_Y4);
-			writel(0x00000000, tvout_base + S5P_SDO_Y5);
-			writel(0x00000000, tvout_base + S5P_SDO_Y6);
-			writel(0x00000000, tvout_base + S5P_SDO_Y7);
-			writel(0x00000000, tvout_base + S5P_SDO_Y8);
-			writel(0x00000000, tvout_base + S5P_SDO_Y9);
-			writel(0x00000000, tvout_base + S5P_SDO_Y10);
-			writel(0x00000251, tvout_base + S5P_SDO_Y11);
-			writel(0x00000000, tvout_base + S5P_SDO_CB0);
-			writel(0x00000000, tvout_base + S5P_SDO_CB1);
-			writel(0x00000000, tvout_base + S5P_SDO_CB2);
-			writel(0x00000000, tvout_base + S5P_SDO_CB3);
-			writel(0x00000000, tvout_base + S5P_SDO_CB4);
-			writel(0x00000001, tvout_base + S5P_SDO_CB5);
-			writel(0x00000006, tvout_base + S5P_SDO_CB6);
-			writel(0x00000013, tvout_base + S5P_SDO_CB7);
-			writel(0x00000028, tvout_base + S5P_SDO_CB8);
-			writel(0x0000003f, tvout_base + S5P_SDO_CB9);
-			writel(0x00000051, tvout_base + S5P_SDO_CB10);
-			writel(0x00000056, tvout_base + S5P_SDO_CB11);
-			writel(0x00000000, tvout_base + S5P_SDO_CR1);
-			writel(0x00000000, tvout_base + S5P_SDO_CR2);
-			writel(0x00000000, tvout_base + S5P_SDO_CR3);
-			writel(0x00000000, tvout_base + S5P_SDO_CR4);
-			writel(0x00000002, tvout_base + S5P_SDO_CR5);
-			writel(0x00000005, tvout_base + S5P_SDO_CR6);
-			writel(0x00000018, tvout_base + S5P_SDO_CR7);
-			writel(0x00000037, tvout_base + S5P_SDO_CR8);
-			writel(0x0000005A, tvout_base + S5P_SDO_CR9);
-			writel(0x00000076, tvout_base + S5P_SDO_CR10);
-			writel(0x0000007e, tvout_base + S5P_SDO_CR11);
+			writel(0x00000000, sdout_base + S5P_SDO_Y0);
+			writel(0x00000000, sdout_base + S5P_SDO_Y1);
+			writel(0x00000000, sdout_base + S5P_SDO_Y2);
+			writel(0x00000000, sdout_base + S5P_SDO_Y3);
+			writel(0x00000000, sdout_base + S5P_SDO_Y4);
+			writel(0x00000000, sdout_base + S5P_SDO_Y5);
+			writel(0x00000000, sdout_base + S5P_SDO_Y6);
+			writel(0x00000000, sdout_base + S5P_SDO_Y7);
+			writel(0x00000000, sdout_base + S5P_SDO_Y8);
+			writel(0x00000000, sdout_base + S5P_SDO_Y9);
+			writel(0x00000000, sdout_base + S5P_SDO_Y10);
+			writel(0x00000251, sdout_base + S5P_SDO_Y11);
+			writel(0x00000000, sdout_base + S5P_SDO_CB0);
+			writel(0x00000000, sdout_base + S5P_SDO_CB1);
+			writel(0x00000000, sdout_base + S5P_SDO_CB2);
+			writel(0x00000000, sdout_base + S5P_SDO_CB3);
+			writel(0x00000000, sdout_base + S5P_SDO_CB4);
+			writel(0x00000001, sdout_base + S5P_SDO_CB5);
+			writel(0x00000006, sdout_base + S5P_SDO_CB6);
+			writel(0x00000013, sdout_base + S5P_SDO_CB7);
+			writel(0x00000028, sdout_base + S5P_SDO_CB8);
+			writel(0x0000003f, sdout_base + S5P_SDO_CB9);
+			writel(0x00000051, sdout_base + S5P_SDO_CB10);
+			writel(0x00000056, sdout_base + S5P_SDO_CB11);
+			writel(0x00000000, sdout_base + S5P_SDO_CR1);
+			writel(0x00000000, sdout_base + S5P_SDO_CR2);
+			writel(0x00000000, sdout_base + S5P_SDO_CR3);
+			writel(0x00000000, sdout_base + S5P_SDO_CR4);
+			writel(0x00000002, sdout_base + S5P_SDO_CR5);
+			writel(0x00000005, sdout_base + S5P_SDO_CR6);
+			writel(0x00000018, sdout_base + S5P_SDO_CR7);
+			writel(0x00000037, sdout_base + S5P_SDO_CR8);
+			writel(0x0000005A, sdout_base + S5P_SDO_CR9);
+			writel(0x00000076, sdout_base + S5P_SDO_CR10);
+			writel(0x0000007e, sdout_base + S5P_SDO_CR11);
 			break;
 
 		default:
@@ -1736,13 +1740,13 @@ static s5p_tv_sd_err __s5p_sdout_init_oversampling_filter_coeff_default(s5p_tv_o
 	case TVOUT_OUTPUT_SVIDEO:
 
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED:
-		temp_reg = (u32)(tvout_base + S5P_SDO_OSFC00_0);
+		temp_reg = (u32)(sdout_base + S5P_SDO_OSFC00_0);
 
 		for (i = 0; i < 3; i++) { 
 			// Setting SFR data from SDOUT_OSFC00_0 to SDOUT_OSFC23_2
-			temp_reg = (u32)((i == 0) ? tvout_base + S5P_SDO_OSFC00_0 :
-				       (i == 1) ? tvout_base + S5P_SDO_OSFC00_1 :
-				       tvout_base + S5P_SDO_OSFC00_2);
+			temp_reg = (u32)((i == 0) ? sdout_base + S5P_SDO_OSFC00_0 :
+				       (i == 1) ? sdout_base + S5P_SDO_OSFC00_1 :
+				       sdout_base + S5P_SDO_OSFC00_2);
 				       
 			writel(((-2&0xfff) << 0) | ((-3&0xfff) << 0), 
 				temp_reg + 0);
@@ -2060,9 +2064,9 @@ s5p_tv_sd_err __s5p_sdout_init_display_mode(s5p_tv_disp_mode disp_mode,
 
 	__s5p_sdout_init_oversampling_filter_coeff_default(out_mode);
 
-	writel(temp_reg, tvout_base + S5P_SDO_CONFIG);
+	writel(temp_reg, sdout_base + S5P_SDO_CONFIG);
 
-	SDPRINTK("0x%08x\n\r", readl(tvout_base + S5P_SDO_CONFIG));
+	SDPRINTK("0x%08x\n\r", readl(sdout_base + S5P_SDO_CONFIG));
 
 	return SDOUT_NO_ERROR;
 }
@@ -2074,9 +2078,9 @@ void __s5p_sdout_start(void)
 {
 	SDPRINTK("()\n\r");
 
-	writel(SDO_TVOUT_CLOCK_ON, tvout_base + S5P_SDO_CLKCON);
+	writel(SDO_TVOUT_CLOCK_ON, sdout_base + S5P_SDO_CLKCON);
 
-	SDPRINTK("0x%x\n\r", readl(tvout_base + S5P_SDO_CLKCON));
+	SDPRINTK("0x%x\n\r", readl(sdout_base + S5P_SDO_CLKCON));
 }
 
 /*
@@ -2086,9 +2090,9 @@ void __s5p_sdout_stop(void)
 {
 	SDPRINTK("()\n\r");
 
-	writel(SDO_TVOUT_CLOCK_OFF, tvout_base + S5P_SDO_CLKCON);
+	writel(SDO_TVOUT_CLOCK_OFF, sdout_base + S5P_SDO_CLKCON);
 
-	SDPRINTK(" 0x%x)\n\r", readl(tvout_base + S5P_SDO_CLKCON));
+	SDPRINTK(" 0x%x)\n\r", readl(sdout_base + S5P_SDO_CLKCON));
 }
 
 /*
@@ -2100,13 +2104,13 @@ void __s5p_sdout_sw_reset(bool active)
 	SDPRINTK("%d\n\r", active);
 
 	if (active)
-		writel(readl(tvout_base + S5P_SDO_CLKCON) | SDO_TVOUT_SW_RESET, 
-			tvout_base + S5P_SDO_CLKCON);
+		writel(readl(sdout_base + S5P_SDO_CLKCON) | SDO_TVOUT_SW_RESET, 
+			sdout_base + S5P_SDO_CLKCON);
 	else
-		writel(readl(tvout_base + S5P_SDO_CLKCON) & ~SDO_TVOUT_SW_RESET, 
-			tvout_base + S5P_SDO_CLKCON);
+		writel(readl(sdout_base + S5P_SDO_CLKCON) & ~SDO_TVOUT_SW_RESET, 
+			sdout_base + S5P_SDO_CLKCON);
 
-	SDPRINTK(" 0x%x\n\r", readl(tvout_base + S5P_SDO_CLKCON));
+	SDPRINTK(" 0x%x\n\r", readl(sdout_base + S5P_SDO_CLKCON));
 }
 
 
@@ -2115,30 +2119,83 @@ void __s5p_sdout_set_interrupt_enable(bool vsync_intr_en)
 	SDPRINTK("%d)\n\r", vsync_intr_en);
 
 	if (vsync_intr_en)
-		writel(readl(tvout_base + S5P_SDO_IRQMASK) & ~SDO_VSYNC_IRQ_DISABLE, 
-			tvout_base + S5P_SDO_IRQMASK);
+		writel(readl(sdout_base + S5P_SDO_IRQMASK) & ~SDO_VSYNC_IRQ_DISABLE, 
+			sdout_base + S5P_SDO_IRQMASK);
 	else
-		writel(readl(tvout_base + S5P_SDO_IRQMASK) | SDO_VSYNC_IRQ_DISABLE, 
-			tvout_base + S5P_SDO_IRQMASK);
+		writel(readl(sdout_base + S5P_SDO_IRQMASK) | SDO_VSYNC_IRQ_DISABLE, 
+			sdout_base + S5P_SDO_IRQMASK);
 
-	SDPRINTK("0x%x)\n\r", readl(tvout_base + S5P_SDO_IRQMASK));
+	SDPRINTK("0x%x)\n\r", readl(sdout_base + S5P_SDO_IRQMASK));
 }
 
 void __s5p_sdout_clear_interrupt_pending(void)
 {
-	SDPRINTK("0x%x\n\r", readl(tvout_base + S5P_SDO_IRQ));
+	SDPRINTK("0x%x\n\r", readl(sdout_base + S5P_SDO_IRQ));
 
-	writel(readl(tvout_base + S5P_SDO_IRQ) | SDO_VSYNC_IRQ_PEND, 
-		tvout_base + S5P_SDO_IRQ);
+	writel(readl(sdout_base + S5P_SDO_IRQ) | SDO_VSYNC_IRQ_PEND, 
+		sdout_base + S5P_SDO_IRQ);
 
-	SDPRINTK("0x%x\n\r", readl(tvout_base + S5P_SDO_IRQ));
+	SDPRINTK("0x%x\n\r", readl(sdout_base + S5P_SDO_IRQ));
 }
 
 bool __s5p_sdout_get_interrupt_pending(void)
 {
-	SDPRINTK(" 0x%x\n\r", readl(tvout_base + S5P_SDO_IRQ));
+	SDPRINTK(" 0x%x\n\r", readl(sdout_base + S5P_SDO_IRQ));
 
-	return ((readl(tvout_base + S5P_SDO_IRQ) | SDO_VSYNC_IRQ_PEND) ? 1 : 0);
+	return ((readl(sdout_base + S5P_SDO_IRQ) | SDO_VSYNC_IRQ_PEND) ? 1 : 0);
 }
 
+int __init __s5p_sdout_probe(struct platform_device *pdev, u32 res_num)
+{
+	struct resource *res;
+	size_t	size;
+	int 	ret;
 
+	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
+
+	if (res == NULL) {
+		dev_err(&pdev->dev, 
+			"failed to get memory region resource\n");
+		ret = -ENOENT;
+	}
+
+	size = (res->end - res->start) + 1;
+
+	sdout_mem = request_mem_region(res->start, size, pdev->name);
+
+	if (sdout_mem == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to get memory region\n");
+		ret = -ENOENT;
+	}
+
+	sdout_base = ioremap(res->start, size);
+
+	if (sdout_base == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to ioremap address region\n");
+		ret = -ENOENT;
+
+	}
+
+	return ret;
+
+}
+
+int __init __s5p_sdout_release(struct platform_device *pdev)
+{
+	iounmap(sdout_base);
+
+	/* remove memory region */
+	if (sdout_mem != NULL) {
+		if (release_resource(sdout_mem))
+			dev_err(&pdev->dev,
+				"Can't remove tvout drv !!\n");
+
+		kfree(sdout_mem);
+
+		sdout_mem = NULL;
+	}
+
+	return 0;
+}

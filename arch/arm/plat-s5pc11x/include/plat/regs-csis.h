@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-csis.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/regs-csis.h
  *
  * Register definition file for MIPI-CSI2 Driver
  *

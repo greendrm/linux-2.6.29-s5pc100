@@ -1,4 +1,4 @@
-/* linux/arch/arm/mach-s5pc100/mach-smdkc110.c
+/* linux/arch/arm/mach-s5pc110/mach-smdkc110.c
  *
  * Copyright 2008 Openmoko, Inc.
  * Copyright 2008 Simtec Electronics
@@ -29,6 +29,9 @@
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/spi_gpio.h>
+#include <linux/videodev2.h>
+#include <media/s5k4ba_platform.h>
+#include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -61,6 +64,7 @@
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
 #include <plat/regs-clock.h>
+#include <plat/regs-fimc.h>
 
 #ifdef CONFIG_USB_SUPPORT
 #include <plat/regs-otg.h>
@@ -223,6 +227,7 @@ static struct s3c_platform_fb lte480wv_data __initdata = {
 #endif
 
 #ifdef CONFIG_FB_S3C_TL2796
+#if 1
 static void tl2796_cfg_gpio(struct platform_device *pdev)
 {
 	int i;
@@ -323,6 +328,105 @@ static int tl2796_reset_lcd(struct platform_device *pdev)
 
 	return 0;
 }
+#else
+static void tl2796_cfg_gpio(struct platform_device *pdev)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF0(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF1(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 8; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF2(i), S3C_GPIO_PULL_NONE);
+	}
+
+	for (i = 0; i < 4; i++) {
+		s3c_gpio_cfgpin(S5PC11X_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PC11X_GPF3(i), S3C_GPIO_PULL_NONE);
+	}
+
+	/* mDNIe SEL: why we shall write 0x2 ? */
+	writel(0x2, S5P_MDNIE_SEL);
+
+	/* drive strength to max */
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x12c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x14c);
+	writel(0xffffffff, S5PC11X_VA_GPIO + 0x16c);
+	writel(0x000000ff, S5PC11X_VA_GPIO + 0x18c);
+
+#if 1
+	s3c_gpio_cfgpin(S5PC11X_GPB(4), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(5), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(6), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5PC11X_GPB(7), S3C_GPIO_SFN(1));
+#else
+	/* why the followings do not work? */
+	gpio_request(S5PC11X_GPB(4), "GPB");
+	gpio_request(S5PC11X_GPB(5), "GPB");
+	gpio_request(S5PC11X_GPB(6), "GPB");
+	gpio_request(S5PC11X_GPB(7), "GPB");
+	gpio_direction_output(S5PC11X_GPB(4), 0);
+	gpio_direction_output(S5PC11X_GPB(5), 0);
+	gpio_direction_output(S5PC11X_GPB(6), 0);
+	gpio_direction_output(S5PC11X_GPB(7), 0);
+#endif
+	s3c_gpio_setpull(S5PC11X_GPB(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(5), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPB(7), S3C_GPIO_PULL_NONE);
+
+	gpio_request(S5PC11X_GPH0(5), "GPH0");
+	gpio_direction_output(S5PC11X_GPH0(5), 1);
+}
+
+static int tl2796_backlight_on(struct platform_device *pdev)
+{
+	gpio_request(S5PC11X_GPH1(7), "MLCD_RST");
+	gpio_request(S5PC11X_GPJ1(3), "MLCD_ON");
+	
+	/* set gpio data for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	/* set gpio data for MLCD_ON to HIGH */
+	gpio_direction_output(S5PC11X_GPJ1(3), 1);
+	mdelay(25);
+
+	/* set gpio data for MLCD_RST to LOW */
+	gpio_direction_output(S5PC11X_GPH1(7), 0);
+	udelay(20);
+	/* set gpio data for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	mdelay(20);
+
+	gpio_free(S5PC11X_GPH1(7));
+	gpio_free(S5PC11X_GPJ1(3));
+
+	return 0;
+}
+
+static int tl2796_reset_lcd(struct platform_device *pdev)
+{
+	gpio_request(S5PC11X_GPH1(7), "MLCD_RST");
+
+	/* set gpio pin for MLCD_RST to LOW */
+	gpio_direction_output(S5PC11X_GPH1(7), 0);
+	udelay(1);	/* Shorter than 5 usec */
+	/* set gpio pin for MLCD_RST to HIGH */
+	gpio_direction_output(S5PC11X_GPH1(7), 1);
+	mdelay(10);
+
+	gpio_free(S5PC11X_GPH1(7));
+
+	return 0;
+}
+#endif
 
 static struct s3c_platform_fb tl2796_data __initdata = {
 	.hw_ver	= 0x60,
@@ -388,7 +492,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
         &s3c_device_hsmmc1,
 #endif        
         
-#ifdef CONFIG_S3C_DEV_HSMMC2        
+#ifdef CONFIG_S3C_DEV_HSMMC2
         &s3c_device_hsmmc2,
 #endif        
         
@@ -397,6 +501,10 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #endif
 
 #ifdef CONFIG_S3C2410_WATCHDOG
+	&s3c_device_wdt,
+#endif
+
+#ifdef CONFIG_RTC_DRV_S3C
 	&s3c_device_wdt,
 #endif
 
@@ -409,6 +517,12 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #endif
 	&s3c_device_usbgadget,
 	&s3c_device_cfcon,
+	&s5p_device_tvout,
+	&s3c_device_fimc0,
+	&s3c_device_fimc1,
+	&s3c_device_fimc2,
+	&s3c_device_i2c0,
+	&s3c_device_i2c1,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -433,6 +547,165 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
+
+/* External camera module setting */
+static struct s5k4ba_platform_data s5k4ba = {
+	.default_width = 800,
+	.default_height = 600,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 44000000,
+	.is_mipi = 0,
+};
+
+static struct s5k6aa_platform_data s5k6aa = {
+	.default_width = 640,
+	.default_height = 480,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 24000000,
+	.is_mipi = 1,
+};
+
+static struct i2c_board_info  __initdata camera_info[] = {
+	{
+		I2C_BOARD_INFO("S5K4BA", 0x2d),
+		.platform_data = &s5k4ba,
+	},
+	{
+		I2C_BOARD_INFO("S5K6AA", 0x3c),
+		.platform_data = &s5k6aa,
+	},
+};
+
+/* Camera interface setting */
+static struct s3c_platform_camera __initdata camera_a = {
+	.id		= CAMERA_PAR_A,		/* FIXME */
+	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &camera_info[0],
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_mpll",
+	.clk_name	= "sclk_cam0",
+	.clk_rate	= 44000000,		/* 44MHz */
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 800,
+	.height		= 600,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 800,
+		.height	= 600,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized = 0,
+};
+
+static struct s3c_platform_camera __initdata camera_c = {
+	.id		= CAMERA_CSI_C,		/* FIXME */
+	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
+	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &camera_info[1],
+	.pixelformat	= V4L2_PIX_FMT_YUYV,
+	.srclk_name	= "mout_mpll",
+	.clk_name	= "sclk_cam0",
+	.clk_rate	= 24000000,		/* 24MHz */
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 640,
+	.height		= 480,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 640,
+		.height	= 480,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized = 0,
+};
+
+/* Interface setting */
+static struct s3c_platform_fimc __initdata fimc_plat = {
+	.srclk_name	= "mout_mpll",
+	.clk_name	= "sclk_fimc",
+	.clk_rate	= 166000000,
+	.default_cam	= CAMERA_PAR_A,
+	.camera		= { 
+		&camera_a, 
+		&camera_c,
+	}
+};
+
+/*
+ * External camera reset
+ * Because the most of cameras take i2c bus signal, so that
+ * you have to reset at the boot time for other i2c slave devices.
+ * Do optimization for cameras on your platform.
+*/
+static void smdkc110_reset_camera(void)
+{
+	void __iomem *regs = ioremap(S5PC11X_PA_FIMC0, SZ_4K);
+	u32 cfg;
+
+	/* based on s5k4ba at the channel A */
+#if 0
+	/* high reset */
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#else
+	/* low reset */
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+	udelay(2000);
+#endif
+
+#if 0
+	/* channel B reset: should be done by following after ch A reset */
+	cfg = readl(S5PC11X_GPH3CON);
+	cfg &= ~S5PC11X_GPH3_CONMASK(6);
+	cfg |= S5PC11X_GPH3_OUTPUT(6);
+	writel(cfg, S5PC11X_GPH3CON);
+
+	cfg = readl(S5PC11X_GPH3DAT);
+	cfg &= ~(0x1 << 6);
+	writel(cfg, S5PC11X_GPH3DAT);
+	udelay(200);
+
+	cfg |= (0x1 << 6);
+	writel(cfg, S5PC11X_GPH3DAT);
+	udelay(2000);
+#endif
+
+	iounmap(regs);
+}
 
 #if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
@@ -470,9 +743,9 @@ static void __init smdkc110_map_io(void)
 
 static void __init smdkc110_dm9000_set(void)
 {
+#if 0
 	unsigned int tmp;
 
-#if 0
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
@@ -507,6 +780,12 @@ static void __init smdkc110_machine_init(void)
 {
 	smdkc110_dm9000_set();
 
+	/* i2c */
+	s3c_i2c0_set_platdata(NULL);
+	s3c_i2c1_set_platdata(NULL);
+	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+
 #ifdef CONFIG_FB_S3C_LTE480WV
 	s3cfb_set_platdata(&lte480wv_data);
 #endif
@@ -515,6 +794,13 @@ static void __init smdkc110_machine_init(void)
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&tl2796_data);
 #endif
+
+	/* fimc */
+	s3c_fimc0_set_platdata(&fimc_plat);
+	s3c_fimc1_set_platdata(&fimc_plat);
+	s3c_fimc2_set_platdata(&fimc_plat);
+	s3c_csis_set_platdata(NULL);
+	smdkc110_reset_camera();
 
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
@@ -567,7 +853,7 @@ MACHINE_END
 /* Initializes OTG Phy. */
 void otg_phy_init(void) {
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<0), S5P_USB_PHY_CONTROL); /*USB PHY0 Enable */
-	writel((readl(S3C_USBOTG_PHYPWR)&~(0x3<<3))|(0x1<<5), S3C_USBOTG_PHYPWR);
+	writel((readl(S3C_USBOTG_PHYPWR)&~(0x3<<3)&~(0x1<<0))|(0x1<<5), S3C_USBOTG_PHYPWR);
 	writel((readl(S3C_USBOTG_PHYCLK)&~(0x5<<2))|(0x3<<0), S3C_USBOTG_PHYCLK);
 	writel((readl(S3C_USBOTG_RSTCON)&~(0x3<<1))|(0x1<<0), S3C_USBOTG_RSTCON);
 	udelay(10);

@@ -33,7 +33,7 @@
 #include <asm/memory.h>
 #include <plat/clock.h>
 #include <plat/media.h>
-#include <plat/fimc2.h>
+#include <plat/fimc.h>
 
 #include "fimc.h"
 
@@ -141,21 +141,9 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
-	int done, i;
 
 	fimc_hwset_clear_irq(ctrl);
 	fimc_hwget_overflow_state(ctrl);
-
-	done = (fimc_hwget_frame_count(ctrl) + 2) % 4;
-
-	for (i = 0; i < FIMC_CAPBUFS; i++) {
-		if (cap->bufs[i].state == VIDEOBUF_DONE)
-			cap->bufs[i].state = VIDEOBUF_ACTIVE;
-	}
-
-	cap->bufs[cap->outqueue[done]].state = VIDEOBUF_DONE;
-
-	fimc_update_hwaddr(ctrl);
 	wake_up_interruptible(&ctrl->wq);
 
 	cap->irq = 1;
@@ -361,21 +349,14 @@ static u32 fimc_poll(struct file *filp, poll_table *wait)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	struct fimc_capinfo *cap = ctrl->cap;
-	u32 mask = 0, ret = 1;
+	u32 mask = 0;
 
 	if (cap) {
-		if (cap->inqueue[0] == -1) {
-			ret = wait_event_interruptible_timeout(ctrl->wq, \
-				cap->inqueue[0] != -1, FIMC_DQUEUE_TIMEOUT);
-		}
-
-		if (ret) {
-			if (cap->irq) {
-				mask = POLLIN | POLLRDNORM;
-				cap->irq = 0;
-			} else {
-				poll_wait(filp, &ctrl->wq, wait);
-			}
+		if (cap->irq) {
+			mask = POLLIN | POLLRDNORM;
+			cap->irq = 0;
+		} else {
+			poll_wait(filp, &ctrl->wq, wait);
 		}
 	}
 
@@ -465,9 +446,9 @@ int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift)
 	return 0;
 }
 
+#if 0
 static int fimc_wakeup_fifo(struct fimc_control *ctrl)
 {
-#if 0
 	int ret = -1;
 
 	/* Set the rot, pp param register. */
@@ -499,14 +480,14 @@ static int fimc_wakeup_fifo(struct fimc_control *ctrl)
 	}
 
 	ctrl->status = FIMC_STREAMON;
-#endif
 
 	return 0;
 }
+#endif
 
+#if 0
 int fimc_wakeup(void)
 {
-#if 0
 	struct fimc_control	*ctrl;
 	int			ret = -1;
 
@@ -519,14 +500,14 @@ int fimc_wakeup(void)
 			return -EINVAL;
 		}
 	}
-#endif
 
 	return 0;
 }
+#endif
 
+#if 0
 static void fimc_sleep_fifo(struct fimc_control *ctrl)
 {
-#if 0
 	if (ctrl->rot.status != ROT_IDLE)
 		rp_err(ctrl->log_level, "[%s : %d] ROT status isn't idle\n", __FUNCTION__, __LINE__);
 
@@ -537,12 +518,12 @@ static void fimc_sleep_fifo(struct fimc_control *ctrl)
 		rp_err(ctrl->log_level, "[%s : %d] PP status isn't stable\n", __FUNCTION__, __LINE__);
 
 	s3c_rp_pp_fifo_stop(ctrl, FIFO_SLEEP);
-#endif
 }
+#endif
 
+#if 0
 int fimc_sleep(void)
 {
-#if 0
 	struct fimc_control *ctrl;
 
 	ctrl = &s3c_rp;
@@ -552,9 +533,10 @@ int fimc_sleep(void)
 	}
 
 	ctrl->status		= FIMC_ON_SLEEP;
-#endif
+
 	return 0;
 }
+#endif
 
 static int fimc_open(struct file *filp)
 {
@@ -708,6 +690,7 @@ static int fimc_init_global(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;
 	struct s3c_platform_camera *cam;
+	struct clk *srclk;
 	int i;
 
 	pdata = to_fimc_plat(&pdev->dev);
@@ -718,13 +701,25 @@ static int fimc_init_global(struct platform_device *pdev)
 		if (!cam)
 			break;
 
-		/* mclk */
-		cam->clk = clk_get(&pdev->dev, cam->clk_name);
-		if (IS_ERR(cam->clk)) {
+		srclk = clk_get(&pdev->dev, cam->srclk_name);
+		if (IS_ERR(srclk)) {
 			dev_err(&pdev->dev, "%s: failed to get mclk source\n", \
 				__FUNCTION__);
 			return -EINVAL;
 		}
+
+		/* mclk */
+		cam->clk = clk_get(&pdev->dev, cam->clk_name);
+		if (IS_ERR(cam->clk)) {
+			dev_err(&pdev->dev, "%s: failed to get mclk\n", \
+				__FUNCTION__);
+			return -EINVAL;
+		}
+
+		if (cam->clk->set_parent) {
+			cam->clk->parent = srclk;
+			cam->clk->set_parent(cam->clk, srclk);
+		}		
 
 		/* Assign camera device to fimc */
 		fimc_dev->camera[cam->id] = cam;
@@ -851,8 +846,10 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* set parent clock */
-	if (ctrl->clk->set_parent)
+	if (ctrl->clk->set_parent) {
+		ctrl->clk->parent = srclk;
 		ctrl->clk->set_parent(ctrl->clk, srclk);
+	}
 
 	/* set clockrate for fimc interface block */
 	if (ctrl->clk->set_rate) {
@@ -922,6 +919,7 @@ static int fimc_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
 int fimc_suspend(struct platform_device *dev, pm_message_t state)
 {
 	return 0;
@@ -931,6 +929,10 @@ int fimc_resume(struct platform_device *dev)
 {
 	return 0;
 }
+#else
+#define fimc_suspend	NULL
+#define fimc_resume	NULL
+#endif
 
 static struct platform_driver fimc_driver = {
 	.probe		= fimc_probe,

@@ -1,5 +1,4 @@
 obj-$(CONFIG_VIDEO_FIMC)	+= fimc/
-obj-$(CONFIG_VIDEO_FIMC2)	+= fimc2/
 obj-$(CONFIG_VIDEO_MFC40)	+= mfc40/
 obj-$(CONFIG_VIDEO_MFC50)       += mfc50/
 obj-$(CONFIG_VIDEO_TV20)	+= tv20/

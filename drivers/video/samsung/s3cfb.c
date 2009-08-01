@@ -463,12 +463,9 @@ static int s3cfb_cursor(struct fb_info *info, struct fb_cursor *cursor)
 
 static int s3cfb_wait_for_vsync(void)
 {
-	int count = fbdev->wq_count;
-
 	dev_dbg(fbdev->dev, "waiting for VSYNC interrupt\n");
 
-	wait_event_interruptible_timeout(fbdev->wq, \
-			count != fbdev->wq_count, HZ / 10);
+	interruptible_sleep_on_timeout(&fbdev->wq, HZ / 10);
 
 	dev_dbg(fbdev->dev, "got a VSYNC interrupt\n");
 

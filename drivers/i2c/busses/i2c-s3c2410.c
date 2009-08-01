@@ -541,10 +541,7 @@ static int s3c24xx_i2c_xfer(struct i2c_adapter *adap,
 
 		dev_dbg(i2c->dev, "Retrying transmission (%d)\n", retry);
 
-/* jsgood: not necessary */
-#if 0
 		udelay(100);
-#endif
 	}
 
 	return -EREMOTEIO;

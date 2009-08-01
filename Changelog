@@ -1261,3 +1261,144 @@ v2.6.29.4-dev-1-0-20: Jae-Cheol Lee
 
 	Modified Files:
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		
+v2.6.29.4-dev-1-0-21: Sang Pil Moon
+	- added hdmi kernel resource for hdmi/tvuot drv.
+	- added s5pc110 hdmi drv. module
+
+	Modified Files:
+		M       Changelog
+		M       arch/arm/mach-s5pc100/include/mach/map.h
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M       arch/arm/plat-s5pc1xx/devs.c
+		M       drivers/media/video/samsung/Kconfig
+		M       drivers/media/video/samsung/tv20/Kconfig
+		M       drivers/media/video/samsung/tv20/Makefile
+		M       drivers/media/video/samsung/tv20/s5p_stda_tvout_if.c
+		M       drivers/media/video/samsung/tv20/s5p_tv.h
+		M       drivers/media/video/samsung/tv20/s5p_tv_base.c
+		M       drivers/media/video/samsung/tv20/s5p_tv_v4l2.c
+		M       drivers/media/video/samsung/tv20/s5pc100/hdcp_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/hdmi_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-hdmi.h
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-vmx.h
+		M       drivers/media/video/samsung/tv20/s5pc100/regs/regs-vprocessor.h
+		M       drivers/media/video/samsung/tv20/s5pc100/sdout_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
+		M       drivers/media/video/samsung/tv20/s5pc100/tv_power_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
+		M       drivers/media/video/samsung/tv20/s5pc100/vprocessor_s5pc100.c
+
+	Added Files:		
+		A       drivers/media/video/samsung/tv20/s5pc110/hdcp_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_param.h
+		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-clock_extra.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-hdmi.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-sdaout.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-vmx.h
+		A       drivers/media/video/samsung/tv20/s5pc110/regs/regs-vprocessor.h
+		A       drivers/media/video/samsung/tv20/s5pc110/sdout_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_clock_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_out_s5pc110.h
+		A       drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
+		A       drivers/media/video/samsung/tv20/s5pc110/vp_coeff_s5pc110.h
+		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c	
+
+v2.6.29.4-dev-1-0-22: Jae-Hun Jung
+	- RTC support on S5PC110.
+
+	Modified Files
+		M	drivers/rtc/Kconfig
+		M	arch/arm/plat-s3c/include/plat/regs-rtc.h
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	drivers/rtc/rtc-s3c.c
+
+v2.6.29.4-dev-1-0-23: Jinsung Yang
+	- add support for s5pc100 fimc driver
+	- remove old fimc files
+	- add base s5pc110 fimc platform files
+
+	Added files:
+		A       drivers/media/video/samsung/fimc/fimc40_regs.c
+		A       drivers/media/video/samsung/fimc/fimc43_regs.c
+		A       drivers/media/video/samsung/fimc/fimc_capture.c
+		A       drivers/media/video/samsung/fimc/fimc_dev.c
+		A       drivers/media/video/samsung/fimc/fimc_output.c
+		A       drivers/media/video/samsung/fimc/fimc_overlay.c
+
+	Deleted files:
+		D       drivers/media/video/samsung/fimc/fimc3x_regs.c
+		D       arch/arm/plat-s5pc1xx/include/plat/fimc2.h
+		D       drivers/media/video/samsung/fimc/Kconfig-camera
+		D       drivers/media/video/samsung/fimc/fimc4x_regs.c
+		D       drivers/media/video/samsung/fimc/fimc_cfg.c
+		D       drivers/media/video/samsung/fimc/fimc_core.c
+		D       drivers/media/video/samsung/fimc2/Kconfig
+		D       drivers/media/video/samsung/fimc2/Makefile
+		D       drivers/media/video/samsung/fimc2/csis.c
+		D       drivers/media/video/samsung/fimc2/csis.h
+		D       drivers/media/video/samsung/fimc2/fimc.h
+		D       drivers/media/video/samsung/fimc2/fimc4x_regs.c
+		D       drivers/media/video/samsung/fimc2/fimc_capture.c
+		D       drivers/media/video/samsung/fimc2/fimc_dev.c
+		D       drivers/media/video/samsung/fimc2/fimc_output.c
+		D       drivers/media/video/samsung/fimc2/fimc_overlay.c
+		D       drivers/media/video/samsung/fimc2/fimc_v4l2.c
+
+	Modified files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/plat-s5pc11x/dev-fimc0.c
+		M       arch/arm/plat-s5pc11x/dev-fimc1.c
+		M       arch/arm/plat-s5pc11x/dev-fimc2.c
+		M       arch/arm/plat-s5pc11x/include/plat/fimc.h
+		M       arch/arm/plat-s5pc11x/include/plat/regs-fimc.h
+		M       arch/arm/plat-s5pc11x/setup-fimc0.c
+		M       arch/arm/plat-s5pc11x/setup-fimc1.c
+		M       arch/arm/plat-s5pc1xx/Makefile
+		M       arch/arm/plat-s5pc1xx/dev-fimc0.c
+		M       arch/arm/plat-s5pc1xx/dev-fimc1.c
+		M       arch/arm/plat-s5pc1xx/dev-fimc2.c
+		M       arch/arm/plat-s5pc1xx/include/plat/fimc.h
+		M       drivers/media/video/samsung/Kconfig
+		M       drivers/media/video/samsung/Makefile
+		M       drivers/media/video/samsung/fimc/Kconfig
+		M       drivers/media/video/samsung/fimc/Makefile
+		M       drivers/media/video/samsung/fimc/csis.c
+		M       drivers/media/video/samsung/fimc/fimc.h
+		M       drivers/media/video/samsung/fimc/fimc_v4l2.c
+
+v2.6.29.4-dev-1-0-24: Jae-Cheol Lee
+	- Fixed idle code for s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+
+v2.6.29.4-dev-1-0-25: Jongpill Lee
+	- Temporary update for s5p6442
+
+	Modified Files:		
+		M       arch/arm/configs/smdk6442ramdisk_defconfig
+		M       arch/arm/mach-s5p6442/include/mach/map.h
+		M       arch/arm/plat-s5p64xx/include/plat/pll.h
+
+v2.6.29.4-dev-1-0-26: Kukjin Kim
+	- Support M2M DMA for S5PC110
+
+	Modified Files:
+		M	arch/arm/plat-s3c/dma-pl330-mcode.h
+		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-dev-1-0-27: Thomas Abraham
+	- Disable USB OTG Phy suspend signal when enabling OTG Phy for
+	S5PC110
+
+	Modified Files
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+v2.6.29.4-s5pc110-alpha:Hyunwoong Kim
+	- Official Release for s5pc110(2009.07.31)

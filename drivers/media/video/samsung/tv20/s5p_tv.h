@@ -12,14 +12,24 @@
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/videodev2.h>
+#include <linux/platform_device.h>
 
+#ifdef CONFIG_CPU_S5PC110
+#include "s5pc110/tv_out_s5pc110.h"
+#endif
+
+#ifdef CONFIG_CPU_S5PC100
 #include "s5pc100/tv_out_s5pc100.h"
+#endif
 
-#define COFIG_TVOUT_DBG
+//#define COFIG_TVOUT_DBG
 
 #define S5P_TVMAX_CTRLS 	3
 
+#ifdef CONFIG_CPU_S5PC100
 #define FIX_27M_UNSTABLE_ISSUE
+#endif
+
 #define V4L2_STD_ALL_HD		((v4l2_std_id)0xffffffff)
 
 #define S5P_HDCP_I2C_ADDR		0x74
@@ -537,6 +547,21 @@ extern int s5p_tv_vo_ioctl(struct file *file, u32 cmd, unsigned long arg);
  * STDA layer api - must be refine!!
  *
 */
+
+int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num);
+int __init __s5p_sdout_probe(struct platform_device *pdev, u32 res_num);
+int __init __s5p_mixer_probe(struct platform_device *pdev, u32 res_num);
+int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num);
+int __init __s5p_tvclk_probe(struct platform_device *pdev, u32 res_num);
+
+int __init __s5p_hdmi_release(struct platform_device *pdev);
+int __init __s5p_sdout_release(struct platform_device *pdev);
+int __init __s5p_mixer_release(struct platform_device *pdev);
+int __init __s5p_vp_release(struct platform_device *pdev);
+int __init __s5p_tvclk_release(struct platform_device *pdev);
+
+
+
 // HDMI
 extern	bool _s5p_hdmi_api_proc(unsigned long arg, u32 cmd);
 extern	bool _s5p_hdmi_video_api_proc(unsigned long arg, u32 cmd);

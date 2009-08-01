@@ -14,6 +14,7 @@
 #include <linux/errno.h>
 #include <linux/string.h>
 #include <linux/delay.h>
+#include <linux/platform_device.h>
 
 #include <asm/io.h>
 
@@ -32,6 +33,8 @@
 #define VPPRINTK(fmt, args...)
 #endif
 
+static struct resource	*vp_mem;
+void __iomem		*vp_base;
 
 /*
 * set
@@ -44,10 +47,10 @@ void __s5p_vp_set_field_id(s5p_vp_field mode)
 	VPPRINTK("%d\n\r", mode);
 
 	writel((mode == VPROC_TOP_FIELD) ? 
-		tvout_base + S5P_VP_FIELD_ID_TOP : tvout_base + S5P_VP_FIELD_ID_BOTTOM, 
-		tvout_base + S5P_VP_FIELD_ID);
+		vp_base + S5P_VP_FIELD_ID_TOP : vp_base + S5P_VP_FIELD_ID_BOTTOM, 
+		vp_base + S5P_VP_FIELD_ID);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_VP_FIELD_ID));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_VP_FIELD_ID));
 }
 
 s5p_tv_vp_err __s5p_vp_set_top_field_address(u32 top_y_addr, u32 top_c_addr)
@@ -60,13 +63,13 @@ s5p_tv_vp_err __s5p_vp_set_top_field_address(u32 top_y_addr, u32 top_c_addr)
 		return S5P_TV_VP_ERR_BASE_ADDRESS_MUST_DOUBLE_WORD_ALIGN;
 	}
 
-	writel(top_y_addr, tvout_base + S5P_VP_TOP_Y_PTR);
+	writel(top_y_addr, vp_base + S5P_VP_TOP_Y_PTR);
 
-	writel(top_c_addr, tvout_base + S5P_VP_TOP_C_PTR);
+	writel(top_c_addr, vp_base + S5P_VP_TOP_C_PTR);
 
 
-	VPPRINTK("0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_TOP_Y_PTR), 
-		readl(tvout_base + S5P_VP_TOP_C_PTR));
+	VPPRINTK("0x%x,0x%x\n\r", readl(vp_base + S5P_VP_TOP_Y_PTR), 
+		readl(vp_base + S5P_VP_TOP_C_PTR));
 
 	return VPROC_NO_ERROR;
 }
@@ -81,18 +84,18 @@ s5p_tv_vp_err __s5p_vp_set_bottom_field_address(u32 bottom_y_addr,u32 bottom_c_a
 		return S5P_TV_VP_ERR_BASE_ADDRESS_MUST_DOUBLE_WORD_ALIGN;
 	}
 
-	writel(bottom_y_addr, tvout_base + S5P_VP_BOT_Y_PTR);
+	writel(bottom_y_addr, vp_base + S5P_VP_BOT_Y_PTR);
 
-	writel(bottom_c_addr, tvout_base + S5P_VP_BOT_C_PTR);
+	writel(bottom_c_addr, vp_base + S5P_VP_BOT_C_PTR);
 
 
-	VPPRINTK("0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_BOT_Y_PTR), 
-		readl(tvout_base + S5P_VP_BOT_C_PTR));
+	VPPRINTK("0x%x,0x%x\n\r", readl(vp_base + S5P_VP_BOT_Y_PTR), 
+		readl(vp_base + S5P_VP_BOT_C_PTR));
 
 	return VPROC_NO_ERROR;
 }
 
-// TO-DO :: VP_TILE_SIZE_Y, tvout_base+S5P_VP_IMG_SIZE_Y --> what is diff.?
+// TO-DO :: VP_TILE_SIZE_Y, vp_base+S5P_VP_IMG_SIZE_Y --> what is diff.?
 s5p_tv_vp_err __s5p_vp_set_img_size(u32 img_width, u32 img_height)
 {
 	VPPRINTK("%d,%d\n\r", img_width, img_height);
@@ -104,13 +107,13 @@ s5p_tv_vp_err __s5p_vp_set_img_size(u32 img_width, u32 img_height)
 	}
 
 	writel(VP_IMG_HSIZE(img_width) | VP_IMG_VSIZE(img_height), 
-		tvout_base + S5P_VP_IMG_SIZE_Y);
+		vp_base + S5P_VP_IMG_SIZE_Y);
 
 	writel(VP_IMG_HSIZE(img_width) | VP_IMG_VSIZE(img_height / 2), 
-		tvout_base + S5P_VP_IMG_SIZE_C);
+		vp_base + S5P_VP_IMG_SIZE_C);
 
-	VPPRINTK("0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_IMG_SIZE_Y), 
-		readl(tvout_base + S5P_VP_IMG_SIZE_C));
+	VPPRINTK("0x%x,0x%x\n\r", readl(vp_base + S5P_VP_IMG_SIZE_Y), 
+		readl(vp_base + S5P_VP_IMG_SIZE_C));
 
 	return VPROC_NO_ERROR;
 }
@@ -122,11 +125,11 @@ void __s5p_vp_set_src_position(u32 src_off_x,
 	VPPRINTK("%d,%d,%d)\n\r", src_off_x, src_x_fract_step, src_off_y);
 
 	writel(VP_SRC_H_POSITION(src_off_x) |  VP_SRC_X_FRACT_STEP(src_x_fract_step),
-	       tvout_base + S5P_VP_SRC_H_POSITION);
-	writel(VP_SRC_V_POSITION(src_off_y), tvout_base + S5P_VP_SRC_V_POSITION);
+	       vp_base + S5P_VP_SRC_H_POSITION);
+	writel(VP_SRC_V_POSITION(src_off_y), vp_base + S5P_VP_SRC_V_POSITION);
 
-	VPPRINTK("0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_SRC_H_POSITION), 
-		readl(tvout_base + S5P_VP_SRC_V_POSITION));
+	VPPRINTK("0x%x,0x%x\n\r", readl(vp_base + S5P_VP_SRC_H_POSITION), 
+		readl(vp_base + S5P_VP_SRC_V_POSITION));
 }
 
 void __s5p_vp_set_dest_position(u32 dst_off_x,
@@ -135,11 +138,11 @@ void __s5p_vp_set_dest_position(u32 dst_off_x,
 	VPPRINTK("%d,%d)\n\r", dst_off_x, dst_off_y);
 
 
-	writel(VP_DST_H_POSITION(dst_off_x), tvout_base + S5P_VP_DST_H_POSITION);
-	writel(VP_DST_V_POSITION(dst_off_y), tvout_base + S5P_VP_DST_V_POSITION);
+	writel(VP_DST_H_POSITION(dst_off_x), vp_base + S5P_VP_DST_H_POSITION);
+	writel(VP_DST_V_POSITION(dst_off_y), vp_base + S5P_VP_DST_V_POSITION);
 
-	VPPRINTK("0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_DST_H_POSITION), 
-		readl(tvout_base + S5P_VP_DST_V_POSITION));
+	VPPRINTK("0x%x,0x%x\n\r", readl(vp_base + S5P_VP_DST_H_POSITION), 
+		readl(vp_base + S5P_VP_DST_V_POSITION));
 }
 
 void __s5p_vp_set_src_dest_size(u32 src_width,
@@ -155,23 +158,23 @@ void __s5p_vp_set_src_dest_size(u32 src_width,
 
 	VPPRINTK("(%d,%d,%d,%d)++\n\r", src_width, src_height, dst_width, dst_height);
 
-	writel(VP_SRC_WIDTH(src_width), tvout_base + S5P_VP_SRC_WIDTH);
-	writel(VP_SRC_HEIGHT(src_height), tvout_base + S5P_VP_SRC_HEIGHT);
-	writel(VP_DST_WIDTH(dst_width), tvout_base + S5P_VP_DST_WIDTH);
-	writel(VP_DST_HEIGHT(dst_height), tvout_base + S5P_VP_DST_HEIGHT) ;
-	writel(VP_H_RATIO(h_ratio), tvout_base + S5P_VP_H_RATIO);
-	writel(VP_V_RATIO(v_ratio), tvout_base + S5P_VP_V_RATIO);
+	writel(VP_SRC_WIDTH(src_width), vp_base + S5P_VP_SRC_WIDTH);
+	writel(VP_SRC_HEIGHT(src_height), vp_base + S5P_VP_SRC_HEIGHT);
+	writel(VP_DST_WIDTH(dst_width), vp_base + S5P_VP_DST_WIDTH);
+	writel(VP_DST_HEIGHT(dst_height), vp_base + S5P_VP_DST_HEIGHT) ;
+	writel(VP_H_RATIO(h_ratio), vp_base + S5P_VP_H_RATIO);
+	writel(VP_V_RATIO(v_ratio), vp_base + S5P_VP_V_RATIO);
 
-	writel((ipc_2d) ? (readl(tvout_base + S5P_VP_MODE) | VP_2D_IPC_ON) : 
-		(readl(tvout_base + S5P_VP_MODE) & ~VP_2D_IPC_ON),
-		tvout_base + S5P_VP_MODE);
+	writel((ipc_2d) ? (readl(vp_base + S5P_VP_MODE) | VP_2D_IPC_ON) : 
+		(readl(vp_base + S5P_VP_MODE) & ~VP_2D_IPC_ON),
+		vp_base + S5P_VP_MODE);
 
-	VPPRINTK("%d,%d,%d,%d,0x%x,0x%x\n\r", readl(tvout_base + S5P_VP_SRC_WIDTH), 
-					readl(tvout_base + S5P_VP_SRC_HEIGHT),
-					readl(tvout_base + S5P_VP_DST_WIDTH),
-					readl(tvout_base + S5P_VP_DST_HEIGHT), 
-					readl(tvout_base + S5P_VP_H_RATIO), 
-					readl(tvout_base + S5P_VP_V_RATIO));
+	VPPRINTK("%d,%d,%d,%d,0x%x,0x%x\n\r", readl(vp_base + S5P_VP_SRC_WIDTH), 
+					readl(vp_base + S5P_VP_SRC_HEIGHT),
+					readl(vp_base + S5P_VP_DST_WIDTH),
+					readl(vp_base + S5P_VP_DST_HEIGHT), 
+					readl(vp_base + S5P_VP_H_RATIO), 
+					readl(vp_base + S5P_VP_V_RATIO));
 }
 
 s5p_tv_vp_err __s5p_vp_set_poly_filter_coef(s5p_vp_poly_coeff poly_coeff,
@@ -190,10 +193,10 @@ s5p_tv_vp_err __s5p_vp_set_poly_filter_coef(s5p_vp_poly_coeff poly_coeff,
 	}
 
 	writel((((0xff&ch0) << 24) | ((0xff&ch1) << 16) | ((0xff&ch2) << 8) | (0xff&ch3)),
-		tvout_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4);
+		vp_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4);
 
-	VPPRINTK("0x%08x, 0x%08x\n\r", readl(tvout_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4), 
-		tvout_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4);
+	VPPRINTK("0x%08x, 0x%08x\n\r", readl(vp_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4), 
+		vp_base + S5P_VP_POLY8_Y0_LL + poly_coeff*4);
 
 	return VPROC_NO_ERROR;
 }
@@ -319,10 +322,10 @@ s5p_tv_vp_err __s5p_vp_set_brightness_contrast_control(s5p_vp_line_eq eq_num,
 
 	writel(VP_LINE_INTC(intc) | VP_LINE_SLOPE(slope),
 
-	       tvout_base + S5P_PP_LINE_EQ0 + eq_num*4);
+	       vp_base + S5P_PP_LINE_EQ0 + eq_num*4);
 
-	VPPRINTK("0x%08x, 0x%08x\n\r", readl(tvout_base + S5P_PP_LINE_EQ0 + eq_num*4), 
-		tvout_base + S5P_PP_LINE_EQ0 + eq_num*4);
+	VPPRINTK("0x%08x, 0x%08x\n\r", readl(vp_base + S5P_PP_LINE_EQ0 + eq_num*4), 
+		vp_base + S5P_PP_LINE_EQ0 + eq_num*4);
 
 	return VPROC_NO_ERROR;
 }
@@ -337,7 +340,7 @@ void __s5p_vp_set_brightness(bool brightness)
 				   VP_LINE_INTC(brightness);
 
 	for (i = 0; i < 8; i++) {
-		writel(g_vp_contrast_brightness, tvout_base + S5P_PP_LINE_EQ0 + i*4);
+		writel(g_vp_contrast_brightness, vp_base + S5P_PP_LINE_EQ0 + i*4);
 	}
 
 	VPPRINTK("%d\n\r", g_vp_contrast_brightness);
@@ -353,7 +356,7 @@ void __s5p_vp_set_contrast(u8 contrast)
 				   VP_LINE_SLOPE(contrast);
 
 	for (i = 0; i < 8; i++) {
-		writel(g_vp_contrast_brightness, tvout_base + S5P_PP_LINE_EQ0 + i*4);
+		writel(g_vp_contrast_brightness, vp_base + S5P_PP_LINE_EQ0 + i*4);
 	}
 
 	VPPRINTK("%d\n\r", g_vp_contrast_brightness);
@@ -363,8 +366,8 @@ s5p_tv_vp_err __s5p_vp_update(void)
 {
 	VPPRINTK("()\n\r");
 
-	writel(readl(tvout_base + S5P_VP_SHADOW_UPDATE) | S5P_VP_SHADOW_UPDATE_ENABLE,
-	       tvout_base + S5P_VP_SHADOW_UPDATE);
+	writel(readl(vp_base + S5P_VP_SHADOW_UPDATE) | S5P_VP_SHADOW_UPDATE_ENABLE,
+	       vp_base + S5P_VP_SHADOW_UPDATE);
 
 	VPPRINTK("()\n\r");
 
@@ -377,7 +380,7 @@ s5p_tv_vp_err __s5p_vp_update(void)
 s5p_vp_field __s5p_vp_get_field_id(void)
 {
 	VPPRINTK("()\n\r");
-	return ((readl(tvout_base + S5P_VP_FIELD_ID) ==  S5P_VP_FIELD_ID_BOTTOM) ? 
+	return ((readl(vp_base + S5P_VP_FIELD_ID) ==  S5P_VP_FIELD_ID_BOTTOM) ? 
 		VPROC_BOTTOM_FIELD : VPROC_TOP_FIELD);
 }
 
@@ -387,7 +390,7 @@ s5p_vp_field __s5p_vp_get_field_id(void)
 unsigned short __s5p_vp_get_update_status(void)
 {
 	VPPRINTK("()\n\r");
-	return ((readl(tvout_base + S5P_VP_SHADOW_UPDATE) & S5P_VP_SHADOW_UPDATE_ENABLE));
+	return ((readl(vp_base + S5P_VP_SHADOW_UPDATE) & S5P_VP_SHADOW_UPDATE_ENABLE));
 }
 
 
@@ -416,17 +419,17 @@ void __s5p_vp_init_op_mode(bool line_skip,
 	temp_reg |= (toggle_id == S5P_TV_VP_FILED_ID_TOGGLE_VSYNC) ?
 		    VP_FIELD_ID_TOGGLE_VSYNC : VP_FIELD_ID_TOGGLE_USER;
 
-	writel(temp_reg, tvout_base + S5P_VP_MODE);
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_VP_MODE));
+	writel(temp_reg, vp_base + S5P_VP_MODE);
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_VP_MODE));
 }
 
 void __s5p_vp_init_pixel_rate_control(s5p_vp_pxl_rate rate)
 {
 	VPPRINTK("%d\n\r", rate);
 
-	writel(VP_PEL_RATE_CTRL(rate), tvout_base + S5P_VP_PER_RATE_CTRL);
+	writel(VP_PEL_RATE_CTRL(rate), vp_base + S5P_VP_PER_RATE_CTRL);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_VP_PER_RATE_CTRL));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_VP_PER_RATE_CTRL));
 }
 
 s5p_tv_vp_err __s5p_vp_init_layer(u32 top_y_addr,
@@ -451,7 +454,7 @@ s5p_tv_vp_err __s5p_vp_init_layer(u32 top_y_addr,
 
 	VPPRINTK("%d\n\r", src_img_endian);
 
-	writel(1, tvout_base + S5P_VP_ENDIAN_MODE);
+	writel(1, vp_base + S5P_VP_ENDIAN_MODE);
 
 	error = __s5p_vp_set_top_field_address(top_y_addr, top_c_addr);
 
@@ -474,7 +477,7 @@ s5p_tv_vp_err __s5p_vp_init_layer(u32 top_y_addr,
 
 	__s5p_vp_set_src_dest_size(src_width, src_height, dst_width, dst_height, ipc_2d);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_VP_ENDIAN_MODE));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_VP_ENDIAN_MODE));
 
 	return error;
 
@@ -531,9 +534,9 @@ void __s5p_vp_init_bypass_post_process(bool bypass)
 	VPPRINTK("%d\n\r", bypass);
 
 	writel((bypass) ? VP_BY_PASS_ENABLE : VP_BY_PASS_DISABLE, 
-		tvout_base + S5P_PP_BYPASS);
+		vp_base + S5P_PP_BYPASS);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_BYPASS));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_BYPASS));
 }
 
 s5p_tv_vp_err __s5p_vp_init_csc_coef(s5p_vp_csc_coeff csc_coeff, u32 coeff)
@@ -545,9 +548,9 @@ s5p_tv_vp_err __s5p_vp_init_csc_coef(s5p_vp_csc_coeff csc_coeff, u32 coeff)
 		return S5P_TV_VP_ERR_INVALID_PARAM;
 	}
 
-	writel(VP_CSC_COEF(coeff), tvout_base + S5P_PP_CSC_Y2Y_COEF + csc_coeff*4);
+	writel(VP_CSC_COEF(coeff), vp_base + S5P_PP_CSC_Y2Y_COEF + csc_coeff*4);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_CSC_Y2Y_COEF + csc_coeff*4));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_CSC_Y2Y_COEF + csc_coeff*4));
 
 	return VPROC_NO_ERROR;
 }
@@ -556,9 +559,9 @@ void __s5p_vp_init_saturation(u32 sat)
 {
 	VPPRINTK("%d\n\r", sat);
 
-	writel(VP_SATURATION(sat), tvout_base + S5P_PP_SATURATION);
+	writel(VP_SATURATION(sat), vp_base + S5P_PP_SATURATION);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_SATURATION));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_SATURATION));
 }
 
 void __s5p_vp_init_sharpness(u32 th_h_noise, s5p_vp_sharpness_control sharpness)
@@ -566,9 +569,9 @@ void __s5p_vp_init_sharpness(u32 th_h_noise, s5p_vp_sharpness_control sharpness)
 	VPPRINTK("%d,%d\n\r", th_h_noise, sharpness);
 
 	writel(VP_TH_HNOISE(th_h_noise) | VP_SHARPNESS(sharpness), 
-		tvout_base + S5P_PP_SHARPNESS);
+		vp_base + S5P_PP_SHARPNESS);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_SHARPNESS));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_SHARPNESS));
 }
 
 s5p_tv_vp_err __s5p_vp_init_brightness_contrast_control(s5p_vp_line_eq eq_num,
@@ -593,9 +596,9 @@ void __s5p_vp_init_brightness_offset(u32 offset)
 {
 	VPPRINTK("%d\n\r", offset);
 
-	writel(VP_BRIGHT_OFFSET(offset), tvout_base + S5P_PP_BRIGHT_OFFSET);
+	writel(VP_BRIGHT_OFFSET(offset), vp_base + S5P_PP_BRIGHT_OFFSET);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_BRIGHT_OFFSET));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_BRIGHT_OFFSET));
 }
 
 void __s5p_vp_init_csc_control(bool sub_y_offset_en, bool csc_en)
@@ -606,9 +609,9 @@ void __s5p_vp_init_csc_control(bool sub_y_offset_en, bool csc_en)
 	temp_reg = (sub_y_offset_en) ? VP_SUB_Y_OFFSET_ENABLE :
 		   VP_SUB_Y_OFFSET_DISABLE;
 	temp_reg |= (csc_en) ? VP_CSC_ENABLE : VP_CSC_DISABLE;
-	writel(temp_reg, tvout_base + S5P_PP_CSC_EN);
+	writel(temp_reg, vp_base + S5P_PP_CSC_EN);
 
-	VPPRINTK("0x%08x\n\r", readl(tvout_base + S5P_PP_CSC_EN));
+	VPPRINTK("0x%08x\n\r", readl(vp_base + S5P_PP_CSC_EN));
 }
 
 s5p_tv_vp_err __s5p_vp_init_csc_coef_default(s5p_vp_csc_type csc_type)
@@ -618,27 +621,27 @@ s5p_tv_vp_err __s5p_vp_init_csc_coef_default(s5p_vp_csc_type csc_type)
 	switch (csc_type) {
 
 	case VPROC_CSC_SD_HD:
-		writel(Y2Y_COEF_601_TO_709, tvout_base + S5P_PP_CSC_Y2Y_COEF);
-		writel(CB2Y_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CB2Y_COEF);
-		writel(CR2Y_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CR2Y_COEF);
-		writel(Y2CB_COEF_601_TO_709, tvout_base + S5P_PP_CSC_Y2CB_COEF);
-		writel(CB2CB_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CB2CB_COEF);
-		writel(CR2CB_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CR2CB_COEF);
-		writel(Y2CR_COEF_601_TO_709, tvout_base + S5P_PP_CSC_Y2CR_COEF);
-		writel(CB2CR_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CB2CR_COEF);
-		writel(CR2CR_COEF_601_TO_709, tvout_base + S5P_PP_CSC_CR2CR_COEF);
+		writel(Y2Y_COEF_601_TO_709, vp_base + S5P_PP_CSC_Y2Y_COEF);
+		writel(CB2Y_COEF_601_TO_709, vp_base + S5P_PP_CSC_CB2Y_COEF);
+		writel(CR2Y_COEF_601_TO_709, vp_base + S5P_PP_CSC_CR2Y_COEF);
+		writel(Y2CB_COEF_601_TO_709, vp_base + S5P_PP_CSC_Y2CB_COEF);
+		writel(CB2CB_COEF_601_TO_709, vp_base + S5P_PP_CSC_CB2CB_COEF);
+		writel(CR2CB_COEF_601_TO_709, vp_base + S5P_PP_CSC_CR2CB_COEF);
+		writel(Y2CR_COEF_601_TO_709, vp_base + S5P_PP_CSC_Y2CR_COEF);
+		writel(CB2CR_COEF_601_TO_709, vp_base + S5P_PP_CSC_CB2CR_COEF);
+		writel(CR2CR_COEF_601_TO_709, vp_base + S5P_PP_CSC_CR2CR_COEF);
 		break;
 
 	case VPROC_CSC_HD_SD:
-		writel(Y2Y_COEF_709_TO_601, tvout_base + S5P_PP_CSC_Y2Y_COEF);
-		writel(CB2Y_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CB2Y_COEF);
-		writel(CR2Y_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CR2Y_COEF);
-		writel(Y2CB_COEF_709_TO_601, tvout_base + S5P_PP_CSC_Y2CB_COEF);
-		writel(CB2CB_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CB2CB_COEF);
-		writel(CR2CB_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CR2CB_COEF);
-		writel(Y2CR_COEF_709_TO_601, tvout_base + S5P_PP_CSC_Y2CR_COEF);
-		writel(CB2CR_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CB2CR_COEF);
-		writel(CR2CR_COEF_709_TO_601, tvout_base + S5P_PP_CSC_CR2CR_COEF);
+		writel(Y2Y_COEF_709_TO_601, vp_base + S5P_PP_CSC_Y2Y_COEF);
+		writel(CB2Y_COEF_709_TO_601, vp_base + S5P_PP_CSC_CB2Y_COEF);
+		writel(CR2Y_COEF_709_TO_601, vp_base + S5P_PP_CSC_CR2Y_COEF);
+		writel(Y2CB_COEF_709_TO_601, vp_base + S5P_PP_CSC_Y2CB_COEF);
+		writel(CB2CB_COEF_709_TO_601, vp_base + S5P_PP_CSC_CB2CB_COEF);
+		writel(CR2CB_COEF_709_TO_601, vp_base + S5P_PP_CSC_CR2CB_COEF);
+		writel(Y2CR_COEF_709_TO_601, vp_base + S5P_PP_CSC_Y2CR_COEF);
+		writel(CB2CR_COEF_709_TO_601, vp_base + S5P_PP_CSC_CB2CR_COEF);
+		writel(CR2CR_COEF_709_TO_601, vp_base + S5P_PP_CSC_CR2CR_COEF);
 		break;
 
 	default:
@@ -648,15 +651,15 @@ s5p_tv_vp_err __s5p_vp_init_csc_coef_default(s5p_vp_csc_type csc_type)
 	}
 
 	VPPRINTK("0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,0x%08x)\n\r",
-		readl(tvout_base + S5P_PP_CSC_Y2Y_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CB2Y_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CR2Y_COEF),
-		readl(tvout_base + S5P_PP_CSC_Y2CB_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CB2CB_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CR2CB_COEF),
-		readl(tvout_base + S5P_PP_CSC_Y2CR_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CB2CR_COEF), 
-		readl(tvout_base + S5P_PP_CSC_CR2CR_COEF));
+		readl(vp_base + S5P_PP_CSC_Y2Y_COEF), 
+		readl(vp_base + S5P_PP_CSC_CB2Y_COEF), 
+		readl(vp_base + S5P_PP_CSC_CR2Y_COEF),
+		readl(vp_base + S5P_PP_CSC_Y2CB_COEF), 
+		readl(vp_base + S5P_PP_CSC_CB2CB_COEF), 
+		readl(vp_base + S5P_PP_CSC_CR2CB_COEF),
+		readl(vp_base + S5P_PP_CSC_Y2CR_COEF), 
+		readl(vp_base + S5P_PP_CSC_CB2CR_COEF), 
+		readl(vp_base + S5P_PP_CSC_CR2CR_COEF));
 
 	return VPROC_NO_ERROR;
 }
@@ -670,7 +673,7 @@ s5p_tv_vp_err __s5p_vp_start(void)
 
 	VPPRINTK("()\n\r");
 
-	writel(VP_ON_ENABLE, tvout_base + S5P_VP_ENABLE);
+	writel(VP_ON_ENABLE, vp_base + S5P_VP_ENABLE);
 
 	error = __s5p_vp_update();
 
@@ -687,12 +690,12 @@ s5p_tv_vp_err __s5p_vp_stop(void)
 
 	VPPRINTK("()\n\r");
 
-	writel((readl(tvout_base + S5P_VP_ENABLE) &~VP_ON_ENABLE), 
-		tvout_base + S5P_VP_ENABLE);
+	writel((readl(vp_base + S5P_VP_ENABLE) &~VP_ON_ENABLE), 
+		vp_base + S5P_VP_ENABLE);
 
 	error = __s5p_vp_update();
 
-	while (!(readl(tvout_base + S5P_VP_ENABLE) & VP_POWER_DOWN_RDY)) {
+	while (!(readl(vp_base + S5P_VP_ENABLE) & VP_POWER_DOWN_RDY)) {
 		msleep(1);
 	}
 
@@ -706,13 +709,71 @@ void __s5p_vp_sw_reset(void)
 {
 	VPPRINTK("()\n\r");
 
-	writel((readl(tvout_base + S5P_VP_SRESET) | VP_SOFT_RESET), 
-		tvout_base + S5P_VP_SRESET);
+	writel((readl(vp_base + S5P_VP_SRESET) | VP_SOFT_RESET), 
+		vp_base + S5P_VP_SRESET);
 
-	while (readl(tvout_base + S5P_VP_SRESET) & VP_SOFT_RESET) {
+	while (readl(vp_base + S5P_VP_SRESET) & VP_SOFT_RESET) {
 		msleep(10);
 	}
 
 	VPPRINTK("()\n\r");
+}
+
+int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num)
+{
+	struct resource *res;
+	size_t	size;
+	int 	ret;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
+
+	if (res == NULL) {
+		dev_err(&pdev->dev, 
+			"failed to get memory region resource\n");
+		ret = -ENOENT;
+		
+	}
+
+	size = (res->end - res->start) + 1;
+
+	vp_mem = request_mem_region(res->start, size, pdev->name);
+
+	if (vp_mem == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to get memory region\n");
+		ret = -ENOENT;
+		
+	}
+
+	vp_base = ioremap(res->start, size);
+
+	if (vp_base == NULL) {
+		dev_err(&pdev->dev,  
+			"failed to ioremap address region\n");
+		ret = -ENOENT;
+		
+
+	}
+
+	return ret;
+
+}
+
+int __init __s5p_vp_release(struct platform_device *pdev)
+{
+	iounmap(vp_base);
+
+	/* remove memory region */
+	if (vp_mem != NULL) {
+		if (release_resource(vp_mem))
+			dev_err(&pdev->dev,
+				"Can't remove tvout drv !!\n");
+
+		kfree(vp_mem);
+
+		vp_mem = NULL;
+	}
+
+	return 0;
 }
 
