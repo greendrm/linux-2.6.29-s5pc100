@@ -319,6 +319,12 @@ config VIDEO_TCM825X
 	  This is a driver for the Toshiba TCM825x VGA camera sensor.
 	  It is used for example in Nokia N800.
  
+config VIDEO_S5K3BA
+	tristate "S5K3BA supporting camera driver"
+	depends on I2C && VIDEO_V4L2
+	---help---
+	  This driver supports s5k3ba SoC camera module
+
 config VIDEO_S5K4BA
 	tristate "S5K4BA supporting camera driver"
 	depends on I2C && VIDEO_V4L2

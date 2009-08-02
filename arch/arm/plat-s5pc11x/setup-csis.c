@@ -21,28 +21,9 @@ struct platform_device; /* don't need the contents */
 
 void s3c_csis_cfg_gpio(struct platform_device *dev)
 {
-	return;
 }
 
 void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
 {
-	u32 cfg;
-
-	if (on) {
-		/* MIPI Power Enable */
-		cfg = __raw_readl(S5P_OTHERS);
-		cfg |= S5P_OTHERS_MIPI_DPHY_EN;
-		__raw_writel(cfg, S5P_OTHERS);
-
-		/* MIPI CSIS Part Reset */
-		cfg = __raw_readl(S5P_MIPI_PHY_CON0);
-		cfg |= S5P_MIPI_PHY_CON0_S_RESETN;
-		__raw_writel(cfg, S5P_MIPI_PHY_CON0);
-	} else {
-		/* MIPI Power Disable */
-		cfg = __raw_readl(S5P_OTHERS);
-		cfg &= ~S5P_OTHERS_MIPI_DPHY_EN;
-		__raw_writel(cfg, S5P_OTHERS);
-	}
 }
 
