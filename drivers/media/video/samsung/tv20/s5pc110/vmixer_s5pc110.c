@@ -451,6 +451,13 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_720P_MODE;
 		break;
 
+// C110
+	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_60:
+		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
+		break;		
+
 	default:
 		VMPRINTK(" invalid mode parameter = %d\n\r", mode);
 		return S5P_TV_VMX_ERR_INVALID_PARAM;

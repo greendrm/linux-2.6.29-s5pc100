@@ -269,7 +269,7 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd, s5p_tv_hdm
 		return ERROR;
 	}
 */
-	// config Phy
+	/* config Phy */
 #if 0	
 	if (PHYConfig(video_params[mode].pixel_clock, cd) == ERROR)
 	{
@@ -660,6 +660,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 						s5p_tv_o_mode out_mode)
 {
 	s5p_tv_hdmi_disp_mode hdmi_disp_num;
+	s5p_hdmi_v_fmt hdmi_v_fmt;
 
 	HDMIPRINTK("%d,%d\n\r", disp_mode, out_mode);
 
@@ -676,6 +677,12 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	case TVOUT_720P_60:
 
 	case TVOUT_720P_50:
+
+// C110
+	case TVOUT_1080P_60:
+
+	case TVOUT_1080P_50:		
+
 		writel(INT_PRO_MODE_PROGRESSIVE, hdmi_base + S5P_INT_PRO_MODE);
 		break;
 
@@ -690,23 +697,38 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
+		hdmi_v_fmt = v640x480p_60Hz;
 		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_480P_60;
 		break;
 
 	case TVOUT_576P_50_16_9:
 
 	case TVOUT_576P_50_4_3:
+		hdmi_v_fmt = v720x576p_50Hz;
 		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_576P_50;
 		break;
 
 	case TVOUT_720P_60:
+		hdmi_v_fmt = v1280x720p_60Hz;
 		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_720P_60;
 		break;
 
 	case TVOUT_720P_50:
+		hdmi_v_fmt = v1280x720p_50Hz;
 		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_720P_50;
 		break;
 
+// C110
+	case TVOUT_1080P_60:
+		hdmi_v_fmt = v1920x1080p_60Hz;
+		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_1080P_60;
+		break;
+
+	case TVOUT_1080P_50:
+		hdmi_v_fmt = v1920x1080p_50Hz;
+		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_1080P_50;
+		break;
+		
 	default:
 		HDMIPRINTK(" invalid disp_mode parameter(%d)\n\r", disp_mode);
 		return S5P_TV_HDMI_ERR_INVALID_PARAM;
@@ -727,7 +749,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	}
 
 //FPGA: FOR C110 HDMI TEST
-	hdmi_set_video_mode(v1280x720p_60Hz, HDMI_CD_24,HDMI_PIXEL_RATIO_16_9);
+	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24,HDMI_PIXEL_RATIO_16_9);
 //FPGA: FOR C110 HDMI TEST
 	
 	return HDMI_NO_ERROR;

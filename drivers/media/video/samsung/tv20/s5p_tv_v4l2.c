@@ -54,41 +54,40 @@ static struct v4l2_output s5p_tv_outputs[] = {
 
 		.index		= 1,
 		.name		= "Analog  SVIDEO",
-		.type			= V4L2_OUTPUT_TYPE_SVIDEO,
-		.audioset		= 0,
+		.type		= V4L2_OUTPUT_TYPE_SVIDEO,
+		.audioset	= 0,
 		.modulator	= 0,
-		.std			= CVBS_S_VIDEO,
+		.std		= CVBS_S_VIDEO,
 	}, {
 		.index		= 2,
 		.name		= "Analog COMPONENT_YPBPR_I",
-		.type			= V4L2_OUTPUT_TYPE_YPBPR_INERLACED,
-		.audioset		= 0,
+		.type		= V4L2_OUTPUT_TYPE_YPBPR_INERLACED,
+		.audioset	= 0,
 		.modulator	= 0,
-		.std			= V4L2_STD_ALL,
+		.std		= V4L2_STD_ALL,
 	}, {
 		.index		= 3,
-		.name		= "Analog  COMPONENT_YPBPR_P",
-		.type			= V4L2_OUTPUT_TYPE_YPBPR_PROGRESSIVE,
-		.audioset		= 0,
+		.name		= "Analog COMPONENT_YPBPR_P",
+		.type		= V4L2_OUTPUT_TYPE_YPBPR_PROGRESSIVE,
+		.audioset	= 0,
 		.modulator	= 0,
-		.std			= V4L2_STD_ALL,
+		.std		= V4L2_STD_ALL,
 	}, {
 		.index		= 4,
-		.name		= "Analog  COMPONENT_RGB_P",
-		.type			= V4L2_OUTPUT_TYPE_RGB_PROGRESSIVE,
-		.audioset		= 0,
+		.name		= "Analog COMPONENT_RGB_P",
+		.type		= V4L2_OUTPUT_TYPE_RGB_PROGRESSIVE,
+		.audioset	= 0,
 		.modulator	= 0,
-		.std			= V4L2_STD_ALL,
+		.std		= V4L2_STD_ALL,
 	}, {
 		.index		= 5,
-		.name		= "Digital  HDMI",
-		.type			= V4L2_OUTPUT_TYPE_DIGITAL,
-		.audioset		= 2,
+		.name		= "Digital HDMI",
+		.type		= V4L2_OUTPUT_TYPE_DIGITAL,
+		.audioset	= 2,
 		.modulator	= 0,
-		.std			= V4L2_STD_480P_60_16_9 |
-		V4L2_STD_480P_60_16_9 |
-		V4L2_STD_720P_60 |
-		V4L2_STD_720P_50,
+		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
+					V4L2_STD_720P_60 | V4L2_STD_720P_50 |
+					V4L2_STD_1080P_60 | V4L2_STD_1080P_50,
 	}
 
 };
@@ -186,6 +185,14 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.index    = 12,
 		.id     = V4L2_STD_720P_50,
 		.name = "720P_50",
+	}, {
+		.index    = 13,
+		.id     = V4L2_STD_1080P_60,
+		.name = "1080P_60",
+	}, {
+		.index    = 14,
+		.id     = V4L2_STD_1080P_50,
+		.name = "1080P_50",
 	}
 };
 
@@ -730,7 +737,15 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 	case V4L2_STD_720P_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_50;
 		break;
-
+//C110		
+	case V4L2_STD_1080P_60:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_60;
+		break;
+		
+	case V4L2_STD_1080P_50:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_50;
+		break;
+	
 	default:
 		break;
 	}
@@ -977,6 +992,20 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 		cropcap->defrect.width = 1280;
 		cropcap->defrect.height = 720;
 		break;
+		
+	case TVOUT_1080P_60:
+
+	case TVOUT_1080P_50:
+		cropcap->bounds.top = 0;
+		cropcap->bounds.left = 0;
+		cropcap->bounds.width = 1920;
+		cropcap->bounds.height = 1080;
+
+		cropcap->defrect.top = 0;
+		cropcap->defrect.left = 0;
+		cropcap->defrect.width = 1920;
+		cropcap->defrect.height = 1080;
+		break;
 
 	default :
 		return -1;
@@ -1106,8 +1135,8 @@ static int s5p_tv_v4l2_s_parm_v(struct file *file, void *fh, struct v4l2_streamp
 	s5ptv_status.vl_basic_param.priority		= vparam.priority;
 	s5ptv_status.vl_basic_param.src_offset_x 	= vparam.win.w.left;
 	s5ptv_status.vl_basic_param.src_offset_y 	= vparam.win.w.top;
-	s5ptv_status.vl_basic_param.src_width  	= vparam.win.w.width;
-	s5ptv_status.vl_basic_param.src_height 	= vparam.win.w.height;
+	s5ptv_status.vl_basic_param.src_width  		= vparam.win.w.width;
+	s5ptv_status.vl_basic_param.src_height 		= vparam.win.w.height;
 
 	V4L2PRINTK("[type 0x%08x] : left: [%d], top [%d], width[%d], height[%d]\n",
 		   a->type,

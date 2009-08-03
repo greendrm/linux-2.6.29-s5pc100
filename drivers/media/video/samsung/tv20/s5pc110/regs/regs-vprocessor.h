@@ -265,7 +265,9 @@ enum VP_PIXEL_RATE
 #define VP_DST_WIDTH(a)     (0x7ff&a)
 
 // S5P_VP_DST_WIDTH
-#define VP_DST_HEIGHT(a)    (0x3ff&a)
+//#define VP_DST_HEIGHT(a)    (0x3ff&a)
+//C110:
+#define VP_DST_HEIGHT(a)    (0x7ff&a)
 
 // S5P_VP_H_RATIO
 #define VP_H_RATIO(a)   (0x7ffff&a)

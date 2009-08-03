@@ -57,10 +57,12 @@
 #define AVI_VIC_3		(3<<0) 	// 720x480p@59.94/60Hz 16:9
 #define AVI_VIC_4		(4<<0) 	// 1280x720p@59.94/60Hz 16:9
 #define AVI_VIC_5		(5<<0) 	// 1920x1080i@59.94/60Hz 16:9
+#define AVI_VIC_16		(16<<0) // 1920x1080p@60Hz 16:9
 #define AVI_VIC_17		(17<<0) // 720x576p@50Hz 4:3
 #define AVI_VIC_18		(18<<0) // 720x576p@50Hz 16:9
 #define AVI_VIC_19		(19<<0) // 1280x720p@50Hz 16:9
 #define AVI_VIC_20		(20<<0) // 1920x1080i@50Hz 16:9
+#define AVI_VIC_31		(31<<0) // 1920x1080p@50Hz
 
 #define VP_UPDATE_RETRY_MAXIMUM 	30
 #define VP_WAIT_UPDATE_SLEEP 		3
@@ -509,6 +511,8 @@ typedef struct _s5p_tv_status {
 #define V4L2_STD_576P_50_4_3	((v4l2_std_id)0x07000000)
 #define V4L2_STD_720P_60	((v4l2_std_id)0x08000000)
 #define V4L2_STD_720P_50	((v4l2_std_id)0x09000000)
+#define V4L2_STD_1080P_60	((v4l2_std_id)0x0a000000)
+#define V4L2_STD_1080P_50	((v4l2_std_id)0x0b000000)
 
 #define FORMAT_FLAGS_DITHER       	0x01
 #define FORMAT_FLAGS_PACKED       	0x02
