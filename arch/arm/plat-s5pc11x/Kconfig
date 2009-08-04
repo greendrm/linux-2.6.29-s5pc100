@@ -94,6 +94,19 @@ config S5PC11X_SETUP_CSIS
 	help
 	  Common setup code for MIPI-CSIS
 
+# IPC part
+config S5PC11X_DEV_IPC
+	bool
+	default y
+	help
+	  Compile in platform device definitions for IPC
+
+config S5PC11X_SETUP_IPC
+	bool
+	default y
+	help
+	  Common setup code for IPC
+
 # FIMC part
 config S5PC11X_DEV_FIMC0
 	bool

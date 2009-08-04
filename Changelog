@@ -1401,3 +1401,22 @@ v2.6.29.4-dev-1-0-27: Thomas Abraham
 	Modified Files
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-1-0-28: Youngmok Song
+	- Support IPC for S5PC110
+
+	Added Files:
+		A       arch/arm/plat-s5pc11x/dev-ipc.c
+		A       arch/arm/plat-s5pc11x/include/plat/ipc.h
+		A       arch/arm/plat-s5pc11x/include/plat/regs-ipc.h
+		A       arch/arm/plat-s5pc11x/setup-ipc.c
+		A       drivers/media/video/samsung/fimc/ipc.c
+		A       drivers/media/video/samsung/fimc/ipc.h
+		A       drivers/media/video/samsung/fimc/ipc_table.h
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       drivers/media/video/samsung/fimc/Kconfig
+		M       drivers/media/video/samsung/fimc/Makefile
+
