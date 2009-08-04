@@ -22,6 +22,11 @@
 #include "s3c-pcm.h"
 #include "s3c-i2s.h"
 
+extern struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
+extern struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+
+static int lowpower = 0;
+
 static const struct snd_soc_dapm_widget universal_dapm_widgets[] = {
 	/* TODO */
 };
@@ -68,7 +73,7 @@ static struct snd_soc_dai_link universal_dai[] = {
 {
 	.name = "AK4671",
 	.stream_name = "AK4671 HiFi",
-	.cpu_dai = &s3c_i2s_dai,
+	.cpu_dai = &s3c_i2s_pdat.i2s_dai,
 	.codec_dai = &ak4671_dai,
 	.init = universal_ak4671_init,
 	.ops = &universal_hifi_ops,
@@ -77,7 +82,7 @@ static struct snd_soc_dai_link universal_dai[] = {
 
 static struct snd_soc_card universal = {
 	.name = "universal",
-	.platform = &s3c24xx_soc_platform,
+	.platform = &s3c_pcm_pdat.pcm_pltfm,
 	.dai_link = universal_dai,
 	.num_links = ARRAY_SIZE(universal_dai),
 };
@@ -92,6 +97,17 @@ static struct platform_device *universal_snd_device;
 static int __init universal_init(void)
 {
 	int ret;
+
+	s3c_pcm_pdat.set_mode(lowpower, &s3c_i2s_pdat);
+	s3c_i2s_pdat.set_mode(lowpower);
+
+	if(lowpower){ /* LPMP3 Mode doesn't support recording */
+		ak4671_dai.capture.channels_min = 0;
+		ak4671_dai.capture.channels_max = 0;
+	}else{
+		ak4671_dai.capture.channels_min = 2;
+		ak4671_dai.capture.channels_max = 2;
+	}
 
 	universal_snd_device = platform_device_alloc("soc-audio", 0);
 	if (!universal_snd_device)
@@ -114,6 +130,8 @@ static void __exit universal_exit(void)
 
 module_init(universal_init);
 module_exit(universal_exit);
+
+module_param (lowpower, int, 0444);
 
 /* Module information */
 MODULE_DESCRIPTION("ASoC AK4671 codec driver");
