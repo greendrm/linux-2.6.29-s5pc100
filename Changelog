@@ -1401,7 +1401,20 @@ v2.6.29.4-dev-1-0-27: Thomas Abraham
 	Modified Files
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
-v2.6.29.4-dev-1-0-28: Youngmok Song
+v2.6.29.4-s5pc110-alpha:Hyunwoong Kim
+	- Official Release for s5pc110(2009.07.31)
+
+v2.6.29.4-dev-1-0-28: Thomas Abraham
+	- Enable dedicated TX FIFO operation for USB OTG gadget in S5PC110.
+	The following changes have been made
+	1. Enabled dedicated Tx FIFO operation for all IN endpoints 
+	   for USB OTG gadget in S5PC11X.
+	2. Modified the endpoint FIFO sizes and base addresses.
+	3. Endpoint Tx FIFO's are flushed before each transfer.
+	4. Write the FIFO number to be used by endpoint in the DIEPCTL 
+	   register.
+
+v2.6.29.4-dev-1-0-29: Youngmok Song
 	- Support IPC for S5PC110
 
 	Added Files:
@@ -1419,4 +1432,5 @@ v2.6.29.4-dev-1-0-28: Youngmok Song
 		M       arch/arm/plat-s5pc11x/Makefile
 		M       drivers/media/video/samsung/fimc/Kconfig
 		M       drivers/media/video/samsung/fimc/Makefile
+
 

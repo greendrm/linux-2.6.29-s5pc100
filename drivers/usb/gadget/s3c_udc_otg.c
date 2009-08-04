@@ -501,18 +501,28 @@ static void reconfig_usbd(void)
 	/* 10. Unmask device IN EP common interrupts*/
 	writel(DIEPMSK_INIT, S3C_UDC_OTG_DIEPMSK);
 
-	/* 11. Set Rx FIFO Size*/
-	writel(RX_FIFO_SIZE, S3C_UDC_OTG_GRXFSIZ);
-
+	/* 11. Set Rx FIFO Size (in 32-bit words) */
+	writel(RX_FIFO_SIZE >> 2, S3C_UDC_OTG_GRXFSIZ);
+	
 	/* 12. Set Non Periodic Tx FIFO Size*/
-	writel(NPTX_FIFO_SIZE<<16| NPTX_FIFO_START_ADDR<<0, S3C_UDC_OTG_GNPTXFSIZ);
+	writel((NPTX_FIFO_SIZE >> 2) << 16 | (NPTX_FIFO_START_ADDR) << 0,
+		S3C_UDC_OTG_GNPTXFSIZ);
 
 #ifdef DED_TX_FIFO
-	for (i = 1; i < S3C_MAX_ENDPOINTS; i++)
-		writel(NPTX_FIFO_SIZE << 16 |
+	for (i = 1; i < S3C_MAX_ENDPOINTS; i++) 
+		writel((PTX_FIFO_SIZE >> 2) << 16 |
 			(NPTX_FIFO_START_ADDR + NPTX_FIFO_SIZE + PTX_FIFO_SIZE*(i-1)) << 0,
 			S3C_UDC_OTG_DIEPTXF(i));
 #endif
+
+        /* Flush the RX FIFO */
+        writel(0x10, S3C_UDC_OTG_GRSTCTL);
+        while(readl(S3C_UDC_OTG_GRSTCTL) & 0x10);
+
+        /* Flush all the Tx FIFO's */
+        writel(0x10<<6, S3C_UDC_OTG_GRSTCTL);
+        writel((0x10<<6)|0x20, S3C_UDC_OTG_GRSTCTL);
+        while(readl(S3C_UDC_OTG_GRSTCTL) & 0x20);
 
 	/* 13. Clear NAK bit of EP0, EP1, EP2*/
 	/* For Slave mode*/
@@ -520,7 +530,6 @@ static void reconfig_usbd(void)
 
 	/* 14. Initialize OTG Link Core.*/
 	writel(GAHBCFG_INIT, S3C_UDC_OTG_GAHBCFG);
-
 }
 
 static void set_max_pktsize(struct s3c_udc *dev, enum usb_device_speed speed)

@@ -9,6 +9,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
 */
+
 //#define COFIG_TVOUT_RAW_DBG
 
 // common
@@ -45,7 +46,10 @@ typedef enum {
 	TVOUT_576P_50_16_9,
 	TVOUT_576P_50_4_3,
 	TVOUT_720P_60,
-	TVOUT_720P_50
+	TVOUT_720P_50,
+//C110	
+	TVOUT_1080P_60,
+	TVOUT_1080P_50,
 }s5p_tv_disp_mode;
 
 typedef enum {
@@ -539,7 +543,9 @@ typedef enum {
 	S5P_TV_HDMI_DISP_MODE_1080I_60 = 4,
 	S5P_TV_HDMI_DISP_MODE_1080I_50 = 5,
 	S5P_TV_HDMI_DISP_MODE_VGA_60 = 6,
-	S5P_TV_HDMI_DISP_MODE_NUM = 7
+	S5P_TV_HDMI_DISP_MODE_1080P_60 = 7,
+	S5P_TV_HDMI_DISP_MODE_1080P_50 = 8,	
+	S5P_TV_HDMI_DISP_MODE_NUM = 9
 }s5p_tv_hdmi_disp_mode;
 
 /* pixel aspect ratio for HDMI HW (AVI packet and EDID) */

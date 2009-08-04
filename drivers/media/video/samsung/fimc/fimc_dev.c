@@ -690,6 +690,7 @@ static int fimc_init_global(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;
 	struct s3c_platform_camera *cam;
+	struct clk *srclk;
 	int i;
 
 	pdata = to_fimc_plat(&pdev->dev);
@@ -700,13 +701,25 @@ static int fimc_init_global(struct platform_device *pdev)
 		if (!cam)
 			break;
 
-		/* mclk */
-		cam->clk = clk_get(&pdev->dev, cam->clk_name);
-		if (IS_ERR(cam->clk)) {
+		srclk = clk_get(&pdev->dev, cam->srclk_name);
+		if (IS_ERR(srclk)) {
 			dev_err(&pdev->dev, "%s: failed to get mclk source\n", \
 				__FUNCTION__);
 			return -EINVAL;
 		}
+
+		/* mclk */
+		cam->clk = clk_get(&pdev->dev, cam->clk_name);
+		if (IS_ERR(cam->clk)) {
+			dev_err(&pdev->dev, "%s: failed to get mclk\n", \
+				__FUNCTION__);
+			return -EINVAL;
+		}
+
+		if (cam->clk->set_parent) {
+			cam->clk->parent = srclk;
+			cam->clk->set_parent(cam->clk, srclk);
+		}		
 
 		/* Assign camera device to fimc */
 		fimc_dev->camera[cam->id] = cam;
@@ -833,8 +846,10 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	}
 
 	/* set parent clock */
-	if (ctrl->clk->set_parent)
+	if (ctrl->clk->set_parent) {
+		ctrl->clk->parent = srclk;
 		ctrl->clk->set_parent(ctrl->clk, srclk);
+	}
 
 	/* set clockrate for fimc interface block */
 	if (ctrl->clk->set_rate) {

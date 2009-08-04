@@ -521,6 +521,23 @@ static struct clk_sources clkset_fimc2 = {
 	.nr_sources	= ARRAY_SIZE(clkset_fimc2_list),
 };
 
+static struct clk *clkset_csis_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
+};
+
+static struct clk_sources clkset_csis = {
+	.sources	= clkset_csis_list,
+	.nr_sources	= ARRAY_SIZE(clkset_csis_list),
+};
+
 static struct clk *clkset_pwi_list[] = {
 	&clk_srclk,
 	&clk_mout_epll.clk,
@@ -577,8 +594,6 @@ static int s5pc11x_setrate_clksrc(struct clk *clk, unsigned long rate)
 	val |= (div - 1) << sclk->shift;
 	__raw_writel(val, reg);
 
-	printk("div %d, rate %lu", div, rate);
-
 	return 0;
 }
 
@@ -613,17 +628,15 @@ static unsigned long s5pc11x_roundrate_clksrc(struct clk *clk,
 	unsigned long parent_rate = clk_get_rate(clk->parent);
 	int div;
 
-	if (rate >= parent_rate)
+	if (rate > parent_rate)
 		rate = parent_rate;
 	else {
 		div = parent_rate / rate;
 
 		if (div == 0)
 			div = 1;
-		else if (div > 16)
+		if (div > 16)
 			div = 16;
-		else
-			div++;
 
 		rate = parent_rate / div;
 	}
@@ -916,6 +929,25 @@ static struct clksrc_clk clk_fimc2 = {
 	.reg_source	= S5P_CLK_SRC3,
 };
 
+static struct clksrc_clk clk_csis = {
+	.clk	= {
+		.name		= "mipi-csis",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_IP0_CSIS,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC1_CSIS_SHIFT,
+	.mask		= S5P_CLKSRC1_CSIS_MASK,
+	.sources	= &clkset_csis,
+	.divider_shift	= S5P_CLKDIV1_CSIS_SHIFT,
+	.reg_divider	= S5P_CLK_DIV1,
+	.reg_source	= S5P_CLK_SRC1,
+};
+
 /* Clock initialisation code */
 
 static struct clksrc_clk *init_parents[] = {
@@ -938,6 +970,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc0,
 	&clk_fimc1,
 	&clk_fimc2,
+	&clk_csis,
 };
 
 static void __init_or_cpufreq s5pc11x_set_clksrc(struct clksrc_clk *clk)
@@ -1054,10 +1087,10 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 
-	clk_set_rate(&clk_mmc0.clk, 50*MHZ);	
-	clk_set_rate(&clk_mmc1.clk, 50*MHZ);
-	clk_set_rate(&clk_mmc2.clk, 50*MHZ);
-	clk_set_rate(&clk_mmc3.clk, 50*MHZ);	
+	clk_set_rate(&clk_mmc0.clk, 47*MHZ);	
+	clk_set_rate(&clk_mmc1.clk, 47*MHZ);
+	clk_set_rate(&clk_mmc2.clk, 47*MHZ);
+	clk_set_rate(&clk_mmc3.clk, 47*MHZ);	
 }
 
 static struct clk *clks[] __initdata = {
@@ -1086,6 +1119,7 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
 	&clk_fimc2.clk,
+	&clk_csis.clk,
 };
 
 void __init s5pc110_register_clocks(void)

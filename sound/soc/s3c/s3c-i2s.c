@@ -21,18 +21,11 @@
 
 #include <asm/dma.h>
 #include <mach/map.h>
+#include <mach/s3c-dma.h>
+#include <plat/regs-clock.h>
 
-#include "s3c-pcm.h"
+#include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
-#include "mach/s3c-dma.h" //changed by Taeyong
-
-
-//#define CONFIG_SND_DEBUG
-#ifdef CONFIG_SND_DEBUG
-#define debug_msg(x...) printk(x)
-#else
-#define debug_msg(x...)
-#endif
 
 static struct s3c2410_dma_client s3c_dma_client_out = {
 	.name = "I2S PCM Stereo out"
@@ -42,14 +35,14 @@ static struct s3c2410_dma_client s3c_dma_client_in = {
 	.name = "I2S PCM Stereo in"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_i2s_pcm_stereo_out = {
+static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_out = {
 	.client		= &s3c_dma_client_out,
 	.channel	= S3C_DMACH_I2S_OUT,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISTXD,
 	.dma_size	= 4,
 };
 
-static struct s3c24xx_pcm_dma_params s3c_i2s_pcm_stereo_in = {
+static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_in = {
 	.client		= &s3c_dma_client_in,
 	.channel	= S3C_DMACH_I2S_IN,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISRXD,
@@ -57,37 +50,58 @@ static struct s3c24xx_pcm_dma_params s3c_i2s_pcm_stereo_in = {
 };
 
 struct s3c_i2s_info {
-	void __iomem	*regs;
-	struct clk	*iis_clk;
-	struct clk	*audio_bus;
-	u32		iiscon;
-	u32		iismod;
-	u32		iisfic;
-	u32		iispsr;
-	u32		slave;
-	u32		clk_rate;
+	void __iomem  *regs;
+	struct clk    *iis_clk;
+	struct clk    *audio_bus;
+	u32           iiscon;
+	u32           iismod;
+	u32           iisfic;
+	u32           iispsr;
+	u32           slave;
+	u32           clk_rate;
 };
+
 static struct s3c_i2s_info s3c_i2s;
+
+struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+
+#define S3C_IISFIC_LP 			(s3c_i2s_pdat.lp_mode ? S3C_IISFICS : S3C_IISFIC)
+#define S3C_IISCON_TXDMACTIVE_LP 	(s3c_i2s_pdat.lp_mode ? S3C_IISCON_TXSDMACTIVE : S3C_IISCON_TXDMACTIVE)
+#define S3C_IISCON_TXDMAPAUSE_LP 	(s3c_i2s_pdat.lp_mode ? S3C_IISCON_TXSDMAPAUSE : S3C_IISCON_TXDMAPAUSE)
+#define S3C_IISMOD_BLCMASK_LP	(s3c_i2s_pdat.lp_mode ? S3C_IISMOD_BLCSMASK : S3C_IISMOD_BLCPMASK)
+#define S3C_IISMOD_8BIT_LP	(s3c_i2s_pdat.lp_mode ? S3C_IISMOD_S8BIT : S3C_IISMOD_P8BIT)
+#define S3C_IISMOD_16BIT_LP	(s3c_i2s_pdat.lp_mode ? S3C_IISMOD_S16BIT : S3C_IISMOD_P16BIT)
+#define S3C_IISMOD_24BIT_LP	(s3c_i2s_pdat.lp_mode ? S3C_IISMOD_S24BIT : S3C_IISMOD_P24BIT)
+
+#define dump_i2s()	do{	\
+				printk("%s:%s:%d\t", __FILE__, __func__, __LINE__);	\
+				printk("\tS3C_IISCON : %x", readl(s3c_i2s.regs + S3C_IISCON));		\
+				printk("\tS3C_IISMOD : %x\n", readl(s3c_i2s.regs + S3C_IISMOD));	\
+				printk("\tS3C_IISFIC : %x", readl(s3c_i2s.regs + S3C_IISFIC_LP));	\
+				printk("\tS3C_IISPSR : %x\n", readl(s3c_i2s.regs + S3C_IISPSR));	\
+				printk("\tS3C_IISAHB : %x\n", readl(s3c_i2s.regs + S3C_IISAHB));	\
+				printk("\tS3C_IISSTR : %x\n", readl(s3c_i2s.regs + S3C_IISSTR));	\
+				printk("\tS3C_IISSIZE : %x\n", readl(s3c_i2s.regs + S3C_IISSIZE));	\
+				printk("\tS3C_IISADDR0 : %x\n", readl(s3c_i2s.regs + S3C_IISADDR0));	\
+			}while(0)
 
 static void s3c_snd_txctrl(int on)
 {
 	u32 iiscon;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	iiscon  = readl(s3c_i2s.regs + S3C_IISCON);
 
 	if(on){
 		iiscon |= S3C_IISCON_I2SACTIVE;
 		iiscon  &= ~S3C_IISCON_TXCHPAUSE;
-		iiscon  &= ~S3C_IISCON_TXDMAPAUSE;
-		iiscon  |= S3C_IISCON_TXDMACTIVE;
+		iiscon  &= ~S3C_IISCON_TXDMAPAUSE_LP;
+		iiscon  |= S3C_IISCON_TXDMACTIVE_LP;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
 	}else{
 		iiscon &= ~S3C_IISCON_I2SACTIVE;
 		iiscon  |= S3C_IISCON_TXCHPAUSE;
-		iiscon  |= S3C_IISCON_TXDMAPAUSE;
-		iiscon  &= ~S3C_IISCON_TXDMACTIVE;
+		iiscon  |= S3C_IISCON_TXDMAPAUSE_LP;
+		iiscon  &= ~S3C_IISCON_TXDMACTIVE_LP;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
 	}
 }
@@ -95,8 +109,6 @@ static void s3c_snd_txctrl(int on)
 static void s3c_snd_rxctrl(int on)
 {
 	u32 iiscon;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	iiscon  = readl(s3c_i2s.regs + S3C_IISCON);
 
@@ -125,8 +137,6 @@ static int s3c_snd_lrsync(void)
 	u32 iiscon;
 	int timeout = 50; /* 5ms */
 
-	debug_msg("%s\n", __FUNCTION__);
-
 	while (1) {
 		iiscon = readl(s3c_i2s.regs + S3C_IISCON);
 		if (iiscon & S3C_IISCON_LRI)
@@ -147,8 +157,6 @@ static int s3c_i2s_set_fmt(struct snd_soc_dai *cpu_dai,
 		unsigned int fmt)
 {
 	u32 iismod;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	iismod = readl(s3c_i2s.regs + S3C_IISMOD);
 	iismod &= ~S3C_IISMOD_SDFMASK;
@@ -202,8 +210,6 @@ static int s3c_i2s_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	u32 iismod;
 
-	debug_msg("%s\n", __FUNCTION__);
-
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		rtd->dai->cpu_dai->dma_data = &s3c_i2s_pcm_stereo_out;
 	else
@@ -211,7 +217,7 @@ static int s3c_i2s_hw_params(struct snd_pcm_substream *substream,
 
 	/* Working copies of register */
 	iismod = readl(s3c_i2s.regs + S3C_IISMOD);
-	iismod &= ~S3C_IISMOD_BLCMASK;
+	iismod &= ~(S3C_IISMOD_BLCMASK | S3C_IISMOD_BLCMASK_LP);
 
 	/* TODO */
 	switch(params_channels(params)) {
@@ -230,21 +236,13 @@ static int s3c_i2s_hw_params(struct snd_pcm_substream *substream,
 	/* RFS & BFS are set by dai_link(machine specific) code via set_clkdiv */
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S8:
-		iismod |= S3C_IISMOD_8BIT;
-//Added By Taeyong
-//		((struct s3c_pcm_dma_params *)
-//		  rtd->dai->cpu_dai->dma_data)->dma_size = 1;
-//End
+		iismod |= S3C_IISMOD_8BIT | S3C_IISMOD_8BIT_LP;
  		break;
  	case SNDRV_PCM_FORMAT_S16_LE:
- 		iismod |= S3C_IISMOD_16BIT;
-//Added By Taeyong
-//		((struct s3c_pcm_dma_params *)
-//		  rtd->dai->cpu_dai->dma_data)->dma_size = 2;
-//End
+ 		iismod |= S3C_IISMOD_16BIT | S3C_IISMOD_16BIT_LP;
  		break;
  	case SNDRV_PCM_FORMAT_S24_LE:
- 		iismod |= S3C_IISMOD_24BIT;
+ 		iismod |= S3C_IISMOD_24BIT | S3C_IISMOD_24BIT_LP;
  		break;
 	default:
 		return -EINVAL;
@@ -255,37 +253,52 @@ static int s3c_i2s_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int s3c_i2s_startup(struct snd_pcm_substream *substream)
+static int s3c_i2s_startup(struct snd_pcm_substream *substream, struct snd_soc_dai *dai)
 {
 	u32 iiscon, iisfic;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	iiscon = readl(s3c_i2s.regs + S3C_IISCON);
 
 	/* FIFOs must be flushed before enabling PSR and other MOD bits, so we do it here. */
-	if(!(iiscon & S3C_IISCON_I2SACTIVE)){
-		iisfic = readl(s3c_i2s.regs + S3C_IISFIC);
-		iisfic |= S3C_IISFIC_TFLUSH | S3C_IISFIC_RFLUSH;
-		writel(iisfic, s3c_i2s.regs + S3C_IISFIC);
-	}
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
+		if(!(iiscon & S3C_IISCON_I2SACTIVE)){
+			iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+			iisfic |= S3C_IISFIC_TFLUSH;
+			writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
+		}
 
-	do{
-	   iiscon = readl(s3c_i2s.regs + S3C_IISCON);
-	}while((iiscon & 0x780) != (S3C_IISCON_FRXEMPT | S3C_IISCON_FTX0EMPT));
-	iisfic = readl(s3c_i2s.regs + S3C_IISFIC);
-	iisfic &= ~(S3C_IISFIC_TFLUSH | S3C_IISFIC_RFLUSH);
-	writel(iisfic, s3c_i2s.regs + S3C_IISFIC);
+		do{
+	   	   cpu_relax();
+		   iiscon = __raw_readl(s3c_i2s.regs + S3C_IISCON);
+		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC_LP) & 0x7f) >> 8);
+
+		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+		iisfic &= ~S3C_IISFIC_TFLUSH;
+		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
+	}else{
+		if(!(iiscon & S3C_IISCON_I2SACTIVE)){
+			iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+			iisfic |= S3C_IISFIC_RFLUSH;
+			writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
+		}
+
+		do{
+	   	   cpu_relax();
+		   iiscon = readl(s3c_i2s.regs + S3C_IISCON);
+		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC_LP) & 0x7f) >> 0);
+
+		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+		iisfic &= ~S3C_IISFIC_RFLUSH;
+		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
+	}
 
 	return 0;
 }
 
-static int s3c_i2s_prepare(struct snd_pcm_substream *substream)
+static int s3c_i2s_prepare(struct snd_pcm_substream *substream, struct snd_soc_dai *dai)
 {
 	u32 iismod;
 
-	debug_msg("%s\n", __FUNCTION__);
-	
 	iismod = readl(s3c_i2s.regs + S3C_IISMOD);
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
@@ -305,21 +318,9 @@ static int s3c_i2s_prepare(struct snd_pcm_substream *substream)
 	return 0;
 }
 
-/*
-static void dump_i2s(void)
-{
-	printk("S3C_IISCON : %x\n", readl(s3c_i2s.regs + S3C_IISCON));
-	printk("S3C_IISMOD : %x\n", readl(s3c_i2s.regs + S3C_IISMOD));
-	printk("S3C_IISFIC : %x\n", readl(s3c_i2s.regs + S3C_IISFIC));
-	printk("S3C_IISPSR : %x\n", readl(s3c_i2s.regs + S3C_IISPSR));
-}
-*/
-
 static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct snd_soc_dai *dai)
 {
 	int ret = 0;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
@@ -362,8 +363,6 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 {
 	struct clk *clk;
 	u32 iismod = readl(s3c_i2s.regs + S3C_IISMOD);
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	switch (clk_id) {
 	case S3C_CLKSRC_PCLK:
@@ -491,8 +490,6 @@ static int s3c_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai,
 {
 	u32 reg;
 
-	debug_msg("%s\n", __FUNCTION__);
-
 	switch (div_id) {
 	case S3C_DIV_MCLK:
 		reg = readl(s3c_i2s.regs + S3C_IISMOD) & ~S3C_IISMOD_RFSMASK;
@@ -530,33 +527,90 @@ static int s3c_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai,
 	return 0;
 }
 
-/*
- * To avoid duplicating clock code, allow machine driver to
- * get the clockrate from here.
- */
-u32 s3c_i2s_get_clockrate(void)
-{
-	debug_msg("%s\n", __FUNCTION__);
-
-	return s3c_i2s.clk_rate;
-}
-EXPORT_SYMBOL_GPL(s3c_i2s_get_clockrate);
-
 static irqreturn_t s3c_iis_irq(int irqno, void *dev_id)
 {
-	u32 iiscon;
+	u32 iiscon, iisahb, val;
 
-	debug_msg("%s\n", __FUNCTION__);
+	//dump_i2s();
 
+	iisahb  = readl(s3c_i2s.regs + S3C_IISAHB);
 	iiscon  = readl(s3c_i2s.regs + S3C_IISCON);
+	if(iiscon & S3C_IISCON_FTXSURSTAT) {
+		iiscon |= S3C_IISCON_FTXURSTATUS;
+		writel(iiscon, s3c_i2s.regs + S3C_IISCON);
+		s3cdbg("TX_S underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
+	}
 	if(S3C_IISCON_FTXURSTATUS & iiscon) {
 		iiscon &= ~S3C_IISCON_FTXURINTEN;
 		iiscon |= S3C_IISCON_FTXURSTATUS;
 		writel(iiscon, s3c_i2s.regs + S3C_IISCON);
-		printk("underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
+		s3cdbg("TX_P underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
+	}
+
+	val = 0;
+	val |= ((iisahb & S3C_IISAHB_LVL0INT) ? S3C_IISAHB_CLRLVL0 : 0);
+	//val |= ((iisahb & S3C_IISAHB_DMAEND) ? S3C_IISAHB_DMACLR : 0);
+	if(val){
+		iisahb |= val;
+		iisahb |= S3C_IISAHB_INTENLVL0;
+		writel(iisahb, s3c_i2s.regs + S3C_IISAHB);
+
+		if(iisahb & S3C_IISAHB_LVL0INT){
+			val = readl(s3c_i2s.regs + S3C_IISADDR0) - LP_TXBUFF_ADDR; /* current offset */
+			val += s3c_i2s_pdat.dma_prd; /* Length before next Lvl0 Intr */
+			val %= MAX_LP_BUFF; /* Round off at boundary */
+			writel(LP_TXBUFF_ADDR + val, s3c_i2s.regs + S3C_IISADDR0); /* Update start address */
+		}
+
+		if(iisahb & S3C_IISAHB_DMAEND)
+			printk("Didnt expect S3C_IISAHB_DMAEND\n");
+
+		iisahb  = readl(s3c_i2s.regs + S3C_IISAHB);
+		iisahb |= S3C_IISAHB_DMAEN;
+		writel(iisahb, s3c_i2s.regs + S3C_IISAHB);
+
+		/* Keep callback in the end */
+		if(s3c_i2s_pdat.dma_cb){
+		   val = (iisahb & S3C_IISAHB_LVL0INT) ? 
+				s3c_i2s_pdat.dma_prd:
+				MAX_LP_BUFF;
+		   s3c_i2s_pdat.dma_cb(s3c_i2s_pdat.dma_token, val);
+		}
 	}
 
 	return IRQ_HANDLED;
+}
+
+static void init_i2s(void)
+{
+	u32 iiscon, iismod, iisahb;
+
+	writel(S3C_IISCON_I2SACTIVE | S3C_IISCON_SWRESET, s3c_i2s.regs + S3C_IISCON);
+
+	iiscon  = readl(s3c_i2s.regs + S3C_IISCON);
+	iismod  = readl(s3c_i2s.regs + S3C_IISMOD);
+	iisahb  = S3C_IISAHB_DMARLD | S3C_IISAHB_DISRLDINT;
+
+	/* Enable all interrupts to find bugs */
+	iiscon |= S3C_IISCON_FRXOFINTEN;
+	iismod &= ~S3C_IISMOD_OPMSK;
+	iismod |= S3C_IISMOD_OPPCLK;
+
+	if(s3c_i2s_pdat.lp_mode){
+		iiscon &= ~S3C_IISCON_FTXURINTEN;
+		iiscon |= S3C_IISCON_FTXSURINTEN;
+		iismod |= S3C_IISMOD_TXSLP;
+		//iisahb |= S3C_IISAHB_DMARLD | S3C_IISAHB_DISRLDINT;
+	}else{
+		iiscon &= ~S3C_IISCON_FTXSURINTEN;
+		iiscon |= S3C_IISCON_FTXURINTEN;
+		iismod &= ~S3C_IISMOD_TXSLP;
+		iisahb = 0;
+	}
+
+	writel(iisahb, s3c_i2s.regs + S3C_IISAHB);
+	writel(iismod, s3c_i2s.regs + S3C_IISMOD);
+	writel(iiscon, s3c_i2s.regs + S3C_IISCON);
 }
 
 static int s3c_i2s_probe(struct platform_device *pdev,
@@ -564,8 +618,6 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 {
 	int ret = 0;
 	struct clk *cm, *cf;
-
-	debug_msg("%s\n", __FUNCTION__);
 
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
@@ -587,6 +639,11 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
 #ifdef USE_CLKAUDIO
+	if(s3c_i2s_pdat.lp_mode){
+		printk("Don't use CLKAUDIO in LP_Audio mode!\n");
+		goto lb4;
+	}
+
 	s3c_i2s.audio_bus = clk_get(NULL, EXTCLK);
 	if (IS_ERR(s3c_i2s.audio_bus)) {
 		printk("failed to get clk(%s)\n", EXTCLK);
@@ -618,11 +675,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	clk_put(cm);
 #endif
 
-#if defined(CONFIG_SND_S3C_I2S_V50)
-	writel(readl(s3c_i2s.regs + S3C_IISCON) | S3C_IISCON_SWRESET, s3c_i2s.regs + S3C_IISCON);
-#else
-	writel(S3C_IISCON_I2SACTIVE, s3c_i2s.regs + S3C_IISCON);
-#endif
+	init_i2s();
 
 	s3c_snd_txctrl(0);
 	s3c_snd_rxctrl(0);
@@ -636,10 +689,10 @@ lb2:
 	clk_put(cm);
 lb3:
 	clk_put(s3c_i2s.audio_bus);
+#endif
 lb4:
 	clk_disable(s3c_i2s.iis_clk);
 	clk_put(s3c_i2s.iis_clk);
-#endif
 lb5:
 	free_irq(S3C_IISIRQ, pdev);
 	iounmap(s3c_i2s.regs);
@@ -647,34 +700,41 @@ lb5:
 	return -ENODEV;
 }
 
-#ifdef CONFIG_PM
-static int s3c_i2s_suspend(struct snd_soc_dai *dai)
+static void s3c_i2s_remove(struct platform_device *pdev,
+		       struct snd_soc_dai *dai)
 {
-	debug_msg("%s\n", __FUNCTION__);
+	writel(0, s3c_i2s.regs + S3C_IISCON);
 
+#ifdef USE_CLKAUDIO
+	clk_put(s3c_i2s.audio_bus);
+#endif
+	clk_disable(s3c_i2s.iis_clk);
+	clk_put(s3c_i2s.iis_clk);
+	free_irq(S3C_IISIRQ, pdev);
+	iounmap(s3c_i2s.regs);
+}
+
+#ifdef CONFIG_PM
+static int s3c_i2s_suspend(struct snd_soc_dai *cpu_dai)
+{
 	s3c_i2s.iiscon = readl(s3c_i2s.regs + S3C_IISCON);
 	s3c_i2s.iismod = readl(s3c_i2s.regs + S3C_IISMOD);
-	s3c_i2s.iisfic = readl(s3c_i2s.regs + S3C_IISFIC);
+	s3c_i2s.iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
 	s3c_i2s.iispsr = readl(s3c_i2s.regs + S3C_IISPSR);
 
 	clk_disable(s3c_i2s.iis_clk);
-	debug_msg("%s-done\n", __FUNCTION__);
 
 	return 0;
 }
 
-static int s3c_i2s_resume(struct snd_soc_dai *dai)
+static int s3c_i2s_resume(struct snd_soc_dai *cpu_dai)
 {
-	debug_msg("%s\n", __FUNCTION__);
-
 	clk_enable(s3c_i2s.iis_clk);
 
 	writel(s3c_i2s.iiscon, s3c_i2s.regs + S3C_IISCON);
 	writel(s3c_i2s.iismod, s3c_i2s.regs + S3C_IISMOD);
-	writel(s3c_i2s.iisfic, s3c_i2s.regs + S3C_IISFIC);
+	writel(s3c_i2s.iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
 	writel(s3c_i2s.iispsr, s3c_i2s.regs + S3C_IISPSR);
-
-	debug_msg("%s-done\n", __FUNCTION__);
 
 	return 0;
 }
@@ -683,53 +743,163 @@ static int s3c_i2s_resume(struct snd_soc_dai *dai)
 #define s3c_i2s_resume NULL
 #endif
 
-struct snd_soc_dai s3c_i2s_dai = {
-	.name = "s3c-i2s",
-	.id = 0,
-	.probe = s3c_i2s_probe,
-	.suspend = s3c_i2s_suspend,
-	.resume = s3c_i2s_resume,
-	.playback = {
-		.channels_min = 2,
-		.channels_max = PLBK_CHAN,
-		.rates = SNDRV_PCM_RATE_8000_96000,
-		.formats = SNDRV_PCM_FMTBIT_S8 | SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
-	},
-	.capture = {
-		.channels_min = 2,
-		.channels_max = 2,
-		.rates = SNDRV_PCM_RATE_8000_96000,
-		.formats = SNDRV_PCM_FMTBIT_S8 | SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
-	},
-	.ops = {
-		.hw_params = s3c_i2s_hw_params,
-		.prepare   = s3c_i2s_prepare,
-		.startup   = s3c_i2s_startup,
-		.trigger   = s3c_i2s_trigger,
-		.set_fmt = s3c_i2s_set_fmt,
-		.set_clkdiv = s3c_i2s_set_clkdiv,
-		.set_sysclk = s3c_i2s_set_sysclk,
+static void s3c_i2sdma_getpos(dma_addr_t *src, dma_addr_t *dst)
+{
+	*dst = s3c_i2s_pcm_stereo_out.dma_addr;
+	*src = LP_TXBUFF_ADDR + (readl(s3c_i2s.regs + S3C_IISTRNCNT) & 0xffffff) * 4;
+}
+
+static int s3c_i2sdma_enqueue(void *id)
+{
+	u32 val;
+
+	spin_lock(&s3c_i2s_pdat.lock);
+	s3c_i2s_pdat.dma_token = id;
+	spin_unlock(&s3c_i2s_pdat.lock);
+
+	s3cdbg("%s: %d@%x\n", __func__, MAX_LP_BUFF, LP_TXBUFF_ADDR);
+	s3cdbg("CB @%x", LP_TXBUFF_ADDR + MAX_LP_BUFF);
+	if(s3c_i2s_pdat.dma_prd != MAX_LP_BUFF)
+		s3cdbg(" and @%x\n", LP_TXBUFF_ADDR + s3c_i2s_pdat.dma_prd);
+	else
+		s3cdbg("\n");
+
+	val = LP_TXBUFF_ADDR + s3c_i2s_pdat.dma_prd;
+	//val |= S3C_IISADDR_ENSTOP;
+	writel(val, s3c_i2s.regs + S3C_IISADDR0);
+
+	val = readl(s3c_i2s.regs + S3C_IISSTR);
+	val = LP_TXBUFF_ADDR;
+	writel(val, s3c_i2s.regs + S3C_IISSTR);
+
+	val = readl(s3c_i2s.regs + S3C_IISSIZE);
+	val &= ~(S3C_IISSIZE_TRNMSK << S3C_IISSIZE_SHIFT);
+	val |= (((MAX_LP_BUFF >> 2) & S3C_IISSIZE_TRNMSK) << S3C_IISSIZE_SHIFT);
+	writel(val, s3c_i2s.regs + S3C_IISSIZE);
+
+	val = readl(s3c_i2s.regs + S3C_IISAHB);
+	val |= S3C_IISAHB_INTENLVL0;
+	writel(val, s3c_i2s.regs + S3C_IISAHB);
+
+	return 0;
+}
+
+static void s3c_i2sdma_setcallbk(void (*cb)(void *id, int result), unsigned prd)
+{
+	if(!prd || prd > MAX_LP_BUFF)
+	   prd = MAX_LP_BUFF;
+
+	spin_lock(&s3c_i2s_pdat.lock);
+	s3c_i2s_pdat.dma_cb = cb;
+	s3c_i2s_pdat.dma_prd = prd;
+	spin_unlock(&s3c_i2s_pdat.lock);
+}
+
+static void s3c_i2s_setmode(int lpmd)
+{
+	s3c_i2s_pdat.lp_mode = lpmd;
+
+	spin_lock_init(&s3c_i2s_pdat.lock);
+
+	if(s3c_i2s_pdat.lp_mode){
+	   s3c_i2s_pdat.i2s_dai.capture.channels_min = 0;
+	   s3c_i2s_pdat.i2s_dai.capture.channels_max = 0;
+	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXDS,
+	   writel((readl(S5P_LPMP_MODE_SEL) & ~(1<<1)) | (1<<0), S5P_LPMP_MODE_SEL);
+	}else{
+	   s3c_i2s_pdat.i2s_dai.capture.channels_min = 2;
+	   s3c_i2s_pdat.i2s_dai.capture.channels_max = 2;
+	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXD,
+	   writel((readl(S5P_LPMP_MODE_SEL) & ~(1<<0)) | (1<<1), S5P_LPMP_MODE_SEL);
+	}
+
+	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2 | S5P_CLKGATE_D20_I2SD2, S5P_CLKGATE_D20);
+}
+
+static void s3c_i2sdma_ctrl(int state)
+{
+	u32 val;
+
+	spin_lock(&s3c_i2s_pdat.lock);
+
+	val = readl(s3c_i2s.regs + S3C_IISAHB);
+
+	switch(state){
+	   case S3C_I2SDMA_START:
+				  val |= S3C_IISAHB_INTENLVL0 | S3C_IISAHB_DMAEN;
+		                  break;
+
+	   case S3C_I2SDMA_FLUSH:
+	   case S3C_I2SDMA_STOP:
+				  val &= ~(S3C_IISAHB_INTENLVL0 | S3C_IISAHB_DMAEN);
+		                  break;
+
+	   default:
+				  spin_unlock(&s3c_i2s_pdat.lock);
+				  return;
+	}
+
+	writel(val, s3c_i2s.regs + S3C_IISAHB);
+
+	s3c_i2s_pdat.dma_state = state;
+
+	spin_unlock(&s3c_i2s_pdat.lock);
+}
+
+struct s5pc1xx_i2s_pdata s3c_i2s_pdat = {
+	.lp_mode = 0,
+	.set_mode = s3c_i2s_setmode,
+	.p_rate = &s3c_i2s.clk_rate,
+	.dma_getpos = s3c_i2sdma_getpos,
+	.dma_enqueue = s3c_i2sdma_enqueue,
+	.dma_setcallbk = s3c_i2sdma_setcallbk,
+	.dma_token = NULL,
+	.dma_cb = NULL,
+	.dma_ctrl = s3c_i2sdma_ctrl,
+	.i2s_dai = {
+		.name = "s3c-i2s",
+		.id = 0,
+		.probe = s3c_i2s_probe,
+		.remove = s3c_i2s_remove,
+		.suspend = s3c_i2s_suspend,
+		.resume = s3c_i2s_resume,
+		.playback = {
+			.channels_min = 2,
+			.channels_max = PLBK_CHAN,
+			.rates = SNDRV_PCM_RATE_8000_96000,
+			.formats = SNDRV_PCM_FMTBIT_S8 | SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
+			},
+		.capture = {
+			.channels_min = 2,
+			.channels_max = 2,
+			.rates = SNDRV_PCM_RATE_8000_96000,
+			.formats = SNDRV_PCM_FMTBIT_S8 | SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE,
+		},
+		.ops = {
+			.hw_params = s3c_i2s_hw_params,
+			.prepare   = s3c_i2s_prepare,
+			.startup   = s3c_i2s_startup,
+			.trigger   = s3c_i2s_trigger,
+			.set_fmt = s3c_i2s_set_fmt,
+			.set_clkdiv = s3c_i2s_set_clkdiv,
+			.set_sysclk = s3c_i2s_set_sysclk,
+		},
 	},
 };
-EXPORT_SYMBOL_GPL(s3c_i2s_dai);
 
-//Added By Taeyong
-//From
-static int __init s3c_i2s_init(void)
+EXPORT_SYMBOL_GPL(s3c_i2s_pdat);
+
+static int __init s5pc1xx_i2s_init(void)
 {
-	debug_msg("%s\n", __FUNCTION__);
-	return snd_soc_register_dai(&s3c_i2s_dai);
+	return snd_soc_register_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_init(s3c_i2s_init);
+module_init(s5pc1xx_i2s_init);
 
-static void __exit s3c_i2s_exit(void)
+static void __exit s5pc1xx_i2s_exit(void)
 {
-	debug_msg("%s\n", __FUNCTION__);
-	snd_soc_unregister_dai(&s3c_i2s_dai);
+	snd_soc_unregister_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_exit(s3c_i2s_exit);
-//End
-
+module_exit(s5pc1xx_i2s_exit);
 
 /* Module information */
 MODULE_AUTHOR("Jaswinder Singh <jassi.brar@samsung.com>");

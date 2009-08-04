@@ -15,6 +15,12 @@
 #define ST_RUNNING		(1<<0)
 #define ST_OPENED		(1<<1)
 
+#ifdef CONFIG_SND_DEBUG
+#define s3cdbg(x...) printk(x)
+#else
+#define s3cdbg(x...)
+#endif
+
 struct s3c24xx_pcm_dma_params {
 	struct s3c2410_dma_client *client;	/* stream identifier */
 	int channel;				/* Channel ID */
@@ -24,14 +30,8 @@ struct s3c24xx_pcm_dma_params {
 
 #define S3C24XX_DAI_I2S			0
 
-#if defined (CONFIG_CPU_S3C6400) || defined (CONFIG_CPU_S3C6410) 
-#define S3CPCM_DCON 	0
-#define S3CPCM_HWCFG	0
-#else
-//#include <asm/arch/dma.h>
 #define S3CPCM_DCON 	S3C2410_DCON_SYNC_PCLK|S3C2410_DCON_HANDSHAKE
 #define S3CPCM_HWCFG 	S3C2410_DISRCC_INC|S3C2410_DISRCC_APB	
-#endif
 
 /* platform data */
 extern struct snd_soc_platform s3c24xx_soc_platform;

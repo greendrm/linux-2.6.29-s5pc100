@@ -129,14 +129,15 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, u
 	
 	risc_phy_buf = s3c_mfc_get_risc_buf_phys_addr(inst_no);
 	aligned_risc_phy_buf = Align(risc_phy_buf, 2*BUF_L_UNIT);
-	printk(">> peter risc_phy_buf = 0x%08x <<\n", risc_phy_buf);
-	printk(">> peter aligned_risc_phy_buf = 0x%08x <<\n", aligned_risc_phy_buf);	
-
+	
 	WRITEL((buf_addr & 0xfffffff8)-fw_phybuf, S3C_FIMV_SI_CH1_SB_ST_ADR);
 	WRITEL(buf_size, S3C_FIMV_SI_CH1_SB_FRM_SIZE);	// peter, buf_size is '0' when last frame
 	WRITEL(aligned_risc_phy_buf-fw_phybuf, S3C_FIMV_SI_CH1_DESC_ADR);
 	WRITEL(CPB_BUF_SIZE, S3C_FIMV_SI_CH1_CPB_SIZE);
-	WRITEL(DESC_BUF_SIZE, S3C_FIMV_SI_CH1_DESC_SIZE);	
+	WRITEL(DESC_BUF_SIZE, S3C_FIMV_SI_CH1_DESC_SIZE);
+
+	mfc_debug("risc_phy_buf : 0x%08x, aligned_risc_phy_buf : 0x%08x\n", 
+			risc_phy_buf, aligned_risc_phy_buf);
 
 	return MFCINST_RET_OK;
 }
@@ -545,7 +546,7 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	/*
 	 * 4. Initialize firmware
 	 */
-	fw_buf_size = FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE;
+	fw_buf_size = MFC_FW_TOTAL_BUF_SIZE;
 	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_SYS_INIT_RET) == 0){
@@ -939,7 +940,8 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 
 	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_ONLY) {
 		dec_arg->out_display_Y_addr = 0;
-		dec_arg->out_display_C_addr = 0;		
+		dec_arg->out_display_C_addr = 0;
+		mfc_debug("DECODING_ONLY frame decoded \n");
 	} else {
 		dec_arg->out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
 		dec_arg->out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);		

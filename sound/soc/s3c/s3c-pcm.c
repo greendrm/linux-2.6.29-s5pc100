@@ -7,16 +7,12 @@
  * (c) 2004-2005 Simtec Electronics
  *	http://armlinux.simtec.co.uk/
  *	Ben Dooks <ben@simtec.co.uk>
- *	Ryu Euiyoul <ryu.real@gmail.com>
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
  *  Free Software Foundation;  either version 2 of the  License, or (at your
  *  option) any later version.
  *
- *  Revision history
- *    11th Dec 2006   Merged with Simtec driver
- *    10th Nov 2006   Initial version.
  */
 
 #include <linux/module.h>
@@ -25,7 +21,6 @@
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
 
-//#include <sound/driver.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -34,26 +29,10 @@
 #include <asm/dma.h>
 #include <asm/io.h>
 #include <mach/hardware.h>
-#include <mach/dma.h> //changed by Taeyong
-#include <plat/dma.h>
+#include <mach/s3c-dma.h>
 #include <mach/audio.h>
 
 #include "s3c-pcm.h"
-
-#if defined CONFIG_SND_S3C6400_SOC_AC97
-#define MAIN_DMA_CH 1
-#else /*S3C6400 I2S */ 
-#define MAIN_DMA_CH 0
-#endif
-
-//#define CONFIG_SND_DEBUG
-
-#ifdef CONFIG_SND_DEBUG
-#define s3cdbg(x...) printk(x)
-#else
-#define s3cdbg(x...)
-#endif
-
 
 static const struct snd_pcm_hardware s3c24xx_pcm_hardware = {
 	.info			= SNDRV_PCM_INFO_INTERLEAVED |
@@ -131,39 +110,25 @@ static void s3c24xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 				enum s3c2410_dma_buffresult result)
 {
 	struct snd_pcm_substream *substream = dev_id;
-	struct s3c24xx_runtime_data *prtd;
+	struct s5pc1xx_runtime_data *prtd;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
-	if (result == S3C2410_RES_ABORT || result == S3C2410_RES_ERR){
+	if (result == S3C2410_RES_ABORT || result == S3C2410_RES_ERR)
 		return;
-	}
-	else {
 		
-		if (!substream)
-			return;
+	if (!substream)
+		return;
 
-		prtd = substream->runtime->private_data;
-		snd_pcm_period_elapsed(substream);
+	prtd = substream->runtime->private_data;
+	snd_pcm_period_elapsed(substream);
 
-		spin_lock(&prtd->lock);
-		if (prtd->state & ST_RUNNING) {
-
-//#define FLUSH_PROBLEM_PATCH
-
-#ifndef FLUSH_PROBLEM_PATCH
-	s3cdbg("FLUSH_PROBLEM_PATCH-no\n");
-
-			prtd->dma_loaded--;
-#endif
-			s3c24xx_pcm_enqueue(substream);
-		}
-#ifdef FLUSH_PROBLEM_PATCH
-	s3cdbg("FLUSH_PROBLEM_PATCH-yes\n");
+	spin_lock(&prtd->lock);
+	if (prtd->state & ST_RUNNING) {
 		prtd->dma_loaded--;
-#endif
-		spin_unlock(&prtd->lock);
+		s5pc1xx_pcm_enqueue(substream);
 	}
+	spin_unlock(&prtd->lock);
 }
 
 static int s3c24xx_pcm_hw_params(struct snd_pcm_substream *substream,
@@ -218,28 +183,6 @@ static int s3c24xx_pcm_hw_params(struct snd_pcm_substream *substream,
 
 	/* channel needs configuring for mem=>device, increment memory addr,
 	 * sync to pclk, half-word transfers to the IIS-FIFO. */
-#if !defined (CONFIG_CPU_S3C6400) && !defined (CONFIG_CPU_S3C6410)  && !defined(CONFIG_CPU_S5PC100) && !defined (CONFIG_CPU_S5P6440)
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		s3c2410_dma_devconfig(prtd->params->channel,
-				S3C2410_DMASRC_MEM, S3C2410_DISRCC_INC |
-				S3C2410_DISRCC_APB, prtd->params->dma_addr);
-
-		s3c2410_dma_config(prtd->params->channel,
-				prtd->params->dma_size,
-				S3C2410_DCON_SYNC_PCLK | 
-				S3C2410_DCON_HANDSHAKE);
-	} else {
-		s3c2410_dma_config(prtd->params->channel,
-				prtd->params->dma_size,
-				S3C2410_DCON_HANDSHAKE | 
-				S3C2410_DCON_SYNC_PCLK);
-
-		s3c2410_dma_devconfig(prtd->params->channel,
-					S3C2410_DMASRC_HW, 0x3,
-					prtd->params->dma_addr);
-	}
-
-#else
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		s3c2410_dma_devconfig(prtd->params->channel,
 				S3C2410_DMASRC_MEM, 0,
@@ -255,7 +198,6 @@ static int s3c24xx_pcm_hw_params(struct snd_pcm_substream *substream,
 		s3c2410_dma_config(prtd->params->channel,
 				prtd->params->dma_size, 0);
 	}
-#endif
 
 	s3c2410_dma_set_buffdone_fn(prtd->params->channel,
 				    s3c24xx_audio_buffdone);
@@ -335,9 +277,6 @@ static int s3c24xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		prtd->state |= ST_RUNNING;
 		s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_START);
-#if !defined (CONFIG_CPU_S3C6400) && !defined (CONFIG_CPU_S3C6410) && !defined (CONFIG_CPU_S5P6440)
-		s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_STARTED);
-#endif		
 		break;
 
 	case SNDRV_PCM_TRIGGER_STOP:
@@ -371,9 +310,9 @@ static snd_pcm_uframes_t
 
 	s3c2410_dma_getposition(prtd->params->channel, &src, &dst);
 
-	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) 
+	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		res = dst - prtd->dma_start;
-	else 
+	else
 		res = src - prtd->dma_start;
 
 	spin_unlock(&prtd->lock);
@@ -509,8 +448,6 @@ static int s3c24xx_pcm_new(struct snd_card *card,
 	if (!card->dev->coherent_dma_mask)
 		card->dev->coherent_dma_mask = 0xffffffff;
 
-	s3cdbg("play:%d, capture:%d\n", dai->playback.channels_min, dai->capture.channels_min);
-
 	if (dai->playback.channels_min) {
 		ret = s3c24xx_pcm_preallocate_dma_buffer(pcm,
 			SNDRV_PCM_STREAM_PLAYBACK);
@@ -537,25 +474,17 @@ struct snd_soc_platform s3c24xx_soc_platform = {
 
 EXPORT_SYMBOL_GPL(s3c24xx_soc_platform);
 
-//Added By Taeyong
-//From
-static int __init s3c24xx_soc_platform_init(void)
+static int __init s3c_soc_platform_init(void)
 {
-	s3cdbg("Entered %s\n", __FUNCTION__);
-
 	return snd_soc_register_platform(&s3c24xx_soc_platform);
 }
-module_init(s3c24xx_soc_platform_init);
+module_init(s3c_soc_platform_init);
 
-static void __exit s3c24xx_soc_platform_exit(void)
+static void __exit s3c_soc_platform_exit(void)
 {
-	s3cdbg("Entered %s\n", __FUNCTION__);
 	snd_soc_unregister_platform(&s3c24xx_soc_platform);
 }
-module_exit(s3c24xx_soc_platform_exit);
-
-//end
-
+module_exit(s3c_soc_platform_exit);
 
 MODULE_AUTHOR("Ben Dooks, <ben@simtec.co.uk>");
 MODULE_DESCRIPTION("Samsung S3C24XX PCM DMA module");

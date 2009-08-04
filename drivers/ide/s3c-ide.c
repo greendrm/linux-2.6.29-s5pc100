@@ -68,25 +68,48 @@ static struct clk *s3cide_clock;
 
 static inline int bus_fifo_status_check (BUS_STATE status)
 {
-	u32 temp;
-	uint i;
+        u32 temp;
+        uint i = 0x10000000;
 
-	for (i=0; i<10000000; i++) {
-		temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
-		/* wait for IDLE */
-		if ((temp == 0) && (status == IDLE)) {
-			return 0;
-		}
-		/* wait for PAUSEW */
-		else if (((temp >> 16) == 0x5) && (status == PAUSEW)) {
-			return 0;
-		}
-		/* wait for PAUSER2 and read/write pointer 0 */
-		else if ((temp == 0x60000) && (status == PAUSER2)) {
-			return 0;
-		}
-	}
-	return temp;
+        switch (status) {
+        case IDLE:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if (temp == 0)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        /* write case */
+        case PAUSER2:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if ((temp>>16) == 0x6)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        /* read case */
+        case PAUSEW:
+                do {
+                        temp = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+                        if ((temp>>16) == 0x5)
+                                return 0;
+                        i--;
+                } while (i);
+                break;
+
+        default:
+                printk("unknown case to go\n");
+                return -1;
+        }
+
+        printk("i = %d\n", i);
+        if (i == 0)
+                printk("we got a problem in bus_fifo\n");
+        return temp;
 }
 
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
@@ -127,7 +150,7 @@ static inline int ata_status_check (ide_drive_t * drive, u8 startend)
 
 
 /* Set ATA Mode */
-#if defined(CONFIG_BLK_DEV_IDE_S3C_UDMA) 
+#if defined(CONFIG_BLK_DEV_IDE_S3C_UDMA)
 static void set_config_mode (ATA_MODE mode, int rw)
 {
         u32 reg = readl(s3c_ide_regbase + S5P_ATA_CFG) & ~(0x39c);
@@ -154,7 +177,6 @@ static void set_ata_enable (uint on)
 
 	temp = readl(s3c_ide_regbase + S5P_ATA_CTRL);
 
-	DbgAta("##### %s\n", __FUNCTION__);
 	if (on)
 		writel(temp | 0x1, s3c_ide_regbase + S5P_ATA_CTRL);
 	else
@@ -165,7 +187,6 @@ static void set_endian_mode (uint little)
 {
 	u32 reg = readl(s3c_ide_regbase + S5P_ATA_CFG);
 
-	DbgAta("##### %s\n", __FUNCTION__);
 	/* set Little endian */
 	if (little)
 		reg &= (~0x40);
@@ -178,15 +199,12 @@ static void set_endian_mode (uint little)
 
 static inline void set_trans_command (ATA_TRANSFER_CMD cmd)
 {
-        DbgAta("##### %s\n", __FUNCTION__);
 	writel(cmd, s3c_ide_regbase + S5P_ATA_CMD);
 }
 
 /* Rate filter for PIO and UDMA modes */
 static u8 s3c_ide_ratefilter (ide_drive_t *drive, u8 speed)
 {
-	DbgAta("##### %s\n", __FUNCTION__);
-
 	if (drive->media != ide_disk)
 		return min(speed, (u8)XFER_PIO_4);
 
@@ -214,7 +232,6 @@ static void s3c_ide_tune_chipset (ide_drive_t * drive, u8 xferspeed)
 	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
 
 	u8 speed = s3c_ide_ratefilter(drive, xferspeed);
-	DbgAta("##### %s\n", __FUNCTION__);
 
 	/* IORDY is enabled for modes > PIO2 */
 	if (XFER_PIO_0 <= speed && speed <= XFER_PIO_4) {
@@ -261,10 +278,9 @@ int s3c_ide_ack_intr (ide_hwif_t *hwif)
 
 static void s3c_ide_tune_drive (ide_drive_t * drive, u8 pio)
 {
-	DbgAta("##### %s\n", __FUNCTION__);
 #if defined (CONFIG_CPU_S5PC100)
-	writel(0x1f, s3c_ide_regbase + S5P_ATA_IRQ);
-	writel(0x1f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ);
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
 #endif
 	pio = ide_get_best_pio_mode(drive, 255, pio);
 	(void) s3c_ide_tune_chipset(drive, (XFER_PIO_0 + pio));
@@ -283,7 +299,6 @@ static int s3c_ide_build_sglist (ide_drive_t * drive, struct request *rq)
 	s3c_ide_hwif_t *s3c_hwif = (s3c_ide_hwif_t *) hwif->hwif_data;
 	struct scatterlist *sg = hwif->sg_table;
 
-	DbgAta("##### %s\n", __FUNCTION__);
 	ide_map_sg(drive, rq);
 
 	if (rq_data_dir(rq) == READ)
@@ -305,8 +320,6 @@ static int s3c_ide_build_dmatable (ide_drive_t * drive)
 
 	u32 addr_reg, size_reg;
 
-	DbgAta("##### %s\n", __FUNCTION__);
-
 	if (rq_data_dir(rq) == WRITE) {
 		addr_reg = S5P_ATA_SBUF_START;
 		size_reg = S5P_ATA_SBUF_SIZE;
@@ -320,7 +333,7 @@ static int s3c_ide_build_dmatable (ide_drive_t * drive)
 
 	/* Build sglist */
 	hwif->sg_nents = size = s3c_ide_build_sglist(drive, rq);
-	DbgAta("##### hwif->sg_nents %d\n", hwif->sg_nents);
+	DbgAta("hwif->sg_nents %d\n", hwif->sg_nents);
 
 	if (size > 1) {
 		s3c_hwif->pseudo_dma = 1;
@@ -362,7 +375,6 @@ static int s3c_ide_dma_setup (ide_drive_t * drive)
         ide_hwif_t *hwif = drive->hwif;
 	struct request *rq = hwif->rq;
 
-	DbgAta("##### %s\n", __FUNCTION__);
 	if (!s3c_ide_build_dmatable(drive)) {
 		ide_map_sg(drive, rq);
 		return 1;
@@ -374,7 +386,6 @@ static int s3c_ide_dma_setup (ide_drive_t * drive)
 
 static void s3c_ide_dma_exec_cmd (ide_drive_t * drive, u8 command)
 {
-	DbgAta("##### %s\n", __FUNCTION__);
 	/* issue cmd to drive */
 	ide_execute_command(drive, command, &ide_dma_intr, (WAIT_CMD), NULL);
 }
@@ -385,10 +396,14 @@ static void s3c_ide_dma_start (ide_drive_t * drive)
         struct request *rq = hwif->rq;
 	uint rw = (rq_data_dir(rq) == WRITE);
 
-	DbgAta("##### %s\n", __FUNCTION__);
 	ata_status_check(drive, 0);
+#if defined (CONFIG_CPU_S5PC100)
 	writel(0x3ff, s3c_ide_regbase + S5P_ATA_IRQ);
 	writel(0x3ff, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+#else
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ);
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+#endif
 
 	wait_for_dev_ready();
 	bus_fifo_status_check(IDLE);
@@ -404,8 +419,7 @@ static int s3c_ide_dma_end (ide_drive_t * drive)
 	ide_hwif_t *hwif = drive->hwif;
 	s3c_ide_hwif_t *s3c_hwif = (s3c_ide_hwif_t *) hwif->hwif_data;
 
-	DbgAta("##### %s\n", __FUNCTION__);
-	DbgAta("left: %08x, %08x\n", readl(s3c_ide_regbase + S5P_ATA_XFR_CNT),
+	DbgAta("data left: %08x, %08x\n", readl(s3c_ide_regbase + S5P_ATA_XFR_CNT),
 				readl(s3c_ide_regbase + S5P_ATA_XFR_NUM));
 
 	stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
@@ -414,7 +428,11 @@ static int s3c_ide_dma_end (ide_drive_t * drive)
 	}
 
 	bus_fifo_status_check(IDLE);
+#if defined (CONFIG_CPU_S5PC100)
 	writel(0x3ff, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+#else
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+#endif
 	set_config_mode(PIO_CPU, 0);
 	ata_status_check(drive, 1);
 
@@ -447,15 +465,16 @@ static void s3c_ide_dma_lostirq (ide_drive_t * drive)
 int s3c_ide_irq_hook (void * data)
 {
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	u32 stat = 0;
+	u32 stat = 0, i;
 	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
 #endif
 
 	u32 reg = readl(s3c_ide_regbase + S5P_ATA_IRQ);
 	writel(reg, s3c_ide_regbase + S5P_ATA_IRQ);
-	DbgAta("##### %s, %08x\n", __FUNCTION__, reg);
 
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
+	/* keep transfering data
+	 * thus general ide_intr will be ignored. */
 	if (s3c_hwif->pseudo_dma) {
 		uint i;
 		i = s3c_hwif->index;
@@ -472,11 +491,7 @@ int s3c_ide_irq_hook (void * data)
 				s3c_hwif->table[i].addr,
 				s3c_hwif->table[i].len);
 
-			stat = bus_fifo_status_check(PAUSEW);
-			if (stat == 0x60000) {
-				writel(s3c_hwif->table[i].len-0x1, s3c_ide_regbase + S5P_ATA_SBUF_SIZE);
-				writel(s3c_hwif->table[i].addr, s3c_ide_regbase + S5P_ATA_SBUF_START);
-			}
+			bus_fifo_status_check(PAUSEW);
 
 			writel(s3c_hwif->table[i].len-0x1, s3c_ide_regbase + S5P_ATA_TBUF_SIZE);
 			writel(s3c_hwif->table[i].addr, s3c_ide_regbase + S5P_ATA_TBUF_START);
@@ -495,14 +510,14 @@ int s3c_ide_irq_hook (void * data)
 		return 1;
 	}
 
-	stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
-
-	if ( (stat >> 16) == 0x6 ) { /* in case of PAUSER2. */
-		writel(ATA_CMD_CONTINUE, s3c_ide_regbase + S5P_ATA_CMD);
-		return 1;
-	} else if ( (stat >> 16) == 0x5 ) { /* in case of PAUSEW. */
-		writel(ATA_CMD_CONTINUE, s3c_ide_regbase + S5P_ATA_CMD);
+	for (i=0; i<100000; i++) {
+		stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
+		if (stat == 0)
+			break;
 	}
+	if (i == 100000)
+		printk("BUS has a problem\n");
+
 #endif
 	return 0;
 }
@@ -551,70 +566,11 @@ static void __devinit s3c_ide_setup_ports (hw_regs_t *hw, s3c_ide_hwif_t *s3c_hw
 
         for (i = 0; i < 9; i++)
 		#if defined (CONFIG_CPU_S5PC100)
-                *ata_regs++ = s3c_ide_regbase + 0x1954 + (i << 2);
+                *ata_regs++ = (ulong)s3c_ide_regbase + 0x1954 + (i << 2);
 		#elif defined (CONFIG_CPU_S5PC110)
                 *ata_regs++ = s3c_ide_regbase + 0x54 + (i << 2);
 		#endif
 }
-
-/*=========================================================================
- *          	       ata controller register I/O fuctions
- *=========================================================================
- */
-void s3c_ide_OUTB (u8 addr, ulong reg)
-{
-	writeb(addr, reg);
-}
-EXPORT_SYMBOL(s3c_ide_OUTB);
-
-void s3c_ide_OUTW (u16 addr, ulong reg)
-{
-	writew(addr, reg);
-}
-EXPORT_SYMBOL(s3c_ide_OUTW);
-
-u8 s3c_ide_INB (ulong reg)
-{
-	u8 temp;
-
-	temp = readb(reg);
-	temp = readb(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	return temp;
-}
-EXPORT_SYMBOL(s3c_ide_INB);
-
-u16 s3c_ide_INW (ulong reg)
-{
-	u16 temp;
-
-	temp = readw(reg);
-	temp = readw(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	return temp;
-}
-EXPORT_SYMBOL(s3c_ide_INW );
-
-void s3c_ide_OUTSW(ulong port, void *addr, u32 count)
-{
-	uint i;
-	volatile u16 *temp_addr = (u16*)addr;
-
-	for (i=0; i<count; i++, temp_addr++) {
-		writel(*temp_addr, port);
-	}
-}
-EXPORT_SYMBOL(s3c_ide_OUTSW);
-
-void s3c_ide_INSW (ulong port, void *addr, u32 count)
-{
-	uint i;
-	volatile u16 *temp_addr = (u16*)addr;
-
-	for (i=0; i<count; i++, temp_addr++) {
-		*temp_addr = readw(port);
-		*temp_addr = readw(s3c_ide_regbase + S5P_ATA_PIO_RDATA);
-	}
-}
-EXPORT_SYMBOL(s3c_ide_INSW);
 
 #if defined (CONFIG_CPU_S5PC100)
 static void change_mode_to_ata (void)
@@ -641,7 +597,6 @@ static const struct ide_port_ops s3c_port_ops = {
 static int s3c_ide_dma_init(ide_hwif_t *hwif,
                                       const struct ide_port_info *d)
 {
-	DbgAta("##### %s\n", __FUNCTION__);
 	hwif->hwif_data = &(s3c_ide_hwif);
 
 	return 0;
@@ -726,7 +681,8 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 		goto out;
 	}
 
-	if (ret = clk_enable(s3cide_clock)) {
+	ret = clk_enable(s3cide_clock);
+	if (ret) {
 		printk("failed to enable clock source.\n");
 		goto out;
 	}
@@ -737,21 +693,24 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 #if defined (CONFIG_CPU_S5PC110)
 	/* CF_Addr[0 1 2], CF_IORDY, CF_INTRQ, CF_DMARQ, CF_DMARESET, CF_DMACK */
 	writel(0x44444444, S5PC11X_GPJ0CON);
-	writel(0xaaaa, S5PC11X_GPJ0PUD);
+	writel(0x900, S5PC11X_GPJ0PUD);
+	writel(0xffff, S5PC11X_GPJ0DRV);
 
 	/*CF_Data[0 - 7] */
 	writel(0x44444444, S5PC11X_GPJ2CON);
-	writel(0xaaaa, S5PC11X_GPJ2PUD);
+	writel(0x0, S5PC11X_GPJ2PUD);
+	writel(0xffff, S5PC11X_GPJ2DRV);
 
 	/* CF_Data[8 - 15] */
 	writel(0x44444444, S5PC11X_GPJ3CON);
-	writel(0xaaaa, S5PC11X_GPJ3PUD);
+	writel(0x0, S5PC11X_GPJ3PUD);
+	writel(0xffff, S5PC11X_GPJ3DRV);
 
 	/* CF_CS0, CF_CS1, CF_IORD, CF_IOWR */
 	reg = readl(S5PC11X_GPJ4CON) & ~(0xffff);
 	writel( reg | 0x4444, S5PC11X_GPJ4CON);
 	reg = readl(S5PC11X_GPJ4PUD) & ~(0xff);
-	writel(reg | 0xaa, S5PC11X_GPJ4PUD);
+	writel(0xff, S5PC11X_GPJ4DRV);
 	mdelay(100);
 #elif defined(CONFIG_CPU_S5PC100)
 	reg = readl(S5P_MEM_SYS_CFG) & ~(0x0000003f);
@@ -759,50 +718,33 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 
 	/* CF_ADDR[0:2], CF_IORDY, CF_INTRQ, CF_INPACK, CF_RESET, CF_REG */
 	writel(0x44444444, S5PC1XX_GPJ0CON);
-	writel(0xaaaa, S5PC1XX_GPJ0PUD);
+	writel(0x0, S5PC1XX_GPJ0PUD);
 
 	/*CF_DATA[7:0] */
 	writel(0x44444444, S5PC1XX_GPJ2CON);
-	writel(0xaaaa, S5PC1XX_GPJ2PUD);
+	writel(0x0, S5PC1XX_GPJ2PUD);
 
 	/* CF_DATA[15:8] */
 	writel(0x44444444, S5PC1XX_GPJ3CON);
-	writel(0xaaaa, S5PC1XX_GPJ3PUD);
+	writel(0x0, S5PC1XX_GPJ3PUD);
 
 	/* CF_CS0, CF_CS1, CF_IORD, CF_IOWR */
 	reg = readl(S5PC1XX_GPJ4CON) & ~(0xffff);
 	writel( reg | 0x4444, S5PC1XX_GPJ4CON);
 	reg = readl(S5PC1XX_GPJ4PUD) & ~(0xff);
-	writel(reg | 0xaa, S5PC1XX_GPJ4PUD);
 
 	/* EBI_OE, EBI_WE */
 	reg = readl(S5PC1XX_GPK0CON) & ~(0xff000000);
-	reg = readl(S5PC1XX_GPK0PUD) & ~(0xf000);
-	writel(reg, S5PC1XX_GPK0PUD);
 
 	/* CF_OE, CF_WE */
 	reg = readl(S5PC1XX_GPK1CON) & ~(0xff0000);
 	writel( reg | 0x00220000, S5PC1XX_GPK1CON);
 	reg = readl(S5PC1XX_GPK1PUD) & ~(0xf00);
-	writel(reg | (0xa00), S5PC1XX_GPK1PUD);
 
 	/* CF_CD */
 	reg = readl(S5PC1XX_GPK3CON) & ~(0xf00000);
 	writel( reg | 0x00200000, S5PC1XX_GPK3CON);
 	reg = readl(S5PC1XX_GPK3PUD) & ~(0xc00);
-	writel(reg | (0x800), S5PC1XX_GPK3PUD);
-#if 0
-	/* EBI_ADDR[7:0] disable */
-	writel(0x0, S5PC1XX_GPL0CON);
-	/* EBI_ADDR[15:8] disable */
-	writel(0x0, S5PC1XX_GPL1CON);
-	/* EBI_ADDR[20:16] and EBI_DATA[2:0] disable */
-	writel(0x0, S5PC1XX_GPL2CON);
-	/* EBI_DATA[10:3] disable */
-	writel(0x0, S5PC1XX_GPL3CON);
-	/* EBI_DATA[15:11] disable */
-	writel(0x0, S5PC1XX_GPL4CON);
-#endif
 	
 	/*Change to true IDE mode */
 	change_mode_to_ata();
@@ -812,14 +754,13 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
         writel(0x1C238, s3c_ide_regbase + S5P_ATA_PIO_TIME);
         writel(0x20B1362, s3c_ide_regbase + S5P_ATA_UDMA_TIME);
 
-	//writel(0x2830B, s3c_ide_regbase + S5P_ATA_PIO_TIME); 
 	set_endian_mode(0);
 	set_ata_enable(1);
 	mdelay(100);
 	
 	/* Remove IRQ Status */
-	writel(0x1f, s3c_ide_regbase + S5P_ATA_IRQ);
-	writel(0x1b, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ);
+	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
 
 #if defined (CONFIG_CPU_S5PC100)
 	/* Reserved bit to be fixed to 1 */
@@ -832,11 +773,11 @@ static int __devinit s3c_ide_probe (struct platform_device *pdev)
 	s3c_ide_setup_ports(&hw, s3c_hwif);
 	hw.irq = s3c_hwif->irq;
 	hw.dev = &pdev->dev;
-
-	ret = ide_host_add(&s3c_port_info, hws, &host);
-        if (ret)
-                goto out;
 	
+	ret = ide_host_add(&s3c_port_info, hws, &host);
+	if (ret)
+		goto out;
+
 	s3c_ide_hwif.hwif = host->ports[0];
 	
 	platform_set_drvdata(pdev, host);

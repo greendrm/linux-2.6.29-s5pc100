@@ -238,7 +238,7 @@ static unsigned int s3c_mfc_get_mem_area(int allocSize, int inst_no, int port_no
 
 
 	mfc_debug("request Size : %ld\n", allocSize);
-	printk(">> peter port_no in s3c_mfc_get_mem_area = %d <<\n", port_no);		
+	//printk(">> peter port_no in s3c_mfc_get_mem_area = %d <<\n", port_no);		
 
 	if (s3c_mfc_free_mem_head[port_no]== s3c_mfc_free_mem_tail[port_no]) {
 		mfc_err("all memory is gone\n");
@@ -396,7 +396,7 @@ MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *ar
 	s3c_mfc_get_phys_addr_arg_t *codec_get_phy_addr_arg = (s3c_mfc_get_phys_addr_arg_t *)args;
 	int port_no = mfc_ctx->port_no;
 
-	printk(">> peter mfc_ctx->port_no in s3c_mfc_get_phys_addr = %d <<\n", mfc_ctx->port_no);
+	//printk(">> peter mfc_ctx->port_no in s3c_mfc_get_phys_addr = %d <<\n", mfc_ctx->port_no);
 
 	for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; node = node->next) {
 		if(node->u_addr == (unsigned char *)codec_get_phy_addr_arg->u_addr)

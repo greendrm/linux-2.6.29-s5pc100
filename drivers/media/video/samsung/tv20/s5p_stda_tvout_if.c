@@ -280,8 +280,14 @@ bool _s5p_tv_if_init_vm_reg(void)
 		case TVOUT_720P_60:
 
 		case TVOUT_720P_50:
+
+#ifdef CONFIG_CPU_S5PC110
+		case TVOUT_1080P_60:
+
+		case TVOUT_1080P_50:
+#endif				
 			__s5p_vm_init_csc_coef_default(VMIXER_CSC_RGB_TO_YUV709_FR);
-			break;
+		break;
 		}
 
 		break;
@@ -701,6 +707,17 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		st->avi_byte[3] = AVI_VIC_4;
 		break;
 
+#ifdef CONFIG_CPU_S5PC110
+	case TVOUT_1080P_50:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_31;
+		break;
+
+	case TVOUT_1080P_60:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_16;
+		break;		
+#endif
 	default:
 		TVOUTIFPRINTK("invalid disp_mode parameter(%d)\n\r", 
 			tvout_if->out_mode);
@@ -850,11 +867,27 @@ bool _s5p_tv_if_start(void)
 			__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
 			break;
 
+#ifdef CONFIG_CPU_S5PC100			
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
 			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
 			break;
+#endif 
+
+#ifdef CONFIG_CPU_S5PC110
+		case TVOUT_720P_50:
+
+		case TVOUT_720P_60:
+			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 3);
+			break;
+
+		case TVOUT_1080P_50:
+
+		case TVOUT_1080P_60:
+			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
+			break;
+#endif			
 
 		default:
 			_s5p_tv_if_stop();
@@ -1032,6 +1065,12 @@ bool _s5p_tv_if_set_disp(void)
 
 	case TVOUT_720P_60:
 
+#ifdef CONFIG_CPU_S5PC110
+
+	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_60:
+#endif		
 		if (!_s5p_tv_if_init_avi_frame(&st->tvout_param)) {
 			st->tvout_param_available = false;
 			return false;
