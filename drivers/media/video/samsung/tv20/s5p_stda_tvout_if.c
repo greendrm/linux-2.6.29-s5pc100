@@ -867,12 +867,21 @@ bool _s5p_tv_if_start(void)
 			__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
 			break;
 
+#ifdef CONFIG_CPU_S5PC100			
+		case TVOUT_720P_50:
+
+		case TVOUT_720P_60:
+			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
+			break;
+#endif 
+
+#ifdef CONFIG_CPU_S5PC110
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
 			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 3);
 			break;
-#ifdef CONFIG_CPU_S5PC110
+
 		case TVOUT_1080P_50:
 
 		case TVOUT_1080P_60:
