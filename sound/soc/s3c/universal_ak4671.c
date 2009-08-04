@@ -19,7 +19,7 @@
 
 #include "../codecs/ak4671.h"
 #include "../codecs/max9877.h"
-#include "s3c-pcm.h"
+#include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
 extern struct s5pc1xx_pcm_pdata s3c_pcm_pdat;

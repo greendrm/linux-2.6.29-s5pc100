@@ -1,16 +1,19 @@
 /*
- *  s5pc1xx-pcm.h --
+ *  s3c24xx-pcm.h --
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
  *  Free Software Foundation;  either version 2 of the  License, or (at your
  *  option) any later version.
  *
- *  ALSA PCM interface for the Samsung CPU
+ *  ALSA PCM interface for the Samsung S3C24xx CPU
  */
 
-#ifndef _S5PC1XX_PCM_H
-#define _S5PC1XX_PCM_H
+#ifndef _S3C24XX_PCM_H
+#define _S3C24XX_PCM_H
+
+#define ST_RUNNING		(1<<0)
+#define ST_OPENED		(1<<1)
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -18,36 +21,20 @@
 #define s3cdbg(x...)
 #endif
 
-#define ST_RUNNING		(1<<0)
-#define ST_OPENED		(1<<1)
-
-#define MAX_LP_BUFF	(128 * 1024) /* 128KB is available for Playback and Capture combined */
-
-#define LP_TXBUFF_ADDR    (0xC0000000)
-
-struct s5pc1xx_pcm_dma_params {
+struct s3c24xx_pcm_dma_params {
 	struct s3c2410_dma_client *client;	/* stream identifier */
 	int channel;				/* Channel ID */
 	dma_addr_t dma_addr;
 	int dma_size;			/* Size of the DMA transfer */
 };
 
-struct pcm_buffs {
-	unsigned char    *cpu_addr[2]; /* Vir addr of Playback and Capture stream */
-	dma_addr_t        dma_addr[2];  /* DMA addr of Playback and Capture stream */
-};
-
-struct s5pc1xx_pcm_pdata {
-	int               lp_mode;
-	struct pcm_buffs  nm_buffs;
-	struct pcm_buffs  lp_buffs;
-	struct snd_soc_platform pcm_pltfm;
-	struct snd_pcm_hardware pcm_hw_tx;
-	struct snd_pcm_hardware pcm_hw_rx;
-	void (*set_mode)(int lp_mode, void *ptr);
-};
+#define S3C24XX_DAI_I2S			0
 
 #define S3CPCM_DCON 	S3C2410_DCON_SYNC_PCLK|S3C2410_DCON_HANDSHAKE
 #define S3CPCM_HWCFG 	S3C2410_DISRCC_INC|S3C2410_DISRCC_APB	
+
+/* platform data */
+extern struct snd_soc_platform s3c24xx_soc_platform;
+extern struct snd_ac97_bus_ops s3c24xx_ac97_ops;
 
 #endif

@@ -24,7 +24,7 @@
 #include <plat/regs-clock.h>
 
 #include "../codecs/wm8580.h"
-#include "s3c-pcm.h"
+#include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
 #define PLAY_51       0

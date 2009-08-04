@@ -1,4 +1,4 @@
-config SND_S5PC1XX_SOC
+config SND_S5PC100_SOC
 	tristate "Samsung SoC Audio"
 	depends on ARCH_S5PC1XX
 	help
@@ -14,29 +14,29 @@ config SND_S3C_AC97
 
 choice
 	prompt "Select the codec driver"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5PC100_SOC
 
 config  SND_SMDKC100_WM8580
 	tristate "WM8580-I2S on SMDKC100"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5PC100_SOC
 	select SND_S3C_I2S_V50
 	select SND_SOC_WM8580
 
 config  SND_SMDKC100_S5M8751
 	tristate "S5M8751-I2S on SMDKC100"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5PC100_SOC
 	select SND_S3C_I2S_V32
 	select SND_SOC_S5M8751
 
 config  SND_SMDKC100_WM9713
 	tristate "WM9713-AC97 on SMDKC100"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5PC100_SOC
 	select SND_S3C_AC97
 	select SND_SOC_WM9713
 
 config SND_S5PC100_SOC_UNIVERSAL_AK4671
 	tristate "SoC I2S Audio support for UNIVERSAL - AK4671"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5PC100_SOC
 	select SND_S3C_I2S_V50
 	select SND_SOC_AK4671
 	select SND_SOC_MAX9877

@@ -24,7 +24,7 @@
 #include <mach/s3c-dma.h>
 #include <plat/regs-clock.h>
 
-#include "s3c-pcm.h"
+#include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
 static struct s3c2410_dma_client s3c_dma_client_out = {
