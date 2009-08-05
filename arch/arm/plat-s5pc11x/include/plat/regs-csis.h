@@ -31,6 +31,13 @@
 /* Control Register */
 #define S3C_CSIS_CONTROL_DPDN_DEFAULT		(0 << 31)
 #define S3C_CSIS_CONTROL_DPDN_SWAP		(1 << 31)
+#define S3C_CSIS_CONTROL_ALIGN_32BIT		(1 << 20)
+#define S3C_CSIS_CONTROL_ALIGN_24BIT		(0 << 20)
+#define S3C_CSIS_CONTROL_ALIGN_MASK		(1 << 20)
+#define S3C_CSIS_CONTROL_UPDATE_SHADOW		(1 << 16)
+#define S3C_CSIS_CONTROL_WCLK_PCLK		(0 << 8)
+#define S3C_CSIS_CONTROL_WCLK_EXTCLK		(1 << 8)
+#define S3C_CSIS_CONTROL_WCLK_MASK		(1 << 8)
 #define S3C_CSIS_CONTROL_RESET			(1 << 4)
 #define S3C_CSIS_CONTROL_DISABLE		(0 << 0)
 #define S3C_CSIS_CONTROL_ENABLE			(1 << 0)
@@ -40,6 +47,8 @@
 #define S3C_CSIS_DPHYCTRL_ENABLE		(1 << 0)
 
 /* Configuration Register */
+#define S3C_CSIS_CONFIG_FORMAT_SHIFT		(2)
+#define S3C_CSIS_CONFIG_FORMAT_MASK		(0x1f << 2)
 #define S3C_CSIS_CONFIG_NR_LANE_1		(0 << 0)
 #define S3C_CSIS_CONFIG_NR_LANE_2		(1 << 0)
 #define S3C_CSIS_CONFIG_NR_LANE_MASK		(1 << 0)

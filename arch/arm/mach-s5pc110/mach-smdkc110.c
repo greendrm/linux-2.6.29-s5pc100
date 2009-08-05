@@ -738,27 +738,27 @@ static void smdkc110_reset_camera(void)
 
 #if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
-        .pwm_id         = 3,
-        .max_brightness = 255,
-        .dft_brightness = 255,
-        .pwm_period_ns  = 78770,
+	.pwm_id         = 3,
+	.max_brightness = 255,
+	.dft_brightness = 255,
+	.pwm_period_ns  = 78770,
 };
 
 static struct platform_device smdk_backlight_device = {
-        .name           = "pwm-backlight",
-        .dev            = {
-                .parent = &s3c_device_timer[3].dev,
-                .platform_data = &smdk_backlight_data,
-        },
+	.name           = "pwm-backlight",
+	.dev            = {
+		.parent = &s3c_device_timer[3].dev,
+		.platform_data = &smdk_backlight_data,
+	},
 };
 static void __init smdk_backlight_register(void)
 {
-        int ret = platform_device_register(&smdk_backlight_device);
-        if (ret)
-                printk(KERN_ERR "smdk: failed to register backlight device: %d\n", ret);
+	int ret = platform_device_register(&smdk_backlight_device);
+	if (ret)
+		printk(KERN_ERR "smdk: failed to register backlight device: %d\n", ret);
 }
 #else
-#define smdk_backlight_register()       do { } while (0)
+#define smdk_backlight_register()	do { } while (0)
 #endif
 
 static void __init smdkc110_map_io(void)
