@@ -268,7 +268,9 @@ typedef enum {
 extern void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d);
 extern void ipc_field_id_control(ipc_field_id id);
 extern void ipc_on(void);
-
+extern void ipc_off(void);
+extern void ipc_field_id_mode(ipc_field_id_sel sel, ipc_field_id_togl toggle);
+	
 struct s3c_ipc_info {
 	char 		name[16];
 	struct device	*dev;

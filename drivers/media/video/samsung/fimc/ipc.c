@@ -149,7 +149,7 @@ void ipc_field_id_mode(ipc_field_id_sel sel, ipc_field_id_togl toggle)
 	writel(cfg, s3c_ipc->regs + S3C_IPC_MODE);	
 
 	cfg = readl(s3c_ipc->regs + S3C_IPC_MODE);
-	cfg |= S3C_IPC_FIELD_ID_AUTO_TOGGLING(sel);
+	cfg |= S3C_IPC_FIELD_ID_AUTO_TOGGLING(toggle);
 	writel(cfg, s3c_ipc->regs + S3C_IPC_MODE);
 
 	shadow_update();	
