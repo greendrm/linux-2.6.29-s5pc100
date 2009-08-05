@@ -31,6 +31,7 @@
 #include <linux/spi/spi_gpio.h>
 #include <linux/videodev2.h>
 #include <media/s5k3ba_platform.h>
+#include <media/s5k4ba_platform.h>
 #include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
@@ -551,10 +552,18 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 
 /* External camera module setting */
 static struct s5k3ba_platform_data s5k3ba = {
-	.default_width = 800,
-	.default_height = 600,
+	.default_width = 640,
+	.default_height = 480,
 	.pixelformat = V4L2_PIX_FMT_YVYU,
 	.freq = 24000000,
+	.is_mipi = 0,
+};
+
+static struct s5k4ba_platform_data s5k4ba = {
+	.default_width = 800,
+	.default_height = 600,
+	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.freq = 44000000,
 	.is_mipi = 0,
 };
 
@@ -572,23 +581,58 @@ static struct i2c_board_info  __initdata camera_info[] = {
 		.platform_data = &s5k3ba,
 	},
 	{
+		I2C_BOARD_INFO("S5K4BA", 0x2d),
+		.platform_data = &s5k4ba,
+	},
+	{
 		I2C_BOARD_INFO("S5K6AA", 0x3c),
 		.platform_data = &s5k6aa,
 	},
 };
 
 /* Camera interface setting */
-static struct s3c_platform_camera __initdata camera_b = {
-	.id		= CAMERA_PAR_B,		/* FIXME */
+static struct s3c_platform_camera __initdata camera_a = {
+	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
 	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_YCRYCB,
 	.i2c_busnum	= 0,
 	.info		= &camera_info[0],
 	.pixelformat	= V4L2_PIX_FMT_YVYU,
-	.srclk_name	= "mout_mpll",
+	.srclk_name	= "mout_epll",
+	.clk_name	= "sclk_cam0",
+	.clk_rate	= 24000000,
+	.line_length	= 1280,			/* 1280*1024 */
+	/* default resol for preview kind of thing */
+	.width		= 640,
+	.height		= 480,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 640,
+		.height	= 480,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized = 0,
+};
+
+static struct s3c_platform_camera __initdata camera_b = {
+	.id		= CAMERA_PAR_B,		/* FIXME */
+	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &camera_info[1],
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam1",
-	.clk_rate	= 24000000,		/* 44MHz */
+	.clk_rate	= 44000000,		/* 44MHz */
 	.line_length	= 1280,			/* 1280*1024 */
 	/* default resol for preview kind of thing */
 	.width		= 800,
@@ -615,9 +659,9 @@ static struct s3c_platform_camera __initdata camera_c = {
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 0,
-	.info		= &camera_info[1],
+	.info		= &camera_info[2],
 	.pixelformat	= V4L2_PIX_FMT_YUYV,
-	.srclk_name	= "mout_mpll",
+	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam0",
 	.clk_rate	= 24000000,		/* 24MHz */
 	.line_length	= 1280,			/* 1280*1024 */
@@ -645,8 +689,9 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 166000000,
-	.default_cam	= CAMERA_PAR_B,
+	.default_cam	= CAMERA_PAR_A,
 	.camera		= {
+		&camera_a,
 		&camera_b,
 		&camera_c,
 	}
