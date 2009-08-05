@@ -1433,4 +1433,8 @@ v2.6.29.4-dev-1-0-29: Youngmok Song
 		M       drivers/media/video/samsung/fimc/Kconfig
 		M       drivers/media/video/samsung/fimc/Makefile
 
+v2.6.29.4-dev-1-0-30: Jae-Cheol Lee
+	- Fix idle code for s5pc110
 
+	Modifies Files:
+		M	arch/arm/mach-s5pc110/cpu.c

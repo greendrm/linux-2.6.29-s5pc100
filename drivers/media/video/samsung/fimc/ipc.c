@@ -432,11 +432,8 @@ void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d)
 
 static void s3c_ipc_stop(struct platform_device *pdev)
 {
-	struct s3c_platform_ipc *plat;
-
 	ipc_off();
 	ipc_swreset();
-	
 }
 
 static int s3c_ipc_probe(struct platform_device *pdev)
@@ -449,7 +446,7 @@ static int s3c_ipc_probe(struct platform_device *pdev)
 	pdata = to_ipc_plat(&pdev->dev);
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
-
+/*
 	s3c_ipc->clock = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(s3c_ipc->clock)) {
 		err("failed to get ipc clock source\n");
@@ -457,7 +454,7 @@ static int s3c_ipc_probe(struct platform_device *pdev)
 	}
 
 	clk_enable(s3c_ipc->clock);
-
+*/
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		err("failed to get io memory region\n");

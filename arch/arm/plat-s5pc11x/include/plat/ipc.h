@@ -16,9 +16,11 @@
 struct platform_device;
 
 struct s3c_platform_ipc {
-	const char	clk_name[16];
+	const char			srclk_name[16];		/* source of interface clock name */
+	const char			clk_name[16];		/* interface clock name */
+	u32				clk_rate;		/* clockrate for interface clock */	
 
-	void		(*cfg_gpio)(struct platform_device *dev);
+	void				(*cfg_gpio)(struct platform_device *dev);
 };
 
 extern void s3c_ipc_set_platdata(struct s3c_platform_ipc *csis);
