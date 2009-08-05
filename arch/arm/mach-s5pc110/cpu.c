@@ -90,7 +90,7 @@ static void s5pc110_idle(void)
 
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
-	tmp |= S5P_CFG_WFI_IDLE;
+	//tmp |= S5P_CFG_WFI_IDLE;
 	__raw_writel(tmp, S5P_PWR_CFG);
 
 	tmp = __raw_readl(S5P_OTHERS);

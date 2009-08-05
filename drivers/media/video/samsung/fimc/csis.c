@@ -136,6 +136,58 @@ static void s3c_csis_phy_off(void)
 	writel(cfg, s3c_csis->regs + S3C_CSIS_DPHYCTRL);
 }
 
+#ifdef CONFIG_MIPI_CSI_ADV_FEATURE
+static void s3c_csis_update_shadow(void)
+{
+	u32 cfg;
+
+	cfg = readl(s3c_csis->regs + S3C_CSIS_CONTROL);
+	cfg |= S3C_CSIS_CONTROL_UPDATE_SHADOW;
+	writel(cfg, s3c_csis->regs + S3C_CSIS_CONTROL);
+}
+
+static void s3c_csis_set_data_align(int align)
+{
+	u32 cfg;
+
+	cfg = readl(s3c_csis->regs + S3C_CSIS_CONTROL);
+	cfg &= ~S3C_CSIS_CONTROL_ALIGN_MASK;
+
+	if (align == 24)
+		cfg |= S3C_CSIS_CONTROL_ALIGN_24BIT;
+	else
+		cfg |= S3C_CSIS_CONTROL_ALIGN_32BIT;
+
+	writel(cfg, s3c_csis->regs + S3C_CSIS_CONTROL);
+}
+
+static void s3c_csis_set_wclk(int extclk)
+{
+	u32 cfg;
+
+	cfg = readl(s3c_csis->regs + S3C_CSIS_CONTROL);
+	cfg &= ~S3C_CSIS_CONTROL_WCLK_MASK;
+
+	if (extclk)
+		cfg |= S3C_CSIS_CONTROL_WCLK_EXTCLK;
+	else
+		cfg |= S3C_CSIS_CONTROL_WCLK_PCLK;
+
+	writel(cfg, s3c_csis->regs + S3C_CSIS_CONTROL);
+}
+
+static void s3c_csis_set_format(enum mipi_format fmt)
+{
+	u32 cfg;
+
+	cfg = readl(s3c_csis->regs + S3C_CSIS_CONFIG);
+	cfg &= ~S3C_CSIS_CONFIG_FORMAT_MASK;
+	cfg |= (fmt << S3C_CSIS_CONFIG_FORMAT_SHIFT);
+
+	writel(cfg, s3c_csis->regs + S3C_CSIS_CONFIG);
+}
+#endif
+
 static void s3c_csis_start(struct platform_device *pdev)
 {
 	struct s3c_platform_csis *plat;
@@ -146,6 +198,14 @@ static void s3c_csis_start(struct platform_device *pdev)
 
 	s3c_csis_reset();
 	s3c_csis_set_nr_lanes(S3C_CSIS_NR_LANES);
+
+#ifdef CONFIG_MIPI_CSI_ADV_FEATURE
+	s3c_csis_set_data_align(32);
+	s3c_csis_set_wclk(1);
+	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
+	s3c_csis_update_shadow();
+#endif
+
 	s3c_csis_enable_interrupt();
 	s3c_csis_system_on();
 	s3c_csis_phy_on();
@@ -175,10 +235,11 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int s3c_csis_probe(struct platform_device *pdev)
+ int s3c_csis_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_csis *pdata;
 	struct resource *res;
+	struct clk *parent;
 
 	s3c_csis_set_info();
 
@@ -186,11 +247,25 @@ static int s3c_csis_probe(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
+	parent = clk_get(&pdev->dev, pdata->srclk_name);
+	if (IS_ERR(parent)) {
+		err("failed to get parent clock for csis\n");
+		return -EINVAL;
+	}
+
 	s3c_csis->clock = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(s3c_csis->clock)) {
 		err("failed to get csis clock source\n");
 		return -EINVAL;
 	}
+
+	if (s3c_csis->clock->set_parent) {
+		s3c_csis->clock->parent = parent;
+		s3c_csis->clock->set_parent(s3c_csis->clock, parent);
+	}
+
+	if (s3c_csis->clock->set_rate)
+		s3c_csis->clock->set_rate(s3c_csis->clock, pdata->clk_rate);
 
 	clk_enable(s3c_csis->clock);
 

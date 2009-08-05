@@ -19,6 +19,12 @@
 #define info(args...)	do { printk(KERN_INFO S3C_CSIS_NAME ": " args); } while (0)
 #define err(args...)	do { printk(KERN_ERR  S3C_CSIS_NAME ": " args); } while (0)
 
+enum mipi_format {
+	MIPI_CSI_YCBCR422_8BIT	= 0x1e,
+	MIPI_CSI_RAW8		= 0x2a,
+	MIPI_CSI_RAW10		= 0x2b,
+	MIPI_CSI_RAW12		= 0x2c,
+};
 
 struct s3c_csis_info {
 	char 		name[16];

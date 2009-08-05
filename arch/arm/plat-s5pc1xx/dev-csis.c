@@ -43,7 +43,9 @@ struct platform_device s3c_device_csis = {
 };
 
 static struct s3c_platform_csis default_csis_data __initdata = {
+	.srclk_name = "clk_27m",
 	.clk_name = "mipi-csis",
+	.clk_rate = 133000000,
 };
 
 void __init s3c_csis_set_platdata(struct s3c_platform_csis *pd)
