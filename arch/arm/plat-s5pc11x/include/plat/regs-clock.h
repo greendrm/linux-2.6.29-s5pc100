@@ -597,8 +597,6 @@
 #define S5P_OTHERS_MIPI_DPHY_EN		(1 << 28)
 
 /* MIPI */
-#define S5P_MIPI_DPHY_EN		(1 << 0)
-#define S5P_MIPI_PHY_CON0_M_RESETN	(1 << 1)
-#define S5P_MIPI_PHY_CON0_S_RESETN	(1 << 0)
+#define S5P_MIPI_DPHY_EN		(3 << 0)
 
 #endif /* _PLAT_REGS_CLOCK_H */

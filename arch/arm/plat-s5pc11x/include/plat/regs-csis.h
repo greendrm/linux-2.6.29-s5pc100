@@ -24,6 +24,7 @@
 #define S3C_CSIS_DPHYSTS			S3C_CSISREG(0x0c)
 #define S3C_CSIS_INTMSK				S3C_CSISREG(0x10)
 #define S3C_CSIS_INTSRC				S3C_CSISREG(0x14)
+#define S3C_CSIS_RESOL				S3C_CSISREG(0x2c)
 
 /*************************************************************************
  * Bit Definitions
@@ -43,6 +44,8 @@
 #define S3C_CSIS_CONTROL_ENABLE			(1 << 0)
 
 /* D-PHY Control Register */
+#define S3C_CSIS_DPHYCTRL_HS_SETTLE_MASK	(0x1f << 27)
+#define S3C_CSIS_DPHYCTRL_HS_SETTLE_SHIFT	(27)
 #define S3C_CSIS_DPHYCTRL_DISABLE		(0 << 0)
 #define S3C_CSIS_DPHYCTRL_ENABLE		(1 << 0)
 
@@ -94,5 +97,9 @@
 #define S3C_CSIS_INTSRC_ERR_ECC			(1 << 2)
 #define S3C_CSIS_INTSRC_ERR_CRC			(1 << 1)
 #define S3C_CSIS_INTSRC_ERR_ID			(1 << 0)
+
+/* Resolution Register */
+#define S3C_CSIS_RESOL_HOR_SHIFT		(16)
+#define S3C_CSIS_RESOL_VER_SHIFT		(0)
 
 #endif /* _REGS_CSIS_H */
