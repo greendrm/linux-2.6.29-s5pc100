@@ -82,6 +82,8 @@ extern struct platform_device s3c_device_fimc2;
 extern struct platform_device s3c_device_csis;
 extern struct platform_device s3c_device_fb;
 
+extern struct platform_device s3c_device_ipc;
+
 extern struct platform_device s3c_device_rp;
 
 extern struct platform_device s5p_device_tvout;

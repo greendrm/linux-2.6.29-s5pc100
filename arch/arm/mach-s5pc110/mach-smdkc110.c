@@ -52,6 +52,7 @@
 #include <plat/fimc.h>
 #include <plat/csis.h>
 #include <plat/fb.h>
+#include <plat/ipc.h>
 
 #include <plat/nand.h>
 #include <plat/partition.h>
@@ -524,6 +525,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_csis,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
+	&s3c_device_ipc,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -784,6 +786,9 @@ static void __init smdkc110_machine_init(void)
 	s3c_csis_set_platdata(NULL);
 	smdkc110_reset_camera();
 
+	/* ipc */
+	s3c_ipc_set_platdata(NULL);
+	
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)
