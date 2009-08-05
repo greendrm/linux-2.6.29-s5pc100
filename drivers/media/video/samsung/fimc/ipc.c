@@ -432,11 +432,8 @@ void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d)
 
 static void s3c_ipc_stop(struct platform_device *pdev)
 {
-	struct s3c_platform_ipc *plat;
-
 	ipc_off();
 	ipc_swreset();
-	
 }
 
 static int s3c_ipc_probe(struct platform_device *pdev)
