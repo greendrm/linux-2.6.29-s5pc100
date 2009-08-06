@@ -19,6 +19,7 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/clk.h>
+#include <linux/err.h>
 
 #include <mach/hardware.h>
 #include <mach/map.h>
@@ -27,6 +28,40 @@
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/clock.h>
+
+static int powerdomain_set(struct powerdomain *pd, int enable)
+{
+	unsigned long ctrlbit = pd->pd_ctrlbit;
+	void __iomem *reg = (void __iomem *)(pd->pd_reg);
+	unsigned long reg_dat;
+		
+	if (IS_ERR(pd) || pd == NULL)
+		return -EINVAL;
+	
+	reg_dat = __raw_readl(reg);
+
+	if (enable)
+		__raw_writel(reg_dat|ctrlbit, reg);
+	else
+		__raw_writel(reg_dat &~(ctrlbit), reg);
+
+	return 0;
+}
+
+static struct powerdomain pd_lcd = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_ctrlbit	= (0x1<<3),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
+
+static struct powerdomain pd_tv = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_ctrlbit	= (0x1<<4),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
+
 
 struct clk clk_27m = {
 	.name		= "clk_27m",
@@ -364,36 +399,42 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_LCD,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "rotator",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_ROTATOR,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "fimc0",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_FIMC0,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "fimc1",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_FIMC1,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "fimc2",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_FIMC2,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "jpeg",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_JPEG,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "g3d",
 		.id		= -1,
@@ -406,6 +447,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_ROTATOR,
+		.pd		= &pd_lcd,
 	},
 
 	/* Multimedia2 (D1_2) devices */
@@ -415,24 +457,28 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d12_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D12_TV,
+		.pd		= &pd_tv,
 	}, {
 		.name		= "vp",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d12_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D12_VP,
+		.pd		= &pd_tv,
 	}, {
 		.name		= "mixer",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d12_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D12_MIXER,
+		.pd		= &pd_tv,
 	}, {
 		.name		= "hdmi",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d12_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D12_HDMI,
+		.pd		= &pd_tv,
 	}, {
 		.name		= "mfc",
 		.id		= -1,

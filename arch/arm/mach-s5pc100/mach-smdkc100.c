@@ -403,6 +403,7 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 #endif
 	&s5p_device_tvout,
 	&s3c_device_cfcon,
+	&s3c_device_test,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {

@@ -35,75 +35,9 @@
 #include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
-/* AP's duty_cycle percentage */
-/* For max power savings, define least possible with no latency issues */
-
-/*
-AP's DutyCycle   Minimum Periods   Period Size
-   DUTY_CYCLE       MINPRDS          PRDSIZE
-   **********       *******          *******
-      0               1               131072
-      1               127               1024
-      2               63               2048
-      3               125               1024
-      4               31               4096
-      5               61               2048
-      6               121               1024
-      7               15               8192
-      8               59               2048
-      9               117               1024
-      10               29               4096
-      11               57               2048
-
-      12               113               1024
-//    12               7                16384
-
-      13               7               16384
-      14               111               1024
-      15               55               2048
-      16               27               4096
-      17               107               1024
-      18               53               2048
-      19               13               8192
-      20               103               1024
-      21               51               2048
-      22               25               4096
-      23               99               1024
-      24               49               2048
-      25               3               32768
-      26               95               1024
-      27               47               2048
-      28               93               1024
-      29               23               4096
-      30               45               2048
-      31               89               1024
-      32               11               8192
-      33               43               2048
-      34               85               1024
-      35               21               4096
-      36               41               2048
-
-      37               81               1024
-//    37               5                16384
-
-      38               5               16384
-      39               79               1024
-      40               39               2048
-      41               19               4096
-      42               75               1024
-      43               37               2048
-      44               9               8192
-      45               71               1024
-      46               35               2048
-      47               17               4096
-      48               67               1024
-      49               33               2048
-      50               1               65536
-*/
-
-/* We configure AP's duty cycle as 7% */
-#define MINPRDS 15
-#define PRDSIZE 8192
+/* Set this value to maximum possible without latency issues with playback.
+ * Also, this value must be aligned at KB bounday (multiple of 1024). */
+#define LP_DMA_PERIOD (127 * 1024)
 
 struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
 
@@ -213,7 +147,7 @@ static int s3c_pcm_hw_params_lp(struct snd_pcm_substream *substream,
 	runtime->dma_bytes = totbytes;
 
 	/* We configure callback at partial playback complete acc to dutycyle selected */
-	s3ci2s_func->dma_setcallbk(pcm_dmaupdate, MINPRDS * PRDSIZE);
+	s3ci2s_func->dma_setcallbk(pcm_dmaupdate, LP_DMA_PERIOD);
 	s3ci2s_func->dma_enqueue((void *)substream); /* Configure to loop the whole buffer */
 
 	s3cdbg("DmaAddr=@%x Total=%lubytes PrdSz=%u #Prds=%u\n",
@@ -668,10 +602,10 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 		 * AND, (period_bytes_max * periods_max) in snd_pcm_hw_params_set_buffer_size.
 		 */
 		s3c_pcm_pdat.pcm_hw_tx.buffer_bytes_max = MAX_LP_BUFF;
-		s3c_pcm_pdat.pcm_hw_tx.period_bytes_min = PRDSIZE;
-		s3c_pcm_pdat.pcm_hw_tx.period_bytes_max = s3c_pcm_pdat.pcm_hw_tx.period_bytes_min;
-		s3c_pcm_pdat.pcm_hw_tx.periods_min = MINPRDS;
-		s3c_pcm_pdat.pcm_hw_tx.periods_max = MAX_LP_BUFF / s3c_pcm_pdat.pcm_hw_tx.period_bytes_min;
+		s3c_pcm_pdat.pcm_hw_tx.period_bytes_min = LP_DMA_PERIOD;
+		s3c_pcm_pdat.pcm_hw_tx.period_bytes_max = LP_DMA_PERIOD;
+		s3c_pcm_pdat.pcm_hw_tx.periods_min = 1;
+		s3c_pcm_pdat.pcm_hw_tx.periods_max = 2;
 		/* Configure Capture Channel */
 		s3c_pcm_pdat.pcm_hw_rx.buffer_bytes_max = 0;
 		s3c_pcm_pdat.pcm_hw_rx.channels_min = 0;
