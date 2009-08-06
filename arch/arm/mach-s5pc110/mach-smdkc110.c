@@ -572,7 +572,7 @@ static struct s5k4ba_platform_data s5k4ba = {
 static struct s5k6aa_platform_data s5k6aa = {
 	.default_width = 640,
 	.default_height = 480,
-	.pixelformat = V4L2_PIX_FMT_YUYV,
+	.pixelformat = V4L2_PIX_FMT_UYVY,
 	.freq = 24000000,
 	.is_mipi = 1,
 };
@@ -662,7 +662,7 @@ static struct s3c_platform_camera __initdata camera_c = {
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 0,
 	.info		= &camera_info[2],
-	.pixelformat	= V4L2_PIX_FMT_YUYV,
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
 	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam0",
 	.clk_rate	= 24000000,		/* 24MHz */

@@ -422,7 +422,7 @@ struct s5k6aa_regset_type {
  * User defined commands
  */
 /* S/W defined features for tune */
-#define REG_DELAY	0xFF00	/* in ms */
+#define REG_DELAY	0xFF	/* in ms */
 #define REG_CMD		0xFFFF	/* Followed by command */
 
 /* Following order should not be changed */
@@ -463,23 +463,24 @@ enum s5k6aa_control {
 	.regset = x,			\
 	.len = sizeof(x)/sizeof(s5k6aa_reg),}
 
-
 /*
  * User tuned register setting values
  */
-unsigned char s5k6aa_init_reg1[][4] = {
+unsigned char s5k6aa_init_reg[][4] = {
 	/*******************/
 	{0xFC,0xFC,0xD0,0x00},
 	/*******************/
 	{0x00,0x10,0x00,0x01},	/* Reset */
 	{0x10,0x30,0x00,0x00},	/* Clear host interrupt so main will wait */
 	{0x00,0x14,0x00,0x01},	/* ARM go */
-};
+
 	/*******************/
 	/* Delay{1000},p100*/
 	/* Wait100mSec */
 	/* Start T&P part */
-unsigned char s5k6aa_init_reg2[][4] = {
+
+	{REG_DELAY, 100, 0, 0},
+
 	{0x00,0x28,0x70,0x00},
 	{0x00,0x2A,0x1D,0x60},
 	{0x0F,0x12,0xB5,0x70},
@@ -2523,14 +2524,16 @@ unsigned char s5k6aa_init_reg2[][4] = {
 	/* End tuning part */
 	/* Set host interrupt so main start run */
 	{0x10,0x00,0x00,0x01},	
-};
+
 	/********************/
 	/* Delay{100}, p10 */ 
 	/* Wait10mSec */
 	/* Start user init script */
 
 	/* End user init script */
-unsigned char s5k6aa_init_reg3[][4] = {
+
+	{REG_DELAY, 10, 0, 0},
+
 	{0x00,0x2A,0x04,0x00},
 	{0x0F,0x12,0x00,0x5F},
 	{0x00,0x2A,0x03,0xDC},
@@ -2554,15 +2557,15 @@ unsigned char s5k6aa_init_reg3[][4] = {
 	{0x0F,0x12,0x36,0xB0},
 	{0x00,0x2A,0x01,0xE0},
 	{0x0F,0x12,0x00,0x01},
-};
+
 	/********************/
 	/* Delay{1000},p100 */
+	{REG_DELAY, 100, 0, 0},
 
 	/*
 	 * PREVIEW CONFIGURATION 0 
 	 * {SXGA, YUV, 15fps}
 	 */
-unsigned char s5k6aa_init_reg4[][4] = {
 	{0x00,0x2A,0x02,0x42},
 	{0x0F,0x12,0x05,0x00},	/* 1280 */
 	{0x0F,0x12,0x04,0x00},	/* 1024 */
@@ -2635,8 +2638,10 @@ unsigned char s5k6aa_init_reg4[][4] = {
 	{0x0F,0x12,0x00,0x01},
 	{0x0F,0x12,0x00,0x01},
 	/********************/
-};
+
 	/* Delay{2000} */
+	{REG_DELAY, 200, 0, 0},
+};
 
 #define S5K6AA_INIT_REGS	(sizeof(s5k6aa_init_reg) / sizeof(s5k6aa_init_reg[0]))
 

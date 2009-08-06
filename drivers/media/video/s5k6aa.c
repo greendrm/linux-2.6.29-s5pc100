@@ -474,11 +474,14 @@ static int s5k6aa_init(struct v4l2_subdev *sd, u32 val)
 	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
 
 	for (i = 0; i < S5K6AA_INIT_REGS; i++) {
-		if (i == 4)
-			mdelay(5);
+		if (s5k6aa_init_reg[i][0] == REG_DELAY) {
+			mdelay(s5k6aa_init_reg[i][1]);
+			err = 0;
+		} else {
+			err = s5k6aa_i2c_write(sd, s5k6aa_init_reg[i], \
+						sizeof(s5k6aa_init_reg[i]));
+		}
 
-		err = s5k6aa_i2c_write(sd, s5k6aa_init_reg[i], \
-					sizeof(s5k6aa_init_reg[i]));
 		if (err < 0)
 			v4l_info(client, "%s: register set failed\n", \
 			__FUNCTION__);
