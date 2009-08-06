@@ -80,6 +80,22 @@ enum s5k3ba_control {
 /*
  * User tuned register setting values
  */
+#if 1
+static unsigned char s5k3ba_init_reg[][2] = {
+	{0xfc, 0x01},
+	{0x03, 0x01},
+	{0xfc, 0x01},
+	{0x04, 0x01},
+	{0xfc, 0x02},
+	{0x52, 0x80},
+	{0xfc, 0x02},
+	{0x50, 0x18},
+	{0xfc, 0x00},
+	{0x02, 0x02},
+	{0xfc, 0x01},
+	{0x02, 0x07},
+};
+#else
 static unsigned char s5k3ba_init_reg[][2] = {
  //1. initial setting 
     {0xfc, 0x01},                                
@@ -810,6 +826,7 @@ static unsigned char s5k3ba_init_reg[][2] = {
 
     {0x31, 0x00},  // skin tone[6], CW delete[5]  
 };
+#endif
 
 #define S5K3BA_INIT_REGS	(sizeof(s5k3ba_init_reg) / sizeof(s5k3ba_init_reg[0]))
 

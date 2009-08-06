@@ -21,7 +21,11 @@
 #define ST_RUNNING		(1<<0)
 #define ST_OPENED		(1<<1)
 
-#define MAX_LP_BUFF	(128 * 1024) /* 128KB is available for Playback and Capture combined */
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+#define MAX_LP_BUFF	(128 * 1024) /* 128KB in S5PC100 */
+#else
+#define MAX_LP_BUFF	(160 * 1024) /* 160KB in S5PC110 (Unused RP) */
+#endif
 
 #define LP_TXBUFF_ADDR    (0xC0000000)
 
@@ -46,8 +50,5 @@ struct s5pc1xx_pcm_pdata {
 	struct snd_pcm_hardware pcm_hw_rx;
 	void (*set_mode)(int lp_mode, void *ptr);
 };
-
-#define S3CPCM_DCON 	S3C2410_DCON_SYNC_PCLK|S3C2410_DCON_HANDSHAKE
-#define S3CPCM_HWCFG 	S3C2410_DISRCC_INC|S3C2410_DISRCC_APB	
 
 #endif

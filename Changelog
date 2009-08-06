@@ -1433,4 +1433,19 @@ v2.6.29.4-dev-1-0-29: Youngmok Song
 		M       drivers/media/video/samsung/fimc/Kconfig
 		M       drivers/media/video/samsung/fimc/Makefile
 
+v2.6.29.4-dev-1-0-30: Jae-Cheol Lee
+	- Fix idle code for s5pc110
 
+	Modifies Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+
+v2.6.29.4-dev-1-0-31: Thomas Abraham
+	- Fix for "BUG: sleeping function called ..." message in USB OTG serial
+	gadget.
+
+	The USB OTG serial gadget when used displayes the message 
+	"BUG: sleeping function called from invalid context at kernel/mutex.c:94"
+	when the first data byte is received. This fix is based on the Serial
+	Gadget module author's suggestion as listed in the link
+	http://groups.google.co.in/group/fa.linux.kernel/browse_thread/thread/242d11b3faaf392d
+	

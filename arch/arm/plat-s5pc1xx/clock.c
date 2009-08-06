@@ -205,13 +205,13 @@ static struct clk init_clocks_disable[] = {
 	{
 		.name		= "mipi-dsim",
 		.id		= -1,
-		.parent		= &clk_27m,
+		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_DSI,
 	}, {
 		.name		= "mipi-csis",
 		.id		= -1,
-		.parent		= &clk_27m,
+		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_CSI,
 	}, {

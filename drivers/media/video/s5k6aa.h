@@ -467,17 +467,19 @@ enum s5k6aa_control {
 /*
  * User tuned register setting values
  */
-unsigned char s5k6aa_init_reg[][4] = {
+unsigned char s5k6aa_init_reg1[][4] = {
 	/*******************/
 	{0xFC,0xFC,0xD0,0x00},
 	/*******************/
 	{0x00,0x10,0x00,0x01},	/* Reset */
 	{0x10,0x30,0x00,0x00},	/* Clear host interrupt so main will wait */
 	{0x00,0x14,0x00,0x01},	/* ARM go */
+};
 	/*******************/
 	/* Delay{1000},p100*/
 	/* Wait100mSec */
 	/* Start T&P part */
+unsigned char s5k6aa_init_reg2[][4] = {
 	{0x00,0x28,0x70,0x00},
 	{0x00,0x2A,0x1D,0x60},
 	{0x0F,0x12,0xB5,0x70},
@@ -2521,12 +2523,14 @@ unsigned char s5k6aa_init_reg[][4] = {
 	/* End tuning part */
 	/* Set host interrupt so main start run */
 	{0x10,0x00,0x00,0x01},	
+};
 	/********************/
 	/* Delay{100}, p10 */ 
 	/* Wait10mSec */
 	/* Start user init script */
 
 	/* End user init script */
+unsigned char s5k6aa_init_reg3[][4] = {
 	{0x00,0x2A,0x04,0x00},
 	{0x0F,0x12,0x00,0x5F},
 	{0x00,0x2A,0x03,0xDC},
@@ -2550,6 +2554,7 @@ unsigned char s5k6aa_init_reg[][4] = {
 	{0x0F,0x12,0x36,0xB0},
 	{0x00,0x2A,0x01,0xE0},
 	{0x0F,0x12,0x00,0x01},
+};
 	/********************/
 	/* Delay{1000},p100 */
 
@@ -2557,7 +2562,7 @@ unsigned char s5k6aa_init_reg[][4] = {
 	 * PREVIEW CONFIGURATION 0 
 	 * {SXGA, YUV, 15fps}
 	 */
-
+unsigned char s5k6aa_init_reg4[][4] = {
 	{0x00,0x2A,0x02,0x42},
 	{0x0F,0x12,0x05,0x00},	/* 1280 */
 	{0x0F,0x12,0x04,0x00},	/* 1024 */
@@ -2630,8 +2635,9 @@ unsigned char s5k6aa_init_reg[][4] = {
 	{0x0F,0x12,0x00,0x01},
 	{0x0F,0x12,0x00,0x01},
 	/********************/
-	/* Delay{2000} */
 };
+	/* Delay{2000} */
+
 #define S5K6AA_INIT_REGS	(sizeof(s5k6aa_init_reg) / sizeof(s5k6aa_init_reg[0]))
 
 /* Clock configuration: should be expanded to various clock input */

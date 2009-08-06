@@ -54,7 +54,7 @@ void __init s3c_ipc_set_platdata(struct s3c_platform_ipc *pd)
 
 	npd->cfg_gpio = s3c_ipc_cfg_gpio;
 
-	s3c_device_csis.dev.platform_data = npd;
+	s3c_device_ipc.dev.platform_data = npd;
 }
 
 

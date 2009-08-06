@@ -110,18 +110,6 @@ void ipc_enable_ip(u32 onoff)
 	
 }
 
-void ipc_on(void)
-{
-	ipc_setpostprocessing_onoff(ON);
-	ipc_enable_ip(ON);
-}
-
-void ipc_off(void)
-{
-	ipc_setpostprocessing_onoff(OFF);
-	ipc_enable_ip(OFF);
-}
-
 void ipc_swreset(void)
 {
 	u32 cfg;
@@ -132,6 +120,19 @@ void ipc_swreset(void)
 	} while ((cfg & S3C_IPC_SRESET_MASK) != 0); 
 		
 	writel(S3C_IPC_SRESET_ENABLE, s3c_ipc->regs + S3C_IPC_SRESET);
+}
+
+void ipc_on(void)
+{
+	ipc_setpostprocessing_onoff(ON);
+	ipc_enable_ip(ON);
+}
+
+void ipc_off(void)
+{
+	ipc_setpostprocessing_onoff(OFF);
+	ipc_enable_ip(OFF);
+	ipc_swreset();
 }
 
 void ipc_field_id_control(ipc_field_id id)
@@ -149,7 +150,7 @@ void ipc_field_id_mode(ipc_field_id_sel sel, ipc_field_id_togl toggle)
 	writel(cfg, s3c_ipc->regs + S3C_IPC_MODE);	
 
 	cfg = readl(s3c_ipc->regs + S3C_IPC_MODE);
-	cfg |= S3C_IPC_FIELD_ID_AUTO_TOGGLING(sel);
+	cfg |= S3C_IPC_FIELD_ID_AUTO_TOGGLING(toggle);
 	writel(cfg, s3c_ipc->regs + S3C_IPC_MODE);
 
 	shadow_update();	
@@ -181,7 +182,7 @@ void ipc_setmode_and_imgsize(ipc_source ipc_src, ipc_destination ipc_dst, ipc_co
 	writel(S3C_IPC_DST_WIDTH_SET(ipc_dst.dsthsz), s3c_ipc->regs + S3C_IPC_DST_WIDTH);
 	writel(S3C_IPC_DST_HEIGHT_SET(ipc_dst.dstvsz), s3c_ipc->regs + S3C_IPC_DST_HEIGHT);
 
-	if(1 == ipc_convar.modeval)
+	if (1 == ipc_convar.modeval)
 		h_ratio = IPC_2D_ENABLE;
 	else
 		h_ratio = IPC_HOR_SCALING_ENABLE;		
@@ -401,13 +402,12 @@ void ipc_init(ipc_source ipc_src, ipc_destination ipc_dst, ipc_controlvariable i
 	shadow_update();
 }
 
-void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d)
+int ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d)
 {
 	if(input_width > IN_SC_MAX_WIDTH || input_height > IN_SC_MAX_HEIGHT) {
 		err("IPC input size error\n");
 		ipc_off();
-		ipc_swreset();
-		return;
+		return -EINVAL;
 	}
 
 	ipc_input_src.imghsz = input_width;
@@ -428,12 +428,13 @@ void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d)
 	ipc_con_var.modeval = ipc2d;
 
 	ipc_init(ipc_input_src, ipc_output_dst, ipc_con_var);
+
+	return 0;
 }
 
 static void s3c_ipc_stop(struct platform_device *pdev)
 {
 	ipc_off();
-	ipc_swreset();
 }
 
 static int s3c_ipc_probe(struct platform_device *pdev)
