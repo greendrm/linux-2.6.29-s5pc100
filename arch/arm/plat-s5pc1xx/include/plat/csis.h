@@ -16,7 +16,9 @@
 struct platform_device;
 
 struct s3c_platform_csis {
+	const char	srclk_name[16];
 	const char	clk_name[16];
+	unsigned long	clk_rate;
 
 	void		(*cfg_gpio)(struct platform_device *dev);
 	void		(*cfg_phy_global)(struct platform_device *dev, int on);

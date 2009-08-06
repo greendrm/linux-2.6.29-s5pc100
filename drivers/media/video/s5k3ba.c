@@ -515,6 +515,8 @@ static int s5k3ba_init(struct v4l2_subdev *sd, u32 val)
 		if (err < 0)
 			v4l_info(client, "%s: register set failed\n", \
 			__FUNCTION__);
+
+		mdelay(100);
 	}
 
 	if (err < 0) {

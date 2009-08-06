@@ -1,5 +1,5 @@
 /*
- * drivers/ide/arm/s3c-ide.h
+ * drivers/ide/s3c-ide.h
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -55,20 +55,6 @@ typedef enum {
         #define NUM_DESCRIPTORS         2
 #endif
 
-#ifdef CONFIG_PM
-/*
-* This will enable the device to be powered up when write() or read()
-* is called. If this is not defined, the driver will return -EBUSY.
-*/
-#define WAKE_ON_ACCESS 1
-
-typedef struct
-{
-        spinlock_t         lock;       /* Used to block on state transitions */
-        unsigned	   stopped;    /* USed to signaling device is stopped */
-} pm_state;
-#endif
-
 typedef struct
 {
         ulong addr;       /* Used to block on state transitions */
@@ -93,8 +79,4 @@ typedef struct
 	ulong		piotime[5];
 	ulong		udmatime[5];
 	struct clk	*clk;
-
-#ifdef CONFIG_PM
-	pm_state	pm;
-#endif
 } s3c_ide_hwif_t;

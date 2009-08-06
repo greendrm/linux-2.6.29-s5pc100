@@ -571,6 +571,7 @@
 #define S5P_OSC_CON		S5P_CLKREG(0x8000)
 #define S5P_MIPI_PHY_CON0	S5P_CLKREG(0x7200)
 #define S5P_MIPI_PHY_CON1	S5P_CLKREG(0x7204)
+#define S5P_MIPI_CONTROL	S5P_CLKREG(0xE814)
 
 #define S5P_CFG_WFI_CLEAN		~(3<<8)
 #define S5P_CFG_WFI_IDLE		(1<<8)
@@ -595,8 +596,7 @@
 #define S5P_OTHERS_USB_SIG_MASK 	(1 << 16)
 #define S5P_OTHERS_MIPI_DPHY_EN		(1 << 28)
 
-/* MIPI D-PHY Control Register 0 */
-#define S5P_MIPI_PHY_CON0_M_RESETN	(1 << 1)
-#define S5P_MIPI_PHY_CON0_S_RESETN	(1 << 0)
+/* MIPI */
+#define S5P_MIPI_DPHY_EN		(3 << 0)
 
 #endif /* _PLAT_REGS_CLOCK_H */

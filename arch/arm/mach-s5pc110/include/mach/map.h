@@ -55,6 +55,7 @@
 #define S5PC11X_PA_AC97         (0xE2200000)
 #define S5PC11X_PA_G3D		(0xF3000000)
 #define S5PC11X_PA_ROTATOR	(0xFB100000)
+#define S5PC11X_PA_IPC		(0xFB700000)
 
 /* UART */
 #define S3C_PA_UART		S5PC11X_PA_UART
@@ -190,6 +191,9 @@
 /* MIPI CSIS */
 #define S5PC11X_PA_CSIS		(0xFA600000)
 #define S5PC11X_SZ_CSIS		SZ_1M
+
+/* IPC */
+#define S5PC11X_SZ_IPC		SZ_1M
 
 /* TVOUT */
 #define S5PC11X_PA_TVENC        (0xF9000000)

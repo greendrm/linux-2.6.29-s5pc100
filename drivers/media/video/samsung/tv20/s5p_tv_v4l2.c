@@ -737,7 +737,8 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 	case V4L2_STD_720P_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_50;
 		break;
-//C110		
+		
+#ifdef CONFIG_CPU_S5PC110		
 	case V4L2_STD_1080P_60:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_60;
 		break;
@@ -745,7 +746,7 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 	case V4L2_STD_1080P_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_50;
 		break;
-	
+#endif	
 	default:
 		break;
 	}
@@ -992,6 +993,8 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 		cropcap->defrect.width = 1280;
 		cropcap->defrect.height = 720;
 		break;
+
+#ifdef CONFIG_CPU_S5PC110
 		
 	case TVOUT_1080P_60:
 
@@ -1006,6 +1009,7 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 		cropcap->defrect.width = 1920;
 		cropcap->defrect.height = 1080;
 		break;
+#endif
 
 	default :
 		return -1;

@@ -50,3 +50,6 @@ obj-$(CONFIG_S5PC11X_DEV_FB)	  += dev-fb.o
 obj-$(CONFIG_S5PC11X_DEV_CSIS)	  += dev-csis.o
 obj-$(CONFIG_S5PC11X_SETUP_CSIS)  += setup-csis.o
 
+# Device setup - IPC
+obj-$(CONFIG_S5PC11X_DEV_IPC)	  += dev-ipc.o
+obj-$(CONFIG_S5PC11X_SETUP_IPC)  += setup-ipc.o

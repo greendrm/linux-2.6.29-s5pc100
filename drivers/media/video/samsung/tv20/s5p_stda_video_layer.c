@@ -775,13 +775,19 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 			((st->src_color == VPROC_SRC_COLOR_NV12)||
 			(st->src_color == VPROC_SRC_COLOR_TILE_NV12))) 
 			? false : true;
-//for C110 MFC test	
-/*	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||
-				st->src_color==VPROC_SRC_COLOR_NV12IW) ?
-				VPROC_LINEAR_MODE : VPROC_2D_TILE_MODE;
-*/
-	st->vl_op_mode.mem_mode = VPROC_2D_TILE_MODE;
 
+
+#ifdef CONFIG_CPU_S5PC100
+	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||
+				st->src_color==VPROC_SRC_COLOR_NV12IW) ?	
+				VPROC_LINEAR_MODE : VPROC_2D_TILE_MODE;
+#endif
+
+#ifdef CONFIG_CPU_S5PC110
+	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||
+				st->src_color==VPROC_SRC_COLOR_NV12IW) ?	
+				VPROC_2D_TILE_MODE:VPROC_LINEAR_MODE;
+#endif
 	
 	st->vl_op_mode.chroma_exp = (pro) ? VPROC_USING_C_TOP 
 					: VPROC_USING_C_TOP_BOTTOM;

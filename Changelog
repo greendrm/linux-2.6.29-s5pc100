@@ -1406,9 +1406,7 @@ v2.6.29.4-s5pc110-alpha:Hyunwoong Kim
 
 v2.6.29.4-dev-1-0-28: Thomas Abraham
 	- Enable dedicated TX FIFO operation for USB OTG gadget in S5PC110.
-
 	The following changes have been made
-
 	1. Enabled dedicated Tx FIFO operation for all IN endpoints 
 	   for USB OTG gadget in S5PC11X.
 	2. Modified the endpoint FIFO sizes and base addresses.
@@ -1416,3 +1414,38 @@ v2.6.29.4-dev-1-0-28: Thomas Abraham
 	4. Write the FIFO number to be used by endpoint in the DIEPCTL 
 	   register.
 
+v2.6.29.4-dev-1-0-29: Youngmok Song
+	- Support IPC for S5PC110
+
+	Added Files:
+		A       arch/arm/plat-s5pc11x/dev-ipc.c
+		A       arch/arm/plat-s5pc11x/include/plat/ipc.h
+		A       arch/arm/plat-s5pc11x/include/plat/regs-ipc.h
+		A       arch/arm/plat-s5pc11x/setup-ipc.c
+		A       drivers/media/video/samsung/fimc/ipc.c
+		A       drivers/media/video/samsung/fimc/ipc.h
+		A       drivers/media/video/samsung/fimc/ipc_table.h
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       drivers/media/video/samsung/fimc/Kconfig
+		M       drivers/media/video/samsung/fimc/Makefile
+
+v2.6.29.4-dev-1-0-30: Jae-Cheol Lee
+	- Fix idle code for s5pc110
+
+	Modifies Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+
+v2.6.29.4-dev-1-0-31: Thomas Abraham
+	- Fix for "BUG: sleeping function called ..." message in USB OTG serial
+	gadget.
+
+	The USB OTG serial gadget when used displayes the message 
+	"BUG: sleeping function called from invalid context at kernel/mutex.c:94"
+	when the first data byte is received. This fix is based on the Serial
+	Gadget module author's suggestion as listed in the link
+	http://groups.google.co.in/group/fa.linux.kernel/browse_thread/thread/242d11b3faaf392d
+	

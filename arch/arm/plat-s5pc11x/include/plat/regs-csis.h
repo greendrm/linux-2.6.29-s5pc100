@@ -24,6 +24,7 @@
 #define S3C_CSIS_DPHYSTS			S3C_CSISREG(0x0c)
 #define S3C_CSIS_INTMSK				S3C_CSISREG(0x10)
 #define S3C_CSIS_INTSRC				S3C_CSISREG(0x14)
+#define S3C_CSIS_RESOL				S3C_CSISREG(0x2c)
 
 /*************************************************************************
  * Bit Definitions
@@ -31,15 +32,26 @@
 /* Control Register */
 #define S3C_CSIS_CONTROL_DPDN_DEFAULT		(0 << 31)
 #define S3C_CSIS_CONTROL_DPDN_SWAP		(1 << 31)
+#define S3C_CSIS_CONTROL_ALIGN_32BIT		(1 << 20)
+#define S3C_CSIS_CONTROL_ALIGN_24BIT		(0 << 20)
+#define S3C_CSIS_CONTROL_ALIGN_MASK		(1 << 20)
+#define S3C_CSIS_CONTROL_UPDATE_SHADOW		(1 << 16)
+#define S3C_CSIS_CONTROL_WCLK_PCLK		(0 << 8)
+#define S3C_CSIS_CONTROL_WCLK_EXTCLK		(1 << 8)
+#define S3C_CSIS_CONTROL_WCLK_MASK		(1 << 8)
 #define S3C_CSIS_CONTROL_RESET			(1 << 4)
 #define S3C_CSIS_CONTROL_DISABLE		(0 << 0)
 #define S3C_CSIS_CONTROL_ENABLE			(1 << 0)
 
 /* D-PHY Control Register */
+#define S3C_CSIS_DPHYCTRL_HS_SETTLE_MASK	(0x1f << 27)
+#define S3C_CSIS_DPHYCTRL_HS_SETTLE_SHIFT	(27)
 #define S3C_CSIS_DPHYCTRL_DISABLE		(0 << 0)
 #define S3C_CSIS_DPHYCTRL_ENABLE		(1 << 0)
 
 /* Configuration Register */
+#define S3C_CSIS_CONFIG_FORMAT_SHIFT		(2)
+#define S3C_CSIS_CONFIG_FORMAT_MASK		(0x1f << 2)
 #define S3C_CSIS_CONFIG_NR_LANE_1		(0 << 0)
 #define S3C_CSIS_CONFIG_NR_LANE_2		(1 << 0)
 #define S3C_CSIS_CONFIG_NR_LANE_MASK		(1 << 0)
@@ -85,5 +97,9 @@
 #define S3C_CSIS_INTSRC_ERR_ECC			(1 << 2)
 #define S3C_CSIS_INTSRC_ERR_CRC			(1 << 1)
 #define S3C_CSIS_INTSRC_ERR_ID			(1 << 0)
+
+/* Resolution Register */
+#define S3C_CSIS_RESOL_HOR_SHIFT		(16)
+#define S3C_CSIS_RESOL_VER_SHIFT		(0)
 
 #endif /* _REGS_CSIS_H */
