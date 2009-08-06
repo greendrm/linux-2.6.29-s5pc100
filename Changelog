@@ -1448,4 +1448,16 @@ v2.6.29.4-dev-1-0-31: Thomas Abraham
 	when the first data byte is received. This fix is based on the Serial
 	Gadget module author's suggestion as listed in the link
 	http://groups.google.co.in/group/fa.linux.kernel/browse_thread/thread/242d11b3faaf392d
-	
+
+
+v2.6.29.4-dev-1-0-32: Jae-Cheol Lee
+	- Support power gating on s5pc100
+
+	Modified Files:
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/plat-s3c/clock.c
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s5pc1xx/clock.c
+		M	arch/arm/plat-s5pc1xx/devs.c
+		M	arch/arm/plat-s5pc1xx/s5pc100-clock.c
