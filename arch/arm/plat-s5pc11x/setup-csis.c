@@ -30,11 +30,6 @@ void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
 		cfg = __raw_readl(S5P_MIPI_CONTROL);
 		cfg |= S5P_MIPI_DPHY_EN;
 		__raw_writel(cfg, S5P_MIPI_CONTROL);
-
-		/* MIPI CSIS Part Reset */
-		cfg = __raw_readl(S5P_MIPI_PHY_CON0);
-		cfg |= S5P_MIPI_PHY_CON0_S_RESETN;
-		__raw_writel(cfg, S5P_MIPI_PHY_CON0);
 	} else {
 		/* MIPI Power Disable */
 		cfg = __raw_readl(S5P_MIPI_CONTROL);

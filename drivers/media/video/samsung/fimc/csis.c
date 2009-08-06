@@ -186,6 +186,27 @@ static void s3c_csis_set_format(enum mipi_format fmt)
 
 	writel(cfg, s3c_csis->regs + S3C_CSIS_CONFIG);
 }
+
+static void s3c_csis_set_resol(int width, int height)
+{
+	u32 cfg = 0;
+
+	cfg |= width << S3C_CSIS_RESOL_HOR_SHIFT;
+	cfg |= height << S3C_CSIS_RESOL_VER_SHIFT;
+
+	writel(cfg, s3c_csis->regs + S3C_CSIS_RESOL);
+}
+
+static void s3c_csis_set_hs_settle(int settle)
+{
+	u32 cfg;
+
+	cfg = readl(s3c_csis->regs + S3C_CSIS_DPHYCTRL);
+	cfg &= ~S3C_CSIS_DPHYCTRL_HS_SETTLE_MASK;
+	cfg |= (settle << S3C_CSIS_DPHYCTRL_HS_SETTLE_SHIFT);
+
+	writel(cfg, s3c_csis->regs + S3C_CSIS_DPHYCTRL);
+}
 #endif
 
 static void s3c_csis_start(struct platform_device *pdev)
@@ -200,9 +221,12 @@ static void s3c_csis_start(struct platform_device *pdev)
 	s3c_csis_set_nr_lanes(S3C_CSIS_NR_LANES);
 
 #ifdef CONFIG_MIPI_CSI_ADV_FEATURE
+	/* FIXME: how configure the followings with FIMC dynamically? */
 	s3c_csis_set_data_align(32);
-	s3c_csis_set_wclk(1);
+	s3c_csis_set_wclk(0);
 	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
+	s3c_csis_set_resol(640, 480);
+	s3c_csis_set_hs_settle(6);	/* s5k6aa */
 	s3c_csis_update_shadow();
 #endif
 
