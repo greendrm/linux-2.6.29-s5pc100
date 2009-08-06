@@ -265,11 +265,15 @@ typedef enum {
 	IPC_VERSION_INFO	= 0x3FC
 }ipc_sfr;
 
-extern void ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d);
+/* start ipc */
+extern int ipc_initip(u32 input_width, u32 input_height,  ipc_2d ipc2d);
 extern void ipc_field_id_control(ipc_field_id id);
-extern void ipc_on(void);
-extern void ipc_off(void);
 extern void ipc_field_id_mode(ipc_field_id_sel sel, ipc_field_id_togl toggle);
+extern void ipc_on(void);
+
+/* stop ipc */
+extern void ipc_off(void);
+
 	
 struct s3c_ipc_info {
 	char 		name[16];
