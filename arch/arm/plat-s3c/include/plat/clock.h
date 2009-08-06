@@ -11,6 +11,16 @@
 
 #include <linux/spinlock.h>
 
+#if defined(CONFIG_CPU_S5PC100)
+struct powerdomain {
+	volatile unsigned long	*pd_reg;
+	unsigned long		pd_ctrlbit;
+	int			ref_count;
+
+	int			(*pd_set)(struct powerdomain *, int enable);
+};
+#endif
+
 struct clk {
 	struct list_head      list;
 	struct module        *owner;
@@ -26,6 +36,10 @@ struct clk {
 	unsigned long	    (*get_rate)(struct clk *c);
 	unsigned long	    (*round_rate)(struct clk *c, unsigned long rate);
 	int		    (*set_parent)(struct clk *c, struct clk *parent);
+
+#if defined(CONFIG_CPU_S5PC100)
+	struct powerdomain	*pd;
+#endif
 };
 
 /* other clocks which may be registered by board support */

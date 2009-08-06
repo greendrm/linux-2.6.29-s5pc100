@@ -29,6 +29,7 @@
 #include <plat/cpu.h>
 #include <plat/pll.h>
 
+
 /* For S5PC100 EVT0 workaround
  * When we modify DIVarm value to change ARM speed D0_BUS parent clock is also changed
  * If we prevent from unwanted changing of bus clock, we should modify DIVd0_bus value also.

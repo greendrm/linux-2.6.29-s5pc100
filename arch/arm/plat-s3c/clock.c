@@ -121,9 +121,16 @@ int clk_enable(struct clk *clk)
 	clk_enable(clk->parent);
 
 	spin_lock(&clocks_lock);
-
-	if ((clk->usage++) == 0)
+	if ((clk->usage++) == 0) {
+#if defined(CONFIG_CPU_S5PC100)
+		if (clk->pd != NULL) {
+			if (clk->pd->ref_count == 0)
+				(clk->pd->pd_set)(clk->pd, 1);
+			(clk->pd->ref_count++);
+		}
+#endif
 		(clk->enable)(clk, 1);
+	}
 
 	spin_unlock(&clocks_lock);
 	return 0;
@@ -136,8 +143,17 @@ void clk_disable(struct clk *clk)
 
 	spin_lock(&clocks_lock);
 
-	if ((--clk->usage) == 0)
+	if ((--clk->usage) == 0) {
 		(clk->enable)(clk, 0);
+#if defined(CONFIG_CPU_S5PC100)
+		if (clk->pd != NULL) {
+			if (clk->pd->ref_count == 1)
+				(clk->pd->pd_set)(clk->pd, 0);
+			if (clk->pd->ref_count > 0)
+				(clk->pd->ref_count--);
+		}
+#endif
+	}
 
 	spin_unlock(&clocks_lock);
 	clk_disable(clk->parent);
