@@ -793,6 +793,27 @@ static void s3c_i2sdma_setcallbk(void (*cb)(void *id, int result), unsigned prd)
 	s3c_i2s_pdat.dma_cb = cb;
 	s3c_i2s_pdat.dma_prd = prd;
 	spin_unlock(&s3c_i2s_pdat.lock);
+
+	s3cdbg("%s:%d dma_period=%d\n", __func__, __LINE__, s3c_i2s_pdat.dma_prd);
+}
+
+static inline void __lpinit(int lpmd)
+{
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+	u32 mdsel;
+
+	mdsel = readl(S5P_LPMP_MODE_SEL) & ~0x3;
+
+	if(lpmd)
+	   mdsel |= (1<<0);
+	else
+	   mdsel |= (1<<1);
+
+	writel(mdsel, S5P_LPMP_MODE_SEL);
+	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2 | S5P_CLKGATE_D20_I2SD2, S5P_CLKGATE_D20);
+#else
+	#error PUT SOME CODE HERE !!!
+#endif
 }
 
 static void s3c_i2s_setmode(int lpmd)
@@ -804,16 +825,14 @@ static void s3c_i2s_setmode(int lpmd)
 	if(s3c_i2s_pdat.lp_mode){
 	   s3c_i2s_pdat.i2s_dai.capture.channels_min = 0;
 	   s3c_i2s_pdat.i2s_dai.capture.channels_max = 0;
-	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXDS,
-	   writel((readl(S5P_LPMP_MODE_SEL) & ~(1<<1)) | (1<<0), S5P_LPMP_MODE_SEL);
+	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXDS;
 	}else{
 	   s3c_i2s_pdat.i2s_dai.capture.channels_min = 2;
 	   s3c_i2s_pdat.i2s_dai.capture.channels_max = 2;
-	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXD,
-	   writel((readl(S5P_LPMP_MODE_SEL) & ~(1<<0)) | (1<<1), S5P_LPMP_MODE_SEL);
+	   s3c_i2s_pcm_stereo_out.dma_addr = S3C_IIS_PABASE + S3C_IISTXD;
 	}
 
-	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2 | S5P_CLKGATE_D20_I2SD2, S5P_CLKGATE_D20);
+	__lpinit(s3c_i2s_pdat.lp_mode);
 }
 
 static void s3c_i2sdma_ctrl(int state)
