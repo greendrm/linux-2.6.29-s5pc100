@@ -26,7 +26,6 @@ void s3c_i2c0_cfg_gpio(struct platform_device *dev)
 {
 	s3c_gpio_cfgpin(S5PC11X_GPD1(0), S5PC11X_GPD_1_0_I2C0_SDA);
 	s3c_gpio_cfgpin(S5PC11X_GPD1(1), S5PC11X_GPD_1_1_I2C0_SCL);
-	s3c_gpio_setpull(S5PC11X_GPD1(0), S3C_GPIO_PULL_UP);
-	s3c_gpio_setpull(S5PC11X_GPD1(1), S3C_GPIO_PULL_UP);
-
+	s3c_gpio_setpull(S5PC11X_GPD1(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPD1(1), S3C_GPIO_PULL_NONE);
 }

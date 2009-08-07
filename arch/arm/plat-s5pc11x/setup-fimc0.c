@@ -19,6 +19,8 @@
 #include <plat/gpio-bank-e1.h>
 #include <plat/gpio-bank-j0.h>
 #include <plat/gpio-bank-j1.h>
+#include <asm/io.h>
+#include <mach/map.h>
 
 struct platform_device; /* don't need the contents */
 
@@ -40,10 +42,10 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 	s3c_gpio_cfgpin(S5PC11X_GPE1(4), S5PC11X_GPE1_4_CAM_A_FIELD);
 
 	for (i = 0; i < 8; i++)
-		s3c_gpio_setpull(S5PC11X_GPE0(i), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC11X_GPE0(i), S3C_GPIO_PULL_NONE);
 
 	for (i = 0; i < 5; i++)
-		s3c_gpio_setpull(S5PC11X_GPE1(i), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC11X_GPE1(i), S3C_GPIO_PULL_NONE);
 
 	s3c_gpio_cfgpin(S5PC11X_GPJ0(0), S5PC11X_GPJ0_0_CAM_B_DATA_0);
 	s3c_gpio_cfgpin(S5PC11X_GPJ0(1), S5PC11X_GPJ0_1_CAM_B_DATA_1);
@@ -60,9 +62,12 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 	s3c_gpio_cfgpin(S5PC11X_GPJ1(4), S5PC11X_GPJ1_4_CAM_B_CLKOUT);
 
 	for (i = 0; i < 8; i++)
-		s3c_gpio_setpull(S5PC11X_GPJ0(i), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC11X_GPJ0(i), S3C_GPIO_PULL_NONE);
 
 	for (i = 0; i < 5; i++)
-		s3c_gpio_setpull(S5PC11X_GPJ1(i), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC11X_GPJ1(i), S3C_GPIO_PULL_NONE);
+
+	/* drive strength to max */
+	writel(0xc0, S5PC11X_VA_GPIO + 0x10c);
 }
 

@@ -80,7 +80,7 @@ enum s5k3ba_control {
 /*
  * User tuned register setting values
  */
-#if 1
+#if 0
 static unsigned char s5k3ba_init_reg[][2] = {
 	{0xfc, 0x01},
 	{0x03, 0x01},
