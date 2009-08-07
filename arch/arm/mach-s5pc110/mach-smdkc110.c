@@ -53,7 +53,7 @@
 #include <plat/fimc.h>
 #include <plat/csis.h>
 #include <plat/fb.h>
-#include <plat/ipc.h>
+#include <plat/fimc-ipc.h>
 
 #include <plat/nand.h>
 #include <plat/partition.h>

@@ -49,6 +49,9 @@
 #define pr_debug(fmt...)
 #endif
 
+#undef SECURE_M2M_DMA_MODE_SET
+//#define SECURE_M2M_DMA_MODE_SET
+
 /* io map for dma */
 static void __iomem 		*dma_base;
 static struct kmem_cache 	*dma_kmem;
@@ -115,12 +118,10 @@ void s3c_dma_dump(int dcon_num, int channel)
 	printk("%d dcon_num %d chnnel : Destination address %lx\n", dcon_num, channel, tmp);
 }
 
-
 /* lookup_dma_channel
  *
  * change the dma channel number given into a real dma channel id
  */
-
 static struct s3c2410_dma_chan *lookup_dma_channel(unsigned int channel)
 {
 	if (channel & DMACH_LOW_LEVEL)
@@ -264,12 +265,12 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 			dma_param.mDstAddr = buf->data;
 			break;
 
-		case S3C_DMA_MEM2MEM:		/* source & Destination : Mem-to-Mem  */
+		case S3C_DMA_MEM2MEM:		/* source & destination : Mem-to-Mem  */
 			dma_param.mSrcAddr = chan->dev_addr;
 			dma_param.mDstAddr = buf->data;
 			break;
 
-		case S3C_DMA_MEM2MEM_SET:		/* source & Destination : Mem-to-Mem  */
+		case S3C_DMA_MEM2MEM_SET:	/* source & destination : Mem-to-Mem  */
 			dma_param.mDirection = S3C_DMA_MEM2MEM;
 			dma_param.mSrcAddr = chan->dev_addr;
 			dma_param.mDstAddr = buf->data;
@@ -336,7 +337,6 @@ static inline int s3c_dma_loadbuffer(struct s3c2410_dma_chan *chan,
 
 	return 0;
 }
-
 
 /* s3c_dma_call_op
  *
@@ -410,10 +410,10 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
 		chan->irq_enabled = 1;
 	}
 
-#ifndef CONFIG_CPU_S5PC110
+#ifndef SECURE_M2M_DMA_MODE_SET
 	start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_NON_SECURE_DMA);
-#else	/* S5PC110 */
+#else	/* SECURE_M2M_DMA_MODE */
 	if (chan->dma_con->number == 0) {
 		start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_SECURE_DMA);
@@ -432,13 +432,10 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
 	return 0;
 }
 
-
 /* s3c_dma_canload
  *
  * work out if we can queue another buffer into the DMA engine
  */
-
-
 static int s3c_dma_canload(struct s3c2410_dma_chan * chan)
 {
 	if (chan->load_state == S3C_DMALOAD_NONE || chan->load_state == S3C_DMALOAD_1RUNNING)
@@ -446,8 +443,6 @@ static int s3c_dma_canload(struct s3c2410_dma_chan * chan)
 
 	return 0;
 }
-
-
 
 /* s3c2410_dma_enqueue
  *
@@ -590,11 +585,8 @@ static inline void s3c_dma_lastxfer(struct s3c2410_dma_chan *chan)
 		pr_debug("dma CH %d: lastxfer: unhandled load_state %d with no next",
 			 chan->number, chan->load_state);
 		return;
-
 	}
-
 }
-
 
 #define dmadbg2(x...)
 
@@ -725,10 +717,10 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 
 				local_irq_save(flags);
 				s3c_dma_loadbuffer(chan, chan->next);
-#ifndef CONFIG_CPU_S5PC110
+#ifndef SECURE_M2M_DMA_MODE_SET
 				start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_NON_SECURE_DMA);
-#else	/* S5PC110 */
+#else	/* SECURE_M2M_DMA_MODE */
 				if (chan->dma_con->number == 0) {
 					start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_SECURE_DMA);
@@ -889,7 +881,6 @@ int s3c2410_dma_free(unsigned int channel, struct s3c2410_dma_client *client)
 }
 EXPORT_SYMBOL(s3c2410_dma_free);
 
-
 static int s3c_dma_dostop(struct s3c2410_dma_chan *chan)
 {
 	unsigned long flags;
@@ -918,16 +909,15 @@ static void s3c_dma_showchan(struct s3c2410_dma_chan * chan)
 
 }
 
-/* s3c_dma_flush
- *
- * stop the channel, and remove all current and pending transfers
- */
-
 void s3c_waitforstop(struct s3c2410_dma_chan *chan)
 {
 
 }
 
+/* s3c_dma_flush
+ *
+ * stop the channel, and remove all current and pending transfers
+ */
 static int s3c_dma_flush(struct s3c2410_dma_chan *chan)
 {
 	struct s3c_dma_buf *buf, *next;
@@ -1037,7 +1027,6 @@ int s3c2410_dma_ctrl(unsigned int channel, enum s3c_chan_op op)
 }
 EXPORT_SYMBOL(s3c2410_dma_ctrl);
 
-
 /* s3c2410_dma_config
  *
  * xfersize:     size of unit in bytes (1,2,4)
@@ -1117,7 +1106,6 @@ int s3c2410_dma_setflags(unsigned int channel, unsigned int flags)
 }
 EXPORT_SYMBOL(s3c2410_dma_setflags);
 
-
 /* do we need to protect the settings of the fields from
  * irq?
  */
@@ -1137,7 +1125,6 @@ int s3c2410_dma_set_opfn(unsigned int channel, s3c2410_dma_opfn_t rtn)
 }
 EXPORT_SYMBOL(s3c2410_dma_set_opfn);
 
-
 int s3c2410_dma_set_buffdone_fn(unsigned int channel, s3c2410_dma_cbfn_t rtn)
 {
 	struct s3c2410_dma_chan *chan = lookup_dma_channel(channel);
@@ -1153,7 +1140,6 @@ int s3c2410_dma_set_buffdone_fn(unsigned int channel, s3c2410_dma_cbfn_t rtn)
 }
 EXPORT_SYMBOL(s3c2410_dma_set_buffdone_fn);
 
-
 /* s3c2410_dma_devconfig
  *
  * configure the dma source/destination hardware type and address
@@ -1164,7 +1150,6 @@ EXPORT_SYMBOL(s3c2410_dma_set_buffdone_fn);
  *
  * devaddr:   physical address of the source
  */
-
 int s3c2410_dma_devconfig(int channel,
 			  enum s3c2410_dmasrc source,
 			  int hwcfg,
@@ -1210,11 +1195,11 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = 0;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
-#ifndef CONFIG_CPU_S5PC110
+#ifndef SECURE_M2M_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;
-#else	/* S5PC110 */
+#else	/* SECURE_M2M_DMA_MODE */
 		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;
@@ -1227,11 +1212,11 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = 0;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(16)|S3C_DMACONTROL_SBSIZE(16);
-#ifndef CONFIG_CPU_S5PC110
+#ifndef SECURE_M2M_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_FIXED|
 				      hwcfg;
-#else	/* S5PC110 */
+#else	/* SECURE_M2M_DMA_MODE */
 		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_FIXED|
 				      hwcfg;
@@ -1251,9 +1236,7 @@ int s3c2410_dma_devconfig(int channel,
 	}
 
 }
-
 EXPORT_SYMBOL(s3c2410_dma_devconfig);
-
 
 /*
  * s3c2410_dma_getposition
@@ -1274,9 +1257,7 @@ int s3c2410_dma_getposition(unsigned int channel, dma_addr_t *src, dma_addr_t *d
 
  	return 0;
 }
-
 EXPORT_SYMBOL(s3c2410_dma_getposition);
-
 
 /* system device class */
 #ifdef CONFIG_PM
@@ -1301,15 +1282,12 @@ struct sysdev_class dma_sysclass = {
 };
 
 /* kmem cache implementation */
-
 static void s3c_dma_cache_ctor(void *p)
 {
 	memset(p, 0, sizeof(struct s3c_dma_buf));
 }
 
-
 /* initialisation code */
-
 int __init s3c_dma_init(unsigned int channels, unsigned int irq,
 			    unsigned int stride)
 {
@@ -1400,7 +1378,6 @@ int __init s3c_dma_init(unsigned int channels, unsigned int irq,
 
 		pr_debug("DMA channel %d at %p, irq %d\n", cp->number, cp->regs, cp->irq);
 	}
-
 	return 0;
 err:
 	kmem_cache_destroy(dma_kmem);
@@ -1409,15 +1386,12 @@ err:
 	return ret;
 }
 
-
-
 static inline int is_channel_valid(unsigned int channel)
 {
 	return (channel & DMA_CH_VALID);
 }
 
 static struct s3c_dma_order *dma_order;
-
 
 /* s3c_dma_map_channel()
  *
@@ -1428,7 +1402,6 @@ static struct s3c_dma_order *dma_order;
  * dma code, or the board. Then just find the first usable free
  * channel
 */
-
 struct s3c2410_dma_chan *s3c_dma_map_channel(int channel)
 {
 	struct s3c_dma_order_ch *ord = NULL;
@@ -1529,4 +1502,3 @@ int __init s3c_dma_order_set(struct s3c_dma_order *ord)
 	memcpy(nord, ord, sizeof(struct s3c_dma_order));
 	return 0;
 }
-
