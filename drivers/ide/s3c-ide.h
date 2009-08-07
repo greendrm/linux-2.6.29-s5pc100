@@ -1,26 +1,21 @@
-/*
- * drivers/ide/s3c-ide.h
+/* linux/drivers/ide/s3c-ide.h
  *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * Copyright (C) 2009 Samsung Electronics
+ *      http://samsungsemi.com/
  *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 675 Mass Ave, Cambridge, MA 02139, USA.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 typedef enum {
@@ -49,34 +44,30 @@ typedef enum {
 } BUS_STATE;
 
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-        #define DMA_WAIT_TIMEOUT        100
-        #define NUM_DESCRIPTORS         PRD_ENTRIES
+#define DMA_WAIT_TIMEOUT        100
+#define NUM_DESCRIPTORS         PRD_ENTRIES
 #else
-        #define NUM_DESCRIPTORS         2
+#define NUM_DESCRIPTORS         2
 #endif
 
-typedef struct
-{
-        ulong addr;       /* Used to block on state transitions */
-        ulong len;        /* Power Managers device structure */
+typedef struct {
+	ulong addr;		/* Used to block on state transitions */
+	ulong len;		/* Power Managers device structure */
 } dma_queue_t;
 
-typedef struct
-{
-	u32		tx_dev_id, rx_dev_id, target_dev_id;
-	ide_hwif_t	*hwif;
+typedef struct {
+	ide_hwif_t *hwif;
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	ide_drive_t	*drive;
-
-	uint		index;				/* current queue index */
-	uint		queue_size;			/* total queue size requested */
-	dma_queue_t	table[NUM_DESCRIPTORS];
-	uint		irq_sta;
-	uint		pseudo_dma;			/* in DMA session */
+	ide_drive_t *drive;
+	uint index;		/* current queue index */
+	uint queue_size;	/* total queue size requested */
+	dma_queue_t table[NUM_DESCRIPTORS];
+	uint irq_sta;
+	uint pseudo_dma;	/* in DMA session */
 #endif
-	struct platform_device	*dev;
-	int		irq;
-	ulong		piotime[5];
-	ulong		udmatime[5];
-	struct clk	*clk;
+	struct platform_device *dev;
+	int irq;
+	ulong piotime[5];
+	ulong udmatime[5];
+	struct clk *clk;
 } s3c_ide_hwif_t;
