@@ -24,9 +24,9 @@
 #include <asm/memory.h>
 #include <plat/clock.h>
 #include <plat/regs-ipc.h>
-#include <plat/ipc.h>
+#include <plat/fimc-ipc.h>
 
-#include "ipc.h"
+#include "fimc-ipc.h"
 #include "ipc_table.h"
 
 #define OFF	0
