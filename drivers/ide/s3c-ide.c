@@ -145,7 +145,7 @@ static inline int ata_status_check(ide_drive_t * drive, u8 startend)
 #endif
 
 /* Set ATA Mode */
-#if defined(CONFIG_BLK_DEV_IDE_S3C_UDMA)
+#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
 static void set_config_mode(ATA_MODE mode, int rw)
 {
 	u32 reg = readl(s3c_ide_regbase + S5P_ATA_CFG) & ~(0x39c);
@@ -305,7 +305,7 @@ static int s3c_ide_build_sglist(ide_drive_t * drive, struct request *rq)
 	else
 		hwif->sg_dma_direction = DMA_TO_DEVICE;
 
-	return dma_map_sg(&s3c_hwif->dev, sg, hwif->sg_nents,
+	return dma_map_sg((void *)&s3c_hwif->dev, sg, hwif->sg_nents,
 			  hwif->sg_dma_direction);
 }
 
@@ -344,7 +344,8 @@ static int s3c_ide_build_dmatable(ide_drive_t * drive)
 
 	/* fill the descriptors */
 	sg = hwif->sg_table;
-	for (i = 0, sg = hwif->sg_table; i < size && sg_dma_len(sg); i++, sg++) {
+	for (i = 0, sg = hwif->sg_table; i < size && sg_dma_len(sg);
+				 i++, sg++) {
 		s3c_hwif->table[i].addr = sg_dma_address(sg);
 		s3c_hwif->table[i].len = sg_dma_len(sg);
 		count += s3c_hwif->table[i].len;
@@ -438,8 +439,8 @@ static int s3c_ide_dma_end(ide_drive_t * drive)
 	drive->waiting_for_dma = 0;
 
 	if (hwif->sg_nents) {
-		dma_unmap_sg(&s3c_hwif->dev, hwif->sg_table, hwif->sg_nents,
-			     hwif->sg_dma_direction);
+		dma_unmap_sg((void *)&s3c_hwif->dev, hwif->sg_table,
+				hwif->sg_nents, hwif->sg_dma_direction);
 		hwif->sg_nents = 0;
 	}
 	return 0;
@@ -453,9 +454,7 @@ static int s3c_ide_dma_test_irq(ide_drive_t * drive)
 static void s3c_ide_dma_lostirq(ide_drive_t * drive)
 {
 	printk("%08x, %08x\n", readl(s3c_ide_regbase + S5P_ATA_IRQ),
-	       readl(s3c_ide_regbase + S5P_ATA_IRQ_MSK));
-	printk("left: %08x, %08x\n", readl(s3c_ide_regbase + S5P_ATA_XFR_CNT),
-	       readl(s3c_ide_regbase + S5P_ATA_XFR_NUM));
+		readl(s3c_ide_regbase + S5P_ATA_IRQ_MSK));
 
 	printk(KERN_ERR "%s: IRQ lost\n", drive->name);
 }
@@ -479,17 +478,12 @@ int s3c_ide_irq_hook(void *data)
 		i = s3c_hwif->index;
 
 		if (reg & 0x10) {
-			DbgAta("write: %08lx %08lx\n",
-			       s3c_hwif->table[i].addr, s3c_hwif->table[i].len);
 			bus_fifo_status_check(PAUSER2);
 			writel(s3c_hwif->table[i].len - 0x1,
 			       s3c_ide_regbase + S5P_ATA_SBUF_SIZE);
 			writel(s3c_hwif->table[i].addr,
 			       s3c_ide_regbase + S5P_ATA_SBUF_START);
 		} else if (reg & 0x08) {
-			DbgAta("read: %08lx %08lx\n",
-			       s3c_hwif->table[i].addr, s3c_hwif->table[i].len);
-
 			bus_fifo_status_check(PAUSEW);
 
 			writel(s3c_hwif->table[i].len - 0x1,
@@ -504,8 +498,6 @@ int s3c_ide_irq_hook(void *data)
 		s3c_hwif->index++;
 		if (s3c_hwif->queue_size == s3c_hwif->index) {
 			s3c_hwif->pseudo_dma = 0;
-			DbgAta
-			    ("UDMA close : s3c_hwif->queue_size == s3c_hwif->index\n");
 		}
 
 		writel(ATA_CMD_CONTINUE, s3c_ide_regbase + S5P_ATA_CMD);
@@ -557,7 +549,7 @@ static void s3c_ide_setup_timing_value(s3c_ide_hwif_t * s3c_hwif)
 		uTrp = (uUdmaTrp[i] / cycle_time) & 0xff;
 		uTss = (uUdmaTss[i] / cycle_time) & 0x0f;
 		uTackenv = (uUdmaTackenvMin[i] / cycle_time) & 0x0f;
-		s3c_hwif->udmatime[i] = (uTdvh1 << 24) | (uTdvs << 16) | 
+		s3c_hwif->udmatime[i] = (uTdvh1 << 24) | (uTdvs << 16) |
 			(uTrp << 8) | (uTss << 4) | uTackenv;
 		DbgAta("UDMA%dTIME = %08lx\n", i, s3c_hwif->udmatime[i]);
 	}
@@ -569,7 +561,7 @@ static void s3c_ide_setup_gpio(void)
 	unsigned long reg;
 
 #if defined (CONFIG_CPU_S5PC110)
-	/* CF_Addr[0 1 2], CF_IORDY, CF_INTRQ, CF_DMARQ, CF_DMARESET, CF_DMACK */
+	/* CF_Add[0 - 2], CF_IORDY, CF_INTRQ, CF_DMARQ, CF_DMARST, CF_DMACK */
 	writel(0x44444444, S5PC11X_GPJ0CON);
 	writel(0x0, S5PC11X_GPJ0PUD);
 	writel(0xffff, S5PC11X_GPJ0DRV);
@@ -699,32 +691,32 @@ static int s3c_ide_dma_init(ide_hwif_t * hwif, const struct ide_port_info *d)
 }
 
 static const struct ide_dma_ops s3c_dma_ops = {
-	.dma_host_set 	= s3c_ide_dma_host_set,
-	.dma_setup 	= s3c_ide_dma_setup,
-	.dma_start 	= s3c_ide_dma_start,
-	.dma_end 	= s3c_ide_dma_end,
-	.dma_test_irq 	= s3c_ide_dma_test_irq,
-	.dma_lost_irq 	= s3c_ide_dma_lostirq,
-	.dma_exec_cmd 	= s3c_ide_dma_exec_cmd,
-	.dma_timeout 	= ide_dma_timeout,
+	.dma_host_set	= s3c_ide_dma_host_set,
+	.dma_setup	= s3c_ide_dma_setup,
+	.dma_exec_cmd	= s3c_ide_dma_exec_cmd,
+	.dma_start	= s3c_ide_dma_start,
+	.dma_end	= s3c_ide_dma_end,
+	.dma_test_irq	= s3c_ide_dma_test_irq,
+	.dma_lost_irq	= s3c_ide_dma_lostirq,
+	.dma_timeout	= ide_dma_timeout,
 };
 #endif
 
 static const struct ide_port_info s3c_port_info = {
 	.name		= DRV_NAME,
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	.init_dma 	= s3c_ide_dma_init,
+	.init_dma	= s3c_ide_dma_init,
 #endif
-	.chipset 	= ide_s3c,
-	.port_ops 	= &s3c_port_ops,
+	.port_ops	= &s3c_port_ops,
 /*tp_ops left to the default*/
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	.dma_ops 	= &s3c_dma_ops,
+	.dma_ops	= &s3c_dma_ops,
 #endif
-	.host_flags 	= IDE_HFLAG_MMIO | IDE_HFLAG_NO_IO_32BIT | 
+	.chipset	= ide_s3c,
+	.host_flags	= IDE_HFLAG_MMIO | IDE_HFLAG_NO_IO_32BIT |
 		IDE_HFLAG_UNMASK_IRQS,
-	.pio_mask 	= ATA_PIO4,
-	.udma_mask 	= ATA_UDMA4,
+	.pio_mask	= ATA_PIO4,
+	.udma_mask	= ATA_UDMA4,
 };
 
 static int __devinit s3c_ide_probe(struct platform_device *pdev)
@@ -825,52 +817,64 @@ static int __devexit s3c_ide_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#if 0
 #ifdef CONFIG_PM
-unsigned int ata_cfg;
-ata_ctrl, ata_piotime, ata_udmatime;
 static int s3c_ide_suspend(struct platform_device *pdev, pm_message_t state)
 {
-	ata_cfg = readl(s3c_ide_regbase + S5P_ATA_CFG);
-	ata_ctrl = readl(s3c_ide_regbase + S5P_ATA_CTRL);
-	ata_piotime = readl(s3c_ide_regbase + S5P_ATA_PIO_TIME);
-	ata_udmatime = readl(s3c_ide_regbase + S5P_ATA_UDMA_TIME);
+#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
+	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
+	u16 *id = s3c_hwif->drive->id;
+#endif
+	struct ide_host *host = platform_get_drvdata(pdev);
 
-	set_trans_command(ATA_CMD_SLEEP);
-	disable_irq(IRQ_CFC);
-	clk_disable(s3cide_clock);
+        disable_irq(IRQ_CFC);
+        clk_disable(s3cide_clock);
 
-	return 0;
+#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
+	/* FLUSH_CACHE in command set/feature */
+        id[ATA_ID_CFS_ENABLE_2]  &= ~(0x1000);
+#endif
+
+	ide_host_remove(host);
+
+        return 0;
 }
 
 static int s3c_ide_resume(struct platform_device *pdev)
 {
+	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
+	struct ide_host *host;
+	hw_regs_t hw, *hws[] = { &hw, NULL, NULL, NULL };
+
 	clk_enable(s3cide_clock);
 	enable_irq(IRQ_CFC);
-	set_trans_command(ATA_CMD_DEV_RESET);
 
-	writel(s3c_ide_regbase + S3C_ATA_CFG);
-	writel(s3c_ide_regbase + S3C_ATA_CTRL);
-	writel(s3c_ide_regbase + S5P_ATA_PIO_TIME);
-	writel(s3c_ide_regbase + S5P_ATA_UDMA_TIME);
+	s3c_ide_init_hwif();
+	memset(&hw, 0, sizeof(hw));
+	s3c_ide_setup_ports(&hw, s3c_hwif);
+	hw.irq = s3c_hwif->irq;
+	hw.dev = &pdev->dev;
 
-	return 0;
+	/* Re-enumerate the host */
+	ide_host_add(&s3c_port_info, hws, &host);
+	s3c_ide_hwif.hwif = host->ports[0];
+	platform_set_drvdata(pdev, host);
+
+        return 0;
 }
 
 #else
 #define s3c_ide_suspend NULL
 #define s3c_ide_resume  NULL
 #endif
-#endif
 
 static struct platform_driver s3c_ide_driver = {
 	.probe		= s3c_ide_probe,
-	.remove 	= __devexit_p(s3c_ide_remove),
-	//.suspend 	= s3c_ide_suspend,
-	//.resume  	= s3c_ide_resume,
+	.remove		= __devexit_p(s3c_ide_remove),
+	.suspend	= s3c_ide_suspend,
+	.resume		= s3c_ide_resume,
 	.driver = {
-		.name 	= "s3c-ide",
-		.owner 	= THIS_MODULE,
+		.name	= "s3c-ide",
+		.owner	= THIS_MODULE,
 	},
 };
 
