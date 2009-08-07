@@ -23,7 +23,7 @@ struct s3c_platform_ipc {
 	void				(*cfg_gpio)(struct platform_device *dev);
 };
 
-extern void s3c_ipc_set_platdata(struct s3c_platform_ipc *csis);
+extern void s3c_ipc_set_platdata(struct s3c_platform_ipc *ipc);
 extern void s3c_ipc_cfg_gpio(struct platform_device *dev);
 
 #endif /* _IPC_H */

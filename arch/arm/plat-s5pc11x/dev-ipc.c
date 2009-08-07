@@ -18,7 +18,7 @@
 #include <mach/map.h>
 #include <asm/irq.h>
 
-#include <plat/ipc.h>
+#include <plat/fimc-ipc.h>
 #include <plat/devs.h>
 #include <plat/cpu.h>
 
