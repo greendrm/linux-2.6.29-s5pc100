@@ -52,7 +52,11 @@ int fimc_hwset_camera_source(struct fimc_control *ctrl)
 
 	/* for now, we support only ITU601 8 bit mode */
 	cfg |= S3C_CISRCFMT_ITU601_8BIT;
-	cfg |= (cam->fmt | cam->order422);
+	cfg |= cam->order422;
+
+	if (cam->type == CAM_TYPE_ITU)
+		cfg |= cam->fmt;
+
 	cfg |= S3C_CISRCFMT_SOURCEHSIZE(cam->width);
 	cfg |= S3C_CISRCFMT_SOURCEVSIZE(cam->height);
 
