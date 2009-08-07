@@ -2,6 +2,8 @@
  *
  * V4L2 Capture device support file for Samsung Camera Interface (FIMC) driver
  *
+ * Dongsoo Kim, Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsung.com/sec/
  * Jinsung Yang, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
@@ -39,73 +41,73 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "RGB-5-6-5",
-		.pixelformat	= V4L2_PIX_FMT_RGB565,		
+		.pixelformat	= V4L2_PIX_FMT_RGB565,
 	}, {
 		.index		= 1,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "RGB-8-8-8, unpacked 24 bpp",
-		.pixelformat	= V4L2_PIX_FMT_RGB32,		
+		.pixelformat	= V4L2_PIX_FMT_RGB32,
 	}, {
 		.index		= 2,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "YUV 4:2:2 packed, YCbYCr",
-		.pixelformat	= V4L2_PIX_FMT_YUYV,		
+		.pixelformat	= V4L2_PIX_FMT_YUYV,
 	}, {
 		.index		= 3,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "YUV 4:2:2 packed, CbYCrY",
-		.pixelformat	= V4L2_PIX_FMT_UYVY,		
+		.pixelformat	= V4L2_PIX_FMT_UYVY,
 	}, {
 		.index		= 4,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "YUV 4:2:2 packed, CrYCbY",
-		.pixelformat	= V4L2_PIX_FMT_VYUY,		
+		.pixelformat	= V4L2_PIX_FMT_VYUY,
 	}, {
 		.index		= 5,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PACKED,
 		.description	= "YUV 4:2:2 packed, YCrYCb",
-		.pixelformat	= V4L2_PIX_FMT_YVYU,		
+		.pixelformat	= V4L2_PIX_FMT_YVYU,
 	}, {
 		.index		= 6,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:2 planar, Y/Cb/Cr",
-		.pixelformat	= V4L2_PIX_FMT_YUV422P,		
+		.pixelformat	= V4L2_PIX_FMT_YUV422P,
 	}, {
 		.index		= 7,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/CbCr",
-		.pixelformat	= V4L2_PIX_FMT_NV12,		
+		.pixelformat	= V4L2_PIX_FMT_NV12,
 	}, {
 		.index		= 8,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/CrCb",
-		.pixelformat	= V4L2_PIX_FMT_NV21,		
+		.pixelformat	= V4L2_PIX_FMT_NV21,
 	}, {
 		.index		= 9,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:2 planar, Y/CbCr",
-		.pixelformat	= V4L2_PIX_FMT_NV16,		
+		.pixelformat	= V4L2_PIX_FMT_NV16,
 	}, {
 		.index		= 10,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:2 planar, Y/CrCb",
-		.pixelformat	= V4L2_PIX_FMT_NV61,		
+		.pixelformat	= V4L2_PIX_FMT_NV61,
 	}, {
 		.index		= 11,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/Cb/Cr",
-		.pixelformat	= V4L2_PIX_FMT_YUV420,		
+		.pixelformat	= V4L2_PIX_FMT_YUV420,
 	},
 };
 
@@ -330,8 +332,7 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 	return 0;
 }
 
-int fimc_enum_fmt_vid_capture(struct file *file, void *fh, 
-					struct v4l2_fmtdesc *f)
+int fimc_enum_fmt_vid_capture(struct file *file, void *fh, struct v4l2_fmtdesc *f)
 {
 	struct fimc_control *ctrl = fh;
 	int i = f->index;
