@@ -1473,3 +1473,10 @@ v2.6.29.4-dev-1-0-33: Jae-Cheol Lee
 		M	arch/arm/configs/smdkc110nfs_defconfig
 		M	arch/arm/configs/smdkc110onenand_defconfig
 		M	arch/arm/configs/smdkc110ramdisk_defconfig
+
+v2.6.29.4-dev-1-0-34: Kukjin Kim
+	- Support SECURE/NON-SECURE M2M DMA MODE for S5PC110
+
+	Modified Files:
+		M	arch/arm/plat-s3c/dma-pl330.c
+
