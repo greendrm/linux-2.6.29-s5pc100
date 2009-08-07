@@ -552,6 +552,56 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
+/*
+ * External camera reset
+ * Because the most of cameras take i2c bus signal, so that
+ * you have to reset at the boot time for other i2c slave devices.
+ * This function also called at fimc_init_camera()
+ * Do optimization for cameras on your platform.
+*/
+static int smdkc110_cam0_power(int onoff)
+{
+	/* Camera A */
+	gpio_request(S5PC11X_GPH0(2), "GPH0");
+	s3c_gpio_setpull(S5PC11X_GPH0(2), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5PC11X_GPH0(2), 0);
+	gpio_direction_output(S5PC11X_GPH0(2), 1);
+	gpio_free(S5PC11X_GPH0(2));
+
+	return 0;
+}
+
+static int smdkc110_cam1_power(int onoff)
+{
+	/* Camera B */
+	gpio_request(S5PC11X_GPH0(3), "GPH0");
+	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5PC11X_GPH0(3), 0);
+	gpio_direction_output(S5PC11X_GPH0(3), 1);
+	gpio_free(S5PC11X_GPH0(3));
+
+	return 0;
+}
+
+static int smdkc110_cam2_power(int onoff)
+{
+	void __iomem *regs = ioremap(S5PC11X_PA_FIMC0, SZ_4K);
+	u32 cfg;
+
+	/* MIPI */
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+
+	cfg = readl(regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, regs + S3C_CIGCTRL);
+
+	iounmap(regs);
+
+	return 0;
+}
+
 /* External camera module setting */
 static struct s5k3ba_platform_data s5k3ba = {
 	.default_width = 640,
@@ -621,7 +671,8 @@ static struct s3c_platform_camera __initdata camera_a = {
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized = 0,
+	.initialized 	= 0,
+	.cam_power	= smdkc110_cam0_power,
 };
 
 static struct s3c_platform_camera __initdata camera_b = {
@@ -652,7 +703,8 @@ static struct s3c_platform_camera __initdata camera_b = {
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized = 0,
+	.initialized 	= 0,
+	.cam_power	= smdkc110_cam1_power,
 };
 
 static struct s3c_platform_camera __initdata camera_c = {
@@ -683,7 +735,8 @@ static struct s3c_platform_camera __initdata camera_c = {
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized = 0,
+	.initialized 	= 0,
+	.cam_power	= smdkc110_cam2_power,
 };
 
 /* Interface setting */
@@ -698,43 +751,6 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 		&camera_c,
 	}
 };
-
-/*
- * External camera reset
- * Because the most of cameras take i2c bus signal, so that
- * you have to reset at the boot time for other i2c slave devices.
- * Do optimization for cameras on your platform.
-*/
-static void smdkc110_reset_camera(void)
-{
-	void __iomem *regs = ioremap(S5PC11X_PA_FIMC0, SZ_4K);
-	u32 cfg;
-
-	/* Camera A */
-	gpio_request(S5PC11X_GPH0(2), "GPH0");
-	s3c_gpio_setpull(S5PC11X_GPH0(2), S3C_GPIO_PULL_NONE);
-	gpio_direction_output(S5PC11X_GPH0(2), 0);
-	gpio_direction_output(S5PC11X_GPH0(2), 1);
-	gpio_free(S5PC11X_GPH0(2));
-
-	/* Camera B */
-	gpio_request(S5PC11X_GPH0(3), "GPH0");
-	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
-	gpio_direction_output(S5PC11X_GPH0(3), 0);
-	gpio_direction_output(S5PC11X_GPH0(3), 1);
-	gpio_free(S5PC11X_GPH0(3));
-
-	/* MIPI */
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-
-	iounmap(regs);	
-}
 
 #if defined(CONFIG_HAVE_PWM)
 static struct platform_pwm_backlight_data smdk_backlight_data = {
@@ -829,7 +845,9 @@ static void __init smdkc110_machine_init(void)
 	s3c_fimc1_set_platdata(&fimc_plat);
 	s3c_fimc2_set_platdata(&fimc_plat);
 	s3c_csis_set_platdata(NULL);
-	smdkc110_reset_camera();
+	smdkc110_cam0_power(1);
+	smdkc110_cam1_power(1);
+	smdkc110_cam2_power(1);
 
 	/* ipc */
 	s3c_ipc_set_platdata(NULL);
