@@ -19,8 +19,8 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 
-#include <asm/io.h>
-#include <asm/memory.h>
+#include <linux/io.h>
+#include <linux/memory.h>
 #include <plat/clock.h>
 #include <plat/regs-csis.h>
 #include <plat/csis.h>
@@ -299,7 +299,8 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 		return -EINVAL;
 	}
 
-	res = request_mem_region(res->start, res->end - res->start + 1, pdev->name);
+	res = request_mem_region(res->start,
+			res->end - res->start + 1, pdev->name);
 	if (!res) {
 		err("failed to request io memory region\n");
 		return -EINVAL;
@@ -322,8 +323,8 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 
 	s3c_csis_start(pdev);
 	info("Samsung MIPI-CSI2 operation started\n");
-	
-	return 0;	
+
+	return 0;
 }
 
 static int s3c_csis_remove(struct platform_device *pdev)
@@ -369,7 +370,7 @@ static void s3c_csis_unregister(void)
 
 module_init(s3c_csis_register);
 module_exit(s3c_csis_unregister);
-	
+
 MODULE_AUTHOR("Jinsung, Yang <jsgood.yang@samsung.com>");
 MODULE_DESCRIPTION("MIPI-CSI2 support for FIMC driver");
 MODULE_LICENSE("GPL");

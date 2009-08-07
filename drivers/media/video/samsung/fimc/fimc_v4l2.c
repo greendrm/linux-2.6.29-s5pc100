@@ -26,7 +26,7 @@ static int fimc_querycap(struct file *filp, void *fh,
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 
-	dev_info(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_info(ctrl->dev, "%s: called\n", __func__);
 
 	strcpy(cap->driver, "Samsung FIMC Driver");
 	strlcpy(cap->card, ctrl->vd->name, sizeof(cap->card));
@@ -39,7 +39,7 @@ static int fimc_querycap(struct file *filp, void *fh,
 	return 0;
 }
 
-static int fimc_reqbufs(struct file *filp, void *fh, 
+static int fimc_reqbufs(struct file *filp, void *fh,
 				struct v4l2_requestbuffers *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -83,10 +83,10 @@ static int fimc_g_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 
 	if (ctrl->cap != NULL) {
 		ret = fimc_g_ctrl_capture(fh, c);
-	} else if(ctrl->out != NULL) {
+	} else if (ctrl->out != NULL) {
 		ret = fimc_g_ctrl_output(fh, c);
 	} else {
-		dev_err(ctrl->dev, "%s: Invalid case\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: Invalid case\n", __func__);
 		return -EINVAL;
 	}
 
@@ -95,15 +95,15 @@ static int fimc_g_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 
 static int fimc_s_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 {
-	struct fimc_control *ctrl = (struct fimc_control *) fh;	
+	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
 	if (ctrl->cap != NULL) {
 		ret = fimc_s_ctrl_capture(fh, c);
-	} else if(ctrl->out != NULL) {
+	} else if (ctrl->out != NULL) {
 		ret = fimc_s_ctrl_output(fh, c);
 	} else {
-		dev_err(ctrl->dev, "%s: Invalid case\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: Invalid case\n", __func__);
 		return -EINVAL;
 	}
 

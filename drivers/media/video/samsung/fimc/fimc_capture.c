@@ -19,8 +19,8 @@
 #include <linux/videodev2.h>
 #include <linux/clk.h>
 #include <linux/mm.h>
-#include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/io.h>
+#include <linux/uaccess.h>
 #include <plat/media.h>
 #include <plat/clock.h>
 #include <plat/fimc.h>
@@ -120,7 +120,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 
 	pdata = to_fimc_plat(ctrl->dev);
 	if (pdata->default_cam >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid camera index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid camera index\n", __func__);
 		return -EINVAL;
 	}
 
@@ -146,7 +146,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	if (cam->clk->set_rate) {
 		cam->clk->set_rate(cam->clk, cam->clk_rate);
 		clk_enable(cam->clk);
-		printk("clock for camera: %d\n", cam->clk_rate);
+		dev_info(ctrl->dev, "clock for camera: %d\n", cam->clk_rate);
 	}
 
 	/* enable camera power if needed */
@@ -157,7 +157,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	ret = v4l2_subdev_call(cam->sd, core, init, 0);
 	if (ret == -ENOIOCTLCMD) {
 		dev_err(ctrl->dev, "%s: init subdev api not supported\n",
-			__FUNCTION__);
+			__func__);
 		return ret;
 	}
 
@@ -181,12 +181,12 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 	sc->real_height = sy;
 
 	if (sx <= 0 || sy <= 0) {
-		dev_err(ctrl->dev, "%s: invalid source size\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid source size\n", __func__);
 		return -EINVAL;
 	}
 
 	if (tx <= 0 || ty <= 0) {
-		dev_err(ctrl->dev, "%s: invalid target size\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid target size\n", __func__);
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 
 	sc->scaleup_h = (tx >= sx) ? 1 : 0;
 	sc->scaleup_v = (ty >= sy) ? 1 : 0;
-	
+
 	return 0;
 }
 
@@ -224,7 +224,7 @@ int fimc_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
 	struct fimc_control *ctrl = fh;
 	int ret;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 	ret = subdev_call(ctrl, video, g_parm, a);
@@ -238,7 +238,7 @@ int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
 	struct fimc_control *ctrl = fh;
 	int ret;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 	ret = subdev_call(ctrl, video, s_parm, a);
@@ -255,21 +255,21 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 	int i, cam_count = 0;
 
 	if (inp->index >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid input index\n", __func__);
 		return -EINVAL;
 	}
 
-	dev_dbg(ctrl->dev, "%s: index %d\n", __FUNCTION__, inp->index);
+	dev_dbg(ctrl->dev, "%s: index %d\n", __func__, inp->index);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
 	/*
 	 * External camera input devices are managed in fimc->camera[]
 	 * but it aligned in the order of H/W camera interface's (A/B/C)
-	 * Therefor it could be NULL if there is no actual camera to take
+	 * Therefore it could be NULL if there is no actual camera to take
 	 * place the index
-	 * ie. if index is 1, that means that one camera has been selected before
-	 * so choose second object it reaches
+	 * ie. if index is 1, that means that one camera has been selected
+	 * before so choose second object it reaches
 	 */
 	for (i = 0; i < FIMC_MAXCAMS; i++) {
 		/* increase index until get not NULL and upto FIMC_MAXCAMS */
@@ -278,9 +278,13 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 
 		if (fimc->camera[i]) {
 			++cam_count;
-			if (cam_count == inp->index + 1)
+			if (cam_count == inp->index + 1) {
 				cam = fimc->camera[i];
-			else
+				dev_info(ctrl->dev, "%s:v4l2 input[%d] is %s",
+						__func__,
+						inp->index,
+						fimc->camera[i]->info->type);
+			} else
 				continue;
 		}
 	}
@@ -289,7 +293,7 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 		strcpy(inp->name, cam->info->type);
 		inp->type = V4L2_INPUT_TYPE_CAMERA;
 	} else {
-		dev_err(ctrl->dev, "%s: no camera\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: no camera\n", __func__);
 		mutex_unlock(&ctrl->v4l2_lock);
 		return -EINVAL;
 	}
@@ -305,7 +309,7 @@ int fimc_g_input(struct file *file, void *fh, unsigned int *i)
 
 	*i = (unsigned int) ctrl->cam->id;
 
-	dev_dbg(ctrl->dev, "%s: index %d\n", __FUNCTION__, *i);
+	dev_dbg(ctrl->dev, "%s: index %d\n", __func__, *i);
 
 	return 0;
 }
@@ -314,17 +318,38 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 {
 	struct fimc_global *fimc = get_fimc_dev();
 	struct fimc_control *ctrl = fh;
+	int index, dev_index = -1;
 
 	if (i >= FIMC_MAXCAMS) {
-		dev_err(ctrl->dev, "%s: invalid input index\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid input index\n", __func__);
 		return -EINVAL;
 	}
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	dev_dbg(ctrl->dev, "%s: index %d\n", __FUNCTION__, i);
-	
-	ctrl->cam = fimc->camera[i];
+	dev_dbg(ctrl->dev, "%s: index %d\n", __func__, i);
+
+	/*
+	 * Align mounted camera in v4l2 input order
+	 * (handling NULL devices)
+	 * dev_index represents the actual index number
+	 */
+	for (index = 0; index < FIMC_MAXCAMS; index++) {
+		/* If there is no exact camera H/W for exact index */
+		if (!fimc->camera[index])
+			continue;
+
+		/* Found actual device */
+		if (fimc->camera[index]) {
+			/* Count actual device number */
+			++dev_index;
+			/* If the index number matches the expecting input i */
+			if (dev_index == i)
+				ctrl->cam = fimc->camera[index];
+			else
+				continue;
+		}
+	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 	fimc_init_camera(ctrl);
@@ -332,12 +357,13 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 	return 0;
 }
 
-int fimc_enum_fmt_vid_capture(struct file *file, void *fh, struct v4l2_fmtdesc *f)
+int fimc_enum_fmt_vid_capture(struct file *file, void *fh,
+					struct v4l2_fmtdesc *f)
 {
 	struct fimc_control *ctrl = fh;
 	int i = f->index;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
@@ -353,11 +379,11 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = fh;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	if (!ctrl->cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n", \
-			__FUNCTION__);
+		dev_err(ctrl->dev, "%s: no capture device info\n",
+			__func__);
 		return -EINVAL;
 	}
 
@@ -371,13 +397,81 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	return 0;
 }
 
+/*
+ * Check for whether the requested format
+ * can be streamed out from FIMC
+ * depends on FIMC node
+ */
+static int fimc_fmt_avail(struct fimc_control *ctrl,
+		struct v4l2_format *f)
+{
+	int i;
+
+	/*
+	 * TODO: check for which FIMC is used.
+	 * Available fmt should be varied for each FIMC
+	 */
+
+	for (i = 0; i < sizeof(capture_fmts); i++) {
+		if (capture_fmts[i].pixelformat == f->fmt.pix.pixelformat)
+			return 0;
+	}
+
+	dev_info(ctrl->dev, "Not supported pixelformat requested\n");
+
+	return -1;
+}
+
+/*
+ * figures out the depth of requested format
+ */
+static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_format *f)
+{
+	int err, depth = 0;
+
+	/* First check for available format or not */
+	err = fimc_fmt_avail(ctrl, f);
+	if (err < 0)
+		return -1;
+
+	/* handles only supported pixelformats */
+	switch (f->fmt.pix.pixelformat) {
+	case V4L2_PIX_FMT_RGB32:
+		depth = 32;
+		dev_dbg(ctrl->dev, "32bpp\n");
+		break;
+	case V4L2_PIX_FMT_RGB565:
+	case V4L2_PIX_FMT_YUYV:
+	case V4L2_PIX_FMT_UYVY:
+	case V4L2_PIX_FMT_VYUY:
+	case V4L2_PIX_FMT_YVYU:
+	case V4L2_PIX_FMT_YUV422P:
+	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV61:
+		depth = 16;
+		dev_dbg(ctrl->dev, "16bpp\n");
+		break;
+	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV21:
+	case V4L2_PIX_FMT_YUV420:
+		depth = 12;
+		dev_dbg(ctrl->dev, "12bpp\n");
+		break;
+	default:
+		dev_dbg(ctrl->dev, "why am I here?\n");
+		break;
+	}
+
+	return depth;
+}
+
 int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
 	int ret = 0;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	/*
 	 * The first time alloc for struct cap_info, and will be
@@ -387,8 +481,8 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	if (!cap) {
 		cap = kzalloc(sizeof(*cap), GFP_KERNEL);
 		if (!cap) {
-			dev_err(ctrl->dev, "%s: no memory for " \
-				"capture device info\n", __FUNCTION__);
+			dev_err(ctrl->dev, "%s: no memory for "
+				"capture device info\n", __func__);
 			return -ENOMEM;
 		}
 
@@ -402,6 +496,16 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 
 	memset(&cap->fmt, 0, sizeof(cap->fmt));
 	memcpy(&cap->fmt, &f->fmt.pix, sizeof(cap->fmt));
+
+	/*
+	 * Note that expecting format only can be with
+	 * available output format from FIMC
+	 * Following items should be handled in driver
+	 * bytesperline = width * depth / 8
+	 * sizeimage = bytesperline * height
+	 */
+	cap->fmt.bytesperline = (cap->fmt.width * fimc_fmt_depth(ctrl, f)) >> 3;
+	cap->fmt.sizeimage = (cap->fmt.bytesperline * cap->fmt.height);
 
 	if (cap->fmt.colorspace == V4L2_COLORSPACE_JPEG) {
 		ctrl->sc.bypass = 1;
@@ -427,13 +531,13 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	int i;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
 		return -EINVAL;
 	}
 
 	if (!cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n", \
-			__FUNCTION__);
+		dev_err(ctrl->dev, "%s: no capture device info\n",
+			__func__);
 		return -ENODEV;
 	}
 
@@ -447,8 +551,8 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	cap->nr_bufs = b->count;
 
-	dev_dbg(ctrl->dev, "%s: requested %d buffers\n", \
-		__FUNCTION__, b->count);
+	dev_dbg(ctrl->dev, "%s: requested %d buffers\n",
+		__func__, b->count);
 
 	/* free previous buffers */
 	for (i = 0; i < FIMC_PHYBUFS; i++) {
@@ -460,11 +564,11 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	/* alloc buffers */
 	for (i = 0; i < cap->nr_bufs; i++) {
-		cap->bufs[i].base = fimc_dma_alloc(ctrl, \
+		cap->bufs[i].base = fimc_dma_alloc(ctrl,
 					PAGE_ALIGN(cap->fmt.sizeimage));
 		if (!cap->bufs[i].base) {
-			dev_err(ctrl->dev, "%s: no memory for " \
-				"capture buffer\n", __FUNCTION__);
+			dev_err(ctrl->dev, "%s: no memory for "
+				"capture buffer\n", __func__);
 			goto err_alloc;
 		}
 
@@ -485,7 +589,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 err_alloc:
 	for (i = 0; i < cap->nr_bufs; i++) {
 		if (cap->bufs[i].base) {
-			fimc_dma_free(ctrl, &cap->bufs[i].base, \
+			fimc_dma_free(ctrl, &cap->bufs[i].base,
 					cap->bufs[i].length);
 		}
 
@@ -511,8 +615,8 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_IDLE;
 
-	dev_dbg(ctrl->dev, "%s: %d bytes with offset: %d\n",\
-		__FUNCTION__, b->length, b->m.offset);
+	dev_dbg(ctrl->dev, "%s: %d bytes with offset: %d\n",
+		__func__, b->length, b->m.offset);
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
@@ -524,7 +628,7 @@ int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 	struct fimc_control *ctrl = fh;
 	int ret = 0;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
@@ -545,7 +649,7 @@ int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
-	
+
 	return ret;
 }
 
@@ -554,7 +658,7 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 	struct fimc_control *ctrl = fh;
 	int ret = 0;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
@@ -584,13 +688,13 @@ int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a)
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 
 	if (!ctrl->cam) {
-		dev_err(ctrl->dev, "%s: s_input should be done before crop\n", \
-			__FUNCTION__);
+		dev_err(ctrl->dev, "%s: s_input should be done before crop\n",
+			__func__);
 		return -ENODEV;
 	}
 
@@ -618,7 +722,7 @@ int fimc_g_crop_capture(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = fh;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 	a->c = ctrl->cap->crop;
@@ -631,7 +735,7 @@ int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = fh;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	mutex_lock(&ctrl->v4l2_lock);
 	ctrl->cap->crop = a->c;
@@ -642,7 +746,7 @@ int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 
 int fimc_start_capture(struct fimc_control *ctrl)
 {
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	if (!ctrl->sc.bypass)
 		fimc_hwset_start_scaler(ctrl);
@@ -654,7 +758,7 @@ int fimc_start_capture(struct fimc_control *ctrl)
 
 int fimc_stop_capture(struct fimc_control *ctrl)
 {
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	if (ctrl->cap->lastirq) {
 		fimc_hwset_enable_lastirq(ctrl);
@@ -675,7 +779,7 @@ int fimc_streamon_capture(void *fh)
 	struct fimc_capinfo *cap = ctrl->cap;
 	int rot;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	ctrl->status = FIMC_READY_ON;
 	cap->irq = 0;
@@ -694,7 +798,7 @@ int fimc_streamon_capture(void *fh)
 	fimc_hwset_scaler(ctrl);
 	fimc_hwset_output_colorspace(ctrl, cap->fmt.pixelformat);
 
-	if (cap->fmt.pixelformat == V4L2_PIX_FMT_RGB32 || \
+	if (cap->fmt.pixelformat == V4L2_PIX_FMT_RGB32 ||
 		cap->fmt.pixelformat == V4L2_PIX_FMT_RGB565)
 		fimc_hwset_output_rgb(ctrl, cap->fmt.pixelformat);
 	else
@@ -707,10 +811,10 @@ int fimc_streamon_capture(void *fh)
 	rot = fimc_mapping_rot_flip(cap->rotate, cap->flip);
 
 	if (rot & FIMC_ROT) {
-		fimc_hwset_org_output_size(ctrl, cap->fmt.height, \
+		fimc_hwset_org_output_size(ctrl, cap->fmt.height,
 						cap->fmt.width);
 	} else {
-		fimc_hwset_org_output_size(ctrl, cap->fmt.width, \
+		fimc_hwset_org_output_size(ctrl, cap->fmt.width,
 						cap->fmt.height);
 	}
 
@@ -718,7 +822,7 @@ int fimc_streamon_capture(void *fh)
 	fimc_start_capture(ctrl);
 
 	ctrl->status = FIMC_STREAMON;
-	
+
 	return 0;
 }
 
@@ -726,7 +830,7 @@ int fimc_streamoff_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 
-	dev_dbg(ctrl->dev, "%s\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	ctrl->status = FIMC_READY_OFF;
 
@@ -742,7 +846,7 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 	struct fimc_control *ctrl = fh;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
 		return -EINVAL;
 	}
 
@@ -755,7 +859,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	struct fimc_capinfo *cap = ctrl->cap;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
 		return -EINVAL;
 	}
 
@@ -763,11 +867,11 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	b->index = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
 
-	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n", \
-		__FUNCTION__, b->index, cap->bufs[b->index].base);
+	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n",
+		__func__, b->index, cap->bufs[b->index].base);
 
 	mutex_unlock(&ctrl->v4l2_lock);
-	
+
 	return 0;
 }
 

@@ -13,7 +13,7 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/videodev2.h>
-#include <asm/io.h>
+#include <linux/io.h>
 #include <mach/map.h>
 #include <plat/regs-fimc.h>
 #include <plat/fimc.h>
@@ -61,7 +61,7 @@ int fimc_hwset_camera_source(struct fimc_control *ctrl)
 	cfg |= S3C_CISRCFMT_SOURCEVSIZE(cam->height);
 
 	writel(cfg, ctrl->regs + S3C_CISRCFMT);
-	
+
 	return 0;
 }
 
@@ -164,7 +164,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 
 	if (!cam) {
 		dev_err(ctrl->dev, "%s: no active camera\n", \
-			__FUNCTION__);
+			__func__);
 		return -ENODEV;
 	}
 
@@ -172,7 +172,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 	h2 = cam->width - rect->width - rect->left;
 	v1 = rect->top;
 	v2 = cam->height - rect->height - rect->top;
-	
+
 	cfg = readl(ctrl->regs + S3C_CIWDOFST);
 	cfg &= ~(S3C_CIWDOFST_WINHOROFST_MASK | S3C_CIWDOFST_WINVEROFST_MASK);
 	cfg |= S3C_CIWDOFST_WINHOROFST(h1);
@@ -195,7 +195,7 @@ int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
 
 	if (!cam) {
 		dev_err(ctrl->dev, "%s: no active camera\n", \
-			__FUNCTION__);
+			__func__);
 		return -ENODEV;
 	}
 
@@ -228,7 +228,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 
 	if (!cam) {
 		dev_err(ctrl->dev, "%s: no active camera\n", \
-			__FUNCTION__);
+			__func__);
 		return -ENODEV;
 	}
 
@@ -249,7 +249,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		cfg |= S3C_CIGCTRL_SELCAM_ITU;
 	} else {
 		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
-			__FUNCTION__);
+			__func__);
 		return -EINVAL;
 	}
 
@@ -260,7 +260,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 
 int fimc_hwset_output_size(struct fimc_control *ctrl, int width, int height)
 {
-	u32 cfg= readl(ctrl->regs + S3C_CITRGFMT);
+	u32 cfg = readl(ctrl->regs + S3C_CITRGFMT);
 
 	cfg &= ~(S3C_CITRGFMT_TARGETH_MASK | S3C_CITRGFMT_TARGETV_MASK);
 
@@ -305,7 +305,7 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __func__);
 		break;
 	}
 
@@ -431,7 +431,7 @@ int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
 
 	default:
 		dev_err(ctrl->dev, "%s: invalid pixel format (%08x)\n", \
-			__FUNCTION__, fmt->pixelformat);
+			__func__, fmt->pixelformat);
 		break;
 	}
 
@@ -514,9 +514,10 @@ int fimc_hwset_scaler(struct fimc_control *ctrl)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
 
-	cfg &= ~(S3C_CISCCTRL_SCALERBYPASS | \
-		S3C_CISCCTRL_SCALEUP_H | S3C_CISCCTRL_SCALEUP_V | \
-		S3C_CISCCTRL_MAIN_V_RATIO_MASK | S3C_CISCCTRL_MAIN_H_RATIO_MASK);
+	cfg &= ~(S3C_CISCCTRL_SCALERBYPASS |
+		S3C_CISCCTRL_SCALEUP_H | S3C_CISCCTRL_SCALEUP_V |
+		S3C_CISCCTRL_MAIN_V_RATIO_MASK |
+		S3C_CISCCTRL_MAIN_H_RATIO_MASK);
 	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
 
 	if (ctrl->sc.bypass)
@@ -563,13 +564,13 @@ int fimc_hwget_frame_count(struct fimc_control *ctrl)
 
 int fimc_hwget_frame_end(struct fimc_control *ctrl)
 {
-        unsigned long timeo = jiffies;
+	unsigned long timeo = jiffies;
 	u32 cfg;
 
-        timeo += 20;    /* waiting for 100ms */
+	timeo += 20;	/* waiting for 100ms */
 	while (time_before(jiffies, timeo)) {
 		cfg = readl(ctrl->regs + S3C_CISTATUS);
-		
+
 		if (S3C_CISTATUS_GET_FRAME_END(cfg)) {
 			cfg &= ~S3C_CISTATUS_FRAMEEND;
 			writel(cfg, ctrl->regs + S3C_CISTATUS);
@@ -583,13 +584,13 @@ int fimc_hwget_frame_end(struct fimc_control *ctrl)
 
 int fimc_hwget_last_frame_end(struct fimc_control *ctrl)
 {
-        unsigned long timeo = jiffies;
+	unsigned long timeo = jiffies;
 	u32 cfg;
 
-        timeo += 20;    /* waiting for 100ms */
+	timeo += 20;    /* waiting for 100ms */
 	while (time_before(jiffies, timeo)) {
 		cfg = readl(ctrl->regs + S3C_CISTATUS);
-		
+
 		if (S3C_CISTATUS_GET_LAST_CAPTURE_END(cfg)) {
 			cfg &= ~S3C_CISTATUS_LASTCAPTUREEND;
 			writel(cfg, ctrl->regs + S3C_CISTATUS);
@@ -626,14 +627,13 @@ int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat)
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
 	cfg &= ~S3C_CISCCTRL_INRGB_FMT_RGB_MASK;
 
-	if (pixelformat == V4L2_PIX_FMT_RGB32) {
+	if (pixelformat == V4L2_PIX_FMT_RGB32)
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB888;
-	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
+	else if (pixelformat == V4L2_PIX_FMT_RGB565)
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB565;
-	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	
+
 	return 0;
 }
 
@@ -642,14 +642,13 @@ int fimc_hwset_output_rgb(struct fimc_control *ctrl, u32 pixelformat)
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
 	cfg &= ~S3C_CISCCTRL_OUTRGB_FMT_RGB_MASK;
 
-	if (pixelformat == V4L2_PIX_FMT_RGB32) {
+	if (pixelformat == V4L2_PIX_FMT_RGB32)
 		cfg |= S3C_CISCCTRL_OUTRGB_FMT_RGB888;
-	} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
+	else if (pixelformat == V4L2_PIX_FMT_RGB565)
 		cfg |= S3C_CISCCTRL_OUTRGB_FMT_RGB565;
-	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	
+
 	return 0;
 }
 
@@ -662,7 +661,7 @@ int fimc_hwset_ext_rgb(struct fimc_control *ctrl, int enable)
 		cfg |= S3C_CISCCTRL_EXTRGB_EXTENSION;
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
-	
+
 	return 0;
 }
 
@@ -730,7 +729,7 @@ int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __FUNCTION__);
+		dev_err(ctrl->dev, "%s: invalid pixel format\n", __func__);
 		break;
 	}
 
@@ -766,7 +765,7 @@ int fimc_hwset_disable_autoload(struct fimc_control *ctrl)
 int fimc_hwset_real_input_size(struct fimc_control *ctrl, u32 width, u32 height)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CIREAL_ISIZE);
-	cfg &= ~ (S3C_CIREAL_ISIZE_HEIGHT_MASK | S3C_CIREAL_ISIZE_WIDTH_MASK);
+	cfg &= ~(S3C_CIREAL_ISIZE_HEIGHT_MASK | S3C_CIREAL_ISIZE_WIDTH_MASK);
 
 	cfg |= S3C_CIREAL_ISIZE_WIDTH(width);
 	cfg |= S3C_CIREAL_ISIZE_HEIGHT(height);
@@ -803,7 +802,7 @@ int fimc_hwset_input_burst_cnt(struct fimc_control *ctrl, u32 cnt)
 	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
 	cfg &= ~S3C_MSCTRL_BURST_CNT_MASK;
 
-	if (cnt > 4) 
+	if (cnt > 4)
 		cnt = 4;
 	else if (cnt == 0)
 		cnt = 4;
@@ -826,8 +825,8 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 					(pixelformat == V4L2_PIX_FMT_RGB565)) {
 		cfg |= S3C_MSCTRL_INFORMAT_RGB;
 	} else {
-		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
+		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n",
+				__func__, pixelformat);
 		return -EINVAL;
 	}
 
@@ -873,10 +872,10 @@ int fimc_hwset_input_flip(struct fimc_control *ctrl, u32 rot, u32 flip)
 	cfg &= ~(S3C_MSCTRL_FLIP_X_MIRROR | S3C_MSCTRL_FLIP_Y_MIRROR);
 	val = fimc_mapping_rot_flip(rot, flip);
 
-	if(val & FIMC_XFLIP)
+	if (val & FIMC_XFLIP)
 		cfg |= S3C_MSCTRL_FLIP_X_MIRROR;
 
-	if(val & FIMC_YFLIP)
+	if (val & FIMC_YFLIP)
 		cfg |= S3C_MSCTRL_FLIP_Y_MIRROR;
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -889,11 +888,10 @@ int fimc_hwset_input_source(struct fimc_control *ctrl, enum fimc_input path)
 	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
 	cfg &= ~S3C_MSCTRL_INPUT_MASK;
 
-	if (path == FIMC_SRC_MSDMA) {
+	if (path == FIMC_SRC_MSDMA)
 		cfg |= S3C_MSCTRL_INPUT_MEMORY;
-	} else if (path == FIMC_SRC_CAM) {
+	else if (path == FIMC_SRC_CAM)
 		cfg |= S3C_MSCTRL_INPUT_EXTCAM;
-	}
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
 
@@ -923,7 +921,8 @@ int fimc_hwset_stop_input_dma(struct fimc_control *ctrl)
 
 /* FIXME */
 int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
-				struct v4l2_rect *bounds, struct v4l2_rect *crop)
+				struct v4l2_rect *bounds,
+				struct v4l2_rect *crop)
 {
 	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
 
@@ -932,7 +931,7 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 		return -EINVAL;
 
 	dev_dbg(ctrl->dev, "%s: left: %d, top: %d, width: %d, height: %d\n", \
-		__FUNCTION__, crop->left, crop->top, crop->width, crop->height);
+		__func__, crop->left, crop->top, crop->width, crop->height);
 
 	switch (pixelformat) {
 	/* 1 plane, 32 bits per pixel */
@@ -1001,12 +1000,14 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 }
 
 int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
-				struct v4l2_rect *bounds, struct v4l2_rect *crop)
+				struct v4l2_rect *bounds,
+				struct v4l2_rect *crop)
 {
 	u32 cfg_y = 0, cfg_cb = 0;
 
 	if (crop->left || crop->top || \
-		(bounds->width != crop->width) || (bounds->height != crop->height)) {
+		(bounds->width != crop->width) ||
+		(bounds->height != crop->height)) {
 		if (pixelformat == V4L2_PIX_FMT_NV12) {
 			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
@@ -1098,7 +1099,7 @@ void fimc_reset(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
 
-	dev_dbg(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_dbg(ctrl->dev, "%s: called\n", __func__);
 
 	cfg = readl(ctrl->regs + S3C_CISRCFMT);
 	cfg |= S3C_CISRCFMT_ITU601_8BIT;

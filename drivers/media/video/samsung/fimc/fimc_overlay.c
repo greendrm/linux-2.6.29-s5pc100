@@ -14,8 +14,8 @@
 #include <linux/bootmem.h>
 #include <linux/string.h>
 #include <linux/platform_device.h>
-#include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/io.h>
+#include <linux/uaccess.h>
 #include <plat/media.h>
 
 #include "fimc.h"
@@ -27,7 +27,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 
 	dev_info(ctrl->dev, "%s: called\n\
 			top(%d), left(%d), width(%d), height(%d)\n", \
-			__FUNCTION__, f->fmt.win.w.top, f->fmt.win.w.left, \
+			__func__, f->fmt.win.w.top, f->fmt.win.w.left, \
 			f->fmt.win.w.width, f->fmt.win.w.height);
 
 	if (ctrl->status != FIMC_STREAMOFF) {
@@ -43,7 +43,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 				f->fmt.win.w.width, ctrl->fb.lcd_vres);
 			f->fmt.win.w.width = ctrl->fb.lcd_vres;
 		}
-		
+
 		if (f->fmt.win.w.height > ctrl->fb.lcd_hres) {
 			dev_warn(ctrl->dev, "The height is changed %d -> %d\n",
 				f->fmt.win.w.height, ctrl->fb.lcd_hres);
@@ -55,7 +55,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 				f->fmt.win.w.width, ctrl->fb.lcd_hres);
 			f->fmt.win.w.width = ctrl->fb.lcd_hres;
 		}
-		
+
 		if (f->fmt.win.w.height > ctrl->fb.lcd_vres) {
 			dev_warn(ctrl->dev, "The height is changed %d -> %d\n",
 				f->fmt.win.w.height, ctrl->fb.lcd_vres);
@@ -70,7 +70,7 @@ int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 
-	dev_info(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_info(ctrl->dev, "%s: called\n", __func__);
 
 	f->fmt.win = ctrl->out->win;
 
@@ -82,7 +82,7 @@ int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	dev_info(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_info(ctrl->dev, "%s: called\n", __func__);
 
 	/* Check stream status */
 	if (ctrl->status != FIMC_STREAMOFF) {
@@ -105,7 +105,7 @@ int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	u32 bpp = 1;
 	u32 format = ctrl->out->fbuf.fmt.pixelformat;
 
-	dev_info(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_info(ctrl->dev, "%s: called\n", __func__);
 
 	fb->capability = ctrl->out->fbuf.capability;
 	fb->flags = 0;
@@ -118,7 +118,7 @@ int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	if (format == V4L2_PIX_FMT_NV12)
 		bpp = 1;
 	else if (format == V4L2_PIX_FMT_RGB32)
-		bpp = 4;		
+		bpp = 4;
 	else if (format == V4L2_PIX_FMT_RGB565)
 		bpp = 2;
 
@@ -137,13 +137,13 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	u32 bpp = 1;
 	u32 format = fb->fmt.pixelformat;
 
-	dev_info(ctrl->dev, "%s: called\n", __FUNCTION__);
+	dev_info(ctrl->dev, "%s: called\n", __func__);
 
 	ctrl->out->fbuf.capability = V4L2_FBUF_CAP_EXTERNOVERLAY;
 	ctrl->out->fbuf.flags = 0;
 	ctrl->out->fbuf.base = fb->base;
 
-	if(fb->base) {
+	if (fb->base) {
 		ctrl->out->fbuf.fmt.width = fb->fmt.width;
 		ctrl->out->fbuf.fmt.height = fb->fmt.height;
 		ctrl->out->fbuf.fmt.pixelformat	= fb->fmt.pixelformat;
@@ -151,7 +151,7 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 		if (format == V4L2_PIX_FMT_NV12)
 			bpp = 1;
 		else if (format == V4L2_PIX_FMT_RGB32)
-			bpp = 4;		
+			bpp = 4;
 		else if (format == V4L2_PIX_FMT_RGB565)
 			bpp = 2;
 
