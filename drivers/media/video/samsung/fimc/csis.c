@@ -222,11 +222,11 @@ static void s3c_csis_start(struct platform_device *pdev)
 
 #ifdef CONFIG_MIPI_CSI_ADV_FEATURE
 	/* FIXME: how configure the followings with FIMC dynamically? */
+	s3c_csis_set_hs_settle(6);	/* s5k6aa */
 	s3c_csis_set_data_align(32);
-	s3c_csis_set_wclk(0);
+	s3c_csis_set_wclk(1);
 	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
 	s3c_csis_set_resol(640, 480);
-	s3c_csis_set_hs_settle(6);	/* s5k6aa */
 	s3c_csis_update_shadow();
 #endif
 
