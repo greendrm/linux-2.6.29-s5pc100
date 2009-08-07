@@ -1461,3 +1461,15 @@ v2.6.29.4-dev-1-0-32: Jae-Cheol Lee
 		M	arch/arm/plat-s5pc1xx/clock.c
 		M	arch/arm/plat-s5pc1xx/devs.c
 		M	arch/arm/plat-s5pc1xx/s5pc100-clock.c
+
+v2.6.29.4-dev-1-0-33: Jae-Cheol Lee
+	- Enabling Branch Prediction on C100 and C110
+	- Write-back allocate for L2 cache on C100 and C110
+
+	Modified Files:
+		M	arch/arm/mm/proc-v7.S
+		M	arch/arm/configs/smdkc100mtd_defconfig
+		M	arch/arm/configs/smdkc100nfs_defconfig
+		M	arch/arm/configs/smdkc110nfs_defconfig
+		M	arch/arm/configs/smdkc110onenand_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfig
