@@ -1449,6 +1449,8 @@ v2.6.29.4-dev-1-0-31: Thomas Abraham
 	Gadget module author's suggestion as listed in the link
 	http://groups.google.co.in/group/fa.linux.kernel/browse_thread/thread/242d11b3faaf392d
 
+	Modified Files:
+		M	drivers/usb/gadget/u_serial.c
 
 v2.6.29.4-dev-1-0-32: Jae-Cheol Lee
 	- Support power gating on s5pc100
@@ -1479,4 +1481,15 @@ v2.6.29.4-dev-1-0-34: Kukjin Kim
 
 	Modified Files:
 		M	arch/arm/plat-s3c/dma-pl330.c
+
+v2.6.29.4-dev-1-0.35: Thomas Abraham
+	- FSG thread is stopped if File Storage gadget is suspended.
+
+	On a system suspend, the USB gadget is (soft) disconnected from the
+	USB host. If FSG thread in USB file storage gadget is not stopped
+	during the suspend, after the system wakeup, FSG thread submits
+	requests to a inactive OTG device driver.
+
+	Modified Files
+		M	drivers/usb/gadget/file_storage.c
 
