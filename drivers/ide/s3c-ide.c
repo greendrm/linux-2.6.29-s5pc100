@@ -251,6 +251,7 @@ static void s3c_ide_tune_chipset(ide_drive_t * drive, u8 xferspeed)
 		       s3c_ide_regbase + S5P_ATA_PIO_TIME);
 		writel(s3c_hwif->udmatime[speed - XFER_UDMA_0],
 		       s3c_ide_regbase + S5P_ATA_UDMA_TIME);
+		set_endian_mode(1);
 	}
 	ide_config_drive_speed(drive, speed);
 }
@@ -274,9 +275,6 @@ int s3c_ide_ack_intr(ide_hwif_t * hwif)
 
 static void s3c_ide_tune_drive(ide_drive_t * drive, u8 pio)
 {
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	set_endian_mode(1);
-#endif
 #if defined (CONFIG_CPU_S5PC100)
 	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ);
 	writel(0x3f, s3c_ide_regbase + S5P_ATA_IRQ_MSK);
