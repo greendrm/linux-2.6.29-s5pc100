@@ -1998,7 +1998,6 @@ static int __devinit smc911x_probe(struct net_device *dev)
 	/* Grab the IRQ */
 	retval = request_irq(dev->irq, &smc911x_interrupt,
 			     irq_flags, dev->name, dev);
-	printk("boyko : 1 %d\n",retval);
 	
 	if (retval)
 		goto err_out;
@@ -2013,8 +2012,6 @@ static int __devinit smc911x_probe(struct net_device *dev)
 
 	retval = register_netdev(dev);
 
-	printk("boyko : 2 %d\n",retval);
-	
 	if (retval == 0) {
 		/* now, print out the card info, in a short format.. */
 		printk("%s: %s (rev %d) at %#lx IRQ %d",
