@@ -24,6 +24,7 @@
 #include <linux/wait.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/dma-mapping.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -157,7 +158,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	s3c_mfc_common_args	in_param;
 	s3c_mfc_alloc_mem_t *node;
 	int port_no = 0;
-	int matched_u_addr = 0;		
+	int matched_u_addr = 0;	
+	unsigned char	*start;
+	int size;
 
 	mutex_lock(&s3c_mfc_mutex);
 
@@ -191,7 +194,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			ret = in_param.ret_code;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
-		}
+		}		
 
 		/* Allocate MFC buffer(stream, refYC, MV) */
 		in_param.ret_code = s3c_mfc_allocate_stream_ref_buf(mfc_ctx, &(in_param.args));
@@ -201,6 +204,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 
+		/* cache clean */			
+
 		/* Set Ref YC0~3 & MV */
 		in_param.ret_code = s3c_mfc_set_enc_ref_buffer(mfc_ctx, &(in_param.args));
 		if (in_param.ret_code < 0) {
@@ -208,6 +213,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}	
+
+		/* cache clean */
+		
 		mutex_unlock(&s3c_mfc_mutex);
 		break;
 	
@@ -221,6 +229,19 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
+		#if 0	// peter for debug
+		/* cache clean for Luma */
+		start = (unsigned char *)in_param.args.enc_exe.in_Y_addr_vir;
+		size = (int)(mfc_ctx->img_width * mfc_ctx->img_height);
+		printk("start addr = 0x%08x, size = 0x%08x in IOCTL_MFC_ENC_EXE\n",start, size);
+		dma_cache_maint(start, size, DMA_TO_DEVICE);
+
+		/* cache clean for Chroma */
+		start = (unsigned char *)in_param.args.enc_exe.in_CbCr_addr_vir;
+		size = (int)((mfc_ctx->img_width * mfc_ctx->img_height)>>1);
+		printk("start addr = 0x%08x, size = 0x%08x in IOCTL_MFC_ENC_EXE\n",start, size);
+		dma_cache_maint(start, size, DMA_TO_DEVICE);
+		#endif
 
 		in_param.ret_code = s3c_mfc_exe_encode(mfc_ctx, &(in_param.args));
 		//mfc_debug("InParm->ret_code : %d\n", in_param.ret_code);
@@ -329,6 +350,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		in_param.args.mem_alloc.buff_size = Align(in_param.args.mem_alloc.buff_size, 2*BUF_L_UNIT);
 		in_param.ret_code = s3c_mfc_get_virt_addr(mfc_ctx, &(in_param.args));
+		
 		ret = in_param.ret_code;
 
 		break;
@@ -428,7 +450,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	vir_mmap_size = vir_size;
 	
 	vma->vm_flags |= VM_RESERVED | VM_IO;
-	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);	
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);		
 	
 	/*
 	 * port0 mapping for stream buf & frame buf (chroma + MV)
@@ -438,6 +460,9 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 		mfc_err("mfc remap port0 error\n");
 		return -EAGAIN;
 	}	
+
+	vma->vm_flags |= VM_RESERVED | VM_IO;
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);	
 
 	/*
 	 * port1 mapping for frame buf (luma)

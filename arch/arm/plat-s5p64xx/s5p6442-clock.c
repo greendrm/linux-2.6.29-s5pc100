@@ -546,13 +546,12 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 
 	fclk = apll / GET_DIV(clkdiv0, S5P_CLKDIV0_APLL);
 
-#if 0	// FPGA6442
 	mux_stat1 = __raw_readl(S5P_CLK_MUX_STAT1);
 	mux_stat0 = __raw_readl(S5P_CLK_MUX_STAT0);
 
 	switch ((mux_stat1 & S5P_CLK_MUX_STAT1_MUX166SYNC_MASK) >> S5P_CLK_MUX_STAT1_MUX166SYNC_SHIFT) {
 	case 0x1:	/* Asynchronous mode */
-		switch (mux_stat0 & S5P_CLK_MUX_STAT0_MUX166_MASK >> S5P_CLK_MUX_STAT0_MUX166_SHIFT) {
+		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUX166_MASK) >> S5P_CLK_MUX_STAT0_MUX166_SHIFT) {
 		case 0x1:	/* MPLL source */
 			hclkd0 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK166);
 			pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK83);
@@ -567,7 +566,7 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 			
 		}
 
-		switch (mux_stat0 & S5P_CLK_MUX_STAT0_MUX133_MASK >> S5P_CLK_MUX_STAT0_MUX133_SHIFT) {
+		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUX133_MASK) >> S5P_CLK_MUX_STAT0_MUX133_SHIFT) {
 		case 0x1:	/* MPLL source */
 			hclkd1 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK133);
 			pclkd1 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK66);
@@ -615,19 +614,7 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	/* For backward compatibility */
 	clk_h.rate = hclkd1;
 	clk_p.rate = pclkd1;
-#else
-	clk_fout_mpll.rate = xtal;
-	clk_fout_epll.rate = xtal;
-	clk_fout_apll.rate = xtal;
-	
-	clk_f.rate = xtal;
-	clk_h.rate = xtal;
-	clk_p.rate = xtal;
-	clk_hd0.rate = xtal;
-	clk_pd0.rate = xtal;
-	clk_hd1.rate = xtal;
-	clk_pd1.rate = xtal;
-#endif
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5p6442_set_clksrc(init_parents[ptr]);
 }
