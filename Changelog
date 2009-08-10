@@ -1525,3 +1525,10 @@ v2.6.29.4-dev-1-0-37: Hatim Ali
 	Added Files:
 		A	arch/arm/plat-s5pc11x/dev-spi.c
 
+v2.6.29.4-dev-1-0-38: Jongpill Lee
+	- Support SMDK6442
+		M       arch/arm/configs/smdk6442ramdisk_defconfig
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/cpu.c
+		M       arch/arm/plat-s5p64xx/s5p6442-clock.c
+		M       arch/arm/plat-s5pc1xx/pm.c
