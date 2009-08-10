@@ -1449,6 +1449,8 @@ v2.6.29.4-dev-1-0-31: Thomas Abraham
 	Gadget module author's suggestion as listed in the link
 	http://groups.google.co.in/group/fa.linux.kernel/browse_thread/thread/242d11b3faaf392d
 
+	Modified Files:
+		M	drivers/usb/gadget/u_serial.c
 
 v2.6.29.4-dev-1-0-32: Jae-Cheol Lee
 	- Support power gating on s5pc100
@@ -1480,3 +1482,98 @@ v2.6.29.4-dev-1-0-34: Kukjin Kim
 	Modified Files:
 		M	arch/arm/plat-s3c/dma-pl330.c
 
+v2.6.29.4-dev-1-0.35: Thomas Abraham
+	- FSG thread is stopped if File Storage gadget is suspended.
+
+	On a system suspend, the USB gadget is (soft) disconnected from the
+	USB host. If FSG thread in USB file storage gadget is not stopped
+	during the suspend, after the system wakeup, FSG thread submits
+	requests to a inactive OTG device driver.
+
+	Modified Files
+		M	drivers/usb/gadget/file_storage.c
+
+v2.6.29.4-dev-1.0.36: Thomas Abraham
+	- 'unbind' function check on gadget driver registration removed.
+
+	USB gadgets, when built into the kenrel, do not have a 'unbind' function
+	callback. Hence, gadget driver registeration with OTG driver
+	fails if gadget driver is built into the kernel.
+
+	Modified Files
+		M	drivers/usb/gadget/s3c_udc_otg.c
+
+v2.6.29.4-dev-1-0-37: Hatim Ali
+	- Added Support for SPI for S5PC110
+	
+	Modified Files:
+
+		M	arch/arm/mach-s5pc110/dma.c
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/include/mach/s3c-dma.h
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s5pc11x/Makefile
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/devs.c
+		M	arch/arm/plat-s5pc11x/gpiolib.c
+		M	arch/arm/plat-s5pc11x/include/plat/gpio-bank-b.h
+		M	drivers/spi/Kconfig
+		M	drivers/spi/Makefile
+		M	drivers/spi/spi_s3c.c
+		M	drivers/spi/spi_s3c.h
+
+	Added Files:
+		A	arch/arm/plat-s5pc11x/dev-spi.c
+
+v2.6.29.4-dev-1-0-38: Jongpill Lee
+	- Support SMDK6442
+		M       arch/arm/configs/smdk6442ramdisk_defconfig
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/cpu.c
+		M       arch/arm/plat-s5p64xx/s5p6442-clock.c
+		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-0-39: Jaeryul Oh
+	- Backed for MFC(Write-back allocate for L2 cache on not applied) 
+	- Modified MFC driver on SMDKC110
+	
+	Modified Files:
+
+		M	arch/arm/mm/proc-v7.S
+		M	drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+ v2.6.29.4-dev-1-0-40: Taeyong Lee
+- 	- Support IIS Audio for S5PC110
+- 		M       arch/arm/plat-s5pc11x/clock.c
+- 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+- 		M       sound/soc/s3c/s3c-i2s.c		
+
+
+v2.6.29.4-dev-1-0-41: Hatim Ali
+	- Added support for MMC-SPI GPIO bitbanging
+	
+	Modified Files:
+	M       drivers/spi/Kconfig
+	M       drivers/spi/spi_s3c.c
+	M	drivers/spi/spi_s3c.h
+	M	arch/arm/mach-s5pc110/mach-smdkc110.c
+v2.6.29.4-dev-1-0-42: Hyunwoong Kim
+	- Added New Tag for s5pc110(2009.08.10)
+
+v2.6.29.4-dev-1-0-43: Jongpill Lee
+	- Support NFS for SMDK6442
+
+	Added Files:
+		A       arch/arm/configs/smdk6442nfs_defconfig
+
+	Modified Files:
+		M       arch/arm/mach-s5p6442/include/mach/map.h
+		M       arch/arm/mach-s5p6442/include/mach/regs-mem.h
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/devs.c
+		M       arch/arm/plat-s5p64xx/gpiolib.c
+		M       drivers/net/smc911x.c
+		M       drivers/net/smc911x.h

@@ -454,9 +454,9 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 		WRITEL((enc_init_h264_arg->in_deblock_alpha_C0 & 0x1f)*2, S3C_FIMV_ENC_ALPHA_OFF);
 		WRITEL((enc_init_h264_arg->in_deblock_beta & 0x1f)*2, S3C_FIMV_ENC_BETA_OFF);			
 		if (enc_init_h264_arg->in_ref_num_p > enc_init_h264_arg->in_reference_num) {
-			mfc_info("Reference frame no of P should be equal or less than \
-				Reference frame no");	
-			mfc_info("Reference frame no of P was set same as Reference frame no");		
+			//mfc_info("Reference frame no of P should be equal or less than \
+			//	Reference frame no");	
+			//mfc_info("Reference frame no of P was set same as Reference frame no");		
 			enc_init_h264_arg->in_ref_num_p = enc_init_h264_arg->in_reference_num;
 		}	
 		WRITEL((enc_init_h264_arg->in_ref_num_p<<5)|(enc_init_h264_arg->in_reference_num), 
@@ -550,7 +550,7 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_SYS_INIT_RET) == 0){
-		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n");
+		mfc_err("R2H_CMD_SYS_INIT_RET FAIL\n");
 		return MFCINST_ERR_FW_INIT_FAIL;
 	}	
 	
@@ -632,7 +632,7 @@ static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type)
 	s3c_mfc_cmd_host2risc(H2R_CMD_OPEN_INSTANCE, codec_no);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_OPEN_INSTANCE_RET) == 0){
-		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n"); // peter, check this status
+		mfc_err("R2H_CMD_OPEN_INSTANCE_RET FAIL\n"); // peter, check this status
 		return MFCINST_ERR_FW_INIT_FAIL;
 	}
 
@@ -658,7 +658,7 @@ void s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type)
 	s3c_mfc_cmd_host2risc(H2R_CMD_CLOSE_INSTANCE, inst_no);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_CLOSE_INSTANCE_RET) == 0) {
-		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n"); // peter, check this status
+		mfc_err("R2H_CMD_CLOSE_INSTANCE_RET FAIL\n"); // peter, check this status
 		return MFCINST_ERR_FW_INIT_FAIL;
 	}
 
@@ -949,9 +949,12 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 
 	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_EMPTY) {
 		dec_arg->out_display_status = 0; 
-	} else {
-		dec_arg->out_display_status = 1; // peter, should be checked
-	}	
+	} else if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_DISPLAY)  {
+		dec_arg->out_display_status = 1; 
+	} else if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DISPLAY_ONLY)  { 	
+		dec_arg->out_display_status = 2; 
+	} else
+		dec_arg->out_display_status = 3; 
 	
 	frame_type = READL(S3C_FIMV_SI_FRAME_TYPE); 
 	mfc_ctx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x3);

@@ -298,11 +298,10 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 
 	DEBUG_SETUP("%s: %s\n", __FUNCTION__, driver->driver.name);
 
-	if (!driver
-	    || (driver->speed != USB_SPEED_FULL && driver->speed != USB_SPEED_HIGH)
-	    || !driver->bind
-	    || !driver->unbind || !driver->disconnect || !driver->setup)
-		return -EINVAL;
+        if (!driver
+            || (driver->speed != USB_SPEED_FULL && driver->speed != USB_SPEED_HIGH)
+            || !driver->bind || !driver->disconnect || !driver->setup)
+                return -EINVAL;
 	if (!dev)
 		return -ENODEV;
 	if (dev->driver)

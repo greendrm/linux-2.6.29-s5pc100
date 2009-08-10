@@ -113,6 +113,12 @@ ide_startstop_t ide_start_power_step(ide_drive_t *drive, struct request *rq)
 
 	memset(args, 0, sizeof(*args));
 
+#if defined(CONFIG_BLK_DEV_IDE_S3C)
+	/* FLUSH_CACHE in command set/feature */
+	if (drive->id[ATA_ID_FIELD_VALID] & 4)
+		drive->id[ATA_ID_CFS_ENABLE_2]  &= ~(0x1000);
+#endif
+
 	switch (pm->pm_step) {
 	case IDE_PM_FLUSH_CACHE:	/* Suspend step 1 (flush cache) */
 		if (drive->media != ide_disk)

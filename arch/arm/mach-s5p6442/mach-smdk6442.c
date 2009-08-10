@@ -40,6 +40,7 @@
 
 #include <asm/irq.h>
 #include <asm/mach-types.h>
+#include <asm/setup.h>
 
 #include <plat/regs-serial.h>
 #include <plat/iic.h>
@@ -393,16 +394,16 @@ static struct s3c_platform_fb fb_data __initdata = {
 struct map_desc smdk6442_iodesc[] = {};
 
 static struct platform_device *smdk6442_devices[] __initdata = {
-	&s3c_device_fb,
-	&s3c_device_wdt,
-	&s3c_device_rtc,
-	&s3c_device_i2c0,
-	&s3c_device_i2c1,
+//	&s3c_device_fb,
+//	&s3c_device_wdt,
+//	&s3c_device_rtc,
+//	&s3c_device_i2c0,
+//	&s3c_device_i2c1,
 
 //	&s3c_device_ts,
 	&s3c_device_smc911x,
-	&s3c_device_lcd,
-	&s3c_device_nand,
+//	&s3c_device_lcd,
+//	&s3c_device_nand,
 
 #ifdef CONFIG_S5P64XX_ADC
 	&s3c_device_adc,
@@ -474,55 +475,78 @@ static void __init smdk6442_map_io(void)
 	s3c_device_nand.name = "s5p6442-nand";
 
 	s5p64xx_init_io(smdk6442_iodesc, ARRAY_SIZE(smdk6442_iodesc));
-	s3c24xx_init_clocks(XTAL_FREQ);
+	s3c24xx_init_clocks(12000000);
 	s3c24xx_init_uarts(smdk6442_uartcfgs, ARRAY_SIZE(smdk6442_uartcfgs));
 
 	s3c64xx_reserve_bootmem();
-
-	smdk6442_setup_sdhci0();
 }
 
 static void __init smdk6442_smc911x_set(void)
 {
 	unsigned int tmp;
 
+	tmp = __raw_readl(S5P64XX_VA_GPIO + 0x2A0);
+	tmp &= ~(0xf << 20);
+	tmp |= (0x2 << 20);
+	__raw_writel(tmp,(S5P64XX_VA_GPIO + 0x2A0));
+
 	tmp = __raw_readl(S5P64XX_SROM_BW);
-	tmp &= ~(S5P64XX_SROM_BW_WAIT_ENABLE1_MASK | S5P64XX_SROM_BW_WAIT_ENABLE1_MASK |
-		S5P64XX_SROM_BW_DATA_WIDTH1_MASK);
-	tmp |= S5P64XX_SROM_BW_BYTE_ENABLE1_ENABLE | S5P64XX_SROM_BW_WAIT_ENABLE1_ENABLE |
-		S5P64XX_SROM_BW_DATA_WIDTH1_16BIT;
+	tmp &= ~(0xf << 20);
+	tmp |= S5P64XX_SROM_BW_DATA_WIDTH5_16BIT | (1 << 21);
 
 	__raw_writel(tmp, S5P64XX_SROM_BW);
 
 	__raw_writel(S5P64XX_SROM_BCn_TACS(0) | S5P64XX_SROM_BCn_TCOS(4) |
 			S5P64XX_SROM_BCn_TACC(13) | S5P64XX_SROM_BCn_TCOH(1) |
 			S5P64XX_SROM_BCn_TCAH(4) | S5P64XX_SROM_BCn_TACP(6) |
-			S5P64XX_SROM_BCn_PMC_NORMAL, S5P64XX_SROM_BC1);
+			S5P64XX_SROM_BCn_PMC_NORMAL, S5P64XX_SROM_BC5);
+
+	tmp = gpio_request(S5P64XX_GPH1(3),"GPH1");
+
+	if (tmp){
+		printk("gpio(GPH1_3) request error : %d\n",tmp);
+	}else{
+		s3c_gpio_cfgpin(S5P64XX_GPH1(3),S5P64XX_GPH1_3_EXT_INT1_3);
+	}
+
 }
 
 static void __init smdk6442_machine_init(void)
 {
-	s3c_device_nand.dev.platform_data = &s3c_nand_mtd_part_info;
+//	s3c_device_nand.dev.platform_data = &s3c_nand_mtd_part_info;
 
 	smdk6442_smc911x_set();
 
-	s3c_i2c0_set_platdata(NULL);
-	s3c_i2c1_set_platdata(NULL);
+//	s3c_i2c0_set_platdata(NULL);
+//	s3c_i2c1_set_platdata(NULL);
 
 //	s3c_ts_set_platdata(&s3c_ts_platform);
-	s3c_adc_set_platdata(&s3c_adc_platform);
+//	s3c_adc_set_platdata(&s3c_adc_platform);
 
-	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
-	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+//	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+//	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 
 	/* fb */
-	s3cfb_set_platdata(&fb_data);
+//	s3cfb_set_platdata(&fb_data);
 
 	platform_add_devices(smdk6442_devices, ARRAY_SIZE(smdk6442_devices));
 
-	s5p6442_pm_init();
+//	s5p6442_pm_init();
 
-	smdk_backlight_register();
+//	smdk_backlight_register();
+
+}
+
+static void __init smdk6442_fixup(struct machine_desc *desc,
+					struct tag *tags, char **cmdline,
+					struct meminfo *mi)
+{
+
+	mi->bank[0].start = 0x20000000;
+	mi->bank[0].size = 128 * SZ_1M;
+	mi->bank[0].node = 0;
+
+	mi->nr_banks = 1;
 
 }
 
@@ -531,7 +555,7 @@ MACHINE_START(SMDK6442, "SMDK6442")
 	.phys_io	= S3C_PA_UART & 0xfff00000,
 	.io_pg_offst	= (((u32)S3C_VA_UART) >> 18) & 0xfffc,
 	.boot_params	= S5P64XX_PA_SDRAM + 0x100,
-
+	.fixup		= smdk6442_fixup,
 	.init_irq	= s5p6442_init_irq,
 	.map_io		= smdk6442_map_io,
 	.init_machine	= smdk6442_machine_init,

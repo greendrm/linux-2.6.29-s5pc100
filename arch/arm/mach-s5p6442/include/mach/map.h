@@ -83,7 +83,7 @@
 /* DMA controller */
 #define S5P64XX_PA_DMA		(0xE9000000)
 
-#define S5P64XX_PA_SMC9115	(0x18000000)
+#define S5P64XX_PA_SMC9115	(0xA8000000)
 #define S5P64XX_SZ_SMC9115	SZ_512M
 
 ///////////////////////////////////////////////////

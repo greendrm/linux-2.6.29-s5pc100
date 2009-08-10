@@ -4199,6 +4199,7 @@ static void fsg_suspend(struct usb_gadget *gadget)
 
 	DBG(fsg, "suspend\n");
 	set_bit(SUSPENDED, &fsg->atomic_bitflags);
+	fsg->running = 0;
 }
 
 static void fsg_resume(struct usb_gadget *gadget)

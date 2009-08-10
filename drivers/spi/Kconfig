@@ -204,6 +204,46 @@ config SPI_SH_SCI
 	help
 	  SPI driver for SuperH SCI blocks.
 
+config SPI_S5PC110
+        tristate "S5PC110 SPI Driver"
+        depends on SPI && CPU_S5PC110
+        select SPI_CNTRLR_0
+        help
+          Say Y here to include support for SPI controller in the
+          Samsung S5PC110 based System-on-Chip devices.
+
+config SPI_CNTRLR_0
+        bool
+        depends on SPI_S5PC110
+        default y
+
+config SPI_CNTRLR_1
+        bool "SPI-1 Support"
+        depends on SPI_S5PC110 && SPI_CNTRLR_0
+        default n
+        help
+          Say N(recommended). This will initialize two controllers.
+
+config SPI_CNTRLR_2
+        bool "SPI-2 Support"
+        depends on SPI_S5PC110 && SPI_CNTRLR_1
+        default n
+        help
+          Say N(recommended). This will initialize three SPI controllers.
+
+config SPICLK_SRC_PCLK
+	bool
+        depends on SPI_S5PC110
+        default y
+
+config MMC_SPI_GPIO
+	bool "MMC-SPI support"
+        depends on SPI_S5PC110 && SPI_GPIO
+        default n
+	help
+	  Select this if you want to test MMC-SPI using GPIO bitbang. 
+	  Connect the MMC card to SPI controller 2.
+
 config SPI_S5PC100
 	tristate "S5PC100 SPI Driver"
 	depends on SPI && CPU_S5PC100

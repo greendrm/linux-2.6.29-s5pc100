@@ -209,6 +209,24 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
 	}, {
+                .name           = "spi",
+                .id             = 0,
+                .parent         = &clk_p66,
+                .enable         = s5pc11x_clk_ip3_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP3_SPI0,
+        }, {
+                .name           = "spi",
+                .id             = 1,
+                .parent         = &clk_p66,
+                .enable         = s5pc11x_clk_ip3_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP3_SPI1,
+        }, {
+                .name           = "spi",
+                .id             = 2,
+                .parent         = &clk_p66,
+                .enable         = s5pc11x_clk_ip3_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP3_SPI2,
+        }, {
 		.name		= "lcd",
 		.id		= -1,
 		.parent		= &clk_h166,
@@ -251,6 +269,27 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_PWM,
 	},
+
+	/* Audio (D1_5) devices */
+	{
+		.name		= "i2s_v50",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S0 is v5.0 */
+	}, {
+		.name		= "i2s_v32",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S1 is v3.2 */
+	}, {
+		.name		= "i2s_v32",
+		.id		= 1,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S2 is v3.2 */
+	}, 
 };
 
 static struct clk *clks[] __initdata = {

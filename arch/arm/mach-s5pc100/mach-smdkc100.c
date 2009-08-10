@@ -28,6 +28,7 @@
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 #include <linux/videodev2.h>
 #include <media/s5k4ba_platform.h>
 #include <media/s5k6aa_platform.h>
@@ -176,6 +177,10 @@ static struct s3c_spi_pdata s3c_slv_pdata_1[] __initdata = {
 };
 #endif
 
+#define SPI_GPIO_ID 0
+#define SPI_GPIO_DEVNUM 0
+#define SPI_GPIO_BUSNUM 0
+
 static struct spi_board_info s3c_spi_devs[] __initdata = {
 #if defined(CONFIG_SPI_CNTRLR_0)
 	[0] = {
@@ -196,7 +201,14 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
 		.irq		 = IRQ_SPI0,
 		.chip_select	 = 1,
 	},
+#undef SPI_GPIO_ID
+#define SPI_GPIO_ID 1
+#undef SPI_GPIO_DEVNUM
+#define SPI_GPIO_DEVNUM 2
+#undef SPI_GPIO_BUSNUM
+#define SPI_GPIO_BUSNUM 1
 #endif
+
 #if defined(CONFIG_SPI_CNTRLR_1)
 	[2] = {
 		.modalias	 = "spidev", /* Test Interface */
@@ -217,7 +229,7 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
 		.chip_select	 = 1,
 	},
 	[4] = {
-		.modalias	 = "mmc_spi", /* MMC SPI */
+		.modalias	 = "spidev", /* MMC SPI */
 		.mode		 = SPI_MODE_0 | SPI_CS_HIGH,	/* CPOL=0, CPHA=0 & CS is Active High */
 		.max_speed_hz    = 100000,
 		/* Connected to SPI-1 as 3rd Slave */
@@ -225,8 +237,44 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
 		.irq		 = IRQ_SPI1,
 		.chip_select	 = 2,
 	},
+#undef SPI_GPIO_ID
+#define SPI_GPIO_ID 2
+#undef SPI_GPIO_DEVNUM
+#define SPI_GPIO_DEVNUM 5
+#undef SPI_GPIO_BUSNUM
+#define SPI_GPIO_BUSNUM 2
+#endif
+
+#if defined(CONFIG_SPI_GPIO)
+	[SPI_GPIO_DEVNUM] = {
+		.modalias	 = "mmc_spi", /* MMC SPI */
+		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
+		.max_speed_hz    = 400000,
+		/* Connected to SPI-0 as 1st Slave */
+		.bus_num	 = SPI_GPIO_BUSNUM,
+		.chip_select	 = 0,
+		.controller_data = S5PC1XX_GPH1(0),
+	},
 #endif
 };
+
+#if defined(CONFIG_SPI_GPIO)
+struct spi_gpio_platform_data s3c_spigpio_pdata = {
+	.sck = S5PC1XX_GPG2(0),
+	.miso = S5PC1XX_GPG2(2),
+	.mosi = S5PC1XX_GPG2(3),
+	.num_chipselect = 1,
+};
+
+/* Generic GPIO Bitbanging contoller */
+struct platform_device s3c_device_spi_gpio = {
+	.name		= "spi_gpio",
+	.id		= SPI_GPIO_ID,
+	.dev		= {
+		.platform_data = &s3c_spigpio_pdata,
+	}
+};
+#endif
 
 static struct s3c24xx_uart_clksrc smdkc100_serial_clocks[] = {
 #if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
@@ -385,6 +433,9 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 #endif
 #ifdef CONFIG_SPI_CNTRLR_2
 	&s3c_device_spi2,
+#endif
+#if defined(CONFIG_SPI_GPIO)
+        &s3c_device_spi_gpio,
 #endif
 	&s3c_device_mfc,
 	&s3c_device_jpeg,
