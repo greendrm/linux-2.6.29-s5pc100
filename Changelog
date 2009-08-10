@@ -1503,3 +1503,25 @@ v2.6.29.4-dev-1.0.36: Thomas Abraham
 	Modified Files
 		M	drivers/usb/gadget/s3c_udc_otg.c
 
+v2.6.29.4-dev-1-0-37: Hatim Ali
+	- Added Support for SPI for S5PC110
+	
+	Modified Files:
+
+		M	arch/arm/mach-s5pc110/dma.c
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/include/mach/s3c-dma.h
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s5pc11x/Makefile
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/devs.c
+		M	arch/arm/plat-s5pc11x/gpiolib.c
+		M	arch/arm/plat-s5pc11x/include/plat/gpio-bank-b.h
+		M	drivers/spi/Kconfig
+		M	drivers/spi/Makefile
+		M	drivers/spi/spi_s3c.c
+		M	drivers/spi/spi_s3c.h
+
+	Added Files:
+		A	arch/arm/plat-s5pc11x/dev-spi.c
+
