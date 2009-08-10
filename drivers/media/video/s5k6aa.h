@@ -417,6 +417,8 @@ struct s5k6aa_regset_type {
 #define REG_SVNpathRomAddress			0x015C
 #define REG_TRAP_N_PATCH_START_ADD		0x1B00
 
+#define	setot_usForceClocksSettings		0x0AEA
+#define	setot_usConfigClocksSettings		0x0AEC	
 
 /*
  * User defined commands
@@ -2644,6 +2646,82 @@ unsigned char s5k6aa_init_reg[][4] = {
 };
 
 #define S5K6AA_INIT_REGS	(sizeof(s5k6aa_init_reg) / sizeof(s5k6aa_init_reg[0]))
+
+unsigned short s5k6aa_sleep_reg[][2] = {
+	{0x0028, 0x7000},
+	{0x002A, setot_usForceClocksSettings},
+	{0x0F12, 0x001E},
+	{0x002A, setot_usConfigClocksSettings},
+	{0x0F12, 0x001E},
+
+	{0x002A, REG_TC_GP_EnablePreview},
+	{0x0F12, 0x0000},
+	{0x002A, REG_TC_GP_EnablePreviewChanged},
+	{0x0F12, 0x0001},
+
+	{REG_DELAY, 100},
+
+	{0x0028, 0xD000},
+	{0x002A, 0xB0B0},
+	{0x0F12, 0x0001},
+	{REG_DELAY, 100},
+
+	{0x002A, 0xB0B4},
+	{0x0F12, 0x0000},
+
+	{0x002A, 0xB0A0},
+	{0x0F12, 0x0031},
+
+	{0x002A, 0xB0A0},
+	{0x0F12, 0x0010},
+
+	{0x002A, 0xB0A0},
+	{0x0F12, 0x0000},
+
+	{0x0028, 0x7000},
+	{0x002A, REG_TC_GP_SleepMode},
+	{0x0F12, 0x0001},
+	{0x002A, REG_TC_GP_SleepModeChanged},
+	{0x0F12, 0x0001},
+};
+
+#define S5K6AA_SLEEP_REGS	(sizeof(s5k6aa_sleep_reg) / sizeof(s5k6aa_sleep_reg[0]))
+
+unsigned short s5k6aa_wakeup_reg[][2] = {
+	{0x0028, 0x7000},
+	{0x002A, REG_TC_GP_SleepMode},
+	{0x0F12, 0x0000},
+	{0x002A, REG_TC_GP_SleepModeChanged},
+	{0x0F12, 0x0001},
+
+	{0x0028, 0xD000},
+	{0x002A, 0x1000},
+	{0x0F12, 0x0001},
+
+	{0x002A, 0x003A},
+	{0x0F12, 0x0000},
+
+	{REG_DELAY, 200},
+
+	{0x002A, 0xB0B0},
+	{0x0F12, 0x0000},
+
+	{0x002A, 0xB0A0},
+	{0x0F12, 0x003B},	
+
+	{0x002A, 0xB0B4},
+	{0x0F12, 0x0800},	
+
+	{REG_DELAY, 10},
+
+	{0x0028, 0x7000},
+	{0x002A, REG_TC_GP_EnablePreview},
+	{0x0F12, 0x0001},
+	{0x002A, REG_TC_GP_EnablePreviewChanged},
+	{0x0F12, 0x0001},
+};
+
+#define S5K6AA_WAKEUP_REGS	(sizeof(s5k6aa_wakeup_reg) / sizeof(s5k6aa_wakeup_reg[0]))
 
 /* Clock configuration: should be expanded to various clock input */
 static const struct s5k6aa_reg s5k6aa_mclk_24mhz[] = {

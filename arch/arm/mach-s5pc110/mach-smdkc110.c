@@ -585,19 +585,11 @@ static int smdkc110_cam1_power(int onoff)
 
 static int smdkc110_cam2_power(int onoff)
 {
-	void __iomem *regs = ioremap(S5PC11X_PA_FIMC0, SZ_4K);
-	u32 cfg;
-
-	/* MIPI */
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-
-	cfg = readl(regs + S3C_CIGCTRL);
-	cfg |= S3C_CIGCTRL_CAMRST_A;
-	writel(cfg, regs + S3C_CIGCTRL);
-
-	iounmap(regs);
+	gpio_request(S5PC11X_GPH0(3), "GPH0");
+	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5PC11X_GPH0(3), 0);
+	gpio_direction_output(S5PC11X_GPH0(3), 1);
+	gpio_free(S5PC11X_GPH0(3));
 
 	return 0;
 }
@@ -631,7 +623,7 @@ static struct i2c_board_info  __initdata i2c_camera_info[] = {
 };
 
 /* Camera interface setting */
-#define S5K3BA_CAM_CH	0
+#define S5K3BA_CAM_CH	1
 
 #if (S5K3BA_CAM_CH == 0)
 static struct s3c_platform_camera __initdata s5k3ba = {

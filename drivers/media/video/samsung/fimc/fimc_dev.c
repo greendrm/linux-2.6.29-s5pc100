@@ -64,8 +64,10 @@ void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes)
 {
 	mutex_lock(&ctrl->lock);
 
-	ctrl->mem.curr -= bytes;
-	*addr = 0;
+	if (*addr) {
+		ctrl->mem.curr -= bytes;
+		*addr = 0;
+	}
 
 	mutex_unlock(&ctrl->lock);
 }
@@ -319,7 +321,7 @@ static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
 	 * page frame number of the address for a source frame
 	 * to be stored at.
 	 */
-	pfn = __phys_to_pfn(ctrl->cap->bufs[idx].base);
+	pfn = __phys_to_pfn(ctrl->cap->bufs[idx].base[0]);
 
 	if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED)) {
 		dev_err(ctrl->dev, "%s: writable mapping must be shared\n",
@@ -638,8 +640,8 @@ static int fimc_release(struct file *filp)
 		mutex_unlock(&ctrl->lock);
 
 		for (i = 0; i < FIMC_CAPBUFS; i++) {
-			fimc_dma_free(ctrl, &ctrl->cap->bufs[i].base,
-					ctrl->cap->bufs[i].length);
+			fimc_dma_free(ctrl, &ctrl->cap->bufs[i].base[0],
+					ctrl->cap->bufs[i].length[0]);
 		}
 
 		mutex_lock(&ctrl->lock);

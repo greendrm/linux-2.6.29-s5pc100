@@ -119,8 +119,8 @@ struct fimc_meminfo {
 
 /* general buffer */
 struct fimc_buf_set {
-	dma_addr_t		base;
-	size_t			length;
+	dma_addr_t		base[3];
+	size_t			length[3];
 	enum videobuf_state	state;
 	u32			flags;
 	atomic_t		mapped_cnt;

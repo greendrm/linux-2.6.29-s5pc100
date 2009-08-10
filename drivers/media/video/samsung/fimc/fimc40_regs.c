@@ -234,11 +234,11 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 
 	cfg = readl(ctrl->regs + S3C_CIGCTRL);
 	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK | \
-		S3C_CIGCTRL_SELCAM_MASK);
+		S3C_CIGCTRL_SELCAM_FIMC_MASK);
 
 	/* Interface selection */
 	if (cam->type == CAM_TYPE_MIPI) {
-		cfg |= S3C_CIGCTRL_SELCAM_MIPI;
+		cfg |= S3C_CIGCTRL_SELCAM_FIMC_MIPI;
 		writel(cam->fmt, ctrl->regs + S3C_CSIIMGFMT);
 	} else if (cam->type == CAM_TYPE_ITU) {
 		if (cam->id == CAMERA_PAR_A)
@@ -246,7 +246,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		else
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_B;
 		/* switch to ITU interface */
-		cfg |= S3C_CIGCTRL_SELCAM_ITU;
+		cfg |= S3C_CIGCTRL_SELCAM_FIMC_ITU;
 	} else {
 		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
 			__func__);

@@ -112,7 +112,7 @@ again:
 	/* abnormal case: retry 5 times */
 	if (retry < 5) {
 		dev_err(&client->dev, "%s: address: 0x%02x%02x, " \
-			"value: 0x%02x%02x\n", __FUNCTION__, \
+			"value: 0x%02x%02x\n", __func__, \
 			reg[0], reg[1], reg[2], reg[3]);
 		retry++;
 		goto again;
@@ -396,7 +396,7 @@ static int s5k6aa_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		err = 0;
 		break;
 	default:
-		dev_err(&client->dev, "%s: no such ctrl\n", __FUNCTION__);
+		dev_err(&client->dev, "%s: no such ctrl\n", __func__);
 		break;
 	}
 	
@@ -414,42 +414,42 @@ static int s5k6aa_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_EXPOSURE:
 		dev_dbg(&client->dev, "%s: V4L2_CID_EXPOSURE\n", \
-			__FUNCTION__);
+			__func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_ev_bias[ctrl->value]);
 		break;
 	case V4L2_CID_AUTO_WHITE_BALANCE:
 		dev_dbg(&client->dev, "%s: V4L2_CID_AUTO_WHITE_BALANCE\n", \
-			__FUNCTION__);
+			__func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_awb_enable[ctrl->value]);
 		break;
 	case V4L2_CID_WHITE_BALANCE_PRESET:
 		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_PRESET\n", \
-			__FUNCTION__);
+			__func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_wb_preset[ctrl->value]);
 		break;
 	case V4L2_CID_WHITE_BALANCE_TEMPERATURE:
 		dev_dbg(&client->dev, "%s: V4L2_CID_WHITE_BALANCE_TEMPERATURE\n", \
-			__FUNCTION__);
+			__func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_wb_temperature[ctrl->value]);
 		break;
 	case V4L2_CID_COLORFX:
-		dev_dbg(&client->dev, "%s: V4L2_CID_COLORFX\n", __FUNCTION__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_COLORFX\n", __func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_color_effect[ctrl->value]);
 		break;
 	case V4L2_CID_CONTRAST:
-		dev_dbg(&client->dev, "%s: V4L2_CID_CONTRAST\n", __FUNCTION__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_CONTRAST\n", __func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_contrast_bias[ctrl->value]);
 		break;
 	case V4L2_CID_SATURATION:
-		dev_dbg(&client->dev, "%s: V4L2_CID_SATURATION\n", __FUNCTION__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SATURATION\n", __func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_saturation_bias[ctrl->value]);
 		break;
 	case V4L2_CID_SHARPNESS:
-		dev_dbg(&client->dev, "%s: V4L2_CID_SHARPNESS\n", __FUNCTION__);
+		dev_dbg(&client->dev, "%s: V4L2_CID_SHARPNESS\n", __func__);
 		err = s5k6aa_write_regs(sd, s5k6aa_regs_sharpness_bias[ctrl->value]);
 		break;
 	default:
-		dev_err(&client->dev, "%s: no such control\n", __FUNCTION__);
+		dev_err(&client->dev, "%s: no such control\n", __func__);
 		break;
 	}
 
@@ -459,7 +459,7 @@ static int s5k6aa_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		return 0;
 
 out:
-	dev_dbg(&client->dev, "%s: vidioc_s_ctrl failed\n", __FUNCTION__);
+	dev_dbg(&client->dev, "%s: vidioc_s_ctrl failed\n", __func__);
 	return err;
 #else
 	return 0;
@@ -471,7 +471,7 @@ static int s5k6aa_init(struct v4l2_subdev *sd, u32 val)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int err = -EINVAL, i;
 
-	v4l_info(client, "%s: camera initialization start\n", __FUNCTION__);
+	v4l_info(client, "%s: camera initialization start\n", __func__);
 
 	for (i = 0; i < S5K6AA_INIT_REGS; i++) {
 		if (s5k6aa_init_reg[i][0] == REG_DELAY) {
@@ -484,12 +484,12 @@ static int s5k6aa_init(struct v4l2_subdev *sd, u32 val)
 
 		if (err < 0)
 			v4l_info(client, "%s: register set failed\n", \
-			__FUNCTION__);
+			__func__);
 	}
 
 	if (err < 0) {
 		v4l_err(client, "%s: camera initialization failed\n", \
-			__FUNCTION__);
+			__func__);
 		return -EIO;	/* FIXME */
 	}
 
@@ -513,7 +513,7 @@ static int s5k6aa_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 	pdata = client->dev.platform_data;
 
 	if (!pdata) {
-		dev_err(&client->dev, "%s: no platform data\n", __FUNCTION__);
+		dev_err(&client->dev, "%s: no platform data\n", __func__);
 		return -ENODEV;
 	}
 
@@ -548,6 +548,69 @@ static int s5k6aa_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 	return 0;
 }
 
+static int s5k6aa_sleep(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int err = -EINVAL, i;
+
+	v4l_info(client, "%s: sleep mode\n", __func__);
+
+	for (i = 0; i < S5K6AA_SLEEP_REGS; i++) {
+		if (s5k6aa_sleep_reg[i][0] == REG_DELAY) {
+			mdelay(s5k6aa_sleep_reg[i][1]);
+			err = 0;
+		} else {
+			err = s5k6aa_i2c_write(sd, \
+				(unsigned char *) s5k6aa_sleep_reg[i], \
+				sizeof(s5k6aa_sleep_reg[i]));
+		}
+
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", __func__);
+	}
+
+	if (err < 0) {
+		v4l_err(client, "%s: sleep failed\n", __func__);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int s5k6aa_wakeup(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int err = -EINVAL, i;
+
+	v4l_info(client, "%s: wakeup mode\n", __func__);
+
+	for (i = 0; i < S5K6AA_WAKEUP_REGS; i++) {
+		if (s5k6aa_wakeup_reg[i][0] == REG_DELAY) {
+			mdelay(s5k6aa_wakeup_reg[i][1]);
+			err = 0;
+		} else {
+			err = s5k6aa_i2c_write(sd, \
+				(unsigned char *) s5k6aa_wakeup_reg[i], \
+				sizeof(s5k6aa_wakeup_reg[i]));
+		}
+
+		if (err < 0)
+			v4l_info(client, "%s: register set failed\n", __func__);
+	}
+
+	if (err < 0) {
+		v4l_err(client, "%s: wake up failed\n", __func__);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int s5k6aa_s_stream(struct v4l2_subdev *sd, int enable)
+{
+	return (enable ? s5k6aa_wakeup(sd) : s5k6aa_sleep(sd));
+}
+
 static const struct v4l2_subdev_core_ops s5k6aa_core_ops = {
 	.init = s5k6aa_init,	/* initializing API */
 	.s_config = s5k6aa_s_config,	/* Fetch platform data */
@@ -567,6 +630,7 @@ static const struct v4l2_subdev_video_ops s5k6aa_video_ops = {
 	.try_fmt = s5k6aa_try_fmt,
 	.g_parm = s5k6aa_g_parm,
 	.s_parm = s5k6aa_s_parm,
+	.s_stream = s5k6aa_s_stream,
 };
 
 static const struct v4l2_subdev_ops s5k6aa_ops = {
