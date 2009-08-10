@@ -163,23 +163,15 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		return ret;
 	}
 
-	/* subdev call for sleep */
-	ret = v4l2_subdev_call(cam->sd, video, s_stream, 0);
-	if (ret == -ENOIOCTLCMD) {
-		dev_err(ctrl->dev, "%s: s_stream subdev api not supported\n",
-			__func__);
-		return ret;
-	}
+	if (cam->type == CAM_TYPE_MIPI) {
+		/* subdev call for sleep: no error although no s_stream api */
+		v4l2_subdev_call(cam->sd, video, s_stream, 0);
 
-	/* MIPI-CSI2 start */
-	s3c_csis_start();
+		/* MIPI-CSI2 start */
+		s3c_csis_start();
 
-	/* subdev call for wakeup */
-	ret = v4l2_subdev_call(cam->sd, video, s_stream, 1);
-	if (ret == -ENOIOCTLCMD) {
-		dev_err(ctrl->dev, "%s: s_stream subdev api not supported\n",
-			__func__);
-		return ret;
+		/* subdev call for wakeup: no error although no s_stream api */
+		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 
 	cam->initialized = 1;

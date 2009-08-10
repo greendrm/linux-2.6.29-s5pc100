@@ -211,6 +211,12 @@ static void s3c_csis_set_hs_settle(int settle)
 
 void s3c_csis_start(void)
 {
+	struct s3c_platform_csis *pdata;
+
+	pdata = to_csis_plat(s3c_csis->dev);
+	if (pdata->cfg_phy_global)
+		pdata->cfg_phy_global(1);
+	
 	s3c_csis_reset();
 	s3c_csis_set_nr_lanes(S3C_CSIS_NR_LANES);
 
@@ -241,7 +247,7 @@ static void s3c_csis_stop(struct platform_device *pdev)
 
 	plat = to_csis_plat(&pdev->dev);
 	if (plat->cfg_phy_global)
-		plat->cfg_phy_global(pdev, 0);
+		plat->cfg_phy_global(0);
 }
 
 static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
@@ -263,12 +269,11 @@ static int s3c_csis_probe(struct platform_device *pdev)
 
 	s3c_csis_set_info();
 
+	s3c_csis->dev = &pdev->dev;
+
 	pdata = to_csis_plat(&pdev->dev);
 	if (pdata->cfg_gpio)
-		pdata->cfg_gpio(pdev);
-
-	if (pdata->cfg_phy_global)
-		pdata->cfg_phy_global(pdev, 1);
+		pdata->cfg_gpio();
 
 	parent = clk_get(&pdev->dev, pdata->srclk_name);
 	if (IS_ERR(parent)) {

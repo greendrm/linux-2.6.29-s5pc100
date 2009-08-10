@@ -71,7 +71,7 @@ void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes)
 
 	mutex_unlock(&ctrl->lock);
 }
-
+#if 0
 static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 {
 	int ret = -1;
@@ -139,7 +139,7 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 	if (wakeup == 1)
 		wake_up_interruptible(&ctrl->wq);
 }
-
+#endif
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
@@ -157,8 +157,8 @@ static irqreturn_t fimc_irq(int irq, void *dev_id)
 
 	if (ctrl->cap)
 		fimc_irq_cap(ctrl);
-	else if (ctrl->out)
-		fimc_irq_out(ctrl);
+//	else if (ctrl->out)
+//		fimc_irq_out(ctrl);
 
 	return IRQ_HANDLED;
 }
@@ -242,7 +242,7 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 
 	return 0;
 }
-
+#if 0
 static void fimc_mmap_open(struct vm_area_struct *vma)
 {
 	struct fimc_global *dev = fimc_dev;
@@ -307,7 +307,7 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 
 	return 0;
 }
-
+#endif
 static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
 {
 	struct fimc_control *ctrl = filp->private_data;
@@ -344,8 +344,8 @@ static int fimc_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	if (ctrl->cap)
 		ret = fimc_mmap_cap(filp, vma);
-	else
-		ret = fimc_mmap_out(filp, vma);
+//	else
+//		ret = fimc_mmap_out(filp, vma);
 
 	return ret;
 }
@@ -648,7 +648,7 @@ static int fimc_release(struct file *filp)
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
 	}
-
+#if 0
 	if (ctrl->out) {
 		if (ctrl->status != FIMC_STREAMOFF) {
 			ret = fimc_outdev_stop_streaming(ctrl);
@@ -661,7 +661,7 @@ static int fimc_release(struct file *filp)
 		kfree(ctrl->out);
 		ctrl->out = NULL;
 	}
-
+#endif
 	mutex_unlock(&ctrl->lock);
 
 	dev_info(ctrl->dev, "%s: successfully released\n", __func__);
