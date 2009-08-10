@@ -1560,3 +1560,5 @@ v2.6.29.4-dev-1-0-41: Hatim Ali
 	M       drivers/spi/spi_s3c.c
 	M	drivers/spi/spi_s3c.h
 	M	arch/arm/mach-s5pc110/mach-smdkc110.c
+v2.6.29.4-dev-1-0-42: Hyunwoong Kim
+	- Added New Tag for s5pc110(2009.08.10)
