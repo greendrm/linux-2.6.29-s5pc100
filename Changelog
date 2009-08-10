@@ -1532,3 +1532,15 @@ v2.6.29.4-dev-1-0-38: Jongpill Lee
 		M       arch/arm/plat-s5p64xx/cpu.c
 		M       arch/arm/plat-s5p64xx/s5p6442-clock.c
 		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-0-39: Jaeryul Oh
+	- Backed for MFC(Write-back allocate for L2 cache on not applied) 
+	- Modified MFC driver on SMDKC110
+	
+	Modified Files:
+
+		M	arch/arm/mm/proc-v7.S
+		M	drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
