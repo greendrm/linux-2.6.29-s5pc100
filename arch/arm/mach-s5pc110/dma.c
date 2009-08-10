@@ -224,6 +224,16 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels	= MAP2(S3C_PDMA1_SPI1_TX),
 		.hw_addr.to	= S3C_PDMA1_SPI1_TX,
 	},
+        [DMACH_SPI2_IN] = {
+                .name           = "spi2-in",
+                .channels       = MAP1(S3C_PDMA1_SPI2_RX),
+                .hw_addr.from   = S3C_PDMA1_SPI2_RX,
+        },
+        [DMACH_SPI2_OUT] = {
+                .name           = "spi2-out",
+                .channels       = MAP1(S3C_PDMA1_SPI2_TX),
+                .hw_addr.to     = S3C_PDMA1_SPI2_TX,
+        },
 	[DMACH_AC97_PCM_OUT] = {
 		.name		= "ac97-pcm-out",
 		.channels	= MAP1(S3C_PDMA0_AC_PCMOUT),

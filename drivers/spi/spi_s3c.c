@@ -25,7 +25,7 @@
 
 #ifdef DEBUGSPI
 
-#define dbg_printk(x...)	printk(x)
+#define dbg_printk(x...)        printk(x)
 
 static void dump_regs(struct s3cspi_bus *sspi)
 {
@@ -56,7 +56,11 @@ static void dump_regs(struct s3cspi_bus *sspi)
 	   printk("Rx_Rdy\t");
 	if(val & SPI_STUS_TX_FIFORDY)
 	   printk("Tx_Rdy\t");
+#if defined (CONFIG_CPU_S5PC11X)
+	printk("Rx/TxLvl=%d,%d\n", (val>>15)&0x1ff, (val>>6)&0x1ff);
+#else
 	printk("Rx/TxLvl=%d,%d\n", (val>>13)&0x7f, (val>>6)&0x7f);
+#endif
 }
 
 static void dump_spidevice_info(struct spi_device *spi)
@@ -118,16 +122,28 @@ static inline void flush_spi(struct s3cspi_bus *sspi)
 	/* Flush TxFIFO*/
 	do{
 	   val = readl(sspi->regs + S3C_SPI_STATUS);
+#if defined (CONFIG_CPU_S5PC11X)
+	   val = (val>>6) & 0x1ff;
+#else
 	   val = (val>>6) & 0x7f;
+#endif
 	}while(val);
 
 	/* Flush RxFIFO*/
 	val = readl(sspi->regs + S3C_SPI_STATUS);
+#if defined (CONFIG_CPU_S5PC11X)
+	val = (val>>15) & 0x1ff;
+#else
 	val = (val>>13) & 0x7f;
+#endif
 	while(val){
 	   readl(sspi->regs + S3C_SPI_RX_DATA);
 	   val = readl(sspi->regs + S3C_SPI_STATUS);
-	   val = (val>>13) & 0x7f;
+#if defined (CONFIG_CPU_S5PC11X)
+        val = (val>>15) & 0x1ff;
+#else
+        val = (val>>13) & 0x7f;
+#endif
 	}
 
 	val = readl(sspi->regs + S3C_SPI_CH_CFG);
@@ -204,8 +220,7 @@ static inline void enable_cs(struct s3cspi_bus *sspi, struct spi_device *spi)
 	}
 
 	spd = &sspi->spi_mstinfo->spd[spi->chip_select];
-	val = readl(sspi->regs + S3C_SPI_SLAVE_SEL);
-
+	val = readl(sspi->regs + S3C_SPI_SLAVE_SEL);	
 	if(sspi->cur_mode & SPI_SLAVE){
 	   val |= SPI_SLAVE_AUTO; /* Auto Mode */
 	   val |= SPI_SLAVE_SIG_INACT;
@@ -228,7 +243,6 @@ static inline void disable_cs(struct s3cspi_bus *sspi, struct spi_device *spi)
 {
 	u32 val;
 	struct s3c_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
-
 	if(sspi->tgl_spi == spi)
 	   sspi->tgl_spi = NULL;
 
@@ -360,7 +374,7 @@ static irqreturn_t s3c_spi_interrupt(int irq, void *dev_id)
 
 	dump_regs(sspi);
 	val = readl(sspi->regs + S3C_SPI_PENDING_CLR);
-	dbg_printk("PENDING=%x\n", val);
+	dbg_printk("%s: PENDING=%x\n", __FUNCTION__, val);
 	writel(val, sspi->regs + S3C_SPI_PENDING_CLR);
 
 	/* We get interrupted only for bad news */
@@ -385,10 +399,10 @@ void s3c_spi_dma_rxcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enu
 
 	if(res == S3C2410_RES_OK){
 	   sspi->rx_done = PASS;
-	   //dbg_printk("DmaRx-%d ", size);
+	   dbg_printk("DmaRx-%d ", size);
 	}else{
 	   sspi->rx_done = FAIL;
-	   dbg_printk("DmaAbrtRx-%d ", size);
+	   dbg_printk("DmaAbrtRx-%d\n", size);
 	}
 
 	if(sspi->tx_done != BUSY && !(atomic_read(&sspi->state) & IRQERR)) /* If other done and all OK */
@@ -401,10 +415,10 @@ void s3c_spi_dma_txcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enu
 
 	if(res == S3C2410_RES_OK){
 	   sspi->tx_done = PASS;
-	   //dbg_printk("DmaTx-%d ", size);
+	   dbg_printk("DmaTx-%d tx done \n", size);
 	}else{
 	   sspi->tx_done = FAIL;
-	   dbg_printk("DmaAbrtTx-%d ", size);
+	   dbg_printk("DmaAbrtTx-%d \n", size);
 	}
 
 	if(sspi->rx_done != BUSY && !(atomic_read(&sspi->state) & IRQERR)) /* If other done and all OK */
@@ -416,7 +430,11 @@ static int wait_for_txshiftout(struct s3cspi_bus *sspi, unsigned long t)
 	unsigned long timeout;
 
 	timeout = jiffies + t;
+#if defined (CONFIG_CPU_S5PC110)
+	while((__raw_readl(sspi->regs + S3C_SPI_STATUS) >> 6) & 0x1ff){
+#else
 	while((__raw_readl(sspi->regs + S3C_SPI_STATUS) >> 6) & 0x7f){
+#endif
 	   if(time_after(jiffies, timeout))
 	      return -1;
 	   cpu_relax();
@@ -489,7 +507,7 @@ static int s3c_spi_map_xfer(struct s3cspi_bus *sspi, struct spi_transfer *xfer)
 	      sspi->tx_tmp = (void *)sspi->tx_dma_cpu;
 	   }
 	}else{
-	   dbg_printk("If you plan to use this Xfer size often, increase S3C_SPI_DMABUF_LEN\n");
+	   dbg_printk("%s :If you plan to use this Xfer size often, increase S3C_SPI_DMABUF_LEN\n",__FUNCTION__);
 	   if(xfer->rx_buf != NULL){
 	      sspi->rx_tmp = dma_alloc_coherent(dev, S3C_SPI_DMABUF_LEN, 
 							&xfer->rx_dma, GFP_KERNEL | GFP_DMA);
@@ -770,6 +788,7 @@ static int s3c_spi_setup(struct spi_device *spi)
 	struct s3c_spi_mstr_info *smi = sspi->spi_mstinfo;
 	struct s3c_spi_pdata *spd = &sspi->spi_mstinfo->spd[spi->chip_select];
 
+
 	spin_lock_irqsave(&sspi->lock, flags);
 
 	list_for_each_entry(msg, &sspi->queue, queue){
@@ -931,19 +950,19 @@ static int __init s3c_spi_probe(struct platform_device *pdev)
 		ret = -EBUSY;
 		goto lb9;
 	}
-
 	sspi->workqueue = create_singlethread_workqueue(master->dev.parent->bus_id);
 	if(!sspi->workqueue){
 		dev_err(&pdev->dev, "cannot create workqueue\n");
 		ret = -EBUSY;
 		goto lb10;
 	}
-
 	/* Configure GPIOs */
 	if(pdev->id == 0)
 		SETUP_SPI(sspi, 0);
 	else if(pdev->id == 1)
 		SETUP_SPI(sspi, 1);
+	else if(pdev->id == 2)
+		SETUP_SPI_CNTRL2(sspi, 2);
 	S3C_SETGPIOPULL(sspi);
 
 	if(s3c2410_dma_request(sspi->rx_dmach, &s3c_spi_dma_client, NULL)){

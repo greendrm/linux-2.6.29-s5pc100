@@ -57,6 +57,20 @@
 #include <plat/pm.h>
 #include <plat/regs-power.h>
 
+#if 1
+#include <linux/uaccess.h>
+
+#include <linux/stat.h>
+#include <linux/proc_fs.h>
+
+#define MODE_CFG	S5P_INFORM1
+
+struct proc_dir_entry *proc_root_fp 	= NULL;
+
+struct proc_dir_entry *proc_deep_command_fp 	= NULL;
+char proc_deep_command_str[PAGE_SIZE-80] 	= { 0,};
+#endif
+
 /* for external use */
 
 unsigned long s5pc1xx_pm_flags;
@@ -511,7 +525,18 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	/* Set WFI instruction to SLEEP mode */
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
-	tmp |= S5P_CFG_WFI_SLEEP;
+
+	if(__raw_readl(MODE_CFG) == 0){	
+		tmp |= (S5P_CFG_WFI_SLEEP);
+		printk("normal sleep mode\n");
+	}else{
+		tmp &= ~( 0x1f << 27 );
+		tmp |= (S5P_CFG_WFI_DEEPIDLE | (1 << 31) | (1 << 27) | (0xfff << 7));
+		__raw_writel(((0x1 << 0) | (0x1a0 << 16)) ,S5P_CLAMP_STABLE);
+
+		printk("deep idle mode\n");		
+	}
+		
 	__raw_writel(tmp, S5P_PWR_CFG);
 
 	/* Clear WAKEUP_STAT register for next wakeup */
@@ -524,6 +549,7 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp |= (STA_TYPE_SFR << S5P_OTHER_STA_TYPE);
 	__raw_writel(tmp , S5P_OTHERS);
 	
+
 	__raw_writel(((S5P_PWR_STABLE_COUNT << S5P_PWR_STA_CNT) | (1 << S5P_PWR_STA_EXP_SCALE)), S5P_PWR_STABLE);
 
 	/* Set Syscon Interrupt */
@@ -531,10 +557,12 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp |= (1 << S5P_OTHER_SYS_INT);
 	__raw_writel(tmp, S5P_OTHERS);
 
-	/* Disable OSC_EN (Disable X-tal Osc Pad in Sleep mode) */
-	tmp = __raw_readl(S5P_SLEEP_CFG);
-	tmp &= ~(1 << 0);
-	__raw_writel(tmp, S5P_SLEEP_CFG);
+	if(__raw_readl(MODE_CFG) == 0){
+		/* Disable OSC_EN (Disable X-tal Osc Pad in Sleep mode) */
+		tmp = __raw_readl(S5P_SLEEP_CFG);
+		tmp &= ~(1 << 0);
+		__raw_writel(tmp, S5P_SLEEP_CFG);
+	}
 
 	/* s5pc1xx_cpu_save will also act as our return point from when
 	 * we resume as it saves its own register state, so use the return
@@ -599,6 +627,69 @@ static struct platform_suspend_ops s5pc1xx_pm_ops = {
  * it.
 */
 
+#if 1
+int write_deep_command(struct file *file, const char __user *buffer,
+					unsigned long count, void *data)
+{
+	char *real_data;
+
+	real_data = (char *) data;
+
+	if(copy_from_user(real_data, buffer, count))
+		return -EFAULT;
+
+	if(!(strncmp(real_data,"ON",2))){
+		printk(KERN_ERR "Deep idle mode \n");
+		__raw_writel(0x23452345,S5P_INFORM1);		
+	}else if(!(strncmp(real_data,"OFF",3))){
+		printk(KERN_ERR "Normal sleep mode \n");
+		__raw_writel(0x0,S5P_INFORM1);
+	}else{
+		printk(KERN_ERR "invaild value\n");
+	}
+
+	return count;	
+	
+}
+
+int read_deep_command(char *page, char **start, off_t off,
+			int count, int *eof, void *data_unused)
+{
+	char *buf;
+	u32 inform1_val;
+
+	inform1_val = __raw_readl(MODE_CFG);
+
+	buf = page;
+
+	buf += sprintf(buf, "INFROM1 : %x\n", inform1_val);
+
+	return buf - page;	
+	
+}
+
+int __init s5pc1xx_pm_init(void)
+{
+	printk("s5pc1xx Power Management, (c) 2008 Samsung Electronics\n");
+
+	proc_root_fp = proc_mkdir("deep_idle_test", 0);
+
+	proc_deep_command_fp = create_proc_entry("deep_command", S_IFREG | S_IRWXU, proc_root_fp);
+	if(proc_deep_command_fp) {
+		proc_deep_command_fp->data = proc_deep_command_str;
+		proc_deep_command_fp->write_proc = write_deep_command;
+		proc_deep_command_fp->read_proc = read_deep_command;
+	}	
+
+	weint_base = ioremap(S5P_APM_BASE, 0x350);
+
+	/* set the irq configuration for wake */
+	suspend_set_ops(&s5pc1xx_pm_ops);
+	return 0;
+}
+
+#else
+
 int __init s5pc1xx_pm_init(void)
 {
 	printk("s5pc1xx Power Management, (c) 2008 Samsung Electronics\n");
@@ -609,3 +700,5 @@ int __init s5pc1xx_pm_init(void)
 	suspend_set_ops(&s5pc1xx_pm_ops);
 	return 0;
 }
+#endif
+

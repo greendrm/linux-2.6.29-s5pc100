@@ -818,20 +818,10 @@ static int __devexit s3c_ide_remove(struct platform_device *pdev)
 #ifdef CONFIG_PM
 static int s3c_ide_suspend(struct platform_device *pdev, pm_message_t state)
 {
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	s3c_ide_hwif_t *s3c_hwif = &s3c_ide_hwif;
-	u16 *id = s3c_hwif->drive->id;
-#endif
 	struct ide_host *host = platform_get_drvdata(pdev);
 
         disable_irq(IRQ_CFC);
         clk_disable(s3cide_clock);
-
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	/* FLUSH_CACHE in command set/feature */
-        id[ATA_ID_CFS_ENABLE_2]  &= ~(0x1000);
-#endif
-
 	ide_host_remove(host);
 
         return 0;
