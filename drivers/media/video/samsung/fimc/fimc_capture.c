@@ -164,13 +164,12 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	}
 
 	if (cam->type == CAM_TYPE_MIPI) {
-		/* subdev call for sleep: no error although no s_stream api */
+		/* 
+		 * subdev call for sleep/wakeup:
+		 * no error although no s_stream api support
+		*/
 		v4l2_subdev_call(cam->sd, video, s_stream, 0);
-
-		/* MIPI-CSI2 start */
 		s3c_csis_start();
-
-		/* subdev call for wakeup: no error although no s_stream api */
 		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 
