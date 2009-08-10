@@ -22,6 +22,7 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/partitions.h>
@@ -305,96 +306,143 @@ static struct s3c2410_uartcfg smdk6442_uartcfgs[] __initdata = {
 	},
 };
 
-#ifdef CONFIG_FB_S3C
-static void smdk6442_cfg_gpio(struct platform_device *pdev)
+#ifdef CONFIG_FB_S3C_AMS320
+static void ams320_cfg_gpio(struct platform_device *pdev)
 {
-	void __iomem *syscon;
 	int i;
 
-	syscon = ioremap(S5P64XX_PA_SYSCON, SZ_128K);
-	writel(0x10, syscon + 0x7008);
-
 	for (i = 0; i < 8; i++) {
-		s3c_gpio_setpull(S5P64XX_GPF0(i), S3C_GPIO_PULL_NONE);
 		s3c_gpio_cfgpin(S5P64XX_GPF0(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5P64XX_GPF0(i), S3C_GPIO_PULL_NONE);
 	}
 
 	for (i = 0; i < 8; i++) {
-		s3c_gpio_setpull(S5P64XX_GPF1(i), S3C_GPIO_PULL_NONE);
 		s3c_gpio_cfgpin(S5P64XX_GPF1(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5P64XX_GPF1(i), S3C_GPIO_PULL_NONE);
 	}
 
 	for (i = 0; i < 8; i++) {
-		s3c_gpio_setpull(S5P64XX_GPF2(i), S3C_GPIO_PULL_NONE);
 		s3c_gpio_cfgpin(S5P64XX_GPF2(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5P64XX_GPF2(i), S3C_GPIO_PULL_NONE);
 	}
 
 	for (i = 0; i < 4; i++) {
-		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
 		s3c_gpio_cfgpin(S5P64XX_GPF3(i), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
 	}
 
-	iounmap(syscon);
+	/* drive strength to max */
+	writel(0xffffffff, S5P64XX_VA_GPIO + 0x12c);
+	writel(0xffffffff, S5P64XX_VA_GPIO + 0x14c);
+	writel(0xffffffff, S5P64XX_VA_GPIO + 0x16c);
+	writel(0x000000ff, S5P64XX_VA_GPIO + 0x18c);
+
+#if 1
+	s3c_gpio_cfgpin(S5P64XX_GPB(0), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5P64XX_GPB(1), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5P64XX_GPB(2), S3C_GPIO_SFN(1));
+	s3c_gpio_cfgpin(S5P64XX_GPB(3), S3C_GPIO_SFN(1));
+#else
+	/* why the followings do not work? */
+	gpio_request(S5P64XX_GPB(4), "GPB");
+	gpio_request(S5P64XX_GPB(5), "GPB");
+	gpio_request(S5P64XX_GPB(6), "GPB");
+	gpio_request(S5P64XX_GPB(7), "GPB");
+	gpio_direction_output(S5P64XX_GPB(4), 0);
+	gpio_direction_output(S5P64XX_GPB(5), 0);
+	gpio_direction_output(S5P64XX_GPB(6), 0);
+	gpio_direction_output(S5P64XX_GPB(7), 0);
+#endif
+	s3c_gpio_setpull(S5P64XX_GPB(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPB(1), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPB(2), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPB(3), S3C_GPIO_PULL_NONE);
 }
 
-static int smdk6442_backlight_on(struct platform_device *pdev)
+static int ams320_backlight_on(struct platform_device *pdev)
 {
 	int err;
 
-	err = gpio_request(S5P64XX_GPD0(1), "GPD0");
+	err = gpio_request(S5P64XX_GPF3(4), "GPF3");
+
 	if (err) {
-		printk(KERN_ERR "failed to request GPD0 for "
+		printk(KERN_ERR "failed to request GPF3 for "
 			"lcd backlight control\n");
 		return err;
 	}
 
-	gpio_direction_output(S5P64XX_GPD0(1), 1);
-	gpio_free(S5P64XX_GPD0(1));
+	gpio_direction_output(S5P64XX_GPF3(4), 1);
+	gpio_free(S5P64XX_GPF3(4));
 
 	return 0;
 }
 
-static int smdk6442_reset_lcd(struct platform_device *pdev)
+static int ams320_reset_lcd(struct platform_device *pdev)
 {
 	int err;
 
-	err = gpio_request(S5P64XX_GPH0(6), "GPH0");
+	err = gpio_request(S5P64XX_GPH3(5), "GPH3");
 	if (err) {
-		printk(KERN_ERR "failed to request GPH0 for "
+		printk(KERN_ERR "failed to request GPH3 for "
 			"lcd reset control\n");
 		return err;
 	}
 
-	s3c_gpio_setpull(S5P64XX_GPH0(6), S3C_GPIO_PULL_NONE);
-
-	gpio_direction_output(S5P64XX_GPH0(6), 0);
+	gpio_direction_output(S5P64XX_GPH3(5), 1);
 	mdelay(100);
 
-	gpio_set_value(S5P64XX_GPH0(6), 1);
+	gpio_set_value(S5P64XX_GPH3(5), 0);
 	mdelay(10);
 
-	gpio_free(S5P64XX_GPH0(6));
+	gpio_set_value(S5P64XX_GPH3(5), 1);
+	mdelay(10);
+
+	gpio_free(S5P64XX_GPH3(5));
 
 	return 0;
 }
 
-static struct s3c_platform_fb fb_data __initdata = {
+static struct s3c_platform_fb ams320_data __initdata = {
 	.hw_ver	= 0x60,
 	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
-	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
+	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
 
-	.cfg_gpio = smdk6442_cfg_gpio,
-	.backlight_on = smdk6442_backlight_on,
-	.reset_lcd = smdk6442_reset_lcd,
+	.cfg_gpio = ams320_cfg_gpio,
+	.backlight_on = ams320_backlight_on,
+	.reset_lcd = ams320_reset_lcd,
 };
+
+static struct i2c_gpio_platform_data ams320_i2c_data = {
+	.sda_pin	= S5P64XX_GPD1(0),
+	.scl_pin	= S5P64XX_GPD1(1),
+};
+
+static struct platform_device i2c_gpio_ams320 = {
+	.name		= "i2c-gpio",
+	.id		= 0,
+	.dev		= {
+		.platform_data	= &ams320_i2c_data,
+	},
+};
+
+static void __init smdk6442_i2c_gpio_init(void)
+{
+	s3c_gpio_setpull(S5P64XX_GPD1(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPD1(1), S3C_GPIO_PULL_NONE);
+}
 #endif
 
 struct map_desc smdk6442_iodesc[] = {};
 
 static struct platform_device *smdk6442_devices[] __initdata = {
-//	&s3c_device_fb,
+	&s3c_device_fb,
+
+#ifdef CONFIG_FB_S3C_AMS320
+	&i2c_gpio_ams320,
+#endif
+
 //	&s3c_device_wdt,
 //	&s3c_device_rtc,
 //	&s3c_device_i2c0,
@@ -516,6 +564,11 @@ static void __init smdk6442_machine_init(void)
 //	s3c_device_nand.dev.platform_data = &s3c_nand_mtd_part_info;
 
 	smdk6442_smc911x_set();
+
+#ifdef CONFIG_FB_S3C_AMS320
+	smdk6442_i2c_gpio_init();
+	s3cfb_set_platdata(&ams320_data);
+#endif
 
 //	s3c_i2c0_set_platdata(NULL);
 //	s3c_i2c1_set_platdata(NULL);
