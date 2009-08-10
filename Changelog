@@ -1562,3 +1562,18 @@ v2.6.29.4-dev-1-0-41: Hatim Ali
 	M	arch/arm/mach-s5pc110/mach-smdkc110.c
 v2.6.29.4-dev-1-0-42: Hyunwoong Kim
 	- Added New Tag for s5pc110(2009.08.10)
+
+v2.6.29.4-dev-1-0-43: Jongpill Lee
+	- Support NFS for SMDK6442
+
+	Added Files:
+		A       arch/arm/configs/smdk6442nfs_defconfig
+
+	Modified Files:
+		M       arch/arm/mach-s5p6442/include/mach/map.h
+		M       arch/arm/mach-s5p6442/include/mach/regs-mem.h
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/devs.c
+		M       arch/arm/plat-s5p64xx/gpiolib.c
+		M       drivers/net/smc911x.c
+		M       drivers/net/smc911x.h
