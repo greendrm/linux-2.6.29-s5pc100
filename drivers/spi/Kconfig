@@ -236,6 +236,14 @@ config SPICLK_SRC_PCLK
         depends on SPI_S5PC110
         default y
 
+config MMC_SPI_GPIO
+	bool "MMC-SPI support"
+        depends on SPI_S5PC110 && SPI_GPIO
+        default n
+	help
+	  Select this if you want to test MMC-SPI using GPIO bitbang. 
+	  Connect the MMC card to SPI controller 2.
+
 config SPI_S5PC100
 	tristate "S5PC100 SPI Driver"
 	depends on SPI && CPU_S5PC100

@@ -608,8 +608,23 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .chip_select     = 1,
         },
 #endif
-#if 1
+
 #if defined(CONFIG_SPI_CNTRLR_2)
+/* For MMC-SPI using GPIO BitBanging. MMC connected to SPI CNTRL 2 as slave 0. */
+#if defined (CONFIG_MMC_SPI_GPIO)
+#define SPI_GPIO_DEVNUM 4
+#define SPI_GPIO_BUSNUM 2
+
+        [SPI_GPIO_DEVNUM] = {
+                .modalias        = "mmc_spi", /* MMC SPI */
+                .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
+                .max_speed_hz    = 400000,
+                /* Connected to SPI-0 as 1st Slave */
+                .bus_num         = SPI_GPIO_BUSNUM,
+                .chip_select     = 0,
+                .controller_data = S5PC11X_GPH1(0),
+        },
+#else
         [4] = {
                 .modalias        = "mmc_spi", 	/* MMC SPI */
                 .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
@@ -620,29 +635,11 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .chip_select     = 0,
         },
 #endif
-#endif //if 0
-/* Enable the following if you want SPI BitBanging*/
-#if 0
-#define SPI_GPIO_ID 2
-#define SPI_GPIO_DEVNUM 4
-#define SPI_GPIO_BUSNUM 2
-
-#if defined(CONFIG_SPI_GPIO)
-        [SPI_GPIO_DEVNUM] = {
-                .modalias        = "mmc_spi", /* MMC SPI */
-                .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
-                .max_speed_hz    = 400000,
-                /* Connected to SPI-0 as 1st Slave */
-                .bus_num         = SPI_GPIO_BUSNUM,
-                .chip_select     = 0,
-                .controller_data = S5PC11X_GPH1(0),
-        },
 #endif	
-#endif	//if 0
 };
 
-#if 0 /* Enable the following if you want SPI BitBanging*/
-#if defined(CONFIG_SPI_GPIO)
+#if defined(CONFIG_MMC_SPI_GPIO)
+#define SPI_GPIO_ID 2
 struct spi_gpio_platform_data s3c_spigpio_pdata = {
         .sck = S5PC11X_GPG2(0),
         .miso = S5PC11X_GPG2(2),
@@ -659,7 +656,6 @@ struct platform_device s3c_device_spi_bitbang = {
         }
 };
 #endif
-#endif //if 0
 
 
 struct map_desc smdkc110_iodesc[] = {};
@@ -709,12 +705,10 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_SPI_CNTRLR_1
         &s3c_device_spi1,
 #endif
-#ifdef CONFIG_SPI_CNTRLR_2
-        &s3c_device_spi2,
-#endif
-#if defined(CONFIG_SPI_GPIO)
-/*Uncomment the following if you want to enable SPI bitbanging */
-//      &s3c_device_spi_bitbang,	
+#ifdef CONFIG_MMC_SPI_GPIO	//for mmc-spi gpio bitbanging
+      	&s3c_device_spi_bitbang,
+#elif defined(CONFIG_SPI_CNTRLR_2)
+	&s3c_device_spi2,
 #endif
 	&s3c_device_usbgadget,
 	&s3c_device_cfcon,
