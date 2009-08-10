@@ -1544,3 +1544,9 @@ v2.6.29.4-dev-1-0-39: Jaeryul Oh
 		M	drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
 		M	drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
 		M	drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+ v2.6.29.4-dev-1-0-40: Taeyong Lee
+- 	- Support IIS Audio for S5PC110
+- 		M       arch/arm/plat-s5pc11x/clock.c
+- 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+- 		M       sound/soc/s3c/s3c-i2s.c		
