@@ -149,7 +149,7 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 	unsigned int width, height, frame_size, dec_dpb_addr;
 	unsigned int fw_phybuf, dpb_luma_phybuf, i;
 	s3c_mfc_frame_buf_arg_t dpb_buf_addr;
-	unsigned int aligned_width, aligned_height;
+	unsigned int aligned_width, aligned_ch_height, aligned_mv_height;
 
 	mfc_debug("luma_buf_addr : 0x%08x  luma_buf_size : %d\n", buf_addr.luma, buf_size.luma);
 	mfc_debug("chroma_buf_addr : 0x%08x  chroma_buf_size : %d\n", buf_addr.chroma, buf_size.chroma);
@@ -170,8 +170,9 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		return MFCINST_ERR_FRM_BUF_SIZE;
 	}
 
-	aligned_width = Align(mfc_ctx->img_width, 4*BUF_S_UNIT); // 128B align 
-	aligned_height = Align(mfc_ctx->img_height, BUF_S_UNIT); // 32B align
+	aligned_width = Align(mfc_ctx->img_width, 4*BUF_S_UNIT); 	// 128B align 
+	aligned_ch_height = Align(mfc_ctx->img_height/2, BUF_S_UNIT); 	// 32B align
+	aligned_mv_height = Align(mfc_ctx->img_height/4, BUF_S_UNIT); 	// 32B align
 
 	dpb_buf_addr.luma = Align(buf_addr.luma, 2*BUF_S_UNIT);
 	dpb_buf_addr.chroma = Align(buf_addr.chroma, 2*BUF_S_UNIT);
@@ -184,13 +185,13 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dpb_luma_phybuf)>>11, S3C_FIMV_H264_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 64*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_H264_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT);
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 64*BUF_L_UNIT);
 			/* set MV address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_MV_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_height/4, 64*BUF_L_UNIT);			
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_mv_height, 64*BUF_L_UNIT);			
 		}	
 
 	} else {
@@ -198,10 +199,10 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dpb_luma_phybuf)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 64*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT);			
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 64*BUF_L_UNIT);			
 		}	
 
 	}
