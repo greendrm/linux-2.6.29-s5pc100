@@ -791,7 +791,7 @@ static int smdkc110_cam2_power(int onoff)
 static struct s5k3ba_platform_data s5k3ba_plat = {
 	.default_width = 640,
 	.default_height = 480,
-	.pixelformat = V4L2_PIX_FMT_YVYU,
+	.pixelformat = V4L2_PIX_FMT_VYUY,
 	.freq = 24000000,
 	.is_mipi = 0,
 };
@@ -816,17 +816,17 @@ static struct i2c_board_info  __initdata i2c_camera_info[] = {
 };
 
 /* Camera interface setting */
-#define S5K3BA_CAM_CH	1
+#define S5K3BA_CAM_CH	1	/* 0=A, 1=B */
 
 #if (S5K3BA_CAM_CH == 0)
 static struct s3c_platform_camera __initdata s5k3ba = {
 	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
 	.fmt		= ITU_601_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_YCRYCB,
+	.order422	= CAM_ORDER422_8BIT_CRYCBY,
 	.i2c_busnum	= 0,
 	.info		= &i2c_camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_YVYU,
+	.pixelformat	= V4L2_PIX_FMT_VYUY,
 	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam0",
 	.clk_rate	= 24000000,
@@ -855,10 +855,10 @@ static struct s3c_platform_camera __initdata s5k3ba = {
 	.id		= CAMERA_PAR_B,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
 	.fmt		= ITU_601_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_YCRYCB,
+	.order422	= CAM_ORDER422_8BIT_CRYCBY,
 	.i2c_busnum	= 0,
 	.info		= &i2c_camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_YVYU,
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
 	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam1",
 	.clk_rate	= 24000000,
