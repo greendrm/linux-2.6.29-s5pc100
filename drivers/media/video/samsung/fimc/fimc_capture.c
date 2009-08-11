@@ -111,7 +111,9 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-extern void s3c_csis_start(void);
+#ifndef CONFIG_VIDEO_FIMC_MIPI
+void s3c_csis_start(void) { }
+#endif
 
 static int fimc_init_camera(struct fimc_control *ctrl)
 {
