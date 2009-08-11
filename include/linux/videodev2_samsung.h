@@ -65,6 +65,12 @@ enum v4l2_photometry_mode {
 /* White balance preset control */
 #define V4L2_CID_WHITE_BALANCE_PRESET	(V4L2_CID_CAMERA_CLASS_BASE+27)
 
+/* CID extensions */
+#define V4L2_CID_ROTATION		(V4L2_CID_PRIVATE_BASE + 0)
+
+/*      Pixel format         FOURCC                        	depth  Description  */
+#define V4L2_PIX_FMT_NV12T    v4l2_fourcc('T', 'V', '1', '2') /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
+
 
 /*
  *  * V4L2 extention for digital camera

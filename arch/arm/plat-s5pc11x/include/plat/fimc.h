@@ -17,6 +17,9 @@
 
 #include <linux/videodev2.h>
 
+#define FIMC_SRC_MAX_W		1920
+#define FIMC_SRC_MAX_H		1080
+
 struct platform_device;
 
 /* For exnternal camera device */

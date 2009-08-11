@@ -71,9 +71,10 @@ void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes)
 
 	mutex_unlock(&ctrl->lock);
 }
-#if 0
+
 static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 {
+	u32 next = 0, wakeup = 1;
 	int ret = -1;
 
 	/* Attach done buffer to outgoing queue. */
@@ -81,10 +82,27 @@ static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 	if (ret < 0)
 		dev_err(ctrl->dev, "Failed: fimc_attach_out_queue\n");
 
-	ctrl->out->idx.active = -1;
-	ctrl->status = FIMC_STREAMON_IDLE;
+	if (ctrl->status == FIMC_READY_OFF) {
+		ctrl->out->idx.active = -1;
+		return wakeup;
+	}
 
-	return 1;
+	/* Detach buffer from incomming queue. */
+	ret =  fimc_detach_in_queue(ctrl, &next);
+	if (ret == 0) {	/* There is a buffer in incomming queue. */
+		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[next].base);
+		ret = fimc_outdev_start_camif(ctrl);
+		if (ret < 0)
+			dev_err(ctrl->dev, "Fail: fimc_start_camif\n");
+
+		ctrl->out->idx.active = next;
+		ctrl->status = FIMC_STREAMON;
+	} else {	/* There is no buffer in incomming queue. */
+		ctrl->out->idx.active = -1;
+		ctrl->status = FIMC_STREAMON_IDLE;
+	}
+
+	return wakeup;
 }
 
 static inline u32 fimc_irq_out_fimd(struct fimc_control *ctrl)
@@ -139,7 +157,7 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 	if (wakeup == 1)
 		wake_up_interruptible(&ctrl->wq);
 }
-#endif
+
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
@@ -157,8 +175,8 @@ static irqreturn_t fimc_irq(int irq, void *dev_id)
 
 	if (ctrl->cap)
 		fimc_irq_cap(ctrl);
-//	else if (ctrl->out)
-//		fimc_irq_out(ctrl);
+	else if (ctrl->out)
+		fimc_irq_out(ctrl);
 
 	return IRQ_HANDLED;
 }
@@ -242,7 +260,7 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 
 	return 0;
 }
-#if 0
+
 static void fimc_mmap_open(struct vm_area_struct *vma)
 {
 	struct fimc_global *dev = fimc_dev;
@@ -274,9 +292,13 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 	u32 start_phy_addr = 0;
 	u32 size = vma->vm_end - vma->vm_start;
 	u32 pfn, idx = vma->vm_pgoff;
+	u32 buf_length = 0;
 	int pri_data = 0;
 
-	if (size > ctrl->out->buf[idx].length) {
+	buf_length = ctrl->out->buf[idx].length[FIMC_ADDR_Y] + \
+				ctrl->out->buf[idx].length[FIMC_ADDR_CB] + \
+				ctrl->out->buf[idx].length[FIMC_ADDR_CR];
+	if (size > buf_length) {
 		dev_err(ctrl->dev, "Requested mmap size is too big\n");
 		return -EINVAL;
 	}
@@ -292,7 +314,7 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 		return -EINVAL;
 	}
 
-	start_phy_addr = ctrl->out->buf[idx].base;
+	start_phy_addr = ctrl->out->buf[idx].base[FIMC_ADDR_Y];
 	pfn = __phys_to_pfn(start_phy_addr);
 
 	if (remap_pfn_range(vma, vma->vm_start, pfn, size,
@@ -307,7 +329,7 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 
 	return 0;
 }
-#endif
+
 static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
 {
 	struct fimc_control *ctrl = filp->private_data;
@@ -344,8 +366,8 @@ static int fimc_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	if (ctrl->cap)
 		ret = fimc_mmap_cap(filp, vma);
-//	else
-//		ret = fimc_mmap_out(filp, vma);
+	else
+		ret = fimc_mmap_out(filp, vma);
 
 	return ret;
 }
@@ -648,7 +670,7 @@ static int fimc_release(struct file *filp)
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
 	}
-#if 0
+
 	if (ctrl->out) {
 		if (ctrl->status != FIMC_STREAMOFF) {
 			ret = fimc_outdev_stop_streaming(ctrl);
@@ -661,7 +683,7 @@ static int fimc_release(struct file *filp)
 		kfree(ctrl->out);
 		ctrl->out = NULL;
 	}
-#endif
+
 	mutex_unlock(&ctrl->lock);
 
 	dev_info(ctrl->dev, "%s: successfully released\n", __func__);
