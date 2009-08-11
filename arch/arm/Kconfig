@@ -1276,12 +1276,6 @@ if ALIGNMENT_TRAP || !CPU_CP15_MMU
 source "drivers/mtd/Kconfig"
 endif
 
-# for FSR
-source "drivers/fsr/Kconfig"
-
-# for TINY_FSR
-source "drivers/tfsr/Kconfig"
-
 source "drivers/parport/Kconfig"
 
 source "drivers/pnp/Kconfig"
