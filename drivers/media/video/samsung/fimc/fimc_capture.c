@@ -17,6 +17,7 @@
 #include <linux/string.h>
 #include <linux/platform_device.h>
 #include <linux/videodev2.h>
+#include <linux/videodev2_samsung.h>
 #include <linux/clk.h>
 #include <linux/mm.h>
 #include <linux/io.h>
@@ -24,10 +25,6 @@
 #include <plat/media.h>
 #include <plat/clock.h>
 #include <plat/fimc.h>
-
-#ifdef CONFIG_VIDEO_SAMSUNG_V4L2
-#include <linux/videodev2_samsung.h>
-#endif
 
 #include "fimc.h"
 
@@ -111,7 +108,9 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
-extern void s3c_csis_start(void);
+#ifndef CONFIG_VIDEO_FIMC_MIPI
+void s3c_csis_start(void) { }
+#endif
 
 static int fimc_init_camera(struct fimc_control *ctrl)
 {

@@ -13,6 +13,7 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/videodev2.h>
+#include <linux/videodev2_samsung.h>
 #include <linux/io.h>
 #include <mach/map.h>
 #include <plat/regs-fimc.h>
@@ -20,6 +21,7 @@
 
 #include "fimc.h"
 
+/* struct fimc_limit: Limits for FIMC */
 struct fimc_limit fimc_limits[FIMC_DEVICES] = {
 	{
 		.pre_dst_w	= 3264,
@@ -690,52 +692,11 @@ int fimc_hwset_disable_capture(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t base, \
-						struct v4l2_pix_format *fmt)
+int fimc_hwset_input_address(struct fimc_control *ctrl, dma_addr_t *base)
 {
-	dma_addr_t addr_y = 0, addr_cb = 0, addr_cr = 0;
-
-	switch (fmt->pixelformat) {
-	/* 1 plane formats */
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
-	case V4L2_PIX_FMT_RGB32:	/* fall through */
-	case V4L2_PIX_FMT_YUYV:		/* fall through */
-	case V4L2_PIX_FMT_UYVY:		/* fall through */
-	case V4L2_PIX_FMT_VYUY:		/* fall through */
-	case V4L2_PIX_FMT_YVYU:		/* fall through */
-		addr_y = base;
-		break;
-
-	  /* 2 plane formats */
-	case V4L2_PIX_FMT_NV12:	/* fall through */
-	case V4L2_PIX_FMT_NV21:	/* fall through */
-	case V4L2_PIX_FMT_NV16:	/* fall through */
-	case V4L2_PIX_FMT_NV61:
-		addr_y = base;
-		addr_cb = addr_y + (fmt->width * fmt->height);
-		break;
-
-	  /* 3 plane formats */
-	case V4L2_PIX_FMT_YUV422P:
-		addr_y = base;
-		addr_cb = addr_y + (fmt->width * fmt->height);
-		addr_cr = addr_cb + (fmt->width * fmt->height / 2);
-		break;
-
-	case V4L2_PIX_FMT_YUV420:
-		addr_y = base;
-		addr_cb = addr_y + (fmt->width * fmt->height);
-		addr_cr = addr_cb + (fmt->width * fmt->height / 4);
-		break;
-
-	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __func__);
-		break;
-	}
-
-	writel(addr_y, ctrl->regs + S3C_CIIYSA0);
-	writel(addr_cb, ctrl->regs + S3C_CIICBSA0);
-	writel(addr_cr, ctrl->regs + S3C_CIICRSA0);
+	writel(base[FIMC_ADDR_Y], ctrl->regs + S3C_CIIYSA0);
+	writel(base[FIMC_ADDR_CB], ctrl->regs + S3C_CIICBSA0);
+	writel(base[FIMC_ADDR_CR], ctrl->regs + S3C_CIICRSA0);
 
 	return 0;
 }
@@ -819,14 +780,21 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 	cfg &= ~S3C_MSCTRL_INFORMAT_RGB;
 
 	/* Color format setting */
-	if (pixelformat == V4L2_PIX_FMT_NV12) {
+	switch (pixelformat) {
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV12T:
 		cfg |= S3C_MSCTRL_INFORMAT_YCBCR420;
-	} else if ((pixelformat == V4L2_PIX_FMT_RGB32) || \
-					(pixelformat == V4L2_PIX_FMT_RGB565)) {
+		break;
+	case V4L2_PIX_FMT_YUYV:
+		cfg |= S3C_MSCTRL_INFORMAT_YCBCR422_1PLANE;
+		break;		
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_RGB32:
 		cfg |= S3C_MSCTRL_INFORMAT_RGB;
-	} else {
-		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n",
-				__func__, pixelformat);
+		break;
+	default: 
+		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixelformat);
 		return -EINVAL;
 	}
 
@@ -842,21 +810,20 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 						S3C_MSCTRL_ORDER422_YCBYCR);
 
 	switch (pixelformat) {
-	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+		cfg |= S3C_MSCTRL_ORDER422_YCBYCR;
+		break;
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV12T:
+		cfg |= S3C_MSCTRL_2PLANE_MSB_CRCB;
 		cfg |= S3C_MSCTRL_C_INT_IN_2PLANE;
 		break;
-
-	case V4L2_PIX_FMT_YUYV:		/* fall through */
-	case V4L2_PIX_FMT_UYVY:		/* fall through */
-	case V4L2_PIX_FMT_VYUY:		/* fall through */
-	case V4L2_PIX_FMT_YVYU:		/* fall through */
-	case V4L2_PIX_FMT_YUV422P:	/* fall through */
-	case V4L2_PIX_FMT_YUV420:	/* fall through */
-	case V4L2_PIX_FMT_NV21:		/* fall through */
-	case V4L2_PIX_FMT_NV16:		/* fall through */
-	case V4L2_PIX_FMT_NV61:
-	default:
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_RGB32:
 		break;
+	default: 
+		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
+				__FUNCTION__, pixelformat);
 	}
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -961,6 +928,7 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 
 	/* 2 planes, 12 bits per pixel */
 	case V4L2_PIX_FMT_NV12:	/* fall through */
+	case V4L2_PIX_FMT_NV12T:	/* fall through */		
 	case V4L2_PIX_FMT_NV21:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
@@ -1006,19 +974,28 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 	u32 cfg_y = 0, cfg_cb = 0;
 
 	if (crop->left || crop->top || \
-		(bounds->width != crop->width) ||
-		(bounds->height != crop->height)) {
-		if (pixelformat == V4L2_PIX_FMT_NV12) {
+		(bounds->width != crop->width) || (bounds->height != crop->height)) {
+		switch (pixelformat) {
+		case V4L2_PIX_FMT_YUYV:		/* fall through */
+		case V4L2_PIX_FMT_RGB565:	/* fall through */
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 2);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+			break;			
+		case V4L2_PIX_FMT_RGB32:
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+			break;
+		case V4L2_PIX_FMT_NV12:		/* fall through */
+		case V4L2_PIX_FMT_NV12T:
 			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop->left);
 			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
-		} else if (pixelformat == V4L2_PIX_FMT_RGB32) {
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
-			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
-		} else if (pixelformat == V4L2_PIX_FMT_RGB565) {
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 2);
-			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+
+			break;
+		default: 
+			dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
+					__FUNCTION__, pixelformat);
 		}
 	}
 
@@ -1064,6 +1041,34 @@ int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	writel(cfg, ctrl->regs + S3C_CIEXTEN);
 
 	return 0;
+}
+
+int fimc_hwset_intput_addr_style(struct fimc_control *ctrl, u32 pixelformat)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIDMAPARAM);
+	
+	if (pixelformat == V4L2_PIX_FMT_NV12T)
+		cfg |= S3C_CIDMAPARAM_R_MODE_64X32;
+	else
+		cfg &= ~S3C_CIDMAPARAM_R_MODE_MASK;
+
+	writel(cfg, ctrl->regs + S3C_CIDMAPARAM);
+
+	return 0;	
+}
+
+int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIDMAPARAM);
+	
+	if (pixelformat == V4L2_PIX_FMT_NV12T)
+		cfg |= S3C_CIDMAPARAM_W_MODE_64X32;
+	else
+		cfg &= ~S3C_CIDMAPARAM_W_MODE_MASK;
+
+	writel(cfg, ctrl->regs + S3C_CIDMAPARAM);
+
+	return 0;	
 }
 
 static void fimc_reset_cfg(struct fimc_control *ctrl)
