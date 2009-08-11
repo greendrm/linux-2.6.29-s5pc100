@@ -14,6 +14,7 @@
 #if defined(CONFIG_CPU_S5PC100)
 struct powerdomain {
 	volatile unsigned long	*pd_reg;
+	volatile unsigned long	*pd_stable_reg;
 	unsigned long		pd_ctrlbit;
 	int			ref_count;
 

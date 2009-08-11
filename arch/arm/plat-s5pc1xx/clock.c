@@ -33,23 +33,30 @@ static int powerdomain_set(struct powerdomain *pd, int enable)
 {
 	unsigned long ctrlbit = pd->pd_ctrlbit;
 	void __iomem *reg = (void __iomem *)(pd->pd_reg);
-	unsigned long reg_dat;
+	void __iomem *stable_reg = (void __iomem *)(pd->pd_stable_reg);
+	unsigned long reg_dat, state_dat;
 		
 	if (IS_ERR(pd) || pd == NULL)
 		return -EINVAL;
 	
 	reg_dat = __raw_readl(reg);
 
-	if (enable)
+	if (enable) {
 		__raw_writel(reg_dat|ctrlbit, reg);
-	else
+		do {
+			
+		} while(!(__raw_readl(stable_reg)&ctrlbit));
+		
+	} else {
 		__raw_writel(reg_dat &~(ctrlbit), reg);
+	}
 
 	return 0;
 }
 
 static struct powerdomain pd_lcd = {
 	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<3),
 	.ref_count	= 0,
 	.pd_set		= powerdomain_set,
@@ -57,6 +64,7 @@ static struct powerdomain pd_lcd = {
 
 static struct powerdomain pd_tv = {
 	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<4),
 	.ref_count	= 0,
 	.pd_set		= powerdomain_set,
