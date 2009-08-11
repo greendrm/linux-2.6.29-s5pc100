@@ -56,11 +56,7 @@ static void dump_regs(struct s3cspi_bus *sspi)
 	   printk("Rx_Rdy\t");
 	if(val & SPI_STUS_TX_FIFORDY)
 	   printk("Tx_Rdy\t");
-#if defined (CONFIG_CPU_S5PC11X)
-	printk("Rx/TxLvl=%d,%d\n", (val>>15)&0x1ff, (val>>6)&0x1ff);
-#else
-	printk("Rx/TxLvl=%d,%d\n", (val>>13)&0x7f, (val>>6)&0x7f);
-#endif
+	printk("Rx/TxLvl=%d,%d\n", RX_FIFO_LVL(val), TX_FIFO_LVL(val));
 }
 
 static void dump_spidevice_info(struct spi_device *spi)
@@ -122,28 +118,16 @@ static inline void flush_spi(struct s3cspi_bus *sspi)
 	/* Flush TxFIFO*/
 	do{
 	   val = readl(sspi->regs + S3C_SPI_STATUS);
-#if defined (CONFIG_CPU_S5PC11X)
-	   val = (val>>6) & 0x1ff;
-#else
-	   val = (val>>6) & 0x7f;
-#endif
+	   val = TX_FIFO_LVL(val);
 	}while(val);
 
 	/* Flush RxFIFO*/
 	val = readl(sspi->regs + S3C_SPI_STATUS);
-#if defined (CONFIG_CPU_S5PC11X)
-	val = (val>>15) & 0x1ff;
-#else
-	val = (val>>13) & 0x7f;
-#endif
+	val = RX_FIFO_LVL(val);
 	while(val){
 	   readl(sspi->regs + S3C_SPI_RX_DATA);
 	   val = readl(sspi->regs + S3C_SPI_STATUS);
-#if defined (CONFIG_CPU_S5PC11X)
-        val = (val>>15) & 0x1ff;
-#else
-        val = (val>>13) & 0x7f;
-#endif
+	   val = RX_FIFO_LVL(val);
 	}
 
 	val = readl(sspi->regs + S3C_SPI_CH_CFG);
@@ -399,7 +383,7 @@ void s3c_spi_dma_rxcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enu
 
 	if(res == S3C2410_RES_OK){
 	   sspi->rx_done = PASS;
-	   dbg_printk("DmaRx-%d ", size);
+	   //dbg_printk("DmaRx-%d ", size);
 	}else{
 	   sspi->rx_done = FAIL;
 	   dbg_printk("DmaAbrtRx-%d\n", size);
@@ -415,7 +399,7 @@ void s3c_spi_dma_txcb(struct s3c2410_dma_chan *chan, void *buf_id, int size, enu
 
 	if(res == S3C2410_RES_OK){
 	   sspi->tx_done = PASS;
-	   dbg_printk("DmaTx-%d tx done \n", size);
+	   //dbg_printk("DmaTx-%d tx done \n", size);
 	}else{
 	   sspi->tx_done = FAIL;
 	   dbg_printk("DmaAbrtTx-%d \n", size);

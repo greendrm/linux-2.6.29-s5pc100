@@ -27,6 +27,7 @@ struct platform_device; /* don't need the contents */
 void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 {
 	int i;
+
 	s3c_gpio_cfgpin(S5PC11X_GPE0(0), S5PC11X_GPE0_0_CAM_A_PCLK);
 	s3c_gpio_cfgpin(S5PC11X_GPE0(1), S5PC11X_GPE0_1_CAM_A_VSYNC);
 	s3c_gpio_cfgpin(S5PC11X_GPE0(2), S5PC11X_GPE0_2_CAM_A_HREF);
@@ -69,5 +70,6 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 
 	/* drive strength to max */
 	writel(0xc0, S5PC11X_VA_GPIO + 0x10c);
+	writel(0x300, S5PC11X_VA_GPIO + 0x26c);
 }
 

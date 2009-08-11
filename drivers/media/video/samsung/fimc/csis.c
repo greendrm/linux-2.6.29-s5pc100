@@ -209,14 +209,14 @@ static void s3c_csis_set_hs_settle(int settle)
 }
 #endif
 
-static void s3c_csis_start(struct platform_device *pdev)
+void s3c_csis_start(void)
 {
-	struct s3c_platform_csis *plat;
+	struct s3c_platform_csis *pdata;
 
-	plat = to_csis_plat(&pdev->dev);
-	if (plat->cfg_phy_global)
-		plat->cfg_phy_global(pdev, 1);
-
+	pdata = to_csis_plat(s3c_csis->dev);
+	if (pdata->cfg_phy_global)
+		pdata->cfg_phy_global(1);
+	
 	s3c_csis_reset();
 	s3c_csis_set_nr_lanes(S3C_CSIS_NR_LANES);
 
@@ -224,7 +224,7 @@ static void s3c_csis_start(struct platform_device *pdev)
 	/* FIXME: how configure the followings with FIMC dynamically? */
 	s3c_csis_set_hs_settle(6);	/* s5k6aa */
 	s3c_csis_set_data_align(32);
-	s3c_csis_set_wclk(1);
+	s3c_csis_set_wclk(0);
 	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
 	s3c_csis_set_resol(640, 480);
 	s3c_csis_update_shadow();
@@ -233,6 +233,8 @@ static void s3c_csis_start(struct platform_device *pdev)
 	s3c_csis_enable_interrupt();
 	s3c_csis_system_on();
 	s3c_csis_phy_on();
+
+	info("Samsung MIPI-CSI2 operation started\n");
 }
 
 static void s3c_csis_stop(struct platform_device *pdev)
@@ -245,7 +247,7 @@ static void s3c_csis_stop(struct platform_device *pdev)
 
 	plat = to_csis_plat(&pdev->dev);
 	if (plat->cfg_phy_global)
-		plat->cfg_phy_global(pdev, 0);
+		plat->cfg_phy_global(0);
 }
 
 static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
@@ -259,7 +261,7 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
- int s3c_csis_probe(struct platform_device *pdev)
+static int s3c_csis_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_csis *pdata;
 	struct resource *res;
@@ -267,9 +269,11 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 
 	s3c_csis_set_info();
 
+	s3c_csis->dev = &pdev->dev;
+
 	pdata = to_csis_plat(&pdev->dev);
 	if (pdata->cfg_gpio)
-		pdata->cfg_gpio(pdev);
+		pdata->cfg_gpio();
 
 	parent = clk_get(&pdev->dev, pdata->srclk_name);
 	if (IS_ERR(parent)) {
@@ -320,9 +324,6 @@ static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
 		err("request_irq failed\n");
 
 	info("Samsung MIPI-CSI2 driver probed successfully\n");
-
-	s3c_csis_start(pdev);
-	info("Samsung MIPI-CSI2 operation started\n");
 
 	return 0;
 }

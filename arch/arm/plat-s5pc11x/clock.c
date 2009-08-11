@@ -269,6 +269,27 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_PWM,
 	},
+
+	/* Audio (D1_5) devices */
+	{
+		.name		= "i2s_v50",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S0 is v5.0 */
+	}, {
+		.name		= "i2s_v32",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S1 is v3.2 */
+	}, {
+		.name		= "i2s_v32",
+		.id		= 1,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S2 is v3.2 */
+	}, 
 };
 
 static struct clk *clks[] __initdata = {

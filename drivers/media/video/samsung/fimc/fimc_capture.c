@@ -111,6 +111,8 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 	},
 };
 
+extern void s3c_csis_start(void);
+
 static int fimc_init_camera(struct fimc_control *ctrl)
 {
 	struct fimc_global *fimc = get_fimc_dev();
@@ -159,6 +161,16 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		dev_err(ctrl->dev, "%s: init subdev api not supported\n",
 			__func__);
 		return ret;
+	}
+
+	if (cam->type == CAM_TYPE_MIPI) {
+		/* 
+		 * subdev call for sleep/wakeup:
+		 * no error although no s_stream api support
+		*/
+		v4l2_subdev_call(cam->sd, video, s_stream, 0);
+		s3c_csis_start();
+		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 
 	cam->initialized = 1;
@@ -212,7 +224,7 @@ static int fimc_update_hwaddr(struct fimc_control *ctrl)
 	int i;
 
 	for (i = 0; i < FIMC_PHYBUFS; i++) {
-		base = cap->bufs[i].base;
+		base = cap->bufs[i].base[0];
 		fimc_hwset_output_address(ctrl, i, base, &cap->fmt);
 	}
 
@@ -556,29 +568,29 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	/* free previous buffers */
 	for (i = 0; i < FIMC_PHYBUFS; i++) {
-		fimc_dma_free(ctrl, &cap->bufs[i].base, cap->bufs[i].length);
-		cap->bufs[i].base = 0;
-		cap->bufs[i].length = 0;
+		fimc_dma_free(ctrl, &cap->bufs[i].base[0], cap->bufs[i].length[0]);
+		cap->bufs[i].base[0] = 0;
+		cap->bufs[i].length[0] = 0;
 		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
 	}
 
 	/* alloc buffers */
 	for (i = 0; i < cap->nr_bufs; i++) {
-		cap->bufs[i].base = fimc_dma_alloc(ctrl,
+		cap->bufs[i].base[0] = fimc_dma_alloc(ctrl,
 					PAGE_ALIGN(cap->fmt.sizeimage));
-		if (!cap->bufs[i].base) {
+		if (!cap->bufs[i].base[0]) {
 			dev_err(ctrl->dev, "%s: no memory for "
 				"capture buffer\n", __func__);
 			goto err_alloc;
 		}
 
-		cap->bufs[i].length = PAGE_ALIGN(cap->fmt.sizeimage);
+		cap->bufs[i].length[0] = PAGE_ALIGN(cap->fmt.sizeimage);
 		cap->bufs[i].state = VIDEOBUF_PREPARED;
 	}
 
 	for (i = cap->nr_bufs; i < FIMC_PHYBUFS; i++) {
-		cap->bufs[i].base = cap->bufs[i - cap->nr_bufs].base;
-		cap->bufs[i].length = cap->bufs[i - cap->nr_bufs].length;
+		cap->bufs[i].base[0] = cap->bufs[i - cap->nr_bufs].base[0];
+		cap->bufs[i].length[0] = cap->bufs[i - cap->nr_bufs].length[0];
 		cap->bufs[i].state = cap->bufs[i - cap->nr_bufs].state;
 	}
 
@@ -588,9 +600,9 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 err_alloc:
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].base) {
-			fimc_dma_free(ctrl, &cap->bufs[i].base,
-					cap->bufs[i].length);
+		if (cap->bufs[i].base[0]) {
+			fimc_dma_free(ctrl, &cap->bufs[i].base[0],
+					cap->bufs[i].length[0]);
 		}
 
 		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
@@ -610,7 +622,7 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	b->length = ctrl->cap->bufs[b->index].length;
+	b->length = ctrl->cap->bufs[b->index].length[0];
 	b->m.offset = b->index * PAGE_SIZE;
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_IDLE;
@@ -868,7 +880,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	b->index = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
 
 	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n",
-		__func__, b->index, cap->bufs[b->index].base);
+		__func__, b->index, cap->bufs[b->index].base[0]);
 
 	mutex_unlock(&ctrl->v4l2_lock);
 

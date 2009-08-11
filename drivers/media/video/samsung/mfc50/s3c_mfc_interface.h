@@ -214,6 +214,8 @@ typedef struct {
 	MFC_CODEC_TYPE in_codec_type; /* [IN] codec type */
 	unsigned int in_Y_addr;   /*[IN]In-buffer addr of Y component */
 	unsigned int in_CbCr_addr;/*[IN]In-buffer addr of CbCr component */
+	unsigned int in_Y_addr_vir;   /*[IN]In-buffer addr of Y component */
+	unsigned int in_CbCr_addr_vir;/*[IN]In-buffer addr of CbCr component */
 	unsigned int in_strm_st;  /*[IN]Out-buffer start addr of encoded strm*/
 	unsigned int in_strm_end; /*[IN]Out-buffer end addr of encoded strm */
 	unsigned int out_frame_type; /* [OUT] frame type  */

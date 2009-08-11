@@ -1532,3 +1532,48 @@ v2.6.29.4-dev-1-0-38: Jongpill Lee
 		M       arch/arm/plat-s5p64xx/cpu.c
 		M       arch/arm/plat-s5p64xx/s5p6442-clock.c
 		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-0-39: Jaeryul Oh
+	- Backed for MFC(Write-back allocate for L2 cache on not applied) 
+	- Modified MFC driver on SMDKC110
+	
+	Modified Files:
+
+		M	arch/arm/mm/proc-v7.S
+		M	drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+ v2.6.29.4-dev-1-0-40: Taeyong Lee
+- 	- Support IIS Audio for S5PC110
+- 		M       arch/arm/plat-s5pc11x/clock.c
+- 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+- 		M       sound/soc/s3c/s3c-i2s.c		
+
+
+v2.6.29.4-dev-1-0-41: Hatim Ali
+	- Added support for MMC-SPI GPIO bitbanging
+	
+	Modified Files:
+	M       drivers/spi/Kconfig
+	M       drivers/spi/spi_s3c.c
+	M	drivers/spi/spi_s3c.h
+	M	arch/arm/mach-s5pc110/mach-smdkc110.c
+v2.6.29.4-dev-1-0-42: Hyunwoong Kim
+	- Added New Tag for s5pc110(2009.08.10)
+
+v2.6.29.4-dev-1-0-43: Jongpill Lee
+	- Support NFS for SMDK6442
+
+	Added Files:
+		A       arch/arm/configs/smdk6442nfs_defconfig
+
+	Modified Files:
+		M       arch/arm/mach-s5p6442/include/mach/map.h
+		M       arch/arm/mach-s5p6442/include/mach/regs-mem.h
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/devs.c
+		M       arch/arm/plat-s5p64xx/gpiolib.c
+		M       drivers/net/smc911x.c
+		M       drivers/net/smc911x.h

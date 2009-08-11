@@ -517,7 +517,13 @@ static int s3c_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai,
 		reg = readl(s3c_i2s.regs + S3C_IISPSR) & ~S3C_IISPSR_PSRAEN;
 		writel(reg, s3c_i2s.regs + S3C_IISPSR);
 		reg = readl(s3c_i2s.regs + S3C_IISPSR) & ~S3C_IISPSR_PSVALA;
+
+		//Added by Taeyong
+#if defined(CONFIG_CPU_S5PC110)
+		div = 0x1;
+#else
 		div &= 0x3f;
+#endif
 		writel(reg | (div<<8) | S3C_IISPSR_PSRAEN, s3c_i2s.regs + S3C_IISPSR);
 		break;
 	default:
@@ -812,7 +818,7 @@ static inline void __lpinit(int lpmd)
 	writel(mdsel, S5P_LPMP_MODE_SEL);
 	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2 | S5P_CLKGATE_D20_I2SD2, S5P_CLKGATE_D20);
 #else
-	#error PUT SOME CODE HERE !!!
+	//#error PUT SOME CODE HERE !!!
 #endif
 }
 

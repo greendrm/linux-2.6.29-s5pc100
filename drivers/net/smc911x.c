@@ -1912,7 +1912,7 @@ static int __devinit smc911x_probe(struct net_device *dev)
 
 	spin_lock_init(&lp->lock);
 
-#if defined(CONFIG_MACH_SMDK6410)||defined(CONFIG_MACH_SMDK2450)||defined(CONFIG_MACH_SMDKC100)
+#if defined(CONFIG_MACH_SMDK6410)||defined(CONFIG_MACH_SMDK2450)||defined(CONFIG_MACH_SMDKC100)||defined(CONFIG_MACH_SMDK6442)
 	dev->dev_addr[0] = 0x00;
 	dev->dev_addr[1] = 0x09;
 	dev->dev_addr[2] = 0xc0;
@@ -1998,6 +1998,7 @@ static int __devinit smc911x_probe(struct net_device *dev)
 	/* Grab the IRQ */
 	retval = request_irq(dev->irq, &smc911x_interrupt,
 			     irq_flags, dev->name, dev);
+	
 	if (retval)
 		goto err_out;
 
@@ -2010,6 +2011,7 @@ static int __devinit smc911x_probe(struct net_device *dev)
 #endif
 
 	retval = register_netdev(dev);
+
 	if (retval == 0) {
 		/* now, print out the card info, in a short format.. */
 		printk("%s: %s (rev %d) at %#lx IRQ %d",
