@@ -36,8 +36,8 @@ static struct resource s3c_smc911x_resources[] = {
               .flags  = IORESOURCE_MEM,
       },
       [1] = {
-              .start = IRQ_EINT(10),
-              .end   = IRQ_EINT(10),
+              .start = IRQ_EINT11,
+              .end   = IRQ_EINT11,
               .flags = IORESOURCE_IRQ,
         },
 };

@@ -19,9 +19,9 @@
 
 struct platform_device; /* don't need the contents */
 
-void s3c_csis_cfg_gpio(struct platform_device *dev) { }
+void s3c_csis_cfg_gpio(void) { }
 
-void s3c_csis_cfg_phy_global(struct platform_device *dev, int on)
+void s3c_csis_cfg_phy_global(int on)
 {
 	u32 cfg;
 

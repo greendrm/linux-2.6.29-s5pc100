@@ -184,11 +184,14 @@
 #define IRQ_MDNIE1		S5PC1XX_IRQ_VIC3(6)
 #define IRQ_MDNIE2		S5PC1XX_IRQ_VIC3(7)
 #define IRQ_MDNIE3		S5PC1XX_IRQ_VIC3(8)
+#define IRQ_VIC_END 		S5PC1XX_IRQ_VIC3(31)	// Just define end of IRQ
 
-#define S3C_IRQ_EINT_BASE	(S5PC1XX_IRQ_VIC3(31) + 1)
 
-#define S3C_EINT(x)		(S3C_IRQ_EINT_BASE + (x - 16))
-#define IRQ_EINT(x)		(x < 16 ? IRQ_EINT0 + x : S3C_EINT(x))
+
+#define S3C_IRQ_EINT_BASE	(IRQ_VIC_END + 1)
+
+#define S3C_EINT(x)		((x) + S3C_IRQ_EINT_BASE)
+#define IRQ_EINT(x)		S3C_EINT(x)
 
 #define NR_IRQS 		(IRQ_EINT(31)+1)
 

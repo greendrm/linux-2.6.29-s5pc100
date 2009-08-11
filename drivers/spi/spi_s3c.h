@@ -125,12 +125,18 @@
 #define CH0_TX_MAXBYTES		   (64)
 #define CH0_RX_MAXBYTES		   (64)
 #define CH0_PER_UNIT               (1)
+
+#define TX_FIFO_LVL(off)	   ((off >> 6) & 0x7f)		
+#define RX_FIFO_LVL(off)	   ((off >> 13) & 0x7f)	
 #endif
 
 #if defined(CONFIG_CPU_S5PC110)
 #define CH0_TX_MAXBYTES            (256)
 #define CH0_RX_MAXBYTES            (256)
 #define CH0_PER_UNIT               (1)
+
+#define TX_FIFO_LVL(off)           ((off >> 6) & 0x1ff)
+#define RX_FIFO_LVL(off)           ((off >> 15) & 0x1ff)
 #endif
 
 #define CH1_TX_MAXBYTES	           (64)
@@ -225,14 +231,16 @@
 #define GPIO_CLK_1           S5PC1XX_GPB5_SPI_CLK1
 #define GPIO_MOSI_1          S5PC1XX_GPB6_SPI_MOSI1
 #define GPIO_CS_1            S5PC1XX_GPB7_SPI_CS1
-//#define GPIO_MISO_2          S5PC1XX_GPG3_2_SPI_MISO2
-//#define GPIO_CLK_2           S5PC1XX_GPG3_0_SPI_CLK2
-//#define GPIO_MOSI_2          S5PC1XX_GPG3_3_SPI_MOSI2
-//#define GPIO_CS_2            S5PC1XX_GPG3_1_SPI_CS2
-//#define GPMISO_2             4
-//#define GPCLK_2              5
-//#define GPMOSI_2             6
-//#define GPCS_2               7
+
+#define GPNAME_CNTRL_2	     S5PC1XX_GPG3
+#define GPIO_CLK_2           S5PC1XX_GPG3_0_SPI_CLK2
+#define GPIO_CS_2            S5PC1XX_GPG3_1_SPI_CS2
+#define GPIO_MISO_2          S5PC1XX_GPG3_2_SPI_MISO2
+#define GPIO_MOSI_2          S5PC1XX_GPG3_3_SPI_MOSI2
+#define GPCLK_2              0
+#define GPCS_2               1
+#define GPMISO_2             2
+#define GPMOSI_2             3
 #endif
 
 #if defined(CONFIG_CPU_S5PC110)
@@ -300,7 +308,6 @@
                         	              s3c_gpio_cfgpin(GPNAME_CNTRL_2(GPCS_##n), GPIO_CS_##n);   \
                                 	   }                                                            \
                    		  	 }while(0)
-
 #define SET_GPIOPULL_CNTRL2(sspi)   do{                            					           \
                                        if(sspi->cur_mode & SPI_SLAVE){                                        	   \
                                            	s3c_gpio_setpull(GPNAME_CNTRL_2(GPMISO_2), S3C_GPIO_PULL_DOWN);    \
@@ -352,7 +359,6 @@
                                            /*s3c_gpio_setpull(GPNAME_CNTRL_2(GPCS_2), S3C_GPIO_PULL_UP);*/ \
                                    }                                                                       \
                                 }while(0)
-
 
 #define S3C_UNSETGPIOPULL(sspi)   do{                                          	\
 				   if(sspi->spi_mstinfo->pdev->id == 0)      	\

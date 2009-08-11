@@ -20,13 +20,13 @@ struct s3c_platform_csis {
 	const char	clk_name[16];
 	unsigned long	clk_rate;
 
-	void		(*cfg_gpio)(struct platform_device *dev);
-	void		(*cfg_phy_global)(struct platform_device *dev, int on);
+	void		(*cfg_gpio)(void);
+	void		(*cfg_phy_global)(int on);
 };
 
 extern void s3c_csis_set_platdata(struct s3c_platform_csis *csis);
-extern void s3c_csis_cfg_gpio(struct platform_device *dev);
-extern void s3c_csis_cfg_phy_global(struct platform_device *dev, int on);
+extern void s3c_csis_cfg_gpio(void);
+extern void s3c_csis_cfg_phy_global(int on);
 
 #endif /* _CSIS_H */
 

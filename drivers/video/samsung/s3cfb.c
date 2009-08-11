@@ -38,6 +38,10 @@
 #include "logo_rgb24_wvga_portrait.h"
 #endif
 
+#ifdef CONFIG_FB_S3C_AMS320
+#include "logo_rgb24_wvga_portrait.h"
+#endif
+
 #include "s3cfb.h"
 
 static struct s3cfb_global *fbdev;
