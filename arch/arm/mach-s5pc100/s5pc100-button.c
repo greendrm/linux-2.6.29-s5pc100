@@ -47,6 +47,7 @@ static unsigned int s3c_button_gpio_init(void)
 		printk("gpio request error : %d\n",err);
 	}else{
 		s3c_gpio_cfgpin(S5PC1XX_GPH1(3),S5PC1XX_GPH1_3_WAKEUP_INT_11);
+		s3c_gpio_setpull(S5PC1XX_GPH1(3), S3C_GPIO_PULL_NONE);
 	}
 
 	err = gpio_request(S5PC1XX_GPH3(7),"GPH3");
@@ -70,4 +71,4 @@ static void __init s3c_button_init(void)
 	setup_irq(IRQ_EINT11, &s3c_button_irq);
 }
 
-arch_initcall(s3c_button_init);
+device_initcall(s3c_button_init);

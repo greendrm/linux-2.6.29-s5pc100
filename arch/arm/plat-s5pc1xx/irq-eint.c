@@ -71,30 +71,29 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	int shift;
 	u32 ctrl, mask;
 	u32 newvalue = 0;
-
 	switch (type) {
 	case IRQ_TYPE_NONE:
 		printk(KERN_WARNING "No edge setting!\n");
 		break;
 
 	case IRQ_TYPE_EDGE_RISING:
-		newvalue = S5PC1XX_EINT_RISEEDGE;
+		newvalue = S5P_EXTINT_RISEEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_FALLING:
-		newvalue = S5PC1XX_EINT_FALLEDGE;
+		newvalue = S5P_EXTINT_FALLEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_BOTH:
-		newvalue = S5PC1XX_EINT_BOTHEDGE;
+		newvalue = S5P_EXTINT_BOTHEDGE;
 		break;
 
 	case IRQ_TYPE_LEVEL_LOW:
-		newvalue = S5PC1XX_EINT_LOWLEV;
+		newvalue = S5P_EXTINT_LOWLEV;
 		break;
 
 	case IRQ_TYPE_LEVEL_HIGH:
-		newvalue = S5PC1XX_EINT_HILEV;
+		newvalue = S5P_EXTINT_HILEV;
 		break;
 
 	default:
@@ -109,17 +108,6 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	ctrl &= ~mask;
 	ctrl |= newvalue << shift;
 	__raw_writel(ctrl, S5PC1XX_EINTCON(eint_conf_reg(irq)));
-
-	if((0 <= offs) && (offs < 8))
-		s3c_gpio_cfgpin(S5PC1XX_GPH0(offs&0x7), 0x2<<((offs&0x7)*4));
-	else if((8 <= offs) && (offs < 16))
-		s3c_gpio_cfgpin(S5PC1XX_GPH1(offs&0x7), 0x2<<((offs&0x7)*4));
-	else if((16 <= offs) && (offs < 24))
-		s3c_gpio_cfgpin(S5PC1XX_GPH2(offs&0x7), 0x2<<((offs&0x7)*4));
-	else if((24 <= offs) && (offs < 32))
-		s3c_gpio_cfgpin(S5PC1XX_GPH3(offs&0x7), 0x2<<((offs&0x7)*4));
-	else
-		printk(KERN_ERR "No such irq number %d", offs);
 		
 	return 0;
 }

@@ -519,9 +519,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp |= (1<<0);
 	__raw_writel(tmp, S5PC1XX_UHOST);
 
-	/* Sleep Mode Pad Configuration */
-	__raw_writel(0x2, S5PC1XX_PDNEN); /* Controlled by SLPEN Bit (You Should Clear SLPEN Bit in Wake Up Process...) */
-    
 	/* Set WFI instruction to SLEEP mode */
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
@@ -576,9 +573,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 
 	/* restore the cpu state */
 	cpu_init();
-
-	/* Sleep Mode Pad Configuration */
-    	__raw_writel(0x2, S5PC1XX_PDNEN);	/* Clear SLPEN Bit for Pad back to Normal Mode */
 
 	/* MTC IO OFF |  MTC IO SD-MMC OFF | USB Phy Enable */
 	tmp = __raw_readl(S5P_OTHERS);
