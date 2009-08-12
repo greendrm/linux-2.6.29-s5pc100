@@ -100,7 +100,7 @@ s5p_tv_vp_err __s5p_vp_set_img_size(u32 img_width, u32 img_height)
 {
 	VPPRINTK("%d,%d\n\r", img_width, img_height);
 
-	if (VP_IMG_SIZE_ILLEGAL(img_width) || VP_IMG_SIZE_ILLEGAL(img_height / 2)) {
+	if (VP_IMG_SIZE_ILLEGAL(img_width) || VP_IMG_SIZE_ILLEGAL(img_height)) {
 		VPPRINTK(" image full size is not double word align = %d,%d\n\r", 
 			img_width, img_height);
 		return S5P_TV_VP_ERR_BASE_ADDRESS_MUST_DOUBLE_WORD_ALIGN;

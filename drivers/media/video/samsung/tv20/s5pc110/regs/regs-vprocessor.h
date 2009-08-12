@@ -247,19 +247,19 @@ enum VP_PIXEL_RATE
 #define VP_SRC_X_FRACT_STEP(a)  (0xf&a)
 
 // S5P_VP_SRC_V_POSITION
-#define VP_SRC_V_POSITION(a)    (0x3ff&a)
+#define VP_SRC_V_POSITION(a)    (0x7ff&a)
 
 // S5P_VP_SRC_WIDTH
 #define VP_SRC_WIDTH(a)     (0x7ff&a)
 
 // S5P_VP_SRC_WIDTH
-#define VP_SRC_HEIGHT(a)    (0x3ff&a)
+#define VP_SRC_HEIGHT(a)    (0x7ff&a)
 
 // S5P_VP_DST_H_POSITION
 #define VP_DST_H_POSITION(a)    (0x7ff&a)
 
 // S5P_VP_DST_V_POSITION
-#define VP_DST_V_POSITION(a)    (0x3ff&a)
+#define VP_DST_V_POSITION(a)    (0x7ff&a)
 
 // S5P_VP_DST_WIDTH
 #define VP_DST_WIDTH(a)     (0x7ff&a)
