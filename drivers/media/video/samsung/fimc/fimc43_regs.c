@@ -1032,6 +1032,7 @@ int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	writel(cfg, ctrl->regs + S3C_ORGOSIZE);
 
 	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
 	if (width >= FIMC_HD_WIDTH)
 		cfg |= S3C_CIGCTRL_CSC_ITU709;
 	else 
