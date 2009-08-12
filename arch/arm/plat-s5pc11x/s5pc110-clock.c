@@ -1275,10 +1275,10 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 
-	clk_set_rate(&clk_mmc0.clk, 47*MHZ);	
-	clk_set_rate(&clk_mmc1.clk, 47*MHZ);
-	clk_set_rate(&clk_mmc2.clk, 47*MHZ);
-	clk_set_rate(&clk_mmc3.clk, 47*MHZ);	
+	clk_set_rate(&clk_mmc0.clk, 50*MHZ);	
+	clk_set_rate(&clk_mmc1.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc2.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc3.clk, 50*MHZ);	
 }
 
 static struct clk *clks[] __initdata = {
