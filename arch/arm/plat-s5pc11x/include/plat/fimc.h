@@ -80,6 +80,10 @@ struct s3c_platform_camera {
 	int				height;		/* default resol */
 	struct v4l2_rect		window;		/* real cut region from source */
 
+	int				mipi_lanes;	/* MIPI data lanes */
+	int				mipi_settle;	/* MIPI settle */
+	int				mipi_align;	/* MIPI data align: 24/32 */
+
 	/* Polarity: 1 if inverted polarity used */
 	int				inv_pclk;
 	int				inv_vsync;

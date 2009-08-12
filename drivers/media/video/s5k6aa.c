@@ -560,9 +560,8 @@ static int s5k6aa_sleep(struct v4l2_subdev *sd)
 			mdelay(s5k6aa_sleep_reg[i][1]);
 			err = 0;
 		} else {
-			err = s5k6aa_i2c_write(sd, \
-				(unsigned char *) s5k6aa_sleep_reg[i], \
-				sizeof(s5k6aa_sleep_reg[i]));
+			err = s5k6aa_write(sd, s5k6aa_sleep_reg[i][0], \
+				s5k6aa_sleep_reg[i][1]);
 		}
 
 		if (err < 0)
@@ -589,9 +588,8 @@ static int s5k6aa_wakeup(struct v4l2_subdev *sd)
 			mdelay(s5k6aa_wakeup_reg[i][1]);
 			err = 0;
 		} else {
-			err = s5k6aa_i2c_write(sd, \
-				(unsigned char *) s5k6aa_wakeup_reg[i], \
-				sizeof(s5k6aa_wakeup_reg[i]));
+			err = s5k6aa_write(sd, s5k6aa_wakeup_reg[i][0], \
+				s5k6aa_wakeup_reg[i][1]);
 		}
 
 		if (err < 0)

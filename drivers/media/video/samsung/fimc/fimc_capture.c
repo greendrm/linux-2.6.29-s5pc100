@@ -168,7 +168,8 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		 * no error although no s_stream api support
 		*/
 		v4l2_subdev_call(cam->sd, video, s_stream, 0);
-		s3c_csis_start(1, 6, 32, cam->width, cam->height);
+		s3c_csis_start(cam->mipi_lanes, cam->mipi_settle, \
+				cam->mipi_align, cam->width, cam->height);
 		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 

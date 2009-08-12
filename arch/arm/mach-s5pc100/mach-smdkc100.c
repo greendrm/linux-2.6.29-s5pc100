@@ -562,6 +562,10 @@ static struct s3c_platform_camera __initdata camera_c = {
 		.height	= 480,
 	},
 
+	.mipi_lanes	= 1,
+	.mipi_settle	= 6,
+	.mipi_align	= 32,
+
 	/* Polarity */
 	.inv_pclk	= 0,
 	.inv_vsync 	= 1,

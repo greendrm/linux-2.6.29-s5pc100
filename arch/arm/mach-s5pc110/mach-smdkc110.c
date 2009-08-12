@@ -776,7 +776,7 @@ static int smdkc110_cam1_power(int onoff)
 	return 0;
 }
 
-static int smdkc110_cam2_power(int onoff)
+static int smdkc110_mipi_cam_power(int onoff)
 {
 	gpio_request(S5PC11X_GPH0(3), "GPH0");
 	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
@@ -787,7 +787,27 @@ static int smdkc110_cam2_power(int onoff)
 	return 0;
 }
 
+/*
+ * Guide for Camera Configuration for SMDKC110
+ * ITU channel must be set as A or B
+ * ITU CAM CH A: S5K3BA only
+ * ITU CAM CH B: one of S5K3BA and S5K4BA
+ * MIPI: one of S5K4EA and S5K6AA
+ *
+ * NOTE1: if the S5K4EA is enabled, all other cameras must be disabled
+ * NOTE2: currently, only 1 MIPI camera must be enabled
+ * NOTE3: it is possible to use both one ITU cam and one MIPI cam except for S5K4EA case
+ * 
+*/
+#undef CAM_ITU_CH_A
+#undef S5K3BA_ENABLED
+#define S5K4BA_ENABLED
+#undef S5K4EA_ENABLED
+#define S5K6AA_ENABLED
+
 /* External camera module setting */
+/* 2 ITU Cameras */
+#ifdef S5K3BA_ENABLED
 static struct s5k3ba_platform_data s5k3ba_plat = {
 	.default_width = 640,
 	.default_height = 480,
@@ -796,6 +816,115 @@ static struct s5k3ba_platform_data s5k3ba_plat = {
 	.is_mipi = 0,
 };
 
+static struct i2c_board_info  __initdata s5k3ba_i2c_info = {
+	I2C_BOARD_INFO("S5K3BA", 0x2d),
+	.platform_data = &s5k3ba_plat,
+};
+
+static struct s3c_platform_camera __initdata s5k3ba = {
+#ifdef CAM_ITU_CH_A
+	.id		= CAMERA_PAR_A,
+#else
+	.id		= CAMERA_PAR_B,
+#endif
+	.type		= CAM_TYPE_ITU,
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CRYCBY,
+	.i2c_busnum	= 0,
+	.info		= &s5k3ba_i2c_info,
+	.pixelformat	= V4L2_PIX_FMT_VYUY,
+	.srclk_name	= "mout_epll",
+#ifdef CAM_ITU_CH_A
+	.clk_name	= "sclk_cam0",
+#else
+	.clk_name	= "sclk_cam1",
+#endif
+	.clk_rate	= 24000000,
+	.line_length	= 1920,
+	.width		= 640,
+	.height		= 480,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 640,
+		.height	= 480,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+#ifdef CAM_ITU_CH_A
+	.cam_power	= smdkc110_cam0_power,
+#else
+	.cam_power	= smdkc110_cam1_power,
+#endif
+};
+#endif
+
+#ifdef S5K4BA_ENABLED
+static struct s5k4ba_platform_data s5k4ba_plat = {
+	.default_width = 800,
+	.default_height = 600,
+	.pixelformat = V4L2_PIX_FMT_UYVY,
+	.freq = 44000000,
+	.is_mipi = 0,
+};
+
+static struct i2c_board_info  __initdata s5k4ba_i2c_info = {
+	I2C_BOARD_INFO("S5K4BA", 0x2d),
+	.platform_data = &s5k4ba_plat,
+};
+
+static struct s3c_platform_camera __initdata s5k4ba = {
+#ifdef CAM_ITU_CH_A
+	.id		= CAMERA_PAR_A,
+#else
+	.id		= CAMERA_PAR_B,
+#endif
+	.type		= CAM_TYPE_ITU,
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &s5k4ba_i2c_info,
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_mpll",
+#ifdef CAM_ITU_CH_A
+	.clk_name	= "sclk_cam0",
+#else
+	.clk_name	= "sclk_cam1",
+#endif
+	.clk_rate	= 44000000,
+	.line_length	= 1920,
+	.width		= 800,
+	.height		= 600,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 800,
+		.height	= 600,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+#ifdef CAM_ITU_CH_A
+	.cam_power	= smdkc110_cam0_power,
+#else
+	.cam_power	= smdkc110_cam1_power,
+#endif
+};
+#endif
+
+/* 2 MIPI Cameras */
+#ifdef S5K4EA_ENABLED
 static struct s5k6aa_platform_data s5k4ea_plat = {
 	.default_width = 1920,
 	.default_height = 1080,
@@ -804,6 +933,48 @@ static struct s5k6aa_platform_data s5k4ea_plat = {
 	.is_mipi = 1,
 };
 
+static struct i2c_board_info  __initdata s5k4ea_i2c_info = {
+	I2C_BOARD_INFO("S5K4EA", 0x2d),
+	.platform_data = &s5k4ea_plat,
+};
+
+static struct s3c_platform_camera __initdata s5k4ea = {
+	.id		= CAMERA_CSI_C,
+	.type		= CAM_TYPE_MIPI,
+	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &s5k4ea_i2c_info,
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_epll",
+	.clk_name	= "sclk_cam0",
+	.clk_rate	= 24000000,
+	.line_length	= 1920,
+	.width		= 1920,
+	.height		= 1080,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 1920,
+		.height	= 1080,
+	},
+
+	.mipi_lanes	= 2,
+	.mipi_settle	= 12,
+	.mipi_align	= 32,
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+	.cam_power	= smdkc110_mipi_cam_power,
+};
+#endif
+
+#ifdef S5K6AA_ENABLED
 static struct s5k6aa_platform_data s5k6aa_plat = {
 	.default_width = 640,
 	.default_height = 480,
@@ -812,134 +983,23 @@ static struct s5k6aa_platform_data s5k6aa_plat = {
 	.is_mipi = 1,
 };
 
-static struct i2c_board_info  __initdata i2c_camera_info[] = {
-	{
-		I2C_BOARD_INFO("S5K3BA", 0x2d),
-		.platform_data = &s5k3ba_plat,
-	},
-//	{
-//		I2C_BOARD_INFO("S5K4EA", 0x2d),
-//		.platform_data = &s5k4ea_plat,
-//	},
-	{
-		I2C_BOARD_INFO("S5K6AA", 0x3c),
-		.platform_data = &s5k6aa_plat,
-	},
-};
-
-/* Camera interface setting */
-#define S5K3BA_CAM_CH	1	/* 0=A, 1=B */
-
-#if (S5K3BA_CAM_CH == 0)
-static struct s3c_platform_camera __initdata s5k3ba = {
-	.id		= CAMERA_PAR_A,		/* FIXME */
-	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
-	.fmt		= ITU_601_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_CRYCBY,
-	.i2c_busnum	= 0,
-	.info		= &i2c_camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_VYUY,
-	.srclk_name	= "mout_epll",
-	.clk_name	= "sclk_cam0",
-	.clk_rate	= 24000000,
-	.line_length	= 1280,			/* 1280*1024 */
-	/* default resol for preview kind of thing */
-	.width		= 640,
-	.height		= 480,
-	.window		= {
-		.left	= 0,
-		.top	= 0,
-		.width	= 640,
-		.height	= 480,
-	},
-
-	/* Polarity */
-	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
-	.inv_href	= 0,
-	.inv_hsync	= 0,
-
-	.initialized 	= 0,
-	.cam_power	= smdkc110_cam0_power,
-};
-#else
-static struct s3c_platform_camera __initdata s5k3ba = {
-	.id		= CAMERA_PAR_B,		/* FIXME */
-	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
-	.fmt		= ITU_601_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_CRYCBY,
-	.i2c_busnum	= 0,
-	.info		= &i2c_camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_UYVY,
-	.srclk_name	= "mout_epll",
-	.clk_name	= "sclk_cam1",
-	.clk_rate	= 24000000,
-	.line_length	= 1280,			/* 1280*1024 */
-	/* default resol for preview kind of thing */
-	.width		= 640,
-	.height		= 480,
-	.window		= {
-		.left	= 0,
-		.top	= 0,
-		.width	= 640,
-		.height	= 480,
-	},
-
-	/* Polarity */
-	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
-	.inv_href	= 0,
-	.inv_hsync	= 0,
-
-	.initialized 	= 0,
-	.cam_power	= smdkc110_cam1_power,
-};
-#endif
-
-static struct s3c_platform_camera __initdata s5k4ea = {
-	.id		= CAMERA_CSI_C,		/* FIXME */
-	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
-	.fmt		= MIPI_CSI_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_CBYCRY,
-	.i2c_busnum	= 0,
-	.info		= &i2c_camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_UYVY,
-	.srclk_name	= "mout_epll",
-	.clk_name	= "sclk_cam0",
-	.clk_rate	= 24000000,		/* 24MHz */
-	.line_length	= 1920,
-	/* default resol for preview kind of thing */
-	.width		= 2592,
-	.height		= 984,
-	.window		= {
-		.left	= 0,
-		.top	= 0,
-		.width	= 2592,
-		.height	= 984,
-	},
-
-	/* Polarity */
-	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
-	.inv_href	= 0,
-	.inv_hsync	= 0,
-
-	.initialized 	= 0,
-	.cam_power	= smdkc110_cam2_power,
+static struct i2c_board_info  __initdata s5k6aa_i2c_info = {
+	I2C_BOARD_INFO("S5K6AA", 0x3c),
+	.platform_data = &s5k6aa_plat,
 };
 
 static struct s3c_platform_camera __initdata s5k6aa = {
-	.id		= CAMERA_CSI_C,		/* FIXME */
-	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
+	.id		= CAMERA_CSI_C,
+	.type		= CAM_TYPE_MIPI,
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
 	.i2c_busnum	= 0,
-	.info		= &i2c_camera_info[1],
+	.info		= &s5k6aa_i2c_info,
 	.pixelformat	= V4L2_PIX_FMT_UYVY,
 	.srclk_name	= "mout_epll",
 	.clk_name	= "sclk_cam0",
-	.clk_rate	= 24000000,		/* 24MHz */
-	.line_length	= 1280,			/* 1280*1024 */
+	.clk_rate	= 24000000,
+	.line_length	= 1920,
 	/* default resol for preview kind of thing */
 	.width		= 640,
 	.height		= 480,
@@ -950,6 +1010,10 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 		.height	= 480,
 	},
 
+	.mipi_lanes	= 1,
+	.mipi_settle	= 6,
+	.mipi_align	= 32,
+
 	/* Polarity */
 	.inv_pclk	= 0,
 	.inv_vsync 	= 1,
@@ -957,19 +1021,39 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 	.inv_hsync	= 0,
 
 	.initialized 	= 0,
-	.cam_power	= smdkc110_cam2_power,
+	.cam_power	= smdkc110_mipi_cam_power,
 };
+#endif
 
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
 	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_fimc",
 	.clk_rate	= 166000000,
+#if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
 	.default_cam	= CAMERA_CSI_C,
+#else
+
+#ifdef CAM_ITU_CH_A
+	.default_cam	= CAMERA_PAR_A,
+#else
+	.default_cam	= CAMERA_PAR_B,
+#endif
+
+#endif
 	.camera		= {
+#ifdef S5K3BA_ENABLED
 		&s5k3ba,
+#endif
+#ifdef S5K4BA_ENABLED
+		&s5k4ba,
+#endif
+#ifdef S5K4EA_ENABLED
+		&s5k4ea,
+#endif
+#ifdef S5K6AA_ENABLED
 		&s5k6aa,
-//		&s5k4ea,
+#endif
 	}
 };
 
@@ -1079,7 +1163,7 @@ static void __init smdkc110_machine_init(void)
 	s3c_csis_set_platdata(NULL);
 	smdkc110_cam0_power(1);
 	smdkc110_cam1_power(1);
-	smdkc110_cam2_power(1);
+	smdkc110_mipi_cam_power(1);
 
 	/* ipc */
 	s3c_ipc_set_platdata(NULL);

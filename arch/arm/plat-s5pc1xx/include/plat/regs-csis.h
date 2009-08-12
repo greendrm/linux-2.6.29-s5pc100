@@ -37,7 +37,7 @@
 
 /* D-PHY Control Register */
 #define S3C_CSIS_DPHYCTRL_DISABLE		(0 << 0)
-#define S3C_CSIS_DPHYCTRL_ENABLE		(1 << 0)
+#define S3C_CSIS_DPHYCTRL_ENABLE		(0xf << 0)
 
 /* Configuration Register */
 #define S3C_CSIS_CONFIG_NR_LANE_1		(0 << 0)
