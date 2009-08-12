@@ -209,7 +209,7 @@ static void s3c_csis_set_hs_settle(int settle)
 }
 #endif
 
-void s3c_csis_start(void)
+void s3c_csis_start(int lanes, int settle, int align, int width, int height)
 {
 	struct s3c_platform_csis *pdata;
 
@@ -218,15 +218,15 @@ void s3c_csis_start(void)
 		pdata->cfg_phy_global(1);
 	
 	s3c_csis_reset();
-	s3c_csis_set_nr_lanes(S3C_CSIS_NR_LANES);
+	s3c_csis_set_nr_lanes(lanes);
 
 #ifdef CONFIG_MIPI_CSI_ADV_FEATURE
 	/* FIXME: how configure the followings with FIMC dynamically? */
-	s3c_csis_set_hs_settle(6);	/* s5k6aa */
-	s3c_csis_set_data_align(32);
+	s3c_csis_set_hs_settle(settle);	/* s5k6aa */
+	s3c_csis_set_data_align(align);
 	s3c_csis_set_wclk(0);
 	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
-	s3c_csis_set_resol(640, 480);
+	s3c_csis_set_resol(width, height);
 	s3c_csis_update_shadow();
 #endif
 
