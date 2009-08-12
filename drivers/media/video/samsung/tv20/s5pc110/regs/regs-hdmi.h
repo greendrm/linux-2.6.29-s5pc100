@@ -14,12 +14,26 @@
 
 #include <mach/map.h>
 
-#define S5P_HDMI_CTRL_BASE(x) 	(x)
-#define S5P_HDMI_BASE(x) 	(x + 0x00010000)
-#define S5P_HDMI_SPDIF_BASE(x) 	(x + 0x00030000)
-#define S5P_HDMI_I2S_BASE(x) 	(x + 0x00040000)
-#define S5P_HDMI_TG_BASE(x) 	(x + 0x00050000)
-#define S5P_HDMI_EFUSE_BASE(x)	(x + 0x00060000)
+#define S5P_I2C_HDMI_PHY_BASE(x) 	(x)
+
+/* 
+ * HDMI PHY is configured through the dedicated I2C. 
+ * The dedicated I2C for HDMI PHY is only used as TX mode
+ * I2C-BUS Interface for HDMI PHY is internally connected
+ */
+#define I2C_HDMI_CON			S5P_I2C_HDMI_PHY_BASE(0x0000)
+#define I2C_HDMI_STAT			S5P_I2C_HDMI_PHY_BASE(0x0004)
+#define I2C_HDMI_ADD			S5P_I2C_HDMI_PHY_BASE(0x0008)
+#define I2C_HDMI_DS			S5P_I2C_HDMI_PHY_BASE(0x000c)
+#define I2C_HDMI_LC			S5P_I2C_HDMI_PHY_BASE(0x0010)
+
+
+#define S5P_HDMI_CTRL_BASE(x) 		(x)
+#define S5P_HDMI_BASE(x) 		(x + 0x00010000)
+#define S5P_HDMI_SPDIF_BASE(x) 		(x + 0x00030000)
+#define S5P_HDMI_I2S_BASE(x) 		(x + 0x00040000)
+#define S5P_HDMI_TG_BASE(x) 		(x + 0x00050000)
+#define S5P_HDMI_EFUSE_BASE(x)		(x + 0x00060000)
 
 
 //////////////
@@ -1514,6 +1528,8 @@
 #define CABLE_INSERT 1
 #define CABLE_REMOVE (~CABLE_INSERT)
 
+
+#define HDMI_PHY_READY          (1<<0)
 
 
 #endif // __ASM_ARCH_REGS_HDMI_H

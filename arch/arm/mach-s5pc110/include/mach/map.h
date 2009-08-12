@@ -204,6 +204,8 @@
 #define S5PC11X_SZ_MIXER        SZ_1M
 #define S5PC11X_PA_HDMI         (0xFA100000)
 #define S5PC11X_SZ_HDMI         SZ_1M
+#define I2C_HDMI_PHY_BASE	(0xFA900000)
+#define I2C_HDMI_SZ_PHY_BASE	SZ_1K
 
 /* compatibiltiy defines. */
 #define S3C_SZ_HSMMC		S5PC11X_SZ_HSMMC
