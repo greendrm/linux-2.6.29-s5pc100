@@ -109,7 +109,7 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 };
 
 #ifndef CONFIG_VIDEO_FIMC_MIPI
-void s3c_csis_start(void) { }
+void s3c_csis_start(int settle, int align, int width, int height) {}
 #endif
 
 static int fimc_init_camera(struct fimc_control *ctrl)
@@ -168,7 +168,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		 * no error although no s_stream api support
 		*/
 		v4l2_subdev_call(cam->sd, video, s_stream, 0);
-		s3c_csis_start();
+		s3c_csis_start(1, 6, 32, cam->width, cam->height);
 		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 

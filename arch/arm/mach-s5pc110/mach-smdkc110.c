@@ -796,6 +796,14 @@ static struct s5k3ba_platform_data s5k3ba_plat = {
 	.is_mipi = 0,
 };
 
+static struct s5k6aa_platform_data s5k4ea_plat = {
+	.default_width = 1920,
+	.default_height = 1080,
+	.pixelformat = V4L2_PIX_FMT_UYVY,
+	.freq = 24000000,
+	.is_mipi = 1,
+};
+
 static struct s5k6aa_platform_data s5k6aa_plat = {
 	.default_width = 640,
 	.default_height = 480,
@@ -809,6 +817,10 @@ static struct i2c_board_info  __initdata i2c_camera_info[] = {
 		I2C_BOARD_INFO("S5K3BA", 0x2d),
 		.platform_data = &s5k3ba_plat,
 	},
+//	{
+//		I2C_BOARD_INFO("S5K4EA", 0x2d),
+//		.platform_data = &s5k4ea_plat,
+//	},
 	{
 		I2C_BOARD_INFO("S5K6AA", 0x3c),
 		.platform_data = &s5k6aa_plat,
@@ -884,6 +896,38 @@ static struct s3c_platform_camera __initdata s5k3ba = {
 };
 #endif
 
+static struct s3c_platform_camera __initdata s5k4ea = {
+	.id		= CAMERA_CSI_C,		/* FIXME */
+	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
+	.fmt		= MIPI_CSI_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &i2c_camera_info[0],
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_epll",
+	.clk_name	= "sclk_cam0",
+	.clk_rate	= 24000000,		/* 24MHz */
+	.line_length	= 1920,
+	/* default resol for preview kind of thing */
+	.width		= 2592,
+	.height		= 984,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 2592,
+		.height	= 984,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+	.cam_power	= smdkc110_cam2_power,
+};
+
 static struct s3c_platform_camera __initdata s5k6aa = {
 	.id		= CAMERA_CSI_C,		/* FIXME */
 	.type		= CAM_TYPE_MIPI,	/* 1.3M MIPI */
@@ -925,6 +969,7 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.camera		= {
 		&s5k3ba,
 		&s5k6aa,
+//		&s5k4ea,
 	}
 };
 

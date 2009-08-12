@@ -50,15 +50,8 @@ struct platform_device s3c_device_i2c0 = {
 static struct s3c2410_platform_i2c default_i2c_data0 __initdata = {
 	.flags		= 0,
 	.slave_addr	= 0x10,
-
-#ifdef CONFIG_CPU_S5PC110
-	.bus_freq	= 10*1000,
-	.max_freq	= 10*1000,
-#else
 	.bus_freq	= 100*1000,
 	.max_freq	= 400*1000,
-#endif
-
 	.sda_delay	= S3C2410_IICLC_SDA_DELAY5 | S3C2410_IICLC_FILTER_ON,
 };
 

@@ -331,12 +331,19 @@ config VIDEO_S5K4BA
 	---help---
 	  This driver supports s5k4ba SoC camera module
 
+config VIDEO_S5K4EA
+	tristate "S5K4EA MIPI CSI-2 supporting camera driver"
+	depends on I2C && VIDEO_V4L2
+	---help---
+	  This driver supports s5k4ea SoC camera module with
+	  MIPI CSI-2 as well
+
 config VIDEO_S5K6AA
 	tristate "S5K6AA MIPI CSI-2 supporting camera driver"
 	depends on I2C && VIDEO_V4L2
 	---help---
 	  This driver supports s5k6aa SoC camera module with
-	  parallel and MIPI CSI-2 as well
+	  MIPI CSI-2 as well
 
 config VIDEO_SAA7110
 	tristate "Philips SAA7110 video decoder"

@@ -720,10 +720,12 @@ static unsigned long s5pc11x_roundrate_clksrc(struct clk *clk,
 	unsigned long parent_rate = clk_get_rate(clk->parent);
 	int div;
 
-	if (rate > parent_rate)
+	if (rate >= parent_rate)
 		rate = parent_rate;
 	else {
 		div = parent_rate / rate;
+		if(parent_rate % rate)
+			div++;
 
 		if (div == 0)
 			div = 1;
@@ -1273,10 +1275,10 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 
-	clk_set_rate(&clk_mmc0.clk, 47*MHZ);	
-	clk_set_rate(&clk_mmc1.clk, 47*MHZ);
-	clk_set_rate(&clk_mmc2.clk, 47*MHZ);
-	clk_set_rate(&clk_mmc3.clk, 47*MHZ);	
+	clk_set_rate(&clk_mmc0.clk, 50*MHZ);	
+	clk_set_rate(&clk_mmc1.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc2.clk, 50*MHZ);
+	clk_set_rate(&clk_mmc3.clk, 50*MHZ);	
 }
 
 static struct clk *clks[] __initdata = {
