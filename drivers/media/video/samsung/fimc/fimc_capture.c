@@ -17,6 +17,7 @@
 #include <linux/string.h>
 #include <linux/platform_device.h>
 #include <linux/videodev2.h>
+#include <linux/videodev2_samsung.h>
 #include <linux/clk.h>
 #include <linux/mm.h>
 #include <linux/io.h>
@@ -24,10 +25,6 @@
 #include <plat/media.h>
 #include <plat/clock.h>
 #include <plat/fimc.h>
-
-#ifdef CONFIG_VIDEO_SAMSUNG_V4L2
-#include <linux/videodev2_samsung.h>
-#endif
 
 #include "fimc.h"
 

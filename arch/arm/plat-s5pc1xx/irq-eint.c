@@ -109,6 +109,17 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	ctrl |= newvalue << shift;
 	__raw_writel(ctrl, S5PC1XX_EINTCON(eint_conf_reg(irq)));
 		
+	if((0 <= offs) && (offs < 8))
+		s3c_gpio_cfgpin(S5PC1XX_GPH0(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((8 <= offs) && (offs < 16))
+		s3c_gpio_cfgpin(S5PC1XX_GPH1(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((16 <= offs) && (offs < 24))
+		s3c_gpio_cfgpin(S5PC1XX_GPH2(offs&0x7), 0x2<<((offs&0x7)*4));
+	else if((24 <= offs) && (offs < 32))
+		s3c_gpio_cfgpin(S5PC1XX_GPH3(offs&0x7), 0x2<<((offs&0x7)*4));
+	else
+		printk(KERN_ERR "No such irq number %d", offs);
+		
 	return 0;
 }
 

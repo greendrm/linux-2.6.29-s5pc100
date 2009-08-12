@@ -1577,3 +1577,8 @@ v2.6.29.4-dev-1-0-43: Jongpill Lee
 		M       arch/arm/plat-s5p64xx/gpiolib.c
 		M       drivers/net/smc911x.c
 		M       drivers/net/smc911x.h
+
+v2.6.29.4-dev-1-0-44: Jongpill Lee
+	- Code Modify for PM on SMDKC100
+		M       arch/arm/mach-s5pc100/s5pc100-button.c
+		M       arch/arm/plat-s5pc1xx/irq-eint.c

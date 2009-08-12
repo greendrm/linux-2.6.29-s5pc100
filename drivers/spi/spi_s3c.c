@@ -414,11 +414,7 @@ static int wait_for_txshiftout(struct s3cspi_bus *sspi, unsigned long t)
 	unsigned long timeout;
 
 	timeout = jiffies + t;
-#if defined (CONFIG_CPU_S5PC110)
-	while((__raw_readl(sspi->regs + S3C_SPI_STATUS) >> 6) & 0x1ff){
-#else
-	while((__raw_readl(sspi->regs + S3C_SPI_STATUS) >> 6) & 0x7f){
-#endif
+	while (TX_FIFO_LVL(__raw_readl(sspi->regs + S3C_SPI_STATUS))){
 	   if(time_after(jiffies, timeout))
 	      return -1;
 	   cpu_relax();

@@ -27,15 +27,29 @@
 static irqreturn_t
 s3c_button_interrupt(int irq, void *dev_id)
 {
-	printk("Button Interrupt occure\n");
+	printk(" 11 Button Interrupt occure\n");
+	
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t
+s3c_31_button_interrupt(int irq, void *dev_id)
+{
+	printk(" 31 Button Interrupt occure\n");
 	
 	return IRQ_HANDLED;
 }
 
 static struct irqaction s3c_button_irq = {
-	.name		= "s3c button Tick",
+	.name		= "s3c 11 button Tick",
 	.flags		= IRQF_SHARED ,
 	.handler	= s3c_button_interrupt,
+};
+
+static struct irqaction s3c_31_button_irq = {
+	.name		= "s3c 31 button Tick",
+	.flags		= IRQF_SHARED ,
+	.handler	= s3c_31_button_interrupt,
 };
 
 static unsigned int s3c_button_gpio_init(void)
@@ -55,6 +69,7 @@ static unsigned int s3c_button_gpio_init(void)
 		printk("gpio request error : %d\n",err);
 	}else{
 		s3c_gpio_cfgpin(S5PC1XX_GPH3(7),S5PC1XX_GPH3_7_WAKEUP_INT_31);
+		s3c_gpio_setpull(S5PC1XX_GPH3(7), S3C_GPIO_PULL_NONE);
 	}
 
 }
@@ -69,6 +84,9 @@ static void __init s3c_button_init(void)
 	
 	set_irq_type(IRQ_EINT11, IRQF_TRIGGER_FALLING);
 	setup_irq(IRQ_EINT11, &s3c_button_irq);
+
+	set_irq_type(IRQ_EINT(31), IRQF_TRIGGER_FALLING);
+	setup_irq(IRQ_EINT(31), &s3c_31_button_irq);
 }
 
 device_initcall(s3c_button_init);
