@@ -1582,3 +1582,8 @@ v2.6.29.4-dev-1-0-44: Jongpill Lee
 	- Code Modify for PM on SMDKC100
 		M       arch/arm/mach-s5pc100/s5pc100-button.c
 		M       arch/arm/plat-s5pc1xx/irq-eint.c
+
+v2.6.29.4-dev-1-0-45: Jinsung Yang
+	- Finalize for camera support with SMDKC110
+	- S5K3BA, S5K4BA, S5K4EA and S5K6AA are available
+
