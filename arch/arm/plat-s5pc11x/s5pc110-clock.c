@@ -720,10 +720,12 @@ static unsigned long s5pc11x_roundrate_clksrc(struct clk *clk,
 	unsigned long parent_rate = clk_get_rate(clk->parent);
 	int div;
 
-	if (rate > parent_rate)
+	if (rate >= parent_rate)
 		rate = parent_rate;
 	else {
 		div = parent_rate / rate;
+		if(parent_rate % rate)
+			div++;
 
 		if (div == 0)
 			div = 1;
