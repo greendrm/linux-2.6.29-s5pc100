@@ -552,7 +552,14 @@ extern int s5p_tv_vo_ioctl(struct file *file, u32 cmd, unsigned long arg);
  *
 */
 
+#ifdef CONFIG_CPU_S5PC100
 int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num);
+#endif
+
+#ifdef CONFIG_CPU_S5PC110
+int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_num2);
+#endif
+
 int __init __s5p_sdout_probe(struct platform_device *pdev, u32 res_num);
 int __init __s5p_mixer_probe(struct platform_device *pdev, u32 res_num);
 int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num);

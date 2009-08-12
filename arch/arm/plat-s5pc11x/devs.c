@@ -491,46 +491,51 @@ EXPORT_SYMBOL(s3c_device_rotator);
 
 /* TVOUT interface */
 static struct resource s5p_tvout_resources[] = {
-	[0] = {
-		.start  = S5PC11X_PA_TVENC,
-		.end    = S5PC11X_PA_TVENC + S5PC11X_SZ_TVENC - 1,
-		.flags  = IORESOURCE_MEM,
-	},
-	[1] = {
-		.start  = S5PC11X_PA_VP,
-		.end    = S5PC11X_PA_VP + S5PC11X_SZ_VP - 1,
-		.flags  = IORESOURCE_MEM,
-	},
-	[2] = {
-		.start  = S5PC11X_PA_MIXER,
-		.end    = S5PC11X_PA_MIXER + S5PC11X_SZ_MIXER - 1,
-		.flags  = IORESOURCE_MEM,
-	},
-	[3] = {
-		.start  = S5PC11X_PA_HDMI,
-		.end    = S5PC11X_PA_HDMI + S5PC11X_SZ_HDMI - 1,
-		.flags  = IORESOURCE_MEM,
-	},
-	[4] = {
-		.start  = IRQ_MIXER,
-		.end    = IRQ_MIXER,
-		.flags  = IORESOURCE_IRQ,
-	},
-	[5] = {
-		.start  = IRQ_HDMI,
-		.end    = IRQ_HDMI,
-		.flags  = IORESOURCE_IRQ,
-	},
-	[6] = {
-		.start  = IRQ_TVENC,
-		.end    = IRQ_TVENC,
-		.flags  = IORESOURCE_IRQ,
-	},
-	[7] = {
-		.start  = IRQ_EINT5,
-		.end    = IRQ_EINT5,
-		.flags  = IORESOURCE_IRQ,
-	}
+        [0] = {
+                .start  = S5PC11X_PA_TVENC,
+                .end    = S5PC11X_PA_TVENC + S5PC11X_SZ_TVENC - 1,
+                .flags  = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start  = S5PC11X_PA_VP,
+                .end    = S5PC11X_PA_VP + S5PC11X_SZ_VP - 1,
+                .flags  = IORESOURCE_MEM,
+        },
+        [2] = {
+                .start  = S5PC11X_PA_MIXER,
+                .end    = S5PC11X_PA_MIXER + S5PC11X_SZ_MIXER - 1,
+                .flags  = IORESOURCE_MEM,
+        },
+        [3] = {
+                .start  = S5PC11X_PA_HDMI,
+                .end    = S5PC11X_PA_HDMI + S5PC11X_SZ_HDMI - 1,
+                .flags  = IORESOURCE_MEM,
+        },
+        [4] = {
+                .start  = I2C_HDMI_PHY_BASE,
+                .end    = I2C_HDMI_PHY_BASE + I2C_HDMI_SZ_PHY_BASE - 1,
+                .flags  = IORESOURCE_MEM,
+        },
+        [5] = {
+                .start  = IRQ_MIXER,
+                .end    = IRQ_MIXER,
+                .flags  = IORESOURCE_IRQ,
+        },
+        [6] = {
+                .start  = IRQ_HDMI,
+                .end    = IRQ_HDMI,
+                .flags  = IORESOURCE_IRQ,
+        },
+        [7] = {
+                .start  = IRQ_TVENC,
+                .end    = IRQ_TVENC,
+                .flags  = IORESOURCE_IRQ,
+        },
+        [8] = {
+                .start  = IRQ_EINT5,
+                .end    = IRQ_EINT5,
+                .flags  = IORESOURCE_IRQ,
+        }
 };
 
 struct platform_device s5p_device_tvout = {

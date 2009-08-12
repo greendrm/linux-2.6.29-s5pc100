@@ -484,9 +484,13 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	__s5p_sdout_probe(pdev, 0);
 	__s5p_vp_probe(pdev, 1);	
 	__s5p_mixer_probe(pdev, 2);
-	__s5p_hdmi_probe(pdev, 3);
+
+#ifdef CONFIG_CPU_S5PC110	
+	__s5p_hdmi_probe(pdev, 3, 4);
+#endif
 
 #ifdef CONFIG_CPU_S5PC100	
+	__s5p_hdmi_probe(pdev, 3);
 	__s5p_tvclk_probe(pdev, 4);
 #endif
 
