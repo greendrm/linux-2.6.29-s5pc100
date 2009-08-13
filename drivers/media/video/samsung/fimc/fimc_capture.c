@@ -564,29 +564,28 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	/* free previous buffers */
 	for (i = 0; i < FIMC_PHYBUFS; i++) {
-		fimc_dma_free(ctrl, &cap->bufs[i].base[0], cap->bufs[i].length[0]);
-		cap->bufs[i].base[0] = 0;
-		cap->bufs[i].length[0] = 0;
+		fimc_dma_free(ctrl, &cap->bufs[i], 0);
 		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
 	}
 
 	/* alloc buffers */
 	for (i = 0; i < cap->nr_bufs; i++) {
-		cap->bufs[i].base[0] = fimc_dma_alloc(ctrl,
-					PAGE_ALIGN(cap->fmt.sizeimage));
+		cap->bufs[i].length[0] = PAGE_ALIGN(cap->fmt.sizeimage);
+		fimc_dma_alloc(ctrl, &cap->bufs[i], 0, 0);
+
 		if (!cap->bufs[i].base[0]) {
 			dev_err(ctrl->dev, "%s: no memory for "
 				"capture buffer\n", __func__);
 			goto err_alloc;
 		}
 
-		cap->bufs[i].length[0] = PAGE_ALIGN(cap->fmt.sizeimage);
 		cap->bufs[i].state = VIDEOBUF_PREPARED;
 	}
 
 	for (i = cap->nr_bufs; i < FIMC_PHYBUFS; i++) {
 		cap->bufs[i].base[0] = cap->bufs[i - cap->nr_bufs].base[0];
 		cap->bufs[i].length[0] = cap->bufs[i - cap->nr_bufs].length[0];
+		cap->bufs[i].garbage[0] = cap->bufs[i - cap->nr_bufs].garbage[0];
 		cap->bufs[i].state = cap->bufs[i - cap->nr_bufs].state;
 	}
 
@@ -596,10 +595,8 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 err_alloc:
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].base[0]) {
-			fimc_dma_free(ctrl, &cap->bufs[i].base[0],
-					cap->bufs[i].length[0]);
-		}
+		if (cap->bufs[i].base[0])
+			fimc_dma_free(ctrl, &cap->bufs[i], 0);
 
 		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
 	}

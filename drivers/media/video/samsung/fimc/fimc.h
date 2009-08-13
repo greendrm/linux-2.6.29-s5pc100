@@ -123,6 +123,7 @@ struct fimc_buf {
 struct fimc_buf_set {
 	dma_addr_t		base[3];
 	size_t			length[3];
+	size_t			garbage[3];
 	enum videobuf_state	state;
 	u32			flags;
 	atomic_t		mapped_cnt;
@@ -292,8 +293,8 @@ extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sle
 
 /* general */
 extern void s3c_csis_start(int lanes, int settle, int align, int width, int height);
-extern dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes);
-extern void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes);
+extern int fimc_dma_alloc(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i, int align);
+extern void fimc_dma_free(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i);
 extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);
 extern int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift);
 

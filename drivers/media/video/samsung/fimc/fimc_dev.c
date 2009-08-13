@@ -39,34 +39,59 @@
 
 struct fimc_global *fimc_dev;
 
-dma_addr_t fimc_dma_alloc(struct fimc_control *ctrl, u32 bytes)
+int fimc_dma_alloc(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i, int align)
 {
-	dma_addr_t end, addr, *curr;
+	dma_addr_t end, *curr;
 
 	mutex_lock(&ctrl->lock);
 
 	end = ctrl->mem.base + ctrl->mem.size;
 	curr = &ctrl->mem.curr;
 
-	if (*curr + bytes > end) {
-		addr = 0;
+	if (!bs->length[i])
+		return -EINVAL;
+
+	if (!align) {
+		if (*curr + bs->length[i] > end) {
+			goto overflow;
+		} else {
+			bs->base[i] = *curr;
+			bs->garbage[i] = 0;
+			*curr += bs->length[i];
+		}
 	} else {
-		addr = *curr;
-		*curr += bytes;
+		if (ALIGN(*curr, align) + bs->length[i] > end)
+			goto overflow;
+		else {
+			bs->base[i] = ALIGN(*curr, align);
+			bs->garbage[i] = ALIGN(*curr, align) - *curr;
+			*curr += (bs->length[i] + bs->garbage[i]);
+		}
 	}
 
 	mutex_unlock(&ctrl->lock);
 
-	return addr;
+	return 0;
+
+overflow:
+	bs->base[i] = 0;
+	bs->length[i] = 0;
+	bs->garbage[i] = 0;
+
+	mutex_unlock(&ctrl->lock);
+
+	return -ENOMEM;
 }
 
-void fimc_dma_free(struct fimc_control *ctrl, dma_addr_t *addr, u32 bytes)
+void fimc_dma_free(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i)
 {
 	mutex_lock(&ctrl->lock);
 
-	if (*addr) {
-		ctrl->mem.curr -= bytes;
-		*addr = 0;
+	if (bs->base[i]) {
+		ctrl->mem.curr -= (bs->length[i] + bs->garbage[i]);
+		bs->base[i] = 0;
+		bs->length[i] = 0;
+		bs->garbage[i] = 0;
 	}
 
 	mutex_unlock(&ctrl->lock);
@@ -664,10 +689,8 @@ static int fimc_release(struct file *filp)
 	if (ctrl->cap) {
 		mutex_unlock(&ctrl->lock);
 
-		for (i = 0; i < FIMC_CAPBUFS; i++) {
-			fimc_dma_free(ctrl, &ctrl->cap->bufs[i].base[0],
-					ctrl->cap->bufs[i].length[0]);
-		}
+		for (i = 0; i < FIMC_CAPBUFS; i++)
+			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 0);
 
 		mutex_lock(&ctrl->lock);
 		kfree(ctrl->cap);
