@@ -171,7 +171,7 @@ void s5pc11x_reserve_bootmem(void)
 		if (mdev->memsize <= 0)
 			continue;
 
-		mdev->paddr = virt_to_phys(alloc_bootmem_node( \
+		mdev->paddr = virt_to_phys(alloc_bootmem_pages_node( \
 				NODE_DATA(mdev->node), mdev->memsize));
 		printk(KERN_INFO "s5pc110: %lu bytes system memory reserved " \
 			"for %s at 0x%08x\n", (unsigned long) mdev->memsize, \

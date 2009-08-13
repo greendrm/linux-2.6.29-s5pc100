@@ -171,7 +171,8 @@ void s5pc1xx_reserve_bootmem(void)
 	for(i = 0; i < sizeof(s3c_mdevs) / sizeof(s3c_mdevs[0]); i++) {
 		mdev = &s3c_mdevs[i];
 		if (mdev->memsize > 0) {
-			mdev->paddr = virt_to_phys(alloc_bootmem_low(mdev->memsize));
+			mdev->paddr = virt_to_phys( \
+				alloc_bootmem_pages(mdev->memsize));
 			printk(KERN_INFO \
 				"s5pc1xx: %lu bytes system memory reserved "
 				"for %s at 0x%08x\n",
