@@ -1262,7 +1262,7 @@ int fimc_streamoff_output(void *fh)
 
 static int fimc_qbuf_output_dma(struct fimc_control *ctrl)
 {
-	dma_addr_t dst_base = 0;	
+	struct fimc_buf_set buf_set;
 	u32 index = 0;
 	int ret = -1;
 	u32 i = 0;
@@ -1277,10 +1277,11 @@ static int fimc_qbuf_output_dma(struct fimc_control *ctrl)
 
 		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
 
-		dst_base = (dma_addr_t)ctrl->out->fbuf.base;
+		memset(&buf_set, 0x00, sizeof(buf_set));
+		buf_set.base[FIMC_ADDR_Y] = (dma_addr_t)ctrl->out->fbuf.base;
+
 		for (i = 0; i < FIMC_PHYBUFS; i++)
-			fimc_hwset_output_address(ctrl, i, dst_base, \
-							&ctrl->out->fbuf.fmt);
+			fimc_hwset_output_address(ctrl, &buf_set, i);
 
 		ret = fimc_outdev_start_camif(ctrl);
 		if (ret < 0) {

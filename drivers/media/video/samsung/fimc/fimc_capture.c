@@ -220,13 +220,10 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 static int fimc_update_hwaddr(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
-	dma_addr_t base;
 	int i;
 
-	for (i = 0; i < FIMC_PHYBUFS; i++) {
-		base = cap->bufs[i].base[0];
-		fimc_hwset_output_address(ctrl, i, base, &cap->fmt);
-	}
+	for (i = 0; i < FIMC_PHYBUFS; i++)
+		fimc_hwset_output_address(ctrl, &cap->bufs[i], i);
 
 	return 0;
 }
@@ -534,11 +531,40 @@ int fimc_try_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	return 0;
 }
 
+static int fimc_alloc_buffers(struct fimc_control *ctrl, 
+				int plane, int size, int align)
+{
+	struct fimc_capinfo *cap = ctrl->cap;
+	int i;
+
+	for (i = 0; i < cap->nr_bufs; i++) {
+		cap->bufs[i].length[plane] = PAGE_ALIGN(size);
+		fimc_dma_alloc(ctrl, &cap->bufs[i], plane, align);
+
+		if (!cap->bufs[i].base[plane])
+			goto err_alloc;
+
+		cap->bufs[i].state = VIDEOBUF_PREPARED;
+	}
+
+	return 0;
+
+err_alloc:
+	for (i = 0; i < cap->nr_bufs; i++) {
+		if (cap->bufs[i].base[plane])
+			fimc_dma_free(ctrl, &cap->bufs[i], plane);
+
+		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
+	}
+
+	return -ENOMEM;
+}
+
 int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int i;
+	int ret = 0, i;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
 		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
@@ -568,40 +594,46 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
 	}
 
-	/* alloc buffers */
-	for (i = 0; i < cap->nr_bufs; i++) {
-		cap->bufs[i].length[0] = PAGE_ALIGN(cap->fmt.sizeimage);
-		fimc_dma_alloc(ctrl, &cap->bufs[i], 0, 0);
+	switch (cap->fmt.pixelformat) {
+	case V4L2_PIX_FMT_RGB32:
+	case V4L2_PIX_FMT_RGB565:
+	case V4L2_PIX_FMT_YUYV:
+	case V4L2_PIX_FMT_UYVY:
+	case V4L2_PIX_FMT_VYUY:
+	case V4L2_PIX_FMT_YVYU:	
+	case V4L2_PIX_FMT_NV16:
+	case V4L2_PIX_FMT_NV61:
+	case V4L2_PIX_FMT_YUV422P:
+	case V4L2_PIX_FMT_YUV420:
+	case V4L2_PIX_FMT_NV21:
+		ret = fimc_alloc_buffers(ctrl, 0, cap->fmt.sizeimage, 0);
+		break;
+	
+	case V4L2_PIX_FMT_NV12:
+		ret = fimc_alloc_buffers(ctrl, 0,
+			cap->fmt.width * cap->fmt.height, SZ_64K);
+		ret = fimc_alloc_buffers(ctrl, 1,
+			cap->fmt.width * cap->fmt.height / 4, SZ_64K);
+		break;
 
-		if (!cap->bufs[i].base[0]) {
-			dev_err(ctrl->dev, "%s: no memory for "
+	default:
+		break;
+	}
+
+	if (ret) {
+		dev_err(ctrl->dev, "%s: no memory for "
 				"capture buffer\n", __func__);
-			goto err_alloc;
-		}
-
-		cap->bufs[i].state = VIDEOBUF_PREPARED;
+		return -ENOMEM;
 	}
 
 	for (i = cap->nr_bufs; i < FIMC_PHYBUFS; i++) {
-		cap->bufs[i].base[0] = cap->bufs[i - cap->nr_bufs].base[0];
-		cap->bufs[i].length[0] = cap->bufs[i - cap->nr_bufs].length[0];
-		cap->bufs[i].garbage[0] = cap->bufs[i - cap->nr_bufs].garbage[0];
-		cap->bufs[i].state = cap->bufs[i - cap->nr_bufs].state;
+		memcpy(&cap->bufs[i], \
+			&cap->bufs[i - cap->nr_bufs], sizeof(cap->bufs[i]));
 	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
 	return 0;
-
-err_alloc:
-	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].base[0])
-			fimc_dma_free(ctrl, &cap->bufs[i], 0);
-
-		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
-	}
-
-	return -ENOMEM;
 }
 
 int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
@@ -678,7 +710,16 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 		break;
 
 	case V4L2_CID_PADDR_Y:
-		c->value = ctrl->cap->bufs[c->value].base[0];
+		c->value = ctrl->cap->bufs[c->value].base[FIMC_ADDR_Y];
+		break;
+
+	case V4L2_CID_PADDR_CB:		/* fall through */
+	case V4L2_CID_PADDR_CBCR:
+		c->value = ctrl->cap->bufs[c->value].base[FIMC_ADDR_CB];
+		break;
+
+	case V4L2_CID_PADDR_CR:
+		c->value = ctrl->cap->bufs[c->value].base[FIMC_ADDR_CR];
 		break;
 
 	default:

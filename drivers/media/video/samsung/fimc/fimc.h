@@ -377,7 +377,7 @@ extern int fimc_hwset_enable_lastirq(struct fimc_control *ctrl);
 extern int fimc_hwset_disable_lastirq(struct fimc_control *ctrl);
 extern int fimc_hwset_prescaler(struct fimc_control *ctrl);
 extern int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat);
-extern int fimc_hwset_output_address(struct fimc_control *ctrl, int id, dma_addr_t base, struct v4l2_pix_format *fmt);
+extern int fimc_hwset_output_address(struct fimc_control *ctrl, struct fimc_buf_set *bs, int id);
 extern int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_hwset_scaler(struct fimc_control *ctrl);
 extern int fimc_hwset_enable_lcdfifo(struct fimc_control *ctrl);

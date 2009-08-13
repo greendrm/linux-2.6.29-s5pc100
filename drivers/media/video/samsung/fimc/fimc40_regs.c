@@ -393,53 +393,12 @@ int fimc_hwset_prescaler(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_hwset_output_address(struct fimc_control *ctrl, int id,
-				dma_addr_t base, struct v4l2_pix_format *fmt)
+int fimc_hwset_output_address(struct fimc_control *ctrl,
+				struct fimc_buf_set *bs, int id)
 {
-	dma_addr_t addr_y = 0, addr_cb = 0, addr_cr = 0;
-
-	switch (fmt->pixelformat) {
-	/* 1 plane formats */
-	case V4L2_PIX_FMT_RGB565:	/* fall through */
-	case V4L2_PIX_FMT_RGB32:	/* fall through */
-	case V4L2_PIX_FMT_YUYV:		/* fall through */
-	case V4L2_PIX_FMT_UYVY:		/* fall through */
-	case V4L2_PIX_FMT_VYUY:		/* fall through */
-	case V4L2_PIX_FMT_YVYU:		/* fall through */
-		addr_y = base;
-		break;
-
-	/* 2 plane formats */
-	case V4L2_PIX_FMT_NV12:	/* fall through */
-	case V4L2_PIX_FMT_NV21:	/* fall through */
-	case V4L2_PIX_FMT_NV16:	/* fall through */
-	case V4L2_PIX_FMT_NV61:
-		addr_y = base;
-		addr_cb = base + (fmt->width * fmt->height);
-		break;
-
-	/* 3 plane formats */
-	case V4L2_PIX_FMT_YUV422P:
-		addr_y = base;
-		addr_cb = addr_y + (fmt->width * fmt->height);
-		addr_cr = addr_cb + (fmt->width * fmt->height / 2);
-		break;
-
-	case V4L2_PIX_FMT_YUV420:
-		addr_y = base;
-		addr_cb = addr_y + (fmt->width * fmt->height);
-		addr_cr = addr_cb + (fmt->width * fmt->height / 4);
-		break;
-
-	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format (%08x)\n", \
-			__func__, fmt->pixelformat);
-		break;
-	}
-
-	writel(addr_y, ctrl->regs + S3C_CIOYSA(id));
-	writel(addr_cb, ctrl->regs + S3C_CIOCBSA(id));
-	writel(addr_cr, ctrl->regs + S3C_CIOCRSA(id));
+	writel(bs->base[FIMC_ADDR_Y], ctrl->regs + S3C_CIOYSA(id));
+	writel(bs->base[FIMC_ADDR_CB], ctrl->regs + S3C_CIOCBSA(id));
+	writel(bs->base[FIMC_ADDR_CR], ctrl->regs + S3C_CIOCRSA(id));
 
 	return 0;
 }
