@@ -137,6 +137,12 @@ dma_addr_t s3c_get_media_memory(int dev_id)
 }
 EXPORT_SYMBOL(s3c_get_media_memory);
 
+dma_addr_t s3c_get_media_memory_node(int dev_id, int node)
+{
+	return s3c_get_media_memory(dev_id);
+}
+EXPORT_SYMBOL(s3c_get_media_memory_node);
+
 size_t s3c_get_media_memsize(int dev_id)
 {
 	struct s3c_media_device *mdev;
@@ -150,6 +156,12 @@ size_t s3c_get_media_memsize(int dev_id)
 	return mdev->memsize;
 }
 EXPORT_SYMBOL(s3c_get_media_memsize);
+
+size_t s3c_get_media_memsize_node(int dev_id)
+{
+	return s3c_get_media_memsize(dev_id)
+}
+EXPORT_SYMBOL(s3c_get_media_memsize_node);
 
 void s5pc1xx_reserve_bootmem(void)
 {

@@ -198,9 +198,12 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	ctrl->dev = &pdev->dev;
 	ctrl->vd = &fimc_video_device[id];
 	ctrl->vd->minor = id;
-	ctrl->mem.base = s3c_get_media_memory(mdev_id);
-	ctrl->mem.size = s3c_get_media_memsize(mdev_id);
+
+	/* alloc from bank1 as default */
+	ctrl->mem.base = s3c_get_media_memory_node(mdev_id, 1);
+	ctrl->mem.size = s3c_get_media_memsize_node(mdev_id, 1);
 	ctrl->mem.curr = ctrl->mem.base;
+
 	ctrl->status = FIMC_STREAMOFF;
 	ctrl->limit = &fimc_limits[id];
 

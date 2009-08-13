@@ -293,8 +293,7 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 			if (cam_count == inp->index + 1) {
 				cam = fimc->camera[i];
 				dev_info(ctrl->dev, "%s:v4l2 input[%d] is %s",
-						__func__,
-						inp->index,
+						__func__, inp->index,
 						fimc->camera[i]->info->type);
 			} else
 				continue;
@@ -394,8 +393,7 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	if (!ctrl->cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n",
-			__func__);
+		dev_err(ctrl->dev, "%s: no capture device info\n", __func__);
 		return -EINVAL;
 	}
 
@@ -548,8 +546,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	}
 
 	if (!cap) {
-		dev_err(ctrl->dev, "%s: no capture device info\n",
-			__func__);
+		dev_err(ctrl->dev, "%s: no capture device info\n", __func__);
 		return -ENODEV;
 	}
 
@@ -563,8 +560,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	cap->nr_bufs = b->count;
 
-	dev_dbg(ctrl->dev, "%s: requested %d buffers\n",
-		__func__, b->count);
+	dev_dbg(ctrl->dev, "%s: requested %d buffers\n", __func__, b->count);
 
 	/* free previous buffers */
 	for (i = 0; i < FIMC_PHYBUFS; i++) {
@@ -682,6 +678,10 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 	case V4L2_CID_HFLIP:	/* fall through */
 	case V4L2_CID_VFLIP:
 		ctrl->cap->flip = c->id;
+		break;
+
+	case V4L2_CID_PADDR_Y:
+		c->value = ctrl->cap->bufs[c->value].base[0];
 		break;
 
 	default:

@@ -24,7 +24,7 @@ static struct s3c_media_device media_devs[] = {
 	{
 		.id = S3C_MDEV_FIMC0,
 		.name = "fimc0",
-		.node = 0,
+		.node = 1,
 		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC0 * SZ_1K,
 		.paddr = 0,
 	},
@@ -34,7 +34,7 @@ static struct s3c_media_device media_devs[] = {
 	{
 		.id = S3C_MDEV_FIMC1,
 		.name = "fimc1",
-		.node = 0,
+		.node = 1,
 		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC1 * SZ_1K,
 		.paddr = 0,
 	},
@@ -44,7 +44,7 @@ static struct s3c_media_device media_devs[] = {
 	{
 		.id = S3C_MDEV_FIMC2,
 		.name = "fimc2",
-		.node = 0,
+		.node = 1,
 		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2 * SZ_1K,
 		.paddr = 0,
 	},

@@ -67,6 +67,10 @@ enum v4l2_photometry_mode {
 
 /* CID extensions */
 #define V4L2_CID_ROTATION		(V4L2_CID_PRIVATE_BASE + 0)
+#define V4L2_CID_PADDR_Y		(V4L2_CID_PRIVATE_BASE + 1)
+#define V4L2_CID_PADDR_CB		(V4L2_CID_PRIVATE_BASE + 2)
+#define V4L2_CID_PADDR_CR		(V4L2_CID_PRIVATE_BASE + 3)
+#define V4L2_CID_PADDR_CBCR		(V4L2_CID_PRIVATE_BASE + 4)
 
 /*      Pixel format         FOURCC                        	depth  Description  */
 #define V4L2_PIX_FMT_NV12T    v4l2_fourcc('T', 'V', '1', '2') /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
