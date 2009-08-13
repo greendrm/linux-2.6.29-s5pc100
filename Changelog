@@ -1593,3 +1593,6 @@ v2.6.29.4-dev-1-0-46: Ohkyoung Kwon
 	Added Files:
 		A	arch/arm/configs/smdk6442onenand_defconfig
 
+v2.6.29.4-dev-1-1-0: Jinsung Yang
+	- Official Release (2009.08.13)
+
