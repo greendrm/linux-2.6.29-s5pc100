@@ -159,7 +159,7 @@ EXPORT_SYMBOL(s3c_get_media_memsize);
 
 size_t s3c_get_media_memsize_node(int dev_id)
 {
-	return s3c_get_media_memsize(dev_id)
+	return s3c_get_media_memsize(dev_id);
 }
 EXPORT_SYMBOL(s3c_get_media_memsize_node);
 
