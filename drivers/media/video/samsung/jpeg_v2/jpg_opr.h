@@ -2,7 +2,7 @@
  *
  * Driver header file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh,Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -14,6 +14,40 @@
 #define __JPG_OPR_H__
 
 #include <linux/interrupt.h>
+
+
+/* debug macro */
+#define JPG_DEBUG(fmt, ...)					\
+	do {							\
+		printk(KERN_DEBUG 				\
+			"%s: " fmt, __func__, ##__VA_ARGS__);	\
+	} while(0)
+
+
+#define JPG_WARN(fmt, ...)					\
+	do {							\
+		printk(KERN_WARNING				\
+			fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+
+
+#define JPG_ERROR(fmt, ...)					\
+	do {							\
+		printk(KERN_ERR					\
+			"%s: " fmt, __func__, ##__VA_ARGS__);	\
+	} while (0)
+
+
+
+#ifdef CONFIG_VIDEO_JPEG_DEBUG
+#define jpg_dbg(fmt, ...)		JPG_DEBUG(fmt, ##__VA_ARGS__)
+#else
+#define jpg_dbg(fmt, ...)
+#endif
+
+#define jpg_warn(fmt, ...)		JPG_WARN(fmt, ##__VA_ARGS__)
+#define jpg_err(fmt, ...)		JPG_ERROR(fmt, ##__VA_ARGS__)
 
 extern wait_queue_head_t wait_queue_jpeg;
 
@@ -111,8 +145,10 @@ typedef struct {
 
 jpg_return_status decode_jpg(sspc100_jpg_ctx *jpg_ctx, jpg_dec_proc_param *dec_param);
 void reset_jpg(sspc100_jpg_ctx *jpg_ctx);
+#ifdef CONFIG_CPU_S5PC100
 void decode_header(sspc100_jpg_ctx *jpg_ctx, jpg_dec_proc_param *dec_param);
 void decode_body(sspc100_jpg_ctx *jpg_ctx);
+#endif
 sample_mode_t get_sample_type(sspc100_jpg_ctx *jpg_ctx);
 void get_xy(sspc100_jpg_ctx *jpg_ctx, UINT32 *x, UINT32 *y);
 UINT32 get_yuv_size(out_mode_t out_format, UINT32 width, UINT32 height);

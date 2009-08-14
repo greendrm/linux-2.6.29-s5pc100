@@ -1,13 +1,13 @@
-/* linux/include/asm-arm/arch-s3c2410/regs-nand.h
- *
- * Copyright (c) 2004,2005 Simtec Electronics <linux@simtec.co.uk>
- *		      http://www.simtec.co.uk/products/SWLINUX/
+/* arch/arm/plat-s3c/include/plat/regs-ide.h 
+ * 
+ * Copyright (C) 2009 Samsung Electronics
+ * 	http://samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * S3C2410 NAND register definitions
+ * S5PC1XX IDE register definitions
 */
 
 #ifndef __ASM_ARM_REGS_IDE
@@ -51,7 +51,7 @@
 #define S5P_BUS_FIFO_STATUS	S5P_CFATA_REG(0x1980)
 #define S5P_ATA_FIFO_STATUS	S5P_CFATA_REG(0x1984)
 
-#else
+#elif defined (CONFIG_CPU_S5PC110)
 #define S5P_ATA_CTRL            S5P_CFATA_REG(0x0)
 #define S5P_ATA_STATUS          S5P_CFATA_REG(0x4)
 #define S5P_ATA_CMD             S5P_CFATA_REG(0x8)

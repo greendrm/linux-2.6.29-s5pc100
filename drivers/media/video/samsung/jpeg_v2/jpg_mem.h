@@ -2,7 +2,7 @@
  *
  * Driver header file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh, Hyunmin kwak,Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,12 @@
 #include <linux/version.h>
 #include <plat/media.h>
 
+#ifdef CONFIG_CPU_S5PC100
 #define JPG_REG_BASE_ADDR    	(0xEE500000)
+#else //CONFIG_CPU_S5PC110
+#define JPG_REG_BASE_ADDR    	(0xFB600000)
+#endif
+
 #define jpg_data_base_addr	(UINT32)s3c_get_media_memory(S3C_MDEV_JPEG)
 
 #define MAX_JPG_WIDTH        3072//3264
@@ -29,9 +34,9 @@
 
 #define MAX_RGB_WIDTH        800
 #define MAX_RGB_HEIGHT       480
-      
+
 /*******************************************************************************/
-// define JPG & image memory 
+// define JPG & image memory
 // memory area is 4k(PAGE_SIZE) aligned because of VirtualCopyEx()
 #define JPG_STREAM_BUF_SIZE        ((MAX_JPG_WIDTH * MAX_JPG_HEIGHT )/PAGE_SIZE + 1)*PAGE_SIZE
 #define JPG_STREAM_THUMB_BUF_SIZE  ((MAX_JPG_THUMBNAIL_WIDTH * MAX_JPG_THUMBNAIL_HEIGHT )/PAGE_SIZE + 1)*PAGE_SIZE

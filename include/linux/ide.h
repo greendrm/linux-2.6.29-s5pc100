@@ -779,10 +779,6 @@ typedef struct hwif_s {
 
 	void (*rw_disk)(ide_drive_t *, struct request *);
 
-#ifdef CONFIG_IDE_HOOK_IRQ
-	int (*ide_irq_hook)(void *);
-#endif
-
 	const struct ide_tp_ops		*tp_ops;
 	const struct ide_port_ops	*port_ops;
 	const struct ide_dma_ops	*dma_ops;

@@ -102,7 +102,6 @@ static inline int bus_fifo_status_check(BUS_STATE status)
 		return -1;
 	}
 
-	printk("i = %d\n", i);
 	if (i == 0)
 		printk("we got a problem in bus_fifo\n");
 	return temp;
@@ -114,7 +113,7 @@ static int wait_for_dev_ready(void)
 	u8 temp;
 	uint i;
 
-	for (i = 0; i < 1000000; i++) {
+	for (i = 0; i < 0x10000000; i++) {
 		temp = readl(s3c_ide_regbase + S5P_ATA_PIO_CSD);
 		if ((temp & STATUS_DEVICE_BUSY) == 0) {
 			DbgAta("wait_for_dev_ready: %08x\n", temp);
@@ -130,7 +129,7 @@ static inline int ata_status_check(ide_drive_t * drive, u8 startend)
 	u8 stat;
 	uint i;
 
-	for (i = 0; i < 10000000; i++) {
+	for (i = 0; i < 0x10000000; i++) {
 		stat = readl(s3c_ide_regbase + S5P_ATA_PIO_CSD);
 		/* Starting DMA */
 		if ((stat == 0x58) && (startend == 0))
@@ -142,10 +141,8 @@ static inline int ata_status_check(ide_drive_t * drive, u8 startend)
 	printk("got error in ata_status_check : %08x\n", stat);
 	return -1;
 }
-#endif
 
 /* Set ATA Mode */
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
 static void set_config_mode(ATA_MODE mode, int rw)
 {
 	u32 reg = readl(s3c_ide_regbase + S5P_ATA_CFG) & ~(0x39c);
@@ -175,7 +172,7 @@ static void set_ata_enable(uint on)
 	if (on)
 		writel(temp | 0x1, s3c_ide_regbase + S5P_ATA_CTRL);
 	else
-		writel(temp & 0xfffffffe, s3c_ide_regbase + S5P_ATA_CTRL);
+		writel(temp & (~0x1), s3c_ide_regbase + S5P_ATA_CTRL);
 }
 
 static void set_endian_mode(uint little)
@@ -256,23 +253,6 @@ static void s3c_ide_tune_chipset(ide_drive_t * drive, u8 xferspeed)
 	ide_config_drive_speed(drive, speed);
 }
 
-int s3c_ide_ack_intr(ide_hwif_t * hwif)
-{
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	s3c_ide_hwif_t *s3c_hwif = (s3c_ide_hwif_t *) hwif->hwif_data;
-#endif
-	u32 reg;
-
-	reg = readl(s3c_ide_regbase + S5P_ATA_IRQ);
-	DbgAta("S5P_ATA_IRQ: %08x\n", reg);
-
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	s3c_hwif->irq_sta = reg;
-#endif
-
-	return 1;
-}
-
 static void s3c_ide_tune_drive(ide_drive_t * drive, u8 pio)
 {
 #if defined (CONFIG_CPU_S5PC100)
@@ -288,23 +268,6 @@ static void s3c_ide_tune_drive(ide_drive_t * drive, u8 pio)
 static void s3c_ide_dma_host_set(ide_drive_t * drive, int on)
 {
 	DbgAta("##### %s\n", __FUNCTION__);
-}
-
-static int s3c_ide_build_sglist(ide_drive_t * drive, struct request *rq)
-{
-	ide_hwif_t *hwif = drive->hwif;
-	s3c_ide_hwif_t *s3c_hwif = (s3c_ide_hwif_t *) hwif->hwif_data;
-	struct scatterlist *sg = hwif->sg_table;
-
-	ide_map_sg(drive, rq);
-
-	if (rq_data_dir(rq) == READ)
-		hwif->sg_dma_direction = DMA_FROM_DEVICE;
-	else
-		hwif->sg_dma_direction = DMA_TO_DEVICE;
-
-	return dma_map_sg((void *)&s3c_hwif->dev, sg, hwif->sg_nents,
-			  hwif->sg_dma_direction);
 }
 
 /* Building the Scatter Gather Table */
@@ -330,7 +293,7 @@ static int s3c_ide_build_dmatable(ide_drive_t * drive)
 	s3c_hwif->drive = drive;
 
 	/* Build sglist */
-	hwif->sg_nents = size = s3c_ide_build_sglist(drive, rq);
+	hwif->sg_nents = size = ide_build_sglist(drive, rq);
 	DbgAta("hwif->sg_nents %d\n", hwif->sg_nents);
 
 	if (size > 1) {
@@ -355,8 +318,6 @@ static int s3c_ide_build_dmatable(ide_drive_t * drive)
 	s3c_hwif->queue_size = i;
 	DbgAta("total size: %08x, %d\n", count, s3c_hwif->queue_size);
 
-	DbgAta("rw: %08lx %08lx\n",
-	       s3c_hwif->table[0].addr, s3c_hwif->table[0].len);
 	writel(s3c_hwif->table[0].len - 0x1, s3c_ide_regbase + size_reg);
 	writel(s3c_hwif->table[0].addr, s3c_ide_regbase + addr_reg);
 
@@ -384,7 +345,7 @@ static int s3c_ide_dma_setup(ide_drive_t * drive)
 static void s3c_ide_dma_exec_cmd(ide_drive_t * drive, u8 command)
 {
 	/* issue cmd to drive */
-	ide_execute_command(drive, command, &ide_dma_intr, (WAIT_CMD), NULL);
+	ide_execute_command(drive, command, &ide_dma_intr, WAIT_CMD, NULL);
 }
 
 static void s3c_ide_dma_start(ide_drive_t * drive)
@@ -414,7 +375,6 @@ static int s3c_ide_dma_end(ide_drive_t * drive)
 {
 	u32 stat = 0;
 	ide_hwif_t *hwif = drive->hwif;
-	s3c_ide_hwif_t *s3c_hwif = (s3c_ide_hwif_t *) hwif->hwif_data;
 
 	DbgAta("data left: %08x, %08x\n",
 	       readl(s3c_ide_regbase + S5P_ATA_XFR_CNT),
@@ -437,8 +397,7 @@ static int s3c_ide_dma_end(ide_drive_t * drive)
 	drive->waiting_for_dma = 0;
 
 	if (hwif->sg_nents) {
-		dma_unmap_sg((void *)&s3c_hwif->dev, hwif->sg_table,
-				hwif->sg_nents, hwif->sg_dma_direction);
+		ide_destroy_dmatable(drive);
 		hwif->sg_nents = 0;
 	}
 	return 0;
@@ -502,12 +461,12 @@ int s3c_ide_irq_hook(void *data)
 		return 1;
 	}
 
-	for (i = 0; i < 100000; i++) {
+	for (i = 0; i < 0x100000; i++) {
 		stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
 		if (stat == 0)
 			break;
 	}
-	if (i == 100000)
+	if (i == 0x100000)
 		printk("BUS has a problem\n");
 
 #endif
@@ -704,12 +663,10 @@ static const struct ide_port_info s3c_port_info = {
 	.name		= DRV_NAME,
 #ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
 	.init_dma	= s3c_ide_dma_init,
+	.dma_ops	= &s3c_dma_ops,
 #endif
 	.port_ops	= &s3c_port_ops,
 /*tp_ops left to the default*/
-#ifdef CONFIG_BLK_DEV_IDE_S3C_UDMA
-	.dma_ops	= &s3c_dma_ops,
-#endif
 	.chipset	= ide_s3c,
 	.host_flags	= IDE_HFLAG_MMIO | IDE_HFLAG_NO_IO_32BIT |
 		IDE_HFLAG_UNMASK_IRQS,
