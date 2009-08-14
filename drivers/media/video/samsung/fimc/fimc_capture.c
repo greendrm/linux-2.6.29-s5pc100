@@ -613,7 +613,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 		ret = fimc_alloc_buffers(ctrl, 0,
 			cap->fmt.width * cap->fmt.height, SZ_64K);
 		ret = fimc_alloc_buffers(ctrl, 1,
-			cap->fmt.width * cap->fmt.height / 4, SZ_64K);
+			cap->fmt.width * cap->fmt.height / 2, SZ_64K);
 		break;
 
 	default:
