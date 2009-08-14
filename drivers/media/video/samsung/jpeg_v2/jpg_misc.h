@@ -2,7 +2,7 @@
  *
  * Driver header file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh,Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,9 @@ HANDLE create_jpg_mutex(void);
 DWORD lock_jpg_mutex(void);
 DWORD unlock_jpg_mutex(void);
 void delete_jpg_mutex(void);
+
+#ifdef CONFIG_CPU_S5PC100
 unsigned int get_fb0_addr(void);
 void get_lcd_size(int *width, int *height);
-
+#endif
 #endif

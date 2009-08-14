@@ -2,7 +2,7 @@
  *
  * Driver file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh,Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,6 @@
 
 static struct clk		*jpeg_hclk;
 static struct clk		*jpeg_sclk;
-static struct clk		*post;
 static struct clk		*s3c_jpeg_clk;
 
 static struct resource		*s3c_jpeg_mem;
@@ -66,8 +65,9 @@ static int			instanceNo = 0;
 volatile int			jpg_irq_reason;
 wait_queue_head_t 		wait_queue_jpeg;
 
-DECLARE_WAIT_QUEUE_HEAD(WaitQueue_JPEG);
 
+DECLARE_WAIT_QUEUE_HEAD(WaitQueue_JPEG);
+#ifdef CONFIG_CPU_S5PC100
 irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
 {
 	unsigned int	int_status;
@@ -75,8 +75,8 @@ irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
 
 	log_msg(LOG_TRACE, "s3c_jpeg_irq", "=====enter s3c_jpeg_irq===== \r\n");
 
-	int_status = __raw_readl(s3c_jpeg_base + S3C_JPEG_INTST_REG);
-	status = __raw_readl(s3c_jpeg_base + S3C_JPEG_OPR_REG);
+	int_status = readl(s3c_jpeg_base + S3C_JPEG_INTST_REG);
+	status = readl(s3c_jpeg_base + S3C_JPEG_OPR_REG);
 	log_msg(LOG_TRACE, "s3c_jpeg_irq", "int_status : 0x%08x status : 0x%08x\n", int_status, status);
 
 	if (int_status) {
@@ -107,16 +107,57 @@ irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+#else //CONFIG_CPU_S5PC110
+irqreturn_t s3c_jpeg_irq(int irq, void *dev_id, struct pt_regs *regs)
+{
+	unsigned int	int_status;
+	unsigned int	status;
 
+	jpg_dbg("=====enter s3c_jpeg_irq===== \r\n");
+
+	int_status = readl(s3c_jpeg_base + S3C_JPEG_INTST_REG);
+
+	do{
+		status = readl(s3c_jpeg_base + S3C_JPEG_OPR_REG);
+	}while(status);
+
+	writel(S3C_JPEG_COM_INT_RELEASE, s3c_jpeg_base + S3C_JPEG_COM_REG);
+	jpg_dbg("int_status : 0x%08x status : 0x%08x\n", int_status, status);
+
+	if (int_status) {
+		switch (int_status) {
+		case 0x40 :
+			jpg_irq_reason = OK_ENC_OR_DEC;
+			break;
+		case 0x20 :
+			jpg_irq_reason = ERR_ENC_OR_DEC;
+			break;
+		default :
+			jpg_irq_reason = ERR_UNKNOWN;
+		}
+
+		wake_up_interruptible(&wait_queue_jpeg);
+	} else {
+		jpg_irq_reason = ERR_UNKNOWN;
+		wake_up_interruptible(&wait_queue_jpeg);
+	}
+
+	return IRQ_HANDLED;
+}
+#endif
 static int s3c_jpeg_open(struct inode *inode, struct file *file)
 {
 	sspc100_jpg_ctx *jpg_reg_ctx;
 	DWORD	ret;
-
+#ifdef CONFIG_CPU_S5PC100
 	clk_enable(jpeg_hclk);
 	clk_enable(jpeg_sclk);
+#else //CONFIG_CPU_S5PC110
+        /* clock enable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
+#endif
 
-	log_msg(LOG_TRACE, "s3c_jpeg_open", "JPG_open \r\n");
+	jpg_dbg("JPG_open \r\n");
 
 	jpg_reg_ctx = (sspc100_jpg_ctx *)mem_alloc(sizeof(sspc100_jpg_ctx));
 	memset(jpg_reg_ctx, 0x00, sizeof(sspc100_jpg_ctx));
@@ -124,14 +165,17 @@ static int s3c_jpeg_open(struct inode *inode, struct file *file)
 	ret = lock_jpg_mutex();
 
 	if (!ret) {
-		log_msg(LOG_ERROR, "s3c_jpeg_open", "DD::JPG Mutex Lock Fail\r\n");
+		jpg_err("JPG Mutex Lock Fail\r\n");
 		unlock_jpg_mutex();
+		kfree(jpg_reg_ctx);
 		return FALSE;
 	}
 
 	if (instanceNo > MAX_INSTANCE_NUM) {
-		log_msg(LOG_ERROR, "s3c_jpeg_open", "DD::Instance Number error-JPEG is running, instance number is %d\n", instanceNo);
+		jpg_err("Instance Number error-JPEG is running, \
+				instance number is %d\n", instanceNo);
 		unlock_jpg_mutex();
+		kfree(jpg_reg_ctx);
 		return FALSE;
 	}
 
@@ -150,19 +194,19 @@ static int s3c_jpeg_release(struct inode *inode, struct file *file)
 	DWORD			ret;
 	sspc100_jpg_ctx		*jpg_reg_ctx;
 
-	log_msg(LOG_TRACE, "s3c_jpeg_release", "JPG_Close\n");
+	jpg_dbg("JPG_Close\n");
 
 	jpg_reg_ctx = (sspc100_jpg_ctx *)file->private_data;
 
 	if (!jpg_reg_ctx) {
-		log_msg(LOG_ERROR, "s3c_jpeg_release", "DD::JPG Invalid Input Handle\r\n");
+		jpg_err("JPG Invalid Input Handle\r\n");
 		return FALSE;
 	}
 
 	ret = lock_jpg_mutex();
 
 	if (!ret) {
-		log_msg(LOG_ERROR, "s3c_jpeg_release", "DD::JPG Mutex Lock Fail\r\n");
+		jpg_err("JPG Mutex Lock Fail\r\n");
 		return FALSE;
 	}
 
@@ -170,10 +214,15 @@ static int s3c_jpeg_release(struct inode *inode, struct file *file)
 		instanceNo = 0;
 
 	unlock_jpg_mutex();
-
+	kfree(jpg_reg_ctx);
+#ifdef CONFIG_CPU_S5PC100
 	clk_disable(jpeg_hclk);
 	clk_disable(jpeg_sclk);
 	log_msg(LOG_TRACE, "s3c_jpeg_release end ", "JPG_Close\n");
+#else //CONFIG_CPU_S5PC110
+/* clock disable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
+#endif
 	return 0;
 }
 
@@ -200,49 +249,58 @@ static int s3c_jpeg_ioctl(struct inode *inode, struct file *file, unsigned int c
 	jpg_reg_ctx = (sspc100_jpg_ctx *)file->private_data;
 
 	if (!jpg_reg_ctx) {
-		log_msg(LOG_ERROR, "s3c_jpeg_ioctl", "DD::JPG Invalid Input Handle\r\n");
+		jpg_err("JPG Invalid Input Handle\r\n");
 		return FALSE;
 	}
 
 	ret = lock_jpg_mutex();
 
 	if (!ret) {
-		log_msg(LOG_ERROR, "s3c_jpeg_ioctl", "DD::JPG Mutex Lock Fail\r\n");
+		jpg_err("JPG Mutex Lock Fail\r\n");
 		return FALSE;
 	}
 
 	switch (cmd) {
 	case IOCTL_JPG_DECODE:
 
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPEG_DECODE\n");
+		jpg_dbg("IOCTL_JPEG_DECODE\n");
 
 		out = copy_from_user(&param, (jpg_args *)arg, sizeof(jpg_args));
 
 		jpg_reg_ctx->jpg_data_addr = (UINT32)jpg_data_base_addr;
-		jpg_reg_ctx->img_data_addr = (UINT32)jpg_data_base_addr + JPG_STREAM_BUF_SIZE + JPG_STREAM_THUMB_BUF_SIZE;
-		
+		jpg_reg_ctx->img_data_addr = (UINT32)jpg_data_base_addr
+						+ JPG_STREAM_BUF_SIZE
+						+ JPG_STREAM_THUMB_BUF_SIZE;
+
 		result = decode_jpg(jpg_reg_ctx, param.dec_param);
 		out = copy_to_user((void *)arg, (void *) & param, sizeof(jpg_args));
 		break;
 
 	case IOCTL_JPG_ENCODE:
 
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPEG_ENCODE\n");
+		jpg_dbg("IOCTL_JPEG_ENCODE\n");
 
 		out = copy_from_user(&param, (jpg_args *)arg, sizeof(jpg_args));
 
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "width : %d hegiht : %d\n",
+		jpg_dbg("encode size :: width : %d hegiht : %d\n",
 			param.enc_param->width, param.enc_param->height);
 
 		if (param.enc_param->enc_type == JPG_MAIN) {
 			jpg_reg_ctx->jpg_data_addr = (UINT32)jpg_data_base_addr ;
-			jpg_reg_ctx->img_data_addr = (UINT32)jpg_data_base_addr + JPG_STREAM_BUF_SIZE + JPG_STREAM_THUMB_BUF_SIZE;
-			log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "enc_img_data_addr=0x%08x, enc_jpg_data_addr=0x%08x\n", jpg_reg_ctx->img_data_addr,jpg_reg_ctx->jpg_data_addr);
+			jpg_reg_ctx->img_data_addr = (UINT32)jpg_data_base_addr
+							+ JPG_STREAM_BUF_SIZE
+							+ JPG_STREAM_THUMB_BUF_SIZE;
+			jpg_dbg("enc_img_data_addr=0x%08x, enc_jpg_data_addr=0x%08x\n"
+				, jpg_reg_ctx->img_data_addr,jpg_reg_ctx->jpg_data_addr);
 
 			result = encode_jpg(jpg_reg_ctx, param.enc_param);
 		} else {
-			jpg_reg_ctx->img_thumb_data_addr = (UINT32)jpg_data_base_addr + JPG_STREAM_BUF_SIZE + JPG_STREAM_THUMB_BUF_SIZE + JPG_FRAME_BUF_SIZE;
-			jpg_reg_ctx->jpg_thumb_data_addr = (UINT32)jpg_data_base_addr + JPG_STREAM_BUF_SIZE;
+			jpg_reg_ctx->img_thumb_data_addr = (UINT32)jpg_data_base_addr
+								+ JPG_STREAM_BUF_SIZE
+								+ JPG_STREAM_THUMB_BUF_SIZE
+								+ JPG_FRAME_BUF_SIZE;
+			jpg_reg_ctx->jpg_thumb_data_addr = (UINT32)jpg_data_base_addr
+								+ JPG_STREAM_BUF_SIZE;
 
 			result = encode_jpg(jpg_reg_ctx, param.thumb_enc_param);
 		}
@@ -250,37 +308,38 @@ static int s3c_jpeg_ioctl(struct inode *inode, struct file *file, unsigned int c
 		break;
 
 	case IOCTL_JPG_GET_STRBUF:
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_STRBUF\n");
+		jpg_dbg("IOCTL_JPG_GET_STRBUF\n");
 		unlock_jpg_mutex();
 		return arg + JPG_MAIN_STRART;
 
-	case IOCTL_JPG_GET_THUMB_STRBUF:		
+	case IOCTL_JPG_GET_THUMB_STRBUF:
 		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_THUMB_STRBUF\n");
 		unlock_jpg_mutex();
 		return arg + JPG_THUMB_START;
 
 	case IOCTL_JPG_GET_FRMBUF:
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_FRMBUF\n");
+		jpg_dbg("IOCTL_JPG_GET_FRMBUF\n");
 		unlock_jpg_mutex();
 		return arg + IMG_MAIN_START;
 
 	case IOCTL_JPG_GET_THUMB_FRMBUF:
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_THUMB_FRMBUF\n");
+		jpg_dbg("IOCTL_JPG_GET_THUMB_FRMBUF\n");
 		unlock_jpg_mutex();
 		return arg + IMG_THUMB_START;
 
 	case IOCTL_JPG_GET_PHY_FRMBUF:
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_PHY_FRMBUF\n");
+		jpg_dbg("IOCTL_JPG_GET_PHY_FRMBUF\n");
 		unlock_jpg_mutex();
 		return jpg_data_base_addr + JPG_STREAM_BUF_SIZE + JPG_STREAM_THUMB_BUF_SIZE;
 
 	case IOCTL_JPG_GET_PHY_THUMB_FRMBUF:
-		log_msg(LOG_TRACE, "s3c_jpeg_ioctl", "IOCTL_JPG_GET_PHY_THUMB_FRMBUF\n");
+		jpg_dbg("IOCTL_JPG_GET_PHY_THUMB_FRMBUF\n");
 		unlock_jpg_mutex();
-		return jpg_data_base_addr + JPG_STREAM_BUF_SIZE + JPG_STREAM_THUMB_BUF_SIZE + JPG_FRAME_BUF_SIZE;
-	
+		return jpg_data_base_addr + JPG_STREAM_BUF_SIZE
+			+ JPG_STREAM_THUMB_BUF_SIZE + JPG_FRAME_BUF_SIZE;
+
 	default :
-		log_msg(LOG_ERROR, "s3c_jpeg_ioctl", "DD::JPG Invalid ioctl : 0x%X\n", cmd);
+		jpg_dbg("JPG Invalid ioctl : 0x%X\n", cmd);
 	}
 
 	unlock_jpg_mutex();
@@ -291,8 +350,8 @@ static int s3c_jpeg_ioctl(struct inode *inode, struct file *file, unsigned int c
 static unsigned int s3c_jpeg_poll(struct file *file, poll_table *wait)
 {
 	unsigned int mask = 0;
-	
-	log_msg(LOG_TRACE, "s3c_jpeg_poll", "enter poll \n");
+
+	jpg_dbg("enter poll \n");
 	poll_wait(file, &wait_queue_jpeg, wait);
 	mask = POLLOUT | POLLWRNORM;
 	return mask;
@@ -316,7 +375,7 @@ int s3c_jpeg_mmap(struct file *filp, struct vm_area_struct *vma)
 
 	if (remap_pfn_range(vma, vma->vm_start, page_frame_no, size,	\
 			    vma->vm_page_prot)) {
-		log_msg(LOG_ERROR, "s3c_jpeg_mmap", "jpeg remap error");
+		jpg_err("jpeg remap error");
 		return -EAGAIN;
 	}
 
@@ -349,7 +408,7 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	static int		size;
 	static int		ret;
 	HANDLE 			h_mutex;
-
+#ifdef CONFIG_CPU_S5PC100
 	// JPEG clock enable
 	jpeg_hclk = clk_get(NULL, "hclk_jpeg");
 
@@ -369,19 +428,15 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 
 	clk_enable(jpeg_sclk);
 
-	post = clk_get(NULL, "post");
+#else //CONFIG_CPU_S5PC110
+       /* clock enable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
 
-	if (!post) {
-		printk(KERN_ERR "failed to get post clock source\n");
-		return -ENOENT;
-	}
-
-	clk_enable(post);
-
+#endif
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
 	if (res == NULL) {
-		printk(KERN_INFO "failed to get memory region resouce\n");
+		jpg_err("failed to get memory region resouce\n");
 		return -ENOENT;
 	}
 
@@ -389,14 +444,14 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	s3c_jpeg_mem = request_mem_region(res->start, size, pdev->name);
 
 	if (s3c_jpeg_mem == NULL) {
-		printk(KERN_INFO "failed to get memory region\n");
+		jpg_err("failed to get memory region\n");
 		return -ENOENT;
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 
 	if (res == NULL) {
-		printk(KERN_INFO "failed to get irq resource\n");
+		jpg_err("failed to get irq resource\n");
 		return -ENOENT;
 	}
 
@@ -404,17 +459,17 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	ret = request_irq(res->start, s3c_jpeg_irq, 0, pdev->name, pdev);
 
 	if (ret != 0) {
-		printk(KERN_INFO "failed to install irq (%d)\n", ret);
+		jpg_err("failed to install irq (%d)\n", ret);
 		return ret;
 	}
 
 	s3c_jpeg_base = ioremap(s3c_jpeg_mem->start, size);
 
 	if (s3c_jpeg_base == 0) {
-		printk(KERN_INFO "failed to ioremap() region\n");
+		jpg_err("failed to ioremap() region\n");
 		return -EINVAL;
 	}
-
+#ifdef CONFIG_CPU_S5PC100
 	// JPEG clock was set as 66 MHz
 	s3c_jpeg_clk = clk_get(&pdev->dev, "jpeg");
 
@@ -424,23 +479,24 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	}
 
 	clk_enable(s3c_jpeg_clk);
+#endif
 
 	init_waitqueue_head(&wait_queue_jpeg);
 
-	log_msg(LOG_TRACE, "s3c_jpeg_probe", "JPG_Init\n");
+	jpg_dbg("JPG_Init\n");
 
 	// Mutex initialization
 	h_mutex = create_jpg_mutex();
 
 	if (h_mutex == NULL) {
-		log_msg(LOG_ERROR, "s3c_jpeg_probe", "DD::JPG Mutex Initialize error\r\n");
+		jpg_err("JPG Mutex Initialize error\r\n");
 		return FALSE;
 	}
 
 	ret = lock_jpg_mutex();
 
 	if (!ret) {
-		log_msg(LOG_ERROR, "s3c_jpeg_probe", "DD::JPG Mutex Lock Fail\n");
+		jpg_err("JPG Mutex Lock Fail\n");
 		return FALSE;
 	}
 
@@ -450,8 +506,13 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 
 	ret = misc_register(&s3c_jpeg_miscdev);
 
+#ifdef CONFIG_CPU_S5PC100
 	clk_disable(jpeg_hclk);
 	clk_disable(jpeg_sclk);
+#else //CONFIG_CPU_S5PC110
+	/* clock disable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
+#endif
 
 	return 0;
 }
@@ -469,13 +530,35 @@ static int s3c_jpeg_remove(struct platform_device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_CPU_S5PC110
+static int s3c_jpeg_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	/* clock disable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
+
+	return 0;
+}
+
+static int s3c_jpeg_resume(struct platform_device *pdev)
+{
+	/* clock enable */
+	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
+
+	return 0;
+}
+#endif
 
 static struct platform_driver s3c_jpeg_driver = {
 	.probe		= s3c_jpeg_probe,
 	.remove		= s3c_jpeg_remove,
 	.shutdown	= NULL,
+#ifdef CONFIG_CPU_S5PC100
 	.suspend	= NULL,
 	.resume		= NULL,
+#else //CONFIG_CPU_S5PC110
+	.suspend	= s3c_jpeg_suspend,
+	.resume		= s3c_jpeg_resume,
+#endif
 	.driver		= {
 			.owner	= THIS_MODULE,
 			.name	= "s3c-jpg",
@@ -487,6 +570,11 @@ static char banner[] __initdata = KERN_INFO "S3C JPEG Driver, (c) 2007 Samsung E
 static int __init s3c_jpeg_init(void)
 {
 	printk(banner);
+#ifdef CONFIG_CPU_S5PC100
+	printk("JPEG driver for S5PC100 \n");
+#else //CONFIG_CPU_S5PC110
+	printk("JPEG driver for S5PC110 \n");
+#endif
 	return platform_driver_register(&s3c_jpeg_driver);
 }
 
@@ -494,12 +582,12 @@ static void __exit s3c_jpeg_exit(void)
 {
 	DWORD	ret;
 
-	log_msg(LOG_TRACE, "s3c_jpeg_exit", "JPG_Deinit\n");
+	jpg_dbg("JPG_Deinit\n");
 
 	ret = lock_jpg_mutex();
 
 	if (!ret) {
-		log_msg(LOG_ERROR, "s3c_jpeg_exit", "DD::JPG Mutex Lock Fail\r\n");
+		jpg_err("JPG Mutex Lock Fail\r\n");
 	}
 
 	unlock_jpg_mutex();
@@ -507,7 +595,7 @@ static void __exit s3c_jpeg_exit(void)
 	delete_jpg_mutex();
 
 	platform_driver_unregister(&s3c_jpeg_driver);
-	printk("S3C JPEG driver module exit\n");
+	jpg_dbg("S3C JPEG driver module exit\n");
 }
 
 module_init(s3c_jpeg_init);

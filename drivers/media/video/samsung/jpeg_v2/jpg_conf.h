@@ -2,7 +2,7 @@
  *
  * Configuration file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh, Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
