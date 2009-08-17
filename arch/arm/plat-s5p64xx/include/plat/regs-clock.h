@@ -61,6 +61,7 @@
 #define S5P_CLK_MUX_STAT0	S5P_CLKREG(0x1100)
 #define S5P_CLK_MUX_STAT1	S5P_CLKREG(0x1104)
 
+#define S5P_MDNIE_SEL		S5P_CLKREG(0x7008)
 
 /* Register Bit definition */
 #define S5P_EPLL_EN     (1<<31)

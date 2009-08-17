@@ -45,6 +45,8 @@
 #define S3C_WINCON3		S3C_LCDREG(0x002C)  	/* Window control 3 */
 #define S3C_WINCON4		S3C_LCDREG(0x0030)  	/* Window control 4 */
 
+#define S3C_WINSHMAP		S3C_LCDREG(0x0034)  	/* Window Shadow control */
+
 #define S3C_VIDOSD0A		S3C_LCDREG(0x0040)  	/* Video Window 0 position control */
 #define S3C_VIDOSD0B		S3C_LCDREG(0x0044)  	/* Video Window 0 position control1 */
 #define S3C_VIDOSD0C		S3C_LCDREG(0x0048)  	/* Video Window 0 position control */

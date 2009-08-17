@@ -39,7 +39,7 @@
 #endif
 
 #ifdef CONFIG_FB_S3C_AMS320
-#include "logo_rgb24_wvga_portrait.h"
+#include "logo_rgb24_hvga_portrait.h"
 #endif
 
 #include "s3cfb.h"
