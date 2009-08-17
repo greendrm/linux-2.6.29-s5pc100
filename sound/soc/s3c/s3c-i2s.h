@@ -11,7 +11,7 @@
 #ifndef S3C_I2S_H_
 #define S3C_I2S_H_
 
-//#define USE_CLKAUDIO	1 /* Don't use it for LPMP3 mode */
+#define USE_CLKAUDIO	1 /* use it for LPMP3 mode */
 
 /* Clock dividers */
 #define S3C_DIV_MCLK	0
@@ -187,7 +187,7 @@
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
 #define PCLKCLK			"i2s_v50"
-#define EXTCLK			"sclk_audio0"
+#define EXTCLK			"i2sclkd2"
 #define PLBK_CHAN		6
 #define S3C_DESC		"S3C AP I2S-V5.0 Interface"
 
@@ -195,6 +195,8 @@
 #define S3C_I2SDMA_START   1
 #define S3C_I2SDMA_STOP    2
 #define S3C_I2SDMA_FLUSH   3
+#define S3C_I2SDMA_SUSPEND 4
+#define S3C_I2SDMA_RESUME  5
 
 u32 s3c_i2s_get_clockrate(void);
 
