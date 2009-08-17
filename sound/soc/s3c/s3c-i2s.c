@@ -714,7 +714,7 @@ static void s3c_i2s_remove(struct platform_device *pdev,
 	iounmap(s3c_i2s.regs);
 }
 
-#if 0 //def CONFIG_PM jassi
+#ifdef CONFIG_PM
 static int s3c_i2s_suspend(struct snd_soc_dai *cpu_dai)
 {
 	s3c_i2s.iiscon = readl(s3c_i2s.regs + S3C_IISCON);
