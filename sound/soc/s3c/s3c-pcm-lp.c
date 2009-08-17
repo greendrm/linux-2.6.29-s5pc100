@@ -37,7 +37,7 @@
 
 /* Set this value to maximum possible without latency issues with playback.
  * Also, this value must be aligned at KB bounday (multiple of 1024). */
-#define LP_DMA_PERIOD (127 * 1024)
+#define LP_DMA_PERIOD (103 * 1024)
 
 struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
 
@@ -124,10 +124,12 @@ static void s5pc1xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 static void pcm_dmaupdate(void *id, int bytes_xfer)
 {
 	struct snd_pcm_substream *substream = id;
+	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
 
 	s3cdbg("%s:%d\n", __func__, __LINE__);
 
-	snd_pcm_period_elapsed(substream); /* Only once for any num of periods */
+	if(prtd && (prtd->state & ST_RUNNING))
+		snd_pcm_period_elapsed(substream); /* Only once for any num of periods while RUNNING */
 }
 
 static int s3c_pcm_hw_params_lp(struct snd_pcm_substream *substream,
@@ -319,10 +321,8 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
-	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		prtd->state |= ST_RUNNING;
-
 		if(s3c_pcm_pdat.lp_mode)
 		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_START);
 		else
@@ -330,16 +330,29 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 
 		break;
 
-	case SNDRV_PCM_TRIGGER_STOP:
+	case SNDRV_PCM_TRIGGER_RESUME:
+		prtd->state |= ST_RUNNING;
+		if(s3c_pcm_pdat.lp_mode)
+		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_RESUME);
+		else
+		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_START);
+		break;
+
 	case SNDRV_PCM_TRIGGER_SUSPEND:
+		prtd->state &= ~ST_RUNNING;
+		if(s3c_pcm_pdat.lp_mode)
+		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_SUSPEND);
+		else
+		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_STOP);
+		break;
+
+	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		prtd->state &= ~ST_RUNNING;
-
 		if(s3c_pcm_pdat.lp_mode)
 		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_STOP);
 		else
 		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_STOP);
-
 		break;
 
 	default:
@@ -647,6 +660,8 @@ struct s5pc1xx_pcm_pdata s3c_pcm_pdat = {
 	.pcm_hw_tx = {
 		.info			= SNDRV_PCM_INFO_INTERLEAVED |
 					    SNDRV_PCM_INFO_BLOCK_TRANSFER |
+					    SNDRV_PCM_INFO_PAUSE |
+					    SNDRV_PCM_INFO_RESUME |
 					    SNDRV_PCM_INFO_MMAP |
 					    SNDRV_PCM_INFO_MMAP_VALID,
 		.formats		= SNDRV_PCM_FMTBIT_S16_LE |
@@ -662,6 +677,8 @@ struct s5pc1xx_pcm_pdata s3c_pcm_pdat = {
 	.pcm_hw_rx = {
 		.info			= SNDRV_PCM_INFO_INTERLEAVED |
 					    SNDRV_PCM_INFO_BLOCK_TRANSFER |
+					    SNDRV_PCM_INFO_PAUSE |
+					    SNDRV_PCM_INFO_RESUME |
 					    SNDRV_PCM_INFO_MMAP |
 					    SNDRV_PCM_INFO_MMAP_VALID,
 		.formats		= SNDRV_PCM_FMTBIT_S16_LE |

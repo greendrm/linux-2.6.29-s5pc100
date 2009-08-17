@@ -298,7 +298,7 @@ static void s5pc1xx_timer_setup (void)
 	tcon = S3C_SYSTIMER_INT_AUTO | S3C_SYSTIMER_START | S3C_SYSTIMER_INT_START | S3C_SYSTIMER_AUTO_RELOAD;
 	s5pc1xx_systimer_write(S3C_SYSTIMER_TCON, tcon);
 
-	printk("timer tcon=%08lx, tcnt %04lx, icnt %04lx, tcfg %08lx, usec %08lx\n",
+	pr_debug("timer tcon=%08lx, tcnt %04lx, icnt %04lx, tcfg %08lx, usec %08lx\n",
 	       tcon, tcnt, timer_icnt, tcfg, timer_usec_ticks);
 
 	/* Interrupt Start and Enable */

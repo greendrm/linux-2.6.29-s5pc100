@@ -336,6 +336,7 @@ static struct snd_soc_dai_link smdkc100_dai[] = {
 
 static struct snd_soc_card smdkc100 = {
 	.name = "smdkc100",
+	.lp_mode = 0,
 	.platform = &s3c_pcm_pdat.pcm_pltfm,
 	.dai_link = smdkc100_dai,
 	.num_links = ARRAY_SIZE(smdkc100_dai),
@@ -357,16 +358,18 @@ static int __init smdkc100_audio_init(void)
 {
 	int ret;
 
-	s3c_pcm_pdat.set_mode(lowpower, &s3c_i2s_pdat);
-	s3c_i2s_pdat.set_mode(lowpower);
-
 	if(lowpower){ /* LPMP3 Mode doesn't support recording */
 		wm8580_dai[0].capture.channels_min = 0;
 		wm8580_dai[0].capture.channels_max = 0;
+		smdkc100.lp_mode = 1;
 	}else{
 		wm8580_dai[0].capture.channels_min = 2;
 		wm8580_dai[0].capture.channels_max = 2;
+		smdkc100.lp_mode = 0;
 	}
+
+	s3c_pcm_pdat.set_mode(lowpower, &s3c_i2s_pdat);
+	s3c_i2s_pdat.set_mode(lowpower);
 
 	smdkc100_snd_device = platform_device_alloc("soc-audio", 0);
 	if (!smdkc100_snd_device)
