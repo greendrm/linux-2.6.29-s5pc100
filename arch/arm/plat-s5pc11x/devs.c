@@ -239,12 +239,12 @@ struct platform_device s3c_device_nand = {
 
 EXPORT_SYMBOL(s3c_device_nand);
 
-/* USB Host Controller */
+/* USB Host Controller EHCI */
 
-static struct resource s3c_usb_resource[] = {
+static struct resource s3c_usb__ehci_resource[] = {
         [0] = {
-                .start = S5PC11X_PA_USBHOST,
-                .end   = S5PC11X_PA_USBHOST + S5PC11X_SZ_USBHOST - 1,
+                .start = S5PC11X_PA_USB_EHCI ,
+                .end   = S5PC11X_PA_USB_EHCI  + S5PC11X_SZ_USB_EHCI - 1,
                 .flags = IORESOURCE_MEM,
         },
         [1] = {
@@ -254,20 +254,20 @@ static struct resource s3c_usb_resource[] = {
         }
 };
 
-static u64 s3c_device_usb_dmamask = 0xffffffffUL;
+static u64 s3c_device_usb_ehci_dmamask = 0xffffffffUL;
 
-struct platform_device s3c_device_usb = {
-        .name             = "s3c2410-ohci",
+struct platform_device s3c_device_usb_ehci = {
+        .name             = "s5pc110-ehci",
         .id               = -1,
-        .num_resources    = ARRAY_SIZE(s3c_usb_resource),
-        .resource         = s3c_usb_resource,
+        .num_resources    = ARRAY_SIZE(s3c_usb__ehci_resource),
+        .resource         = s3c_usb__ehci_resource,
         .dev              = {
-                .dma_mask = &s3c_device_usb_dmamask,
+                .dma_mask = &s3c_device_usb_ehci_dmamask,
                 .coherent_dma_mask = 0xffffffffUL
         }
 };
 
-EXPORT_SYMBOL(s3c_device_usb);
+EXPORT_SYMBOL(s3c_device_usb_ehci);
 
 /* USB Device (Gadget)*/
 
