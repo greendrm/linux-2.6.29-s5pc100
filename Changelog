@@ -1594,5 +1594,23 @@ v2.6.29.4-dev-1-0-46: Ohkyoung Kwon
 		A	arch/arm/configs/smdk6442onenand_defconfig
 
 v2.6.29.4-dev-1-1-0: Jinsung Yang
-	- Official Release (2009.08.13)
+	- Internal Release (2009.08.13)
+
+v2.6.29.4-dev-1-2-0: Jonghun Han
+	- Support HVGA LCD for SMDK6442
+
+	Added Files:
+		A       drivers/video/samsung/logo_rgb24_hvga_portrait.h
+
+	Modified Files:
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/plat-s5p64xx/cpu.c
+		M       arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M       arch/arm/plat-s5p64xx/include/plat/regs-fb.h
+		M       drivers/video/samsung/Kconfig
+		M       drivers/video/samsung/Makefile
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb_ams320.c
+		M       drivers/video/samsung/s3cfb_fimd6x.c
+		M       drivers/video/samsung/s3cfb_tl2796.c
 
