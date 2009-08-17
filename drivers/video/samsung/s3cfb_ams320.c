@@ -24,6 +24,7 @@
 #include <linux/fb.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/spi/spi.h>
 
 #include <plat/gpio-cfg.h>
 
@@ -34,6 +35,38 @@
 #define	DEFMASK			0xFF00
 #define COMMAND_ONLY		0xFE
 #define DATA_ONLY		0xFF
+
+static struct spi_device *g_spi;
+
+const unsigned short SEQ_DISPLAY_ON[] = {
+	0x04, 0x05,
+	SLEEPMSEC, 20,
+	0x04, 0x07,
+	SLEEPMSEC, 15,
+	
+	0x04, 0x05,
+	SLEEPMSEC, 25,
+	0x04, 0x07,
+	SLEEPMSEC, 15,
+	
+	0x04, 0x05,
+	SLEEPMSEC, 25,
+	0x04, 0x07,
+	
+	ENDDEF, 0x0000
+};
+
+const unsigned short SEQ_DISPLAY_OFF[] = {
+	ENDDEF, 0x0000		
+};
+
+const unsigned short SEQ_STANDBY_ON[] = {
+	ENDDEF, 0x0000	
+};
+
+const unsigned short SEQ_STANDBY_OFF[] = {
+	ENDDEF, 0x0000	
+};
 
 const unsigned short SEQ_SETTING[] = {
 	0x01, 0x00,
@@ -48,9 +81,25 @@ const unsigned short SEQ_SETTING[] = {
 	0x2f, 0x02,
 	0x05, 0x01,
 	SLEEPMSEC, 400,
+
+	//Power Boosting,
+	0x20, 0x01,
+	SLEEPMSEC, 10,
+	0x20, 0x11,
+	SLEEPMSEC, 20,
+	0x20, 0x31,
+	SLEEPMSEC, 60,
+	0x20, 0x71,
+	SLEEPMSEC, 60,
+	0x20, 0x73,
+	SLEEPMSEC, 20,
+	0x20, 0x77,
+	SLEEPMSEC, 10,
+	//AMP On,
 	0x04, 0x01,
 	SLEEPMSEC, 20,
 
+	//initializing sequence,
 	0x06, 0x44,
 	0x07, 0x04,
 	0x08, 0x01,
@@ -65,6 +114,7 @@ const unsigned short SEQ_SETTING[] = {
 	0x1d, 0x05,
 	0x1f, 0x00,
 
+	//gamma selection sequence,
 	0x30, 0x33,
 	0x31, 0x39,
 	0x32, 0x37,
@@ -83,11 +133,8 @@ const unsigned short SEQ_SETTING[] = {
 	0x3f, 0x39,
 	0x40, 0x21,
 	0x41, 0x29,
-	
-	0x04, 0x05,
-	SLEEPMSEC, 40,
 
-	0x04, 0x07,
+	ENDDEF, 0x0000	
 };
 
 /* FIXME: will be moved to platform data */
@@ -106,7 +153,6 @@ static struct s3cfb_lcd ams320 = {
 		.v_bpe = 1,
 		.v_sw = 2,
 	},
-
 	.polarity = {
 		.rise_vclk = 1,
 		.inv_hsync = 1,
@@ -115,21 +161,99 @@ static struct s3cfb_lcd ams320 = {
 	},
 };
 
+
+static int ams320_spi_write_driver(int addr, int data)
+{
+	u16 buf[1];
+	struct spi_message msg;
+
+	struct spi_transfer xfer = {
+		.len	= 2,
+		.tx_buf	= buf,
+	};
+
+	buf[0] = (addr << 8) | data;
+	spi_message_init(&msg);
+	spi_message_add_tail(&xfer, &msg);
+
+	return spi_sync(g_spi, &msg);
+}
+
+static void ams320_panel_send_sequence(const unsigned short *wbuf)
+{
+	int i = 0;
+
+	while ((wbuf[i] & DEFMASK) != ENDDEF) {
+		if ((wbuf[i] & DEFMASK) != SLEEPMSEC)
+			ams320_spi_write_driver(wbuf[i], wbuf[i+1]);
+		else
+			mdelay(wbuf[i+1]);
+		i += 2;
+	}
+	msleep(100);
+}
+
+void ams320_ldi_init(void)
+{
+	ams320_panel_send_sequence(SEQ_SETTING);
+	ams320_panel_send_sequence(SEQ_STANDBY_OFF);
+}
+
+void ams320_ldi_enable(void)
+{
+	ams320_panel_send_sequence(SEQ_DISPLAY_ON);
+}
+
+static void ams320_ldi_disable(void)
+{
+	ams320_panel_send_sequence(SEQ_DISPLAY_OFF);
+}
+
 void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 {
 	ams320.init_ldi = NULL;
 	ctrl->lcd = &ams320;
 }
 
-static int __init tl2796_init(void)
+static int __init ams320_probe(struct spi_device *spi)
 {
-	return 0;
+	int ret;
+
+	spi->bits_per_word = 16;
+	ret = spi_setup(spi);
+
+	g_spi = spi;
+
+	ams320_ldi_init();
+	ams320_ldi_enable();
+
+	if (ret < 0)
+		return 0;
+
+	return ret;
 }
 
-static void __exit tl2796_exit(void)
-{
 
+static struct spi_driver ams320_driver = {
+	.driver = {
+		.name	= "ams320",
+		.owner	= THIS_MODULE,
+	},
+	.probe		= ams320_probe,
+	.remove		= __exit_p(ams320_remove),
+	.suspend	= NULL,
+	.resume		= NULL,
+};
+
+static int __init ams320_init(void)
+{
+	return spi_register_driver(&ams320_driver);
 }
 
-module_init(tl2796_init);
-module_exit(tl2796_exit);
+static void __exit ams320_exit(void)
+{
+	spi_unregister_driver(&ams320_driver);
+}
+
+module_init(ams320_init);
+module_exit(ams320_exit);

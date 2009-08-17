@@ -209,7 +209,6 @@ static struct s3cfb_lcd tl2796 = {
 	},
 };
 
-
 static int tl2796_spi_write_driver(int addr, int data)
 {
 	u16 buf[1];

@@ -137,7 +137,9 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	if (vclk > maxclk)
 		vclk = maxclk;
 
-	div = (int) (src_clk / vclk);
+	div = (src_clk / vclk);
+	if ((src_clk % vclk)) 
+		div++;
 
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
@@ -304,6 +306,12 @@ int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 	cfg |= S3C_WINCON_ENWIN_ENABLE;
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
+
+#if defined(CONFIG_CPU_S5P6442)
+	cfg = readl(ctrl->regs + S3C_WINSHMAP);
+	cfg |= (0x1 << id);
+	writel(cfg, ctrl->regs + S3C_WINSHMAP);
+#endif
 
 	dev_dbg(ctrl->dev, "[fb%d] turn on\n", id);
 

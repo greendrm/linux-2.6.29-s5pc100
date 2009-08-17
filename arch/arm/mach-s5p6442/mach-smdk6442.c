@@ -22,7 +22,6 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/i2c.h>
-#include <linux/i2c-gpio.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/partitions.h>
@@ -30,6 +29,7 @@
 #include <linux/clk.h>
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
+#include <linux/spi/spi_gpio.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -337,44 +337,19 @@ static void ams320_cfg_gpio(struct platform_device *pdev)
 	writel(0xffffffff, S5P64XX_VA_GPIO + 0x16c);
 	writel(0x000000ff, S5P64XX_VA_GPIO + 0x18c);
 
-#if 1
-	s3c_gpio_cfgpin(S5P64XX_GPB(0), S3C_GPIO_SFN(1));
-	s3c_gpio_cfgpin(S5P64XX_GPB(1), S3C_GPIO_SFN(1));
-	s3c_gpio_cfgpin(S5P64XX_GPB(2), S3C_GPIO_SFN(1));
-	s3c_gpio_cfgpin(S5P64XX_GPB(3), S3C_GPIO_SFN(1));
-#else
-	/* why the followings do not work? */
-	gpio_request(S5P64XX_GPB(4), "GPB");
-	gpio_request(S5P64XX_GPB(5), "GPB");
-	gpio_request(S5P64XX_GPB(6), "GPB");
-	gpio_request(S5P64XX_GPB(7), "GPB");
-	gpio_direction_output(S5P64XX_GPB(4), 0);
-	gpio_direction_output(S5P64XX_GPB(5), 0);
-	gpio_direction_output(S5P64XX_GPB(6), 0);
-	gpio_direction_output(S5P64XX_GPB(7), 0);
-#endif
-	s3c_gpio_setpull(S5P64XX_GPB(0), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPB(1), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPB(2), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPB(3), S3C_GPIO_PULL_NONE);
-}
+	writel(0x10, S5P_MDNIE_SEL);
 
-static int ams320_backlight_on(struct platform_device *pdev)
-{
-	int err;
+	udelay(200);
 
-	err = gpio_request(S5P64XX_GPF3(4), "GPF3");
+	s3c_gpio_cfgpin(S5P64XX_GPH3(5), S3C_GPIO_SFN(1));	/* LCD RESET */
+	s3c_gpio_cfgpin(S5P64XX_GPF3(5), S3C_GPIO_SFN(1));	/* SPI CS */
+	s3c_gpio_cfgpin(S5P64XX_GPD1(0), S3C_GPIO_SFN(1));	/* SPI Clock */
+	s3c_gpio_cfgpin(S5P64XX_GPD1(1), S3C_GPIO_SFN(1));	/* SPI Data */
 
-	if (err) {
-		printk(KERN_ERR "failed to request GPF3 for "
-			"lcd backlight control\n");
-		return err;
-	}
-
-	gpio_direction_output(S5P64XX_GPF3(4), 1);
-	gpio_free(S5P64XX_GPF3(4));
-
-	return 0;
+	s3c_gpio_setpull(S5P64XX_GPH3(5), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPF3(5), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPD1(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5P64XX_GPD1(1), S3C_GPIO_PULL_NONE);
 }
 
 static int ams320_reset_lcd(struct platform_device *pdev)
@@ -389,13 +364,12 @@ static int ams320_reset_lcd(struct platform_device *pdev)
 	}
 
 	gpio_direction_output(S5P64XX_GPH3(5), 1);
-	mdelay(100);
+	mdelay(3);
 
 	gpio_set_value(S5P64XX_GPH3(5), 0);
-	mdelay(10);
+	mdelay(20);
 
 	gpio_set_value(S5P64XX_GPH3(5), 1);
-	mdelay(10);
 
 	gpio_free(S5P64XX_GPH3(5));
 
@@ -410,28 +384,40 @@ static struct s3c_platform_fb ams320_data __initdata = {
 	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
 
 	.cfg_gpio = ams320_cfg_gpio,
-	.backlight_on = ams320_backlight_on,
 	.reset_lcd = ams320_reset_lcd,
 };
 
-static struct i2c_gpio_platform_data ams320_i2c_data = {
-	.sda_pin	= S5P64XX_GPD1(0),
-	.scl_pin	= S5P64XX_GPD1(1),
-};
-
-static struct platform_device i2c_gpio_ams320 = {
-	.name		= "i2c-gpio",
-	.id		= 0,
-	.dev		= {
-		.platform_data	= &ams320_i2c_data,
+#define LCD_BUS_NUM 	3
+#define DISPLAY_CS	S5P64XX_GPF3(5)
+static struct spi_board_info spi_board_info[] __initdata = {
+    	{
+	    	.modalias	= "ams320",
+		.platform_data	= NULL,
+		.max_speed_hz	= 300,
+		.bus_num	= LCD_BUS_NUM,
+		.chip_select	= 0,
+		.mode		= SPI_MODE_3,
+		.controller_data = (void *)DISPLAY_CS,
 	},
 };
 
-static void __init smdk6442_i2c_gpio_init(void)
-{
-	s3c_gpio_setpull(S5P64XX_GPD1(0), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPD1(1), S3C_GPIO_PULL_NONE);
-}
+#define DISPLAY_CLK	S5P64XX_GPD1(1)
+#define DISPLAY_SI	S5P64XX_GPD1(0)
+static struct spi_gpio_platform_data ams320_spi_gpio_data = {
+	.sck	= DISPLAY_CLK,
+	.mosi	= DISPLAY_SI,
+	.miso	= -1,
+	.num_chipselect	= 1,
+};
+
+static struct platform_device s3c_device_spi_gpio = {
+	.name	= "spi_gpio",
+	.id	= LCD_BUS_NUM,
+	.dev	= {
+		.parent		= &s3c_device_fb.dev,
+		.platform_data	= &ams320_spi_gpio_data,
+	},
+};
 #endif
 
 struct map_desc smdk6442_iodesc[] = {};
@@ -440,7 +426,7 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_fb,
 
 #ifdef CONFIG_FB_S3C_AMS320
-	&i2c_gpio_ams320,
+	&s3c_device_spi_gpio,
 #endif
 
 //	&s3c_device_wdt,
@@ -473,7 +459,6 @@ static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("WM8580", 0x1a), },
 	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
 };
-
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
 	.delay 			= 10000,
@@ -566,7 +551,7 @@ static void __init smdk6442_machine_init(void)
 	smdk6442_smc911x_set();
 
 #ifdef CONFIG_FB_S3C_AMS320
-	smdk6442_i2c_gpio_init();
+	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&ams320_data);
 #endif
 

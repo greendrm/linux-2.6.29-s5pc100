@@ -58,6 +58,9 @@ config FB_S3C_TL2796
 config FB_S3C_AMS320
 	bool "AMS320"
 	depends on MACH_SMDK6442
+	select SPI
+	select SPI_GPIO
+	select SPI_BITBANG	
 	---help---
 	  This enables support for AMS320 LED panel
 
