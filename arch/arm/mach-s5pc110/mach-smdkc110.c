@@ -689,7 +689,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #endif
 
 #ifdef CONFIG_RTC_DRV_S3C
-	&s3c_device_wdt,
+	&s3c_device_rtc,
 #endif
 
 #ifdef CONFIG_HAVE_PWM

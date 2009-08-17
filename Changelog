@@ -1614,3 +1614,10 @@ v2.6.29.4-dev-1-2-0: Jonghun Han
 		M       drivers/video/samsung/s3cfb_fimd6x.c
 		M       drivers/video/samsung/s3cfb_tl2796.c
 
+v2.6.29.4-dev-1-2-1: Jae-Hun Jung
+	- Fixed platform device name for rtc.
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+
+
