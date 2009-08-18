@@ -1620,4 +1620,9 @@ v2.6.29.4-dev-1-2-1: Jae-Hun Jung
 	Modified Files:
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-1-2-2: Kukjin Kim
+	- Added DMACH_UARTx for C110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/dma.c
 
