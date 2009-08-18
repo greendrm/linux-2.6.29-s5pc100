@@ -1620,4 +1620,18 @@ v2.6.29.4-dev-1-2-1: Jae-Hun Jung
 	Modified Files:
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
+v2.6.29.4-dev-1-3-0: Jingoo Han
+	- Implement the USB 2.0 HOST EHCI driver with SMDKC110
+
+	Added Files:
+		A       drivers/usb/host/ehci-s5pc110.c
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       drivers/usb/Kconfig
+		M       drivers/usb/host/ehci-hcd.c
 
