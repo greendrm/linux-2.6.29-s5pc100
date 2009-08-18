@@ -17,6 +17,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
+#include <linux/device.h>
 #include <linux/rtc.h>
 #include <linux/bcd.h>
 #include <linux/clk.h>
@@ -460,21 +461,21 @@ static void s3c_rtc_enable(struct platform_device *pdev, int en)
 		/* re-enable the device, and check it is ok */
 
 		if ((readb(base+S3C2410_RTCCON) & S3C2410_RTCCON_RTCEN) == 0){
-			dev_info(&pdev->dev, "rtc disabled, re-enabling\n");
+			dev_dbg(&pdev->dev, "rtc disabled, re-enabling\n");
 
 			tmp = readb(base + S3C2410_RTCCON);
 			writeb(tmp|S3C2410_RTCCON_RTCEN, base+S3C2410_RTCCON);
 		}
 
 		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CNTSEL)){
-			dev_info(&pdev->dev, "removing RTCCON_CNTSEL\n");
+			dev_dbg(&pdev->dev, "removing RTCCON_CNTSEL\n");
 
 			tmp = readb(base + S3C2410_RTCCON);
 			writeb(tmp& ~S3C2410_RTCCON_CNTSEL, base+S3C2410_RTCCON);
 		}
 
 		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CLKRST)){
-			dev_info(&pdev->dev, "removing RTCCON_CLKRST\n");
+			dev_dbg(&pdev->dev, "removing RTCCON_CLKRST\n");
 
 			tmp = readb(base + S3C2410_RTCCON);
 			writeb(tmp & ~S3C2410_RTCCON_CLKRST, base+S3C2410_RTCCON);

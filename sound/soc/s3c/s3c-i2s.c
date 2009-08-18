@@ -323,8 +323,9 @@ static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct 
 	int ret = 0;
 
 	switch (cmd) {
-	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
+		break;
+	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (s3c_i2s.slave) {
 			ret = s3c_snd_lrsync();
@@ -337,8 +338,9 @@ static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct 
 		else
 			s3c_snd_txctrl(1);
 		break;
-	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
+		break;
+	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 			s3c_snd_rxctrl(0);
@@ -600,7 +602,7 @@ static void init_i2s(void)
 	/* Enable all interrupts to find bugs */
 	iiscon |= S3C_IISCON_FRXOFINTEN;
 	iismod &= ~S3C_IISMOD_OPMSK;
-	iismod |= S3C_IISMOD_OPPCLK;
+	iismod |= S3C_IISMOD_OPCCO;
 
 	if(s3c_i2s_pdat.lp_mode){
 		iiscon &= ~S3C_IISCON_FTXURINTEN;
@@ -623,7 +625,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 			     struct snd_soc_dai *dai)
 {
 	int ret = 0;
-	struct clk *cm, *cf;
+	struct clk *cf;
 
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
@@ -639,31 +641,19 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	s3c_i2s.iis_clk = clk_get(&pdev->dev, PCLKCLK);
 	if (IS_ERR(s3c_i2s.iis_clk)) {
 		printk("failed to get clk(%s)\n", PCLKCLK);
-		goto lb5;
+		goto lb4;
 	}
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
 #ifdef USE_CLKAUDIO
-	if(s3c_i2s_pdat.lp_mode){
-		printk("Don't use CLKAUDIO in LP_Audio mode!\n");
-		goto lb4;
-	}
-
+	/* To avoid switching between sources(LP vs NM mode),
+	 * we use fout_epll as parent clock of i2sclkd2.
+	 */
 	s3c_i2s.audio_bus = clk_get(NULL, EXTCLK);
 	if (IS_ERR(s3c_i2s.audio_bus)) {
 		printk("failed to get clk(%s)\n", EXTCLK);
-		goto lb4;
-	}
-
-	cm = clk_get(NULL, "mout_epll");
-	if (IS_ERR(cm)) {
-		printk("failed to get mout_epll\n");
 		goto lb3;
-	}
-	if(clk_set_parent(s3c_i2s.audio_bus, cm)){
-		printk("failed to set MOUTepll as parent of CLKAUDIO0\n");
-		goto lb2;
 	}
 
 	cf = clk_get(NULL, "fout_epll");
@@ -671,14 +661,19 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get fout_epll\n");
 		goto lb2;
 	}
-	clk_enable(cf);
-	if(clk_set_parent(cm, cf)){
-		printk("failed to set FOUTepll as parent of MOUTepll\n");
+	if(clk_set_parent(s3c_i2s.audio_bus, cf)){
+		printk("failed to set FOUTepll as parent of %s\n", EXTCLK);
 		goto lb1;
 	}
-	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
 	clk_put(cf);
-	clk_put(cm);
+
+	clk_enable(s3c_i2s.audio_bus);
+	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
+#else
+	if(s3c_i2s_pdat.lp_mode){
+		printk("Enable USE_CLKAUDIO for LP_Audio mode!\n");
+		goto lb3;
+	}
 #endif
 
 	init_i2s();
@@ -692,17 +687,15 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 lb1:
 	clk_put(cf);
 lb2:
-	clk_put(cm);
-lb3:
 	clk_put(s3c_i2s.audio_bus);
 #endif
-lb4:
+lb3:
 	clk_disable(s3c_i2s.iis_clk);
 	clk_put(s3c_i2s.iis_clk);
-lb5:
+lb4:
 	free_irq(S3C_IISIRQ, pdev);
 	iounmap(s3c_i2s.regs);
-	
+
 	return -ENODEV;
 }
 
@@ -712,6 +705,7 @@ static void s3c_i2s_remove(struct platform_device *pdev,
 	writel(0, s3c_i2s.regs + S3C_IISCON);
 
 #ifdef USE_CLKAUDIO
+	clk_disable(s3c_i2s.audio_bus);
 	clk_put(s3c_i2s.audio_bus);
 #endif
 	clk_disable(s3c_i2s.iis_clk);
@@ -816,7 +810,7 @@ static inline void __lpinit(int lpmd)
 	   mdsel |= (1<<1);
 
 	writel(mdsel, S5P_LPMP_MODE_SEL);
-	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2 | S5P_CLKGATE_D20_I2SD2, S5P_CLKGATE_D20);
+	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2, S5P_CLKGATE_D20);
 #else
 	//#error PUT SOME CODE HERE !!!
 #endif
@@ -854,8 +848,11 @@ static void s3c_i2sdma_ctrl(int state)
 				  val |= S3C_IISAHB_INTENLVL0 | S3C_IISAHB_DMAEN;
 		                  break;
 
+	   case S3C_I2SDMA_SUSPEND:
+	   case S3C_I2SDMA_RESUME:
+		                  break;
 	   case S3C_I2SDMA_FLUSH:
-	   case S3C_I2SDMA_STOP:
+	   case S3C_I2SDMA_STOP: 
 				  val &= ~(S3C_IISAHB_INTENLVL0 | S3C_IISAHB_DMAEN);
 		                  break;
 
