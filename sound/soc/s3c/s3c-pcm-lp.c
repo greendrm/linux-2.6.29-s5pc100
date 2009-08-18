@@ -35,7 +35,8 @@
 #include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
-/* Set this value to maximum possible without latency issues with playback.
+/* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
+ * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
  * Also, this value must be aligned at KB bounday (multiple of 1024). */
 #define LP_DMA_PERIOD (103 * 1024)
 
@@ -608,11 +609,17 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_free = s3c_pcm_hw_free_lp;
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->prepare = s3c_pcm_prepare_lp;
 		/* Configure Playback Channel */
-		/* We use periods_min as a hint, to audio application, about h/w period size,
-		 * which in turn is configured for selected duty-cycle of the AP.
-		 * Ideally, application should use this value, periods_min*buffer_bytes_max, 
-		 * in snd_pcm_sw_params_set_avail_min. AND, use period_bytes_max in snd_pcm_hw_params_set_period_size.
-		 * AND, (period_bytes_max * periods_max) in snd_pcm_hw_params_set_buffer_size.
+		/* LP-Audio is not for playing clicks and tones.
+		 * It is for lengthy audio playback where the user isn't 
+		 * interacting much with the system. Here we can, and should, 
+		 * preserve power at the cost of responsiveness.
+		 * Period size should be as large as possible but small enough to give 
+		 * enough time to system to wakeup-refillbuffer-sleep 
+		 * without causing underruns.
+		 * We use maximum possible period size while keeping 
+		 * the least possible periods i.e, 1 period.
+		 * The only assumptions LP mode make is that the application 
+		 * use MAX_LP_BUFF size buffers _and_ LP_DMA_PERIOD > MAX_LP_BUFF/2.
 		 */
 		s3c_pcm_pdat.pcm_hw_tx.buffer_bytes_max = MAX_LP_BUFF;
 		s3c_pcm_pdat.pcm_hw_tx.period_bytes_min = LP_DMA_PERIOD;

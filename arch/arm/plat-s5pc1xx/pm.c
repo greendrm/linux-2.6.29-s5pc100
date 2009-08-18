@@ -514,7 +514,7 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp &= ~(0x1f << 27);
 	tmp |= S5P_CFG_WFI_DEEPIDLE | (1 << 31) | (0xbff << 7) | (1 << 29);
 	tmp &= ~(1<<17);
-	printk("Deep Idle mode\n");
+	DBG("Deep Idle mode\n");
 #else
 	tmp |= (S5P_CFG_WFI_SLEEP);
 	printk("normal sleep mode\n");
