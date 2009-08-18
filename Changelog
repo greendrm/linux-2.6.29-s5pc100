@@ -1641,3 +1641,9 @@ v2.6.29.4-dev-1-3-1: Kukjin Kim
 	Modified Files:
 		M	arch/arm/mach-s5pc110/dma.c
 
+v2.6.29.4-dev-1-3-2: Jongpill Lee
+	- Added Deep idle test code
+
+	Modified Files:
+		M       arch/arm/plat-s5pc1xx/Kconfig
+		M       arch/arm/plat-s5pc1xx/pm.c
