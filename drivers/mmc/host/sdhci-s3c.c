@@ -104,11 +104,17 @@ static void sdhci_s3c_set_ios(struct sdhci_host *host,
 	struct sdhci_s3c *ourhost = to_s3c(host);
 	struct s3c_sdhci_platdata *pdata = ourhost->pdata;
 	int width;
+	u8 tmp;
 
 	sdhci_s3c_check_sclk(host);
 
 	if (ios->power_mode != MMC_POWER_OFF) {
 		switch (ios->bus_width) {
+		case MMC_BUS_WIDTH_8:
+			width = 8;
+			tmp = readb(host->ioaddr + SDHCI_HOST_CONTROL);
+			writeb(tmp | SDHCI_S3C_CTRL_8BITBUS, host->ioaddr + SDHCI_HOST_CONTROL);
+			break;			
 		case MMC_BUS_WIDTH_4:
 			width = 4;
 			break;
@@ -416,7 +422,6 @@ static int __devexit sdhci_s3c_remove(struct platform_device *pdev)
 static int sdhci_s3c_suspend(struct platform_device *dev, pm_message_t pm)
 {
         struct sdhci_host *host = platform_get_drvdata(dev);
-
         sdhci_suspend_host(host, pm);
         return 0;
 }
@@ -424,7 +429,6 @@ static int sdhci_s3c_suspend(struct platform_device *dev, pm_message_t pm)
 static int sdhci_s3c_resume(struct platform_device *dev)
 {
         struct sdhci_host *host = platform_get_drvdata(dev);
-
         sdhci_resume_host(host);
         return 0;
 }

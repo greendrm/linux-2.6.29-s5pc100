@@ -743,9 +743,6 @@ static void __init smdkc100_machine_init(void)
 	/* fb */
 	s3cfb_set_platdata(&fb_data);
 	
-	/* Setting up the HS-MMC clock for 44.5MHz using doutMpll */
-	writel(((readl(S5P_CLK_DIV3) & ~(0xfff << 0)) | 0x222), S5P_CLK_DIV3);
-
 	platform_add_devices(smdkc100_devices, ARRAY_SIZE(smdkc100_devices));
 
 #if defined(CONFIG_PM)
