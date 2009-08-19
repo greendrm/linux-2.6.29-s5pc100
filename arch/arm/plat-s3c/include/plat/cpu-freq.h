@@ -33,7 +33,7 @@ extern void ltc3714_init(void);
 
 #define CLK_OUT_PROBING	//TP80 on SMDKC100 board
 
-typedef enum perf_level {
+enum perf_level {
 	L0,
 	L1,
 	L2,

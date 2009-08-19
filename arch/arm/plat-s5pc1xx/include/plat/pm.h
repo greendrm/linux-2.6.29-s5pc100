@@ -65,10 +65,3 @@ extern void s5pc1xx_pm_do_restore_phy(struct sleep_save_phy *ptr, struct platfor
 extern void s5pc1xx_pm_do_save(struct sleep_save *ptr, int count);
 extern void s5pc1xx_pm_do_restore(struct sleep_save *ptr, int count);
 
-#ifdef CONFIG_PM
-extern int s5pc1xx_irq_suspend(struct sys_device *dev, pm_message_t state);
-extern int s5pc1xx_irq_resume(struct sys_device *dev);
-#else
-#define s5pc1xx_irq_suspend	NULL
-#define s5pc1xx_irq_resume	NULL
-#endif

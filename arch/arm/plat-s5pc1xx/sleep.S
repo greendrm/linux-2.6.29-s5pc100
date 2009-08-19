@@ -34,7 +34,7 @@
 #include <mach/regs-mem.h>
 #include <plat/regs-serial.h>
 
-#define S5P_INFORM0 0xE0108400
+#define S5P_APM_INFORM0 0xE0108400
 
 /* CONFIG_DEBUG_RESUME is dangerous if your bootloader does not
  * reset the UART configuration, only enable if you really need this!
@@ -165,7 +165,7 @@ ENTRY(s5pc100_cpu_resume)
 	mov	r8, r6
 	ldr	r10, =0x3fff
 	bic	r8, r8, r10
-	ldr	r11, =S5P_INFORM0
+	ldr	r11, =S5P_APM_INFORM0
 	ldr	r9, [r11, #0]
 	mov	r9, r9 ,LSR #18
 	bic	r9, r9, #0x3
@@ -213,7 +213,7 @@ ENTRY(s5pc100_cpu_resume)
 	mov	r4, r6
 	ldr	r5, =0x3fff
 	bic	r4, r4, r5
-	ldr	r11, =S5P_INFORM0
+	ldr	r11, =S5P_APM_INFORM0
 	ldr	r10, [r11, #0]
 	mov	r10, r10 ,LSR #18
 	bic	r10, r10, #0x3
