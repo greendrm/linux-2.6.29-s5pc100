@@ -85,22 +85,28 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 		.index		= 8,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
+		.description	= "YUV 4:2:0 planar, Y/CbCr, Tiled",
+		.pixelformat	= V4L2_PIX_FMT_NV12T,
+	}, {
+		.index		= 9,
+		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
+		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/CrCb",
 		.pixelformat	= V4L2_PIX_FMT_NV21,
 	}, {
-		.index		= 9,
+		.index		= 10,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:2 planar, Y/CbCr",
 		.pixelformat	= V4L2_PIX_FMT_NV16,
 	}, {
-		.index		= 10,
+		.index		= 11,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:2 planar, Y/CrCb",
 		.pixelformat	= V4L2_PIX_FMT_NV61,
 	}, {
-		.index		= 11,
+		.index		= 12,
 		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/Cb/Cr",
@@ -459,6 +465,7 @@ static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_format *f)
 		dev_dbg(ctrl->dev, "16bpp\n");
 		break;
 	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV12T:
 	case V4L2_PIX_FMT_NV21:
 	case V4L2_PIX_FMT_YUV420:
 		depth = 12;
@@ -595,21 +602,22 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	}
 
 	switch (cap->fmt.pixelformat) {
-	case V4L2_PIX_FMT_RGB32:
-	case V4L2_PIX_FMT_RGB565:
-	case V4L2_PIX_FMT_YUYV:
-	case V4L2_PIX_FMT_UYVY:
-	case V4L2_PIX_FMT_VYUY:
-	case V4L2_PIX_FMT_YVYU:	
-	case V4L2_PIX_FMT_NV16:
-	case V4L2_PIX_FMT_NV61:
-	case V4L2_PIX_FMT_YUV422P:
-	case V4L2_PIX_FMT_YUV420:
+	case V4L2_PIX_FMT_RGB32:	/* fall through */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
+	case V4L2_PIX_FMT_NV61:		/* fall through */
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_NV21:
 		ret = fimc_alloc_buffers(ctrl, 0, cap->fmt.sizeimage, 0);
 		break;
 	
-	case V4L2_PIX_FMT_NV12:
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV12T:
 		ret = fimc_alloc_buffers(ctrl, 0,
 			cap->fmt.width * cap->fmt.height, SZ_64K);
 		ret = fimc_alloc_buffers(ctrl, 1,
