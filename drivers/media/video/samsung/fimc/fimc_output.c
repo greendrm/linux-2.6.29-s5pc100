@@ -249,7 +249,7 @@ static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
 	fimc_hwset_input_colorspace(ctrl, pixfmt);
 	fimc_hwset_input_rgb(ctrl, pixfmt);
 	fimc_hwset_ext_rgb(ctrl, 1);
-	fimc_hwset_intput_addr_style(ctrl, pixfmt);
+	fimc_hwset_input_addr_style(ctrl, pixfmt);
 }
 
 static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)

@@ -407,7 +407,7 @@ extern int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat, s
 extern int fimc_hwset_org_input_size(struct fimc_control *ctrl, u32 width, u32 height);
 extern int fimc_hwset_org_output_size(struct fimc_control *ctrl, u32 width, u32 height);
 extern int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height);
-extern int fimc_hwset_intput_addr_style(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_input_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
 

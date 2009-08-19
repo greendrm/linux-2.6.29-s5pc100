@@ -847,6 +847,7 @@ int fimc_streamon_capture(void *fh)
 	fimc_hwset_prescaler(ctrl);
 	fimc_hwset_scaler(ctrl);
 	fimc_hwset_output_colorspace(ctrl, cap->fmt.pixelformat);
+	fimc_hwset_output_addr_style(ctrl, cap->fmt.pixelformat);
 
 	if (cap->fmt.pixelformat == V4L2_PIX_FMT_RGB32 ||
 		cap->fmt.pixelformat == V4L2_PIX_FMT_RGB565)

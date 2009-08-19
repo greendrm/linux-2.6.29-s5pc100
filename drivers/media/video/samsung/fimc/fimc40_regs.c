@@ -143,12 +143,12 @@ int fimc_hwget_overflow_state(struct fimc_control *ctrl)
 
 	if (status & flag) {
 		cfg = readl(ctrl->regs + S3C_CIWDOFST);
-		cfg |= (S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB | \
+		cfg |= (S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB |
 			S3C_CIWDOFST_CLROVFICR);
 		writel(cfg, ctrl->regs + S3C_CIWDOFST);
 
 		cfg = readl(ctrl->regs + S3C_CIWDOFST);
-		cfg &= ~(S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB | \
+		cfg &= ~(S3C_CIWDOFST_CLROVFIY | S3C_CIWDOFST_CLROVFICB |
 			S3C_CIWDOFST_CLROVFICR);
 		writel(cfg, ctrl->regs + S3C_CIWDOFST);
 
@@ -165,7 +165,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 	u32 cfg, h1, h2, v1, v2;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n",
 			__func__);
 		return -ENODEV;
 	}
@@ -196,14 +196,14 @@ int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n",
 			__func__);
 		return -ENODEV;
 	}
 
 	cfg = readl(ctrl->regs + S3C_CIGCTRL);
 
-	cfg &= ~(S3C_CIGCTRL_INVPOLPCLK | S3C_CIGCTRL_INVPOLVSYNC | \
+	cfg &= ~(S3C_CIGCTRL_INVPOLPCLK | S3C_CIGCTRL_INVPOLVSYNC |
 		 S3C_CIGCTRL_INVPOLHREF | S3C_CIGCTRL_INVPOLHSYNC);
 
 	if (cam->inv_pclk)
@@ -229,13 +229,13 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n", \
+		dev_err(ctrl->dev, "%s: no active camera\n",
 			__func__);
 		return -ENODEV;
 	}
 
 	cfg = readl(ctrl->regs + S3C_CIGCTRL);
-	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK | \
+	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK |
 		S3C_CIGCTRL_SELCAM_FIMC_MASK);
 
 	/* Interface selection */
@@ -250,7 +250,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_FIMC_ITU;
 	} else {
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n", \
+		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n",
 			__func__);
 		return -EINVAL;
 	}
@@ -408,7 +408,7 @@ int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
 	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_CIOCTRL);
-	cfg &= ~(S3C_CIOCTRL_ORDER2P_MASK | S3C_CIOCTRL_ORDER422_MASK | \
+	cfg &= ~(S3C_CIOCTRL_ORDER2P_MASK | S3C_CIOCTRL_ORDER422_MASK |
 		S3C_CIOCTRL_YCBCR_PLANE_MASK);
 
 	switch (pixelformat) {
@@ -765,7 +765,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
-	cfg &= ~(S3C_MSCTRL_2PLANE_SHIFT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE | \
+	cfg &= ~(S3C_MSCTRL_2PLANE_SHIFT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE |
 						S3C_MSCTRL_ORDER422_YCBYCR);
 
 	switch (pixelformat) {
@@ -852,11 +852,11 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 {
 	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
 
-	if (!crop->left && !crop->top && (bounds->width == crop->width) && \
+	if (!crop->left && !crop->top && (bounds->width == crop->width) &&
 		(bounds->height == crop->height))
 		return -EINVAL;
 
-	dev_dbg(ctrl->dev, "%s: left: %d, top: %d, width: %d, height: %d\n", \
+	dev_dbg(ctrl->dev, "%s: left: %d, top: %d, width: %d, height: %d\n",
 		__func__, crop->left, crop->top, crop->width, crop->height);
 
 	switch (pixelformat) {
@@ -932,8 +932,9 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 {
 	u32 cfg_y = 0, cfg_cb = 0;
 
-	if (crop->left || crop->top || \
-		(bounds->width != crop->width) || (bounds->height != crop->height)) {
+	if (crop->left || crop->top ||
+		(bounds->width != crop->width) || 
+		(bounds->height != crop->height)) {
 		switch (pixelformat) {
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
@@ -1002,14 +1003,15 @@ int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 height)
 	return 0;
 }
 
-int fimc_hwset_intput_addr_style(struct fimc_control *ctrl, u32 pixelformat)
+int fimc_hwset_input_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CIDMAPARAM);
+	cfg &= ~S3C_CIDMAPARAM_R_MODE_MASK;
 	
 	if (pixelformat == V4L2_PIX_FMT_NV12T)
 		cfg |= S3C_CIDMAPARAM_R_MODE_64X32;
 	else
-		cfg &= ~S3C_CIDMAPARAM_R_MODE_MASK;
+		cfg |= S3C_CIDMAPARAM_R_MODE_LINEAR;
 
 	writel(cfg, ctrl->regs + S3C_CIDMAPARAM);
 
@@ -1019,11 +1021,12 @@ int fimc_hwset_intput_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CIDMAPARAM);
+	cfg &= ~S3C_CIDMAPARAM_W_MODE_MASK;
 	
 	if (pixelformat == V4L2_PIX_FMT_NV12T)
 		cfg |= S3C_CIDMAPARAM_W_MODE_64X32;
 	else
-		cfg &= ~S3C_CIDMAPARAM_W_MODE_MASK;
+		cfg |= S3C_CIDMAPARAM_W_MODE_LINEAR;
 
 	writel(cfg, ctrl->regs + S3C_CIDMAPARAM);
 
