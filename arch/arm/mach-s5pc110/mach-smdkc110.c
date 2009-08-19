@@ -661,7 +661,9 @@ struct platform_device s3c_device_spi_bitbang = {
 struct map_desc smdkc110_iodesc[] = {};
 
 static struct platform_device *smdkc110_devices[] __initdata = {
+#ifdef CONFIG_FB_S3C
 	&s3c_device_fb,
+#endif
 	&s3c_device_dm9000,
 	&s3c_device_mfc,
 #ifdef CONFIG_FB_S3C_TL2796
@@ -1149,6 +1151,7 @@ static void __init smdkc110_machine_init(void)
         s3cspi_set_slaves(BUSNUM(2), ARRAY_SIZE(s3c_slv_pdata_2), s3c_slv_pdata_2);
 #endif
         spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
+
 #ifdef CONFIG_FB_S3C_LTE480WV
 	s3cfb_set_platdata(&lte480wv_data);
 #endif

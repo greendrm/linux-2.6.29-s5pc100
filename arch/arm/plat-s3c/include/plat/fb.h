@@ -46,6 +46,8 @@ extern int s3cfb_reset_lcd(struct platform_device *pdev);
 
 #else
 
+#ifdef CONFIG_FB
+
 /**
  * struct s3c_fb_pd_win - per window setup data
  * @win_mode: The display parameters to initialise (not for window 0)
@@ -100,6 +102,8 @@ extern void s3c_fb_set_platdata(struct s3c_fb_platdata *pd);
  * Initialise the GPIO for an 24bpp LCD display on the RGB interface.
  */
 extern void s3c64xx_fb_gpio_setup_24bpp(void);
+
+#endif	/* CONFIG_FB */
 
 #endif
 

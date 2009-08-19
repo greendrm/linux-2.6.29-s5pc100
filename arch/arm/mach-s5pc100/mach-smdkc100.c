@@ -410,7 +410,9 @@ static struct s3c_platform_fb fb_data __initdata = {
 struct map_desc smdkc100_iodesc[] = {};
 
 static struct platform_device *smdkc100_devices[] __initdata = {
+#ifdef CONFIG_FB_S3C
 	&s3c_device_fb,
+#endif
         &s3c_device_nand,
         &s3c_device_onenand,
 	&s3c_device_keypad,
@@ -741,8 +743,9 @@ static void __init smdkc100_machine_init(void)
 	smdkc100_reset_camera();
 
 	/* fb */
+#ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(&fb_data);
-	
+#endif
 	/* Setting up the HS-MMC clock for 44.5MHz using doutMpll */
 	writel(((readl(S5P_CLK_DIV3) & ~(0xfff << 0)) | 0x222), S5P_CLK_DIV3);
 
