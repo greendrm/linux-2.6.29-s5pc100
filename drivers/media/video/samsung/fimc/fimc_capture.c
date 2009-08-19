@@ -631,6 +631,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	if (ret) {
 		dev_err(ctrl->dev, "%s: no memory for "
 				"capture buffer\n", __func__);
+		mutex_unlock(&ctrl->v4l2_lock);
 		return -ENOMEM;
 	}
 
@@ -753,6 +754,7 @@ int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a)
 	if (!ctrl->cam) {
 		dev_err(ctrl->dev, "%s: s_input should be done before crop\n",
 			__func__);
+		mutex_unlock(&ctrl->v4l2_lock);
 		return -ENODEV;
 	}
 
