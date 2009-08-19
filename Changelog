@@ -275,21 +275,21 @@ v2.6.29.4-r0d4: Kukjin Kim
 	- Support S5PC100 MTD_NAND, KEYPAD, S3C_MEM
 
 	Added / Modified Files:
-     		M	Makefile
-     		M	arch/arm/configs/smdkc100nfs_defconfig
-     		M	arch/arm/plat-s3c/include/plat/regs-nand.h
-     		M	drivers/char/Kconfig
-     		M	drivers/char/Makefile
-     		M	drivers/char/mem.c
-     		A	drivers/char/s3c_mem.c
-     		A	drivers/char/s3c_mem.h
-     		M	drivers/input/keyboard/Kconfig
-     		M	drivers/input/keyboard/Makefile
-     		A	drivers/input/keyboard/s3c-keypad.c
-     		A	drivers/input/keyboard/s3c-keypad.h
-     		M	drivers/mtd/nand/Kconfig
-     		M	drivers/mtd/nand/Makefile
-     		A	drivers/mtd/nand/s3c_nand.c
+		M	Makefile
+		M	arch/arm/configs/smdkc100nfs_defconfig
+		M	arch/arm/plat-s3c/include/plat/regs-nand.h
+		M	drivers/char/Kconfig
+		M	drivers/char/Makefile
+		M	drivers/char/mem.c
+		A	drivers/char/s3c_mem.c
+		A	drivers/char/s3c_mem.h
+		M	drivers/input/keyboard/Kconfig
+		M	drivers/input/keyboard/Makefile
+		A	drivers/input/keyboard/s3c-keypad.c
+		A	drivers/input/keyboard/s3c-keypad.h
+		M	drivers/mtd/nand/Kconfig
+		M	drivers/mtd/nand/Makefile
+		A	drivers/mtd/nand/s3c_nand.c
 
 v2.6.29.4-r0d5: Jinsung Yang
 	- Framebuffer driver support
@@ -1078,7 +1078,7 @@ v2.6.29.4-dev-1-0-3: Kukjin Kim
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
 v2.6.29.4-dev-1-0-4: Changhwan Youn 
-        - SD/MMC support using HCLK for S5PC110 SMDK board 
+	- SD/MMC support using HCLK for S5PC110 SMDK board 
 
 	Modified Files:
 		M       arch/arm/mach-s5pc110/Kconfig
@@ -1211,8 +1211,8 @@ v2.6.29.4-dev-1-0-16: Jongpill Lee
 	- Support APM for S5PC110
 		
 	Modified Files:
-                M       arch/arm/plat-s5pc11x/pm.c
-                M       arch/arm/plat-s5pc11x/sleep.S
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc11x/sleep.S
 
 v2.6.29.4-dev-1-0-17: Jae-Cheol Lee
 	- Changed gpiolib initcall from arch_initcall to core_initcall for
@@ -1635,3 +1635,27 @@ v2.6.29.4-dev-1-3-0: Jingoo Han
 		M       drivers/usb/Kconfig
 		M       drivers/usb/host/ehci-hcd.c
 
+v2.6.29.4-dev-1-3-1: Kukjin Kim
+	- Added DMACH_UARTx for C110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/dma.c
+
+v2.6.29.4-dev-1-3-2: Jongpill Lee
+	- Added Deep idle test code
+
+	Modified Files:
+		M       arch/arm/plat-s5pc1xx/Kconfig
+		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-3-3: Changhwan Youn
+	- Support 8-bit MMC mode for S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc110/Kconfig
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/mach-s5pc110/setup-sdhci.c
+		M       arch/arm/plat-s3c/include/plat/regs-sdhci.h
+		M       arch/arm/plat-s5pc1xx/s5pc100-clock.c
+		M       drivers/mmc/host/sdhci-s3c.c

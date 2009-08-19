@@ -47,7 +47,7 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_dec_exe_arg_t *dec_arg, unsigned int *consumed_strm_size);
 
 
-static void s3c_mfc_cmd_reset(void)
+static void s3c_mfc_cmd_reset(void)  
 {
 	unsigned int mc_status;
 	/* Stop procedure */
@@ -155,7 +155,11 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 	mfc_debug("chroma_buf_addr : 0x%08x  chroma_buf_size : %d\n", buf_addr.chroma, buf_size.chroma);
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
+	#if 0
 	dpb_luma_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);
+	#else
+	dpb_luma_phybuf = MFC_RESERVED_DRAM1_START;
+	#endif
 
 	width = Align(mfc_ctx->img_width, BUF_S_UNIT/2);
 	height = Align(mfc_ctx->img_height, BUF_S_UNIT);
@@ -231,7 +235,11 @@ MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 			init_arg->out_p_addr.mv_ref_yc, init_arg->out_buf_size.mv_ref_yc);		
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
+	#if 0
 	mv_ref_yc_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);
+	#else
+	mv_ref_yc_phybuf = MFC_RESERVED_DRAM1_START;
+	#endif
 
 	width = Align(mfc_ctx->img_width, BUF_S_UNIT/2);
 	height = Align(mfc_ctx->img_height, BUF_S_UNIT);
@@ -258,7 +266,7 @@ MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 	for (i=0; i < 4; i++) {	
 		// Set refC0~C3
 		WRITEL((mv_ref_yc-mv_ref_yc_phybuf)>>11, S3C_FIMV_ENC_REF0_CHROMA_ADR+(4*i));	
-		mv_ref_yc += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT);	
+		mv_ref_yc += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT); // Align size should be checked	
 	}
 	WRITEL((mv_ref_yc-mv_ref_yc_phybuf)>>11, S3C_FIMV_ENC_MV_BUF_ADR);	
 
@@ -510,7 +518,11 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	mfc_debug("s3c_mfc_init_hw++\n");	
 	
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
-	dpb_luma_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);		
+	#if 0
+	dpb_luma_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);
+	#else
+	dpb_luma_phybuf = MFC_RESERVED_DRAM1_START;
+	#endif
 	
 	/*
 	 * 0. MFC reset
@@ -734,7 +746,12 @@ static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_
 	s3c_mfc_restore_context(mfc_ctx);
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
+	#if 0
 	mv_ref_yc_phybuf = Align(s3c_mfc_get_dpb_luma_buf_phys_addr(), 128*BUF_L_UNIT);
+	#else
+	mv_ref_yc_phybuf = MFC_RESERVED_DRAM1_START;
+	#endif
+	
 	
 	/* Set stream buffer addr */
 	WRITEL((enc_arg->in_strm_st-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);

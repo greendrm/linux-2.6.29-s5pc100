@@ -90,6 +90,10 @@
 extern struct sys_timer s5pc11x_timer;
 extern void s5pc11x_reserve_bootmem(void);
 
+#if defined(CONFIG_MMC_SDHCI_S3C)
+extern void s3c_sdhci_set_platdata(void);
+#endif
+
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
         [0] = {
                 .name           = "pclk",
@@ -1183,6 +1187,9 @@ static void __init smdkc110_machine_init(void)
 	smdk_backlight_register();
 #endif
 
+#if defined(CONFIG_MMC_SDHCI_S3C)
+	s3c_sdhci_set_platdata();
+#endif
 }
 
 static void __init smdkc110_fixup(struct machine_desc *desc,

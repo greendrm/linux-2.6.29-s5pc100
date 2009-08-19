@@ -129,4 +129,13 @@ config S5P_HAVE_PWM
         help
            Support for exporting the PWM timer blocks via the pwm device
 
+config  S5P_DEEP_IDLE_TEST
+        bool "Deep Idle test mode"
+        default n
+        help
+           test mode for Deep Idle
+
 endif
+
+
+
