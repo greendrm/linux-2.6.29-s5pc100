@@ -254,7 +254,9 @@ int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
 			    unsigned int off, s3c_gpio_pull_t level)
 {
 	void __iomem *reg = chip->base + 0x04;
+#if defined(CONFIG_CPU_S3C6410)
 	unsigned int baseaddr = (unsigned int)chip->base;
+#endif
 	u32 lvl;
 #if defined CONFIG_CPU_S3C6410
 	if(((baseaddr & 0xFFF) == 0x0E0) /* If it is GPH */

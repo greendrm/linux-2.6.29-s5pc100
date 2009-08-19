@@ -52,7 +52,7 @@ static struct irqaction s3c_31_button_irq = {
 	.handler	= s3c_31_button_interrupt,
 };
 
-static unsigned int s3c_button_gpio_init(void)
+static void s3c_button_gpio_init(void)
 {
 	u32 err;
 
@@ -76,9 +76,8 @@ static unsigned int s3c_button_gpio_init(void)
 
 static void __init s3c_button_init(void)
 {
-	u32 tmp;
 	
-	printk("########## S5PC100 Button init function \n");
+	printk("S5PC100 Button init function \n");
 	
 	s3c_button_gpio_init();
 	

@@ -34,7 +34,7 @@ static int powerdomain_set(struct powerdomain *pd, int enable)
 	unsigned long ctrlbit = pd->pd_ctrlbit;
 	void __iomem *reg = (void __iomem *)(pd->pd_reg);
 	void __iomem *stable_reg = (void __iomem *)(pd->pd_stable_reg);
-	unsigned long reg_dat, state_dat;
+	unsigned long reg_dat;
 		
 	if (IS_ERR(pd) || pd == NULL)
 		return -EINVAL;

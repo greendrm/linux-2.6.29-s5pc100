@@ -223,8 +223,9 @@ static void s5pc1xx_timer_setup (void)
 	/* clock configuration setting and enable */
 	unsigned long pclk;
 	struct clk *clk;
-
+#if defined(T32_DEBUG_GPD)||defined(CLK_OUT_PROBING)
 	unsigned long reg;
+#endif
 
 #ifdef T32_DEBUG_GPD
 	reg = __raw_readl(S5PC1XX_GPDCON);

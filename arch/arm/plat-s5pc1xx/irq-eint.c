@@ -184,7 +184,7 @@ static void s3c_irq_vic_eint_unmask(unsigned int irq)
 
 static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 {
-	void __iomem *reg;
+	u32 reg;
 	
 	reg = eint_irq_to_bit(irq);
 	__raw_writel(reg, S5PC1XX_EINTPEND(eint_pend_reg(irq)));

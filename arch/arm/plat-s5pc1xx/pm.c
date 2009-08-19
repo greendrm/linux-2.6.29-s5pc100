@@ -404,30 +404,6 @@ void (*pm_cpu_sleep)(void);
 
 #define any_allowed(mask, allow) (((mask) & (allow)) != (allow))
 
-static int s5pc1xx_pm_clk(enum PLL_TYPE pm_pll,u32 mdiv, u32 pdiv, u32 sdiv)
-{
-	u32 pll_value;
-	u32 pll_addr;
-
-	pll_value = (1 << 31) | (mdiv << 16) | (pdiv << 8) | (sdiv << 0);
-
-	switch(pm_pll)
-	{
-		case PM_APLL:
-			pll_addr = S5P_APLL_CON;
-		case PM_MPLL:
-			pll_addr = S5P_MPLL_CON;
-		case PM_EPLL:
-			pll_addr = S5P_EPLL_CON;
-		case PM_HPLL:
-			pll_addr = S5P_HPLL_CON;
-	}
-
-	writel(pll_value , pll_addr);
-
-	while(!((readl(pll_addr) >> 30) & 0x1)){}
-}
-
 /* s5pc1xx_pm_enter
  *
  * central control for sleep/resume process
