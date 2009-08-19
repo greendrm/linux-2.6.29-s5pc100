@@ -1659,3 +1659,18 @@ v2.6.29.4-dev-1-3-3: Changhwan Youn
 		M       arch/arm/plat-s3c/include/plat/regs-sdhci.h
 		M       arch/arm/plat-s5pc1xx/s5pc100-clock.c
 		M       drivers/mmc/host/sdhci-s3c.c
+
+v2.6.29.4-dev-1-3-4: Jongpill Lee
+	- remove warning message
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/pm.c
+		M       arch/arm/mach-s5pc100/s5pc100-button.c
+		M       arch/arm/plat-s3c/gpio-config.c
+		M       arch/arm/plat-s3c/include/plat/cpu-freq.h
+		M       arch/arm/plat-s5pc1xx/clock.c
+		M       arch/arm/plat-s5pc1xx/include/plat/pm.h
+		M       arch/arm/plat-s5pc1xx/irq-eint.c
+		M       arch/arm/plat-s5pc1xx/pm.c
+		M       arch/arm/plat-s5pc1xx/s5pc1xx-time.c
+		M       arch/arm/plat-s5pc1xx/sleep.S
