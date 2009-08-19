@@ -301,17 +301,18 @@ int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 
 int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 {
+	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
 	unsigned int cfg;
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 	cfg |= S3C_WINCON_ENWIN_ENABLE;
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
 
-#if defined(CONFIG_CPU_S5P6442)
-	cfg = readl(ctrl->regs + S3C_WINSHMAP);
-	cfg |= (0x1 << id);
-	writel(cfg, ctrl->regs + S3C_WINSHMAP);
-#endif
+	if (pdata->hw_ver == 0x62) {
+		cfg = readl(ctrl->regs + S3C_WINSHMAP);
+		cfg |= (0x1 << id);
+		writel(cfg, ctrl->regs + S3C_WINSHMAP);
+	}
 
 	dev_dbg(ctrl->dev, "[fb%d] turn on\n", id);
 
