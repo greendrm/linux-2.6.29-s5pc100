@@ -137,12 +137,14 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	if (vclk > maxclk)
 		vclk = maxclk;
 
-	div = (int) (src_clk / vclk);
+	div = (src_clk / vclk);
+	if ((src_clk % vclk)) 
+		div++;
 
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
-	pr_debug("parent clock: %d, vclk: %d, vclk div: %d\n", src_clk, vclk, div);
+	info("parent clock: %d, vclk: %d, vclk div: %d\n", src_clk, vclk, div);
 
 	return 0;	
 }
