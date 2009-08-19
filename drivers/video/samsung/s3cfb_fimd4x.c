@@ -137,8 +137,8 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	if (vclk > maxclk)
 		vclk = maxclk;
 
-	div = (src_clk / vclk);
-	if ((src_clk % vclk)) 
+	div = src_clk / vclk;
+	if (src_clk % vclk) 
 		div++;
 
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
