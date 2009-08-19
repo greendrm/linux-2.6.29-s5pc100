@@ -60,7 +60,7 @@ static int s3cfb_draw_logo(struct fb_info *fb)
 	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct fb_var_screeninfo *var = &fb->var;
 
-	memcpy(fbdev->fb[pdata->default_win]->screen_base, \
+	memcpy(fbdev->fb[pdata->default_win]->screen_base,
 		LOGO_RGB24, fix->line_length * var->yres);
 
 	return 0;
@@ -151,15 +151,17 @@ static int s3cfb_map_video_memory(struct fb_info *fb)
 	if (win->path == DATA_PATH_FIFO)
 		return 0;
 
-	fb->screen_base = dma_alloc_writecombine(fbdev->dev, \
-				PAGE_ALIGN(fix->smem_len), \
+	fb->screen_base = dma_alloc_writecombine(fbdev->dev,
+				PAGE_ALIGN(fix->smem_len),
 				(unsigned int *) &fix->smem_start, GFP_KERNEL);
 	if (!fb->screen_base)
 		return -ENOMEM;
 	else
-		info("[fb%d] dma: 0x%08x, cpu: 0x%08x, size: 0x%08x\n", \
-			win->id, (unsigned int) fix->smem_start, \
-			(unsigned int) fb->screen_base, fix->smem_len);
+		dev_info(fbdev->dev, "[fb%d] dma: 0x%08x, cpu: 0x%08x, "
+				"size: 0x%08x\n", win->id,
+				(unsigned int) fix->smem_start,
+				(unsigned int) fb->screen_base,
+				fix->smem_len);
 
 	memset(fb->screen_base, 0, fix->smem_len);
 
@@ -172,11 +174,11 @@ static int s3cfb_unmap_video_memory(struct fb_info *fb)
 	struct s3cfb_window *win = fb->par;
 
 	if (fix->smem_start) {
-		dma_free_writecombine(fbdev->dev, fix->smem_len, \
+		dma_free_writecombine(fbdev->dev, fix->smem_len,
 			fb->screen_base, fix->smem_start);
 		fix->smem_start = 0;
 		fix->smem_len = 0;
-		info("[fb%d] video memory released\n", win->id);
+		dev_info(fbdev->dev, "[fb%d] video memory released\n", win->id);
 	}
 
 	return 0;
@@ -252,8 +254,7 @@ static int s3cfb_set_alpha_info(struct fb_var_screeninfo *var,
 	return 0;
 }
 
-static int s3cfb_check_var(struct fb_var_screeninfo *var,
-				struct fb_info *fb)
+static int s3cfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(fbdev->dev);
 	struct fb_fix_screeninfo *fix = &fb->fix;
@@ -262,9 +263,9 @@ static int s3cfb_check_var(struct fb_var_screeninfo *var,
 
 	dev_dbg(fbdev->dev, "[fb%d] check_var\n", win->id);
 
-	if (var->bits_per_pixel != 16 && var->bits_per_pixel != 24 && \
+	if (var->bits_per_pixel != 16 && var->bits_per_pixel != 24 &&
 		var->bits_per_pixel != 32) {
-		err("invalid bits per pixel\n");
+		dev_err(fbdev->dev, "invalid bits per pixel\n");
 		return -EINVAL;
 	}
 
@@ -337,7 +338,8 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 		if (fb->fix.smem_start)
 			s3cfb_enable_window(win->id);
 		else
-			info("[fb%d] no allocated memory for unblank\n", \
+			dev_info(fbdev->dev,
+				"[fb%d] no allocated memory for unblank\n",
 				win->id);
 		break;
 
@@ -353,19 +355,18 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 	return 0;
 }
 
-static int s3cfb_pan_display(struct fb_var_screeninfo *var, 
-				struct fb_info *fb)
+static int s3cfb_pan_display(struct fb_var_screeninfo *var, struct fb_info *fb)
 {
 	struct s3cfb_window *win = fb->par;
 
 	if (var->yoffset + var->yres > var->yres_virtual) {
-		err("invalid yoffset value\n");
+		dev_err(fbdev->dev, "invalid yoffset value\n");
 		return -EINVAL;
 	}
 
 	fb->var.yoffset = var->yoffset;
 
-	dev_dbg(fbdev->dev, "[fb%d] yoffset for pan display: %d\n", win->id, \
+	dev_dbg(fbdev->dev, "[fb%d] yoffset for pan display: %d\n", win->id,
 		var->yoffset);
 
 	s3cfb_set_buffer_address(fbdev, win->id);
@@ -394,7 +395,7 @@ static int s3cfb_setcolreg(unsigned int regno, unsigned int red,
 		val |= __chan_to_field(red, fb->var.red);
 		val |= __chan_to_field(green, fb->var.green);
 		val |= __chan_to_field(blue, fb->var.blue);
-		val |= __chan_to_field(transp, fb->var.transp);			
+		val |= __chan_to_field(transp, fb->var.transp);
 
 		pal[regno] = val;
 	}
@@ -412,12 +413,12 @@ static int s3cfb_open(struct fb_info *fb, int user)
 
 	if (atomic_read(&win->in_use)) {
 		if (win->id == pdata->default_win) {
-			dev_dbg(fbdev->dev, \
+			dev_dbg(fbdev->dev,
 				"multiple open for default window\n");
 			ret = 0;
 		} else {
-			dev_dbg(fbdev->dev, \
-				"do not allow multiple open " \
+			dev_dbg(fbdev->dev,
+				"do not allow multiple open "
 				"for non-default window\n");
 			ret = -EBUSY;
 		}
@@ -497,8 +498,8 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 		break;
 
 	case S3CFB_WIN_POSITION:
-		if (copy_from_user(&p.user_window, \
-			(struct s3cfb_user_window __user *) arg, \
+		if (copy_from_user(&p.user_window,
+			(struct s3cfb_user_window __user *) arg,
 			sizeof(p.user_window)))
 			ret = -EFAULT;
 		else {
@@ -523,16 +524,16 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 		break;
 
 	case S3CFB_WIN_SET_PLANE_ALPHA:
-		if (copy_from_user(&p.user_alpha, \
-			(struct s3cfb_user_plane_alpha __user *) arg, \
+		if (copy_from_user(&p.user_alpha,
+			(struct s3cfb_user_plane_alpha __user *) arg,
 			sizeof(p.user_alpha)))
 			ret = -EFAULT;
 		else {
 			win->alpha.mode = PLANE_BLENDING;
 			win->alpha.channel = p.user_alpha.channel;
-			win->alpha.value = \
-				S3CFB_AVALUE(p.user_alpha.red, \
-					p.user_alpha.green, \
+			win->alpha.value =
+				S3CFB_AVALUE(p.user_alpha.red,
+					p.user_alpha.green,
 					p.user_alpha.blue);
 
 			s3cfb_set_alpha_blending(fbdev, win->id);
@@ -540,14 +541,14 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 		break;
 
 	case S3CFB_WIN_SET_CHROMA:
-		if (copy_from_user(&p.user_chroma, \
-			(struct s3cfb_user_chroma __user *) arg, \
+		if (copy_from_user(&p.user_chroma,
+			(struct s3cfb_user_chroma __user *) arg,
 			sizeof(p.user_chroma)))
 			ret = -EFAULT;
 		else {
 			win->chroma.enabled = p.user_chroma.enabled;
-			win->chroma.key = S3CFB_CHROMA(p.user_chroma.red, \
-						p.user_chroma.green, \
+			win->chroma.key = S3CFB_CHROMA(p.user_chroma.red,
+						p.user_chroma.green,
 						p.user_chroma.blue);
 
 			s3cfb_set_chroma_key(fbdev, win->id);
@@ -570,23 +571,23 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd,
 }
 
 struct fb_ops s3cfb_ops = {
-	.owner		= THIS_MODULE,
-	.fb_fillrect	= cfb_fillrect,
-	.fb_copyarea	= cfb_copyarea,
-	.fb_imageblit	= cfb_imageblit,
-	.fb_check_var	= s3cfb_check_var,
-	.fb_set_par	= s3cfb_set_par,
-	.fb_blank	= s3cfb_blank,
-	.fb_pan_display	= s3cfb_pan_display,
-	.fb_setcolreg	= s3cfb_setcolreg,
-	.fb_cursor	= s3cfb_cursor,
-	.fb_ioctl	= s3cfb_ioctl,
-	.fb_open	= s3cfb_open,
-	.fb_release	= s3cfb_release,
+	.owner = THIS_MODULE,
+	.fb_fillrect = cfb_fillrect,
+	.fb_copyarea = cfb_copyarea,
+	.fb_imageblit = cfb_imageblit,
+	.fb_check_var = s3cfb_check_var,
+	.fb_set_par = s3cfb_set_par,
+	.fb_blank = s3cfb_blank,
+	.fb_pan_display = s3cfb_pan_display,
+	.fb_setcolreg = s3cfb_setcolreg,
+	.fb_cursor = s3cfb_cursor,
+	.fb_ioctl = s3cfb_ioctl,
+	.fb_open = s3cfb_open,
+	.fb_release = s3cfb_release,
 };
 
 /* new function to open fifo */
-int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param)
+int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 {
 	struct s3cfb_window *win = fbdev->fb[id]->par;
 
@@ -601,7 +602,8 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param)
 
 	if (do_priv) {
 		if (do_priv(param)) {
-			err("failed to run for private fifo open\n");
+			dev_err(fbdev->dev, "failed to run for "
+				"private fifo open\n");
 			s3cfb_enable_window(id);
 			return -EFAULT;
 		}
@@ -614,7 +616,7 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param)
 }
 
 /* new function to close fifo */
-int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sleep)
+int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param, int sleep)
 {
 	struct s3cfb_window *win = fbdev->fb[id]->par;
 
@@ -635,7 +637,8 @@ int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sleep)
 
 	if (do_priv) {
 		if (do_priv(param)) {
-			err("failed to run for private fifo close\n");
+			dev_err(fbdev->dev, "failed to run for"
+				"private fifo close\n");
 			s3cfb_enable_window(id);
 			s3cfb_display_on(fbdev);
 			return -EFAULT;
@@ -706,14 +709,14 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 	case FBIOPUT_VSCREENINFO:
 		ret = s3cfb_check_var((struct fb_var_screeninfo *) argp, fb);
 		if (ret) {
-			err("invalid vscreeninfo\n");
+			dev_err(fbdev->dev, "invalid vscreeninfo\n");
 			break;
 		}
 
-		ret = memcpy(&fb->var, (struct fb_var_screeninfo *) argp, \
+		ret = memcpy(&fb->var, (struct fb_var_screeninfo *) argp,
 				sizeof(fb->var)) ? 0 : -EFAULT;
 		if (ret) {
-			err("failed to put new vscreeninfo\n");
+			dev_err(fbdev->dev, "failed to put new vscreeninfo\n");
 			break;
 		}
 
@@ -721,10 +724,10 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 		break;
 
 	case S3CFB_WIN_POSITION:
-		ret = memcpy(&user_win, (struct s3cfb_user_window __user *) arg, \
+		ret = memcpy(&user_win, (struct s3cfb_user_window __user *) arg,
 				sizeof(user_win)) ? 0 : -EFAULT;
 		if (ret) {
-			err("failed to S3CFB_WIN_POSITION.\n");
+			dev_err(fbdev->dev, "failed to S3CFB_WIN_POSITION\n");
 			break;
 		}
 
@@ -758,7 +761,7 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 	case S3CFB_GET_LCD_WIDTH:
 		ret = memcpy(argp, &lcd->width, sizeof(int)) ? 0 : -EFAULT;
 		if (ret) {
-			err("failed to S3CFB_GET_LCD_WIDTH.\n");
+			dev_err(fbdev->dev, "failed to S3CFB_GET_LCD_WIDTH\n");
 			break;
 		}
 
@@ -767,7 +770,7 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 	case S3CFB_GET_LCD_HEIGHT:
 		ret = memcpy(argp, &lcd->height, sizeof(int)) ? 0 : -EFAULT;
 		if (ret) {
-			err("failed to S3CFB_GET_LCD_HEIGHT.\n");
+			dev_err(fbdev->dev, "failed to S3CFB_GET_LCD_HEIGHT\n");
 			break;
 		}
 
@@ -840,9 +843,9 @@ static int s3cfb_init_fbinfo(int id)
 	var->upper_margin = timing->v_fp;
 	var->lower_margin = timing->v_bp;
 
-	var->pixclock = lcd->freq * (var->left_margin + var->right_margin + \
-			var->hsync_len + var->xres) * \
-			(var->upper_margin + var->lower_margin + \
+	var->pixclock = lcd->freq * (var->left_margin + var->right_margin +
+			var->hsync_len + var->xres) *
+			(var->upper_margin + var->lower_margin +
 			var->vsync_len + var->yres);
 
 	dev_dbg(fbdev->dev, "pixclock: %d\n", var->pixclock);
@@ -859,34 +862,34 @@ static int s3cfb_alloc_framebuffer(void)
 	int ret, i;
 
 	/* alloc for framebuffers */
-	fbdev->fb = (struct fb_info **) kmalloc(pdata->nr_wins * \
+	fbdev->fb = (struct fb_info **) kmalloc(pdata->nr_wins *
 			sizeof(struct fb_info *), GFP_KERNEL);
 	if (!fbdev->fb) {
-		err("not enough memory\n");
+		dev_err(fbdev->dev, "not enough memory\n");
 		ret = -ENOMEM;
 		goto err_alloc;
 	}
 
 	/* alloc for each framebuffer */
 	for (i = 0; i < pdata->nr_wins; i++) {
-		fbdev->fb[i] = framebuffer_alloc(sizeof(struct s3cfb_window), \
+		fbdev->fb[i] = framebuffer_alloc(sizeof(struct s3cfb_window),
 				fbdev->dev);
 		if (!fbdev->fb[i]) {
-			err("not enough memory\n");
+			dev_err(fbdev->dev, "not enough memory\n");
 			ret = -ENOMEM;
 			goto err_alloc_fb;
 		}
 
 		ret = s3cfb_init_fbinfo(i);
 		if (ret) {
-			err("failed to allocate memory for fb%d\n", i);
+			dev_err(fbdev->dev, "failed to allocate memory for fb%d\n", i);
 			ret = -ENOMEM;
 			goto err_alloc_fb;
 		}
 
 		if (i == pdata->default_win) {
 			if (s3cfb_map_video_memory(fbdev->fb[i])) {
-				err("failed to map video memory " \
+				dev_err(fbdev->dev, "failed to map video memory "
 					"for default window (%d)\n", i);
 				ret = -ENOMEM;
 				goto err_alloc_fb;
@@ -916,7 +919,8 @@ int s3cfb_register_framebuffer(void)
 	for (i = 0; i < pdata->nr_wins; i++) {
 		ret = register_framebuffer(fbdev->fb[i]);
 		if (ret) {
-			err("failed to register framebuffer device\n");
+			dev_err(fbdev->dev, "failed to register "
+				"framebuffer device\n");
 			return -EINVAL;
 		}
 
@@ -983,7 +987,7 @@ static int s3cfb_sysfs_store_win_power(struct device *dev,
 	return len;
 }
 
-static DEVICE_ATTR(win_power, 0644, \
+static DEVICE_ATTR(win_power, 0644,
 			s3cfb_sysfs_show_win_power,
 			s3cfb_sysfs_store_win_power);
 
@@ -996,7 +1000,8 @@ static int s3cfb_probe(struct platform_device *pdev)
 	/* initialzing global structure */
 	fbdev = kzalloc(sizeof(struct s3cfb_global), GFP_KERNEL);
 	if (!fbdev) {
-		err("failed to allocate for global fb structure\n");
+		dev_err(fbdev->dev, "failed to allocate for "
+			"global fb structure\n");
 		goto err_global;
 	}
 
@@ -1011,7 +1016,7 @@ static int s3cfb_probe(struct platform_device *pdev)
 	/* clock */
 	fbdev->clock = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(fbdev->clock)) {
-		err("failed to get fimd clock source\n");
+		dev_err(fbdev->dev, "failed to get fimd clock source\n");
 		ret = -EINVAL;
 		goto err_clk;
 	}
@@ -1021,16 +1026,16 @@ static int s3cfb_probe(struct platform_device *pdev)
 	/* io memory */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
-		err("failed to get io memory region\n");
+		dev_err(fbdev->dev, "failed to get io memory region\n");
 		ret = -EINVAL;
 		goto err_io;
 	}
 
 	/* request mem region */
-	res = request_mem_region(res->start, \
+	res = request_mem_region(res->start,
 		res->end - res->start + 1, pdev->name);
 	if (!res) {
-		err("failed to request io memory region\n");
+		dev_err(fbdev->dev, "failed to request io memory region\n");
 		ret = -EINVAL;
 		goto err_io;
 	}
@@ -1038,30 +1043,30 @@ static int s3cfb_probe(struct platform_device *pdev)
 	/* ioremap for register block */
 	fbdev->regs = ioremap(res->start, res->end - res->start + 1);
 	if (!fbdev->regs) {
-		err("failed to remap io region\n");
+		dev_err(fbdev->dev, "failed to remap io region\n");
 		ret = -EINVAL;
 		goto err_io;
 	}
 
 	/* irq */
 	fbdev->irq = platform_get_irq(pdev, 0);
-	if (request_irq(fbdev->irq, s3cfb_irq_frame, IRQF_DISABLED, \
+	if (request_irq(fbdev->irq, s3cfb_irq_frame, IRQF_DISABLED,
 				pdev->name, fbdev)) {
-		err("request_irq failed\n");
+		dev_err(fbdev->dev, "request_irq failed\n");
 		ret = -EINVAL;
 		goto err_irq;
 	}
 
 #ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
-	if (request_irq(platform_get_irq(pdev, 1), s3cfb_irq_fifo, \
+	if (request_irq(platform_get_irq(pdev, 1), s3cfb_irq_fifo,
 			IRQF_DISABLED, pdev->name, fbdev)) {
-		err("request_irq failed\n");
+		dev_err(fbdev->dev, "request_irq failed\n");
 		ret = -EINVAL;
 		goto err_irq;
 	}
 
 	s3cfb_set_fifo_interrupt(fbdev, 1);
-	info("fifo underrun trace\n");
+	dev_info(fbdev->dev, "fifo underrun trace\n");
 #endif
 
 	/* init global */
@@ -1090,9 +1095,9 @@ static int s3cfb_probe(struct platform_device *pdev)
 
 	ret = device_create_file(&(pdev->dev), &dev_attr_win_power);
 	if (ret < 0)
-		err("failed to add sysfs entries\n");
+		dev_err(fbdev->dev, "failed to add sysfs entries\n");
 
-	info("registered successfully\n");
+	dev_info(fbdev->dev, "registered successfully\n");
 
 	return 0;
 
@@ -1151,7 +1156,8 @@ int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 		win = fbdev->fb[i]->par;
 		if (win->path == DATA_PATH_FIFO && win->suspend_fifo) {
 			if (win->suspend_fifo())
-				info("failed to run the suspend for fifo\n");
+				dev_info(fbdev->dev,
+					"failed to run the suspend for fifo\n");
 		}
 	}
 	
@@ -1193,7 +1199,8 @@ int s3cfb_resume(struct platform_device *pdev)
 
 		if (win->path == DATA_PATH_FIFO && win->resume_fifo) {
 			if (win->resume_fifo())
-				info("failed to run the resume for fifo\n");
+				dev_info(fbdev->dev, 
+					"failed to run the resume for fifo\n");
 		} else {
 			if (win->enabled) {
 				s3cfb_check_var(&fb->var, fb);

@@ -26,9 +26,6 @@
 */
 #define S3CFB_NAME		"s3cfb"
 
-#define info(args...)		do { printk(KERN_INFO S3CFB_NAME ": " args); } while (0)
-#define err(args...)		do { printk(KERN_ERR  S3CFB_NAME ": " args); } while (0)
-
 #define S3CFB_AVALUE(r, g, b)	(((r & 0xf) << 8) | ((g & 0xf) << 4) | ((b & 0xf) << 0))
 #define S3CFB_CHROMA(r, g, b)	(((r & 0xff) << 16) | ((g & 0xff) << 8) | ((b & 0xff) << 0))
 

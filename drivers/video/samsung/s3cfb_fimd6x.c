@@ -33,7 +33,7 @@ void s3cfb_check_line_count(struct s3cfb_global *ctrl)
 	} while (i < timeout);
 
 	if (i == timeout) {
-		err("line count mismatch\n");
+		dev_err(ctrl->dev, "line count mismatch\n");
 		s3cfb_display_on(ctrl);
 	}
 }
@@ -54,7 +54,7 @@ int s3cfb_set_output(struct s3cfb_global *ctrl)
 	else if (ctrl->output == OUTPUT_I80LDI1)
 		cfg |= S3C_VIDCON0_VIDOUT_I80LDI1;
 	else {
-		err("invalid output type: %d\n", ctrl->output);
+		dev_err(ctrl->dev, "invalid output type: %d\n", ctrl->output);
 		return -EINVAL;
 	}
 
@@ -126,9 +126,9 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	
 	/* fixed clock source: hclk */
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
-	cfg &= ~(S3C_VIDCON0_CLKSEL_MASK | S3C_VIDCON0_CLKVALUP_MASK | \
+	cfg &= ~(S3C_VIDCON0_CLKSEL_MASK | S3C_VIDCON0_CLKVALUP_MASK |
 		S3C_VIDCON0_VCLKEN_MASK | S3C_VIDCON0_CLKDIR_MASK);
-	cfg |= (S3C_VIDCON0_CLKSEL_HCLK | S3C_VIDCON0_CLKVALUP_ALWAYS | \
+	cfg |= (S3C_VIDCON0_CLKSEL_HCLK | S3C_VIDCON0_CLKVALUP_ALWAYS |
 		S3C_VIDCON0_VCLKEN_NORMAL | S3C_VIDCON0_CLKDIR_DIVIDED);
 	
 	src_clk = ctrl->clock->parent->rate;
@@ -144,7 +144,8 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
-	info("parent clock: %d, vclk: %d, vclk div: %d\n", src_clk, vclk, div);
+	dev_info(ctrl->dev, "parent clock: %d, vclk: %d, vclk div: %d\n",
+			src_clk, vclk, div);
 
 	return 0;	
 }
@@ -218,16 +219,15 @@ int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable)
 	unsigned int cfg = 0;
 
 	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
-	cfg &= ~(S3C_VIDINTCON0_INTFRMEN_ENABLE | \
-		S3C_VIDINTCON0_INT_ENABLE);
+	cfg &= ~(S3C_VIDINTCON0_INTFRMEN_ENABLE | S3C_VIDINTCON0_INT_ENABLE);
 
 	if (enable) {
 		dev_dbg(ctrl->dev, "video interrupt is on\n");
-		cfg |= (S3C_VIDINTCON0_INTFRMEN_ENABLE | \
+		cfg |= (S3C_VIDINTCON0_INTFRMEN_ENABLE |
 			S3C_VIDINTCON0_INT_ENABLE);
 	} else {
 		dev_dbg(ctrl->dev, "video interrupt is off\n");
-		cfg |= (S3C_VIDINTCON0_INTFRMEN_DISABLE | \
+		cfg |= (S3C_VIDINTCON0_INTFRMEN_DISABLE |
 			S3C_VIDINTCON0_INT_DISABLE);
 	}
 
@@ -268,11 +268,11 @@ int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable)
 
 	if (enable) {
 		dev_dbg(ctrl->dev, "fifo interrupt is on\n");
-		cfg |= (S3C_VIDINTCON0_INTFIFO_ENABLE | \
+		cfg |= (S3C_VIDINTCON0_INTFIFO_ENABLE |
 			S3C_VIDINTCON0_INT_ENABLE);
 	} else {
 		dev_dbg(ctrl->dev, "fifo interrupt is off\n");
-		cfg &= ~(S3C_VIDINTCON0_INTFIFO_ENABLE | \
+		cfg &= ~(S3C_VIDINTCON0_INTFIFO_ENABLE |
 			S3C_VIDINTCON0_INT_ENABLE);
 	}
 
@@ -289,9 +289,9 @@ int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 	cfg = readl(ctrl->regs + S3C_VIDINTCON1);
 
 	if (cfg & S3C_VIDINTCON1_INTFIFOPEND)
-		info("fifo underrun occur\n");
+		dev_info(ctrl->dev, "fifo underrun occur\n");
 
-	cfg |= (S3C_VIDINTCON1_INTVPPEND | S3C_VIDINTCON1_INTI80PEND | \
+	cfg |= (S3C_VIDINTCON1_INTVPPEND | S3C_VIDINTCON1_INTI80PEND |
 		S3C_VIDINTCON1_INTFRMPEND | S3C_VIDINTCON1_INTFIFOPEND);
 
 	writel(cfg, ctrl->regs + S3C_VIDINTCON1);
@@ -342,9 +342,9 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 
-	cfg &= ~(S3C_WINCON_BITSWP_ENABLE | S3C_WINCON_BYTESWP_ENABLE | \
-		S3C_WINCON_HAWSWP_ENABLE | S3C_WINCON_WSWP_ENABLE | \
-		S3C_WINCON_BURSTLEN_MASK | S3C_WINCON_BPPMODE_MASK | \
+	cfg &= ~(S3C_WINCON_BITSWP_ENABLE | S3C_WINCON_BYTESWP_ENABLE |
+		S3C_WINCON_HAWSWP_ENABLE | S3C_WINCON_WSWP_ENABLE |
+		S3C_WINCON_BURSTLEN_MASK | S3C_WINCON_BPPMODE_MASK |
 		S3C_WINCON_INRGB_MASK | S3C_WINCON_DATAPATH_MASK);
 
 	if (win->path == DATA_PATH_FIFO) {
@@ -355,13 +355,13 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 		cfg |= S3C_WINCON_BPPMODE_24BPP_888;
 
 		if (id == 1) {
-			cfg &= ~(S3C_WINCON1_LOCALSEL_MASK | \
+			cfg &= ~(S3C_WINCON1_LOCALSEL_MASK |
 				S3C_WINCON1_VP_ENABLE);
 
 			if (win->local_channel == 0) {
 				cfg |= S3C_WINCON1_LOCALSEL_FIMC1;
 			} else {
-				cfg |= (S3C_WINCON1_LOCALSEL_VP | \
+				cfg |= (S3C_WINCON1_LOCALSEL_VP |
 					S3C_WINCON1_VP_ENABLE);
 			}
 		}
@@ -388,15 +388,15 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 		switch (fb->var.bits_per_pixel) {
 		case 16:
 			if (var->transp.length == 1) {
-				dev_dbg(ctrl->dev, \
+				dev_dbg(ctrl->dev,
 					"[fb%d] bpp mode: A1-R5-G5-B5\n", id);
 				cfg |= S3C_WINCON_BPPMODE_16BPP_A555;
 			} else if (var->transp.length == 4) {
-				dev_dbg(ctrl->dev, \
+				dev_dbg(ctrl->dev,
 					"[fb%d] bpp mode: A4-R4-G4-B4\n", id);
 				cfg |= S3C_WINCON_BPPMODE_16BPP_A444;
 			} else {
-				dev_dbg(ctrl->dev, \
+				dev_dbg(ctrl->dev,
 					"[fb%d] bpp mode: R5-G6-B5\n", id);
 				cfg |= S3C_WINCON_BPPMODE_16BPP_565;
 			}
@@ -407,11 +407,11 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 
 		case 32:
 			if (var->transp.length == 0) {
-				dev_dbg(ctrl->dev, \
+				dev_dbg(ctrl->dev,
 					"[fb%d] bpp mode: R8-G8-B8\n", id);
 				cfg |= S3C_WINCON_BPPMODE_24BPP_888;
 			} else {
-				dev_dbg(ctrl->dev, \
+				dev_dbg(ctrl->dev,
 					"[fb%d] bpp mode: A8-R8-G8-B8\n", id);
 				cfg |= S3C_WINCON_BPPMODE_32BPP;
 			}
@@ -431,17 +431,17 @@ int s3cfb_set_buffer_address(struct s3cfb_global *ctrl, int id)
 	dma_addr_t start_addr = 0, end_addr = 0;
 
 	if (fix->smem_start) {
-		start_addr = fix->smem_start + (var->xres_virtual * \
+		start_addr = fix->smem_start + (var->xres_virtual *
 				(var->bits_per_pixel / 8) * var->yoffset);
 
-		end_addr = start_addr + (var->xres_virtual * \
+		end_addr = start_addr + (var->xres_virtual *
 				(var->bits_per_pixel / 8) * var->yres);
 	}
 
 	writel(start_addr, ctrl->regs + S3C_VIDADDR_START0(id));
 	writel(end_addr, ctrl->regs + S3C_VIDADDR_END0(id));
 
-	dev_dbg(ctrl->dev, "[fb%d] start_addr: 0x%08x, end_addr: 0x%08x\n", \
+	dev_dbg(ctrl->dev, "[fb%d] start_addr: 0x%08x, end_addr: 0x%08x\n",
 		id, start_addr, end_addr);
 
 	return 0;
@@ -454,7 +454,8 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 	unsigned int avalue = 0, cfg;
 
 	if (id == 0) {
-		err("[fb%d] does not support alpha blending\n", id);
+		dev_err(ctrl->dev, "[fb%d] does not support alpha blending\n",
+			id);
 		return -EINVAL;
 	}
 
@@ -467,7 +468,7 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 		/* fixing to DATA[31:24] for alpha value */
 		cfg |= (S3C_WINCON_BLD_PIXEL | S3C_WINCON_ALPHA1_SEL);
 	} else {
-		dev_dbg(ctrl->dev, "[fb%d] alpha mode: plane %d blending\n", \
+		dev_dbg(ctrl->dev, "[fb%d] alpha mode: plane %d blending\n",
 			id, alpha->channel);
 
 		cfg |= S3C_WINCON_BLD_PLANE;
@@ -496,12 +497,12 @@ int s3cfb_set_window_position(struct s3cfb_global *ctrl, int id)
 	cfg = S3C_VIDOSD_LEFT_X(win->x) | S3C_VIDOSD_TOP_Y(win->y);
 	writel(cfg, ctrl->regs + S3C_VIDOSD_A(id));
 
-	cfg = S3C_VIDOSD_RIGHT_X(win->x + var->xres - 1) | \
+	cfg = S3C_VIDOSD_RIGHT_X(win->x + var->xres - 1) |
 		S3C_VIDOSD_BOTTOM_Y(win->y + var->yres - 1);
 
 	writel(cfg, ctrl->regs + S3C_VIDOSD_B(id));
 
-	dev_dbg(ctrl->dev, "[fb%d] offset: (%d, %d, %d, %d)\n", id, \
+	dev_dbg(ctrl->dev, "[fb%d] offset: (%d, %d, %d, %d)\n", id,
 		win->x, win->y, win->x + var->xres - 1, win->y + var->yres -1);
 
 	return 0;
@@ -522,7 +523,7 @@ int s3cfb_set_window_size(struct s3cfb_global *ctrl, int id)
 	else
 		writel(cfg, ctrl->regs + S3C_VIDOSD_D(id));
 
-	dev_dbg(ctrl->dev, "[fb%d] resolution: %d x %d\n", id, \
+	dev_dbg(ctrl->dev, "[fb%d] resolution: %d x %d\n", id,
 		var->xres, var->yres);
 
 	return 0;
@@ -546,7 +547,7 @@ int s3cfb_set_chroma_key(struct s3cfb_global *ctrl, int id)
 	unsigned int cfg = 0;
 
 	if (id == 0) {
-		err("[fb%d] does not support chroma key\n", id);
+		dev_err(ctrl->dev, "[fb%d] does not support chroma key\n", id);
 		return -EINVAL;
 	}
 
@@ -560,7 +561,7 @@ int s3cfb_set_chroma_key(struct s3cfb_global *ctrl, int id)
 	cfg = S3C_KEYCON1_COLVAL(chroma->key);
 	writel(cfg, ctrl->regs + S3C_KEYVAL(id));
 
-	dev_dbg(ctrl->dev, "[fb%d] chroma key: 0x%08x, %s\n", id, cfg, \
+	dev_dbg(ctrl->dev, "[fb%d] chroma key: 0x%08x, %s\n", id, cfg,
 		chroma->enabled ? "enabled" : "disabled");
 
 	return 0;
