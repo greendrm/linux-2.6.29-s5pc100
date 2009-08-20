@@ -63,7 +63,7 @@
 #define ADC_MINOR 	131
 #define ADC_INPUT_PIN   _IOW('S', 0x0c, unsigned long)
 
-#define ADC_WITH_TOUCHSCREEN
+#undef ADC_WITH_TOUCHSCREEN
 
 static struct clk	*adc_clock;
 
@@ -95,7 +95,6 @@ static struct resource	*adc_mem;
 
 static int s3c_adc_open(struct inode *inode, struct file *file)
 {
-	printk(KERN_INFO " s3c_adc_open() entered\n");
 	return 0;
 }
 
@@ -105,7 +104,7 @@ unsigned int s3c_adc_convert(void)
 	unsigned long data0;
 	unsigned long data1;
 
-	writel(readl(base_addr + S3C_ADCCON) | S3C_ADCCON_SELMUX(adc_port), base_addr + S3C_ADCCON);
+	writel((adc_port & 0x7), base_addr + S3C_ADCMUX);
 
 	udelay(10);
 
@@ -145,8 +144,6 @@ s3c_adc_read(struct file *file, char __user * buffer,
 {
 	int  adc_value = 0;
 
-	printk(KERN_INFO " s3c_adc_read() entered\n");
-
 #ifdef ADC_WITH_TOUCHSCREEN
         mutex_lock(&adc_mutex);
 	s3c_adc_save_SFR_on_ADC();
@@ -159,8 +156,6 @@ s3c_adc_read(struct file *file, char __user * buffer,
 	mutex_unlock(&adc_mutex);
 #endif
 
-	printk(KERN_INFO " Converted Value: %03d\n", adc_value);
-
 	if (copy_to_user(buffer, &adc_value, sizeof(unsigned int))) {
 		return -EFAULT;
 	}
@@ -171,8 +166,6 @@ s3c_adc_read(struct file *file, char __user * buffer,
 static int s3c_adc_ioctl(struct inode *inode, struct file *file,
 	unsigned int cmd, unsigned long arg)
 {
-
-       printk(KERN_INFO " s3c_adc_ioctl(cmd:: %d) entered\n", cmd);
 
 	switch (cmd) {
 		case ADC_INPUT_PIN:
@@ -204,10 +197,8 @@ static struct s3c_adc_mach_info *s3c_adc_get_platdata(struct device *dev)
 {
 	if(dev->platform_data != NULL)
 	{
-		printk(KERN_INFO "ADC platform data read\n");
 		return (struct s3c_adc_mach_info*) dev->platform_data;
 	} else {
-		printk(KERN_INFO "No ADC platform data \n");
 		return 0;
 	}
 }
@@ -268,8 +259,9 @@ static int __init s3c_adc_probe(struct platform_device *pdev)
 		writel(0, base_addr + S3C_ADCCON);
 
 	/* Initialise registers */
-	if ((plat_data->delay & 0xffff) > 0)
+	if ((plat_data->delay & 0xffff) > 0){
 		writel(plat_data->delay & 0xffff, base_addr + S3C_ADCDLY);
+	}
 
 	if (plat_data->resolution == 12)
 		writel(readl(base_addr + S3C_ADCCON) | S3C_ADCCON_RESSEL_12BIT, base_addr + S3C_ADCCON);
@@ -280,8 +272,6 @@ static int __init s3c_adc_probe(struct platform_device *pdev)
 			ADC_MINOR, ret);
 		goto err_clk;
 	}
-
-	printk(KERN_INFO "S5PC11X ADC driver successfully probed\n");
 
 	return 0;
 
@@ -304,7 +294,6 @@ err_req:
 
 static int s3c_adc_remove(struct platform_device *dev)
 {
-	printk(KERN_INFO "s3c_adc_remove() of ADC called !\n");
 	return 0;
 }
 
