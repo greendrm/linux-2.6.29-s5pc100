@@ -63,7 +63,7 @@
 #define ADC_MINOR 	131
 #define ADC_INPUT_PIN   _IOW('S', 0x0c, unsigned long)
 
-#undef ADC_WITH_TOUCHSCREEN
+#define ADC_WITH_TOUCHSCREEN
 
 static struct clk	*adc_clock;
 
@@ -148,7 +148,7 @@ s3c_adc_read(struct file *file, char __user * buffer,
         mutex_lock(&adc_mutex);
 	s3c_adc_save_SFR_on_ADC();
 #endif
-
+	printk("## delay: %d\n",readl(base_addr + S3C_ADCDLY));
 	adc_value = s3c_adc_convert();
 
 #ifdef ADC_WITH_TOUCHSCREEN

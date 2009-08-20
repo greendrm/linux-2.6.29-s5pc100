@@ -282,7 +282,7 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_TSADC,
 	}, {
-		.name		= "keyif",
+		.name		= "keypad",
 		.id		= -1,
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,

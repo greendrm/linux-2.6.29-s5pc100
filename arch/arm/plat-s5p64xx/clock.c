@@ -252,6 +252,18 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_hd1,
 		.enable		= s5p64xx_clk_ip1_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP1_FIMD,
+	}, {
+		.name		= "adc",
+		.id		= -1,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_TSADC,
+	}, {
+		.name		= "keypad",
+		.id		= -1,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_KEYIF,
 	},
 };
 

@@ -434,7 +434,8 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 //	&s3c_device_i2c0,
 //	&s3c_device_i2c1,
 
-//	&s3c_device_ts,
+	&s3c_device_ts,
+	&s3c_device_keypad,
 	&s3c_device_smc911x,
 //	&s3c_device_lcd,
 //	&s3c_device_nand,
@@ -558,8 +559,8 @@ static void __init smdk6442_machine_init(void)
 //	s3c_i2c0_set_platdata(NULL);
 //	s3c_i2c1_set_platdata(NULL);
 
-//	s3c_ts_set_platdata(&s3c_ts_platform);
-//	s3c_adc_set_platdata(&s3c_adc_platform);
+	s3c_ts_set_platdata(&s3c_ts_platform);
+	s3c_adc_set_platdata(&s3c_adc_platform);
 
 //	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 //	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
@@ -710,4 +711,31 @@ void s3c_rtc_enable_set(struct platform_device *pdev,void __iomem *base, int en)
 	}
 }
 #endif
+
+#if defined(CONFIG_KEYPAD_S3C) || defined (CONFIG_KEYPAD_S3C_MODULE)
+void s3c_setup_keypad_cfg_gpio(int rows, int columns)
+{
+	unsigned int gpio;
+	unsigned int end;
+
+	end = S5P64XX_GPH3(rows);
+
+	/* Set all the necessary GPH2 pins to special-function 0 */
+	for (gpio = S5P64XX_GPH3(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
+	}
+
+	end = S5P64XX_GPH2(columns);
+
+	/* Set all the necessary GPK pins to special-function 0 */
+	for (gpio = S5P64XX_GPH2(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		//s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+}
+
+EXPORT_SYMBOL(s3c_setup_keypad_cfg_gpio);
+#endif
+
 

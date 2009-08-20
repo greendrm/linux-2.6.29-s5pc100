@@ -32,12 +32,14 @@ int keypad_keycode[] = {
 		KEY_LEFTSHIFT, KEY_9, KEY_8, KEY_I, KEY_K, KEY_B, 63, KEY_COMMA
 	};
 
-#ifdef CONFIG_CPU_S3C6410
+#if defined(CONFIG_CPU_S3C6410)
 #define KEYPAD_DELAY		(50)
-#elif CONFIG_CPU_S5PC100
+#elif defined(CONFIG_CPU_S5PC100)
 #define KEYPAD_DELAY		(600)
-#elif CONFIG_CPU_S5PC110
+#elif defined(CONFIG_CPU_S5PC110)
 #define KEYPAD_DELAY		(600)
+#elif defined(CONFIG_CPU_S5P6442)
+#define KEYPAD_DELAY		(50)
 #endif
 
 #define	KEYIFCOL_CLEAR		(readl(key_base+S3C_KEYIFCOL) & ~0xffff)
