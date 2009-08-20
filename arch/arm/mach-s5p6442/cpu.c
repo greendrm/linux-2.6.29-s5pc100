@@ -51,6 +51,7 @@ static struct map_desc s5p6442_iodesc[] __initdata = {
 	IODESC_ENT(SROMC),
 	IODESC_ENT(OTG),
 	IODESC_ENT(OTGSFR),
+	IODESC_ENT(SYSCON)
 };
 
 static void s5p6442_idle(void)

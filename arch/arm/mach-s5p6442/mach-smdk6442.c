@@ -448,6 +448,10 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_timer[0],
 	&s3c_device_timer[1],
 #endif
+
+#if defined CONFIG_USB_GADGET_S3C_OTGD 
+	&s3c_device_usbgadget,
+#endif
 };
 
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -604,23 +608,10 @@ MACHINE_END
 #ifdef CONFIG_USB_SUPPORT
 /* Initializes OTG Phy. */
 void otg_phy_init(void) {
-
-	int err;
-
-	if (gpio_is_valid(S5P64XX_GPN(1))) {
-		err = gpio_request(S5P64XX_GPN(1), "GPN");
-
-		if(err)
-			printk(KERN_ERR "failed to request GPN1\n");
-
-		gpio_direction_output(S5P64XX_GPN(1), 1);
-	}
-
-	writel(readl(S3C_OTHERS)&~S3C_OTHERS_USB_SIG_MASK, S3C_OTHERS);
-	writel(0x0, S3C_USBOTG_PHYPWR);		/* Power up */
+	writel(1, S5P_USB_PHY_CONTROL);
+	writel(0xa0, S3C_USBOTG_PHYPWR);		/* Power up */
         writel(OTGH_PHY_CLK_VALUE, S3C_USBOTG_PHYCLK);
 	writel(0x1, S3C_USBOTG_RSTCON);
-
 	udelay(50);
 	writel(0x0, S3C_USBOTG_RSTCON);
 	udelay(50);
@@ -634,9 +625,7 @@ EXPORT_SYMBOL(usb_ctrl);
 /* OTG PHY Power Off */
 void otg_phy_off(void) {
 	writel(readl(S3C_USBOTG_PHYPWR)|(0x1F<<1), S3C_USBOTG_PHYPWR);
-	writel(readl(S3C_OTHERS)&~S3C_OTHERS_USB_SIG_MASK, S3C_OTHERS);
-
-	gpio_free(S5P64XX_GPN(1));
+	writel(0, S5P_USB_PHY_CONTROL);
 }
 EXPORT_SYMBOL(otg_phy_off);
 

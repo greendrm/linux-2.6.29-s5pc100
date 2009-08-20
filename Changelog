@@ -1714,3 +1714,14 @@ v2.6.29.4-dev-1-3-7: Jongpill Lee
 		M       drivers/input/keyboard/Kconfig
 		M       drivers/input/keyboard/s3c-keypad.h
 		M       drivers/input/touchscreen/Kconfig
+
+v2.6.29.4-dev-1-3-8: Thomas Abraham
+	- Initial USB OTG Device mode support for 6442
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/cpu.c
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M	drivers/usb/gadget/s3c_udc.h
+
