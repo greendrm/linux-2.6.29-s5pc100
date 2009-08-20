@@ -40,21 +40,47 @@ char *s3c6410_hsmmc_clksrcs[4] = {
 void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 {
 	unsigned int gpio;
-	unsigned int end;
 
-        /* Channel 0 supports 1,4 and 8-bit bus width */
-        end = S5PC1XX_GPG0(2 + width);
+	switch(width)
+	{
+	/* Channel 0 supports 4 and 8-bit bus width */
+	case 8:
+	        /* Set all the necessary GPIO function and pull up/down */
+	        for (gpio = S5PC1XX_GPG0(6); gpio <= S5PC1XX_GPG0(7); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	        }
+		
+	        for (gpio = S5PC1XX_GPG1(0); gpio <= S5PC1XX_GPG1(1); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	        }
 
-        /* Set all the necessary GPG0 ins to special-function 2 */
-        for (gpio = S5PC1XX_GPG0(0); gpio < end; gpio++) {
-                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-        }
+		writel(0xf000 | readl(S5PC1XX_GPG0DRV), S5PC1XX_GPG0DRV);
+		writel(0xf | readl(S5PC1XX_GPG1DRV), S5PC1XX_GPG1DRV);
 
-        /* GPG1 chip Detect */
-        s3c_gpio_setpull(S5PC1XX_GPG1(2), S3C_GPIO_PULL_UP);
-        s3c_gpio_cfgpin(S5PC1XX_GPG1(2), S3C_GPIO_SFN(2));
-        writel(0xf, S5PC1XX_GPG0DRV);
+	case 0:	
+	case 1:
+	case 4:
+	        /* Set all the necessary GPIO function and pull up/down */
+	        for (gpio = S5PC1XX_GPG0(0); gpio <= S5PC1XX_GPG0(5); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	        }
+
+		/* SD/MMC controller0 chip detect */
+	        for (gpio = S5PC1XX_GPG1(2); gpio <= S5PC1XX_GPG0(2); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
+	        }
+
+		writel(0xfff | readl(S5PC1XX_GPG0DRV), S5PC1XX_GPG0DRV);
+		writel(0x30 | readl(S5PC1XX_GPG1DRV), S5PC1XX_GPG1DRV);
+
+		break;			
+	default:
+		printk("Wrong SD/MMC bus width : %d\n", width);
+	}
 }
 
 void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
@@ -83,37 +109,57 @@ void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
 void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 {
 	unsigned int gpio;
-	unsigned int end;
 
-	/* Channel 1 supports 1 and 4-bit bus width */
-	end = S5PC1XX_GPG2(2 + width);
+	switch(width)
+	{
 
-	/* Set all the necessary GPG2 pins to special-function 2 */
-	for (gpio = S5PC1XX_GPG2(0); gpio < end; gpio++) {
-		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	/* Channel 0 supports 4-bit bus width */
+	case 0:	
+	case 1:
+	case 4:
+	        /* Set all the necessary GPIO function and pull up/down */
+	        for (gpio = S5PC1XX_GPG2(0); gpio <= S5PC1XX_GPG2(6); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	        }
+
+		/* SD/MMC controller1 chip detect pull up*/
+		s3c_gpio_setpull(S5PC1XX_GPG2(6), S3C_GPIO_PULL_UP);
+
+		writel(0x3fff | readl(S5PC1XX_GPG2DRV), S5PC1XX_GPG2DRV);
+
+		break;
+	default:
+		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
-
-	/* GPG2 chip Detect */
-	s3c_gpio_setpull(S5PC1XX_GPG2(6), S3C_GPIO_PULL_UP);
-	s3c_gpio_cfgpin(S5PC1XX_GPG2(6), S3C_GPIO_SFN(2));
 }
+
 
 void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 {
-        unsigned int gpio;
-        unsigned int end;
+	unsigned int gpio;
 
-        /* Channel 1 supports 1 and 4-bit bus width */
-        end = S5PC1XX_GPG3(2 + width);
+	switch(width)
+	{
 
-        /* Set all the necessary GPG3 pins to special-function 2 */
-        for (gpio = S5PC1XX_GPG3(0); gpio < end; gpio++) {
-                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
-        }
+	/* Channel 0 supports 4-bit bus width */
+	case 0:	
+	case 1:
+	case 4:
+	        /* Set all the necessary GPIO function and pull up/down */
+	        for (gpio = S5PC1XX_GPG3(0); gpio <= S5PC1XX_GPG3(6); gpio++) {
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	        }
 
-        /* GPG3 chip Detect */
-        s3c_gpio_setpull(S5PC1XX_GPG3(6), S3C_GPIO_PULL_UP);
-        s3c_gpio_cfgpin(S5PC1XX_GPG3(6), S3C_GPIO_SFN(2));
+		/* SD/MMC controller1 chip detect pull up*/
+		s3c_gpio_setpull(S5PC1XX_GPG3(6), S3C_GPIO_PULL_UP);
+
+		writel(0x3fff | readl(S5PC1XX_GPG3DRV), S5PC1XX_GPG3DRV);
+
+		break;
+	default:
+		printk("Wrong SD/MMC bus width : %d\n", width);
+	}
 }
+

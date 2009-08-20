@@ -425,8 +425,15 @@ static struct platform_device *smdkc100_devices[] __initdata = {
         &s3c_device_usb,
 	&s3c_device_usbgadget,
 	&s3c_device_usb_otghcd,
-        &s3c_device_hsmmc0,
-        &s3c_device_hsmmc1,
+#ifdef CONFIG_S3C_DEV_HSMMC
+	&s3c_device_hsmmc0,
+#endif
+#ifdef CONFIG_S3C_DEV_HSMMC1
+	&s3c_device_hsmmc1,
+#endif        
+#ifdef CONFIG_S3C_DEV_HSMMC2     
+	&s3c_device_hsmmc2,
+#endif
 #ifdef CONFIG_SPI_CNTRLR_0
         &s3c_device_spi0,
 #endif
@@ -746,9 +753,6 @@ static void __init smdkc100_machine_init(void)
 #ifdef CONFIG_FB_S3C
 	s3cfb_set_platdata(&fb_data);
 #endif
-	/* Setting up the HS-MMC clock for 44.5MHz using doutMpll */
-	writel(((readl(S5P_CLK_DIV3) & ~(0xfff << 0)) | 0x222), S5P_CLK_DIV3);
-
 	platform_add_devices(smdkc100_devices, ARRAY_SIZE(smdkc100_devices));
 
 #if defined(CONFIG_PM)

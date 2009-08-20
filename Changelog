@@ -1689,3 +1689,14 @@ v2.6.29.4-dev-1-3-5: Jongpill Lee
 		M       drivers/input/keyboard/Kconfig
 		M       drivers/input/keyboard/s3c-keypad.h
 		M       drivers/input/touchscreen/Kconfig
+
+v2.6.29.4-dev-1-3-6: Changhwan Youn
+	- Support SD/MMC controller2 for S5PC100
+
+	Modified Files:
+		M       arch/arm/mach-s5pc100/Kconfig
+		M	arch/arm/mach-s5pc100/cpu.c
+		M	arch/arm/mach-s5pc100/mach-smdkc100.c
+		M	arch/arm/mach-s5pc100/setup-sdhci.c
+		M	arch/arm/mach-s5pc110/setup-sdhci.c
+		M	arch/arm/plat-s3c/dev-hsmmc.c
