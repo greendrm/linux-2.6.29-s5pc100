@@ -98,6 +98,7 @@ void __init s5pc100_map_io(void)
 
         s3c6410_default_sdhci0();
         s3c6410_default_sdhci1();
+        s3c6410_default_sdhci2();	
 
 	/* set s5pc100 idle function */
 

@@ -185,13 +185,13 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 	}
 }
 
-struct s3c_sdhci_platdata hsmmc0_platdata = {
+static struct s3c_sdhci_platdata hsmmc0_platdata = {
 	.max_width	= 8,
 	.host_caps	= (MMC_CAP_8_BIT_DATA |
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
 };
 
-struct s3c_sdhci_platdata hsmmc2_platdata = {
+static struct s3c_sdhci_platdata hsmmc2_platdata = {
 	.max_width	= 8,
 	.host_caps	= (MMC_CAP_8_BIT_DATA | 
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
