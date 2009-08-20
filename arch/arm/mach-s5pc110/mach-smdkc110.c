@@ -669,6 +669,9 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_fb,
 #endif
 	&s3c_device_dm9000,
+	&s3c_device_keypad,
+	&s3c_device_ts,
+	&s3c_device_adc,
 	&s3c_device_mfc,
 #ifdef CONFIG_FB_S3C_TL2796
 	&s3c_device_spi_gpio,
@@ -703,7 +706,6 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_timer[1],
 	&s3c_device_timer[2],
 	&s3c_device_timer[3],
-
 #endif
 #ifdef CONFIG_SPI_CNTRLR_0
         &s3c_device_spi0,
@@ -1163,6 +1165,14 @@ static void __init smdkc110_machine_init(void)
 #ifdef CONFIG_FB_S3C_TL2796
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 	s3cfb_set_platdata(&tl2796_data);
+#endif
+
+#if defined(CONFIG_TOUCHSCREEN_S3C)
+        s3c_ts_set_platdata(&s3c_ts_platform);
+#endif
+
+#if defined(CONFIG_S5PC11X_ADC)
+        s3c_adc_set_platdata(&s3c_adc_platform);
 #endif
 
 	/* fimc */

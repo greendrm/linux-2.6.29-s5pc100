@@ -32,7 +32,7 @@ obj-$(CONFIG_PM)                += sleep.o
 # Device setup
 obj-$(CONFIG_S5PC11X_SETUP_I2C0) += setup-i2c0.o
 obj-$(CONFIG_S5PC11X_SETUP_I2C1) += setup-i2c1.o
-#obj-$(CONFIG_S5PC11X_ADC)        += adc.o
+obj-$(CONFIG_S5PC11X_ADC)        += adc.o
 obj-$(CONFIG_HAVE_PWM)		 += pwm.o
 obj-$(CONFIG_SPI_S5PC110)        += dev-spi.o
 

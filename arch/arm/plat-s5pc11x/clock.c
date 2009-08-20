@@ -275,6 +275,18 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_PWM,
+	}, {
+		.name		= "adc",
+		.id		= -1,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_TSADC,
+	}, {
+		.name		= "keyif",
+		.id		= -1,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_KEYIF,
 	},
 
 	/* Audio (D1_5) devices */
@@ -296,7 +308,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S2 is v3.2 */
-	}, 
+	},
 };
 
 static struct clk *clks[] __initdata = {

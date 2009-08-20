@@ -36,6 +36,8 @@ int keypad_keycode[] = {
 #define KEYPAD_DELAY		(50)
 #elif CONFIG_CPU_S5PC100
 #define KEYPAD_DELAY		(600)
+#elif CONFIG_CPU_S5PC110
+#define KEYPAD_DELAY		(600)
 #endif
 
 #define	KEYIFCOL_CLEAR		(readl(key_base+S3C_KEYIFCOL) & ~0xffff)

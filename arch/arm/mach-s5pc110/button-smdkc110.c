@@ -63,8 +63,7 @@ static unsigned int s3c_button_gpio_init(void)
 
 static void __init s3c_button_init(void)
 {
-	u32 tmp;
-	
+
 	printk("SMDKC110 Button init function \n");
 
 	if (s3c_button_gpio_init()) {
