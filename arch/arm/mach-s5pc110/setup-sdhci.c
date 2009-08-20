@@ -199,11 +199,11 @@ static struct s3c_sdhci_platdata hsmmc2_platdata = {
 
 void s3c_sdhci_set_platdata(void)
 {
-#if defined(CONFIG_SMDKC110_SD_CH0_8bit)
+#if defined(CONFIG_SMDKC110_SD_CH0_8BIT)
 	s3c_sdhci0_set_platdata(&hsmmc0_platdata);
 #endif
 
-#if defined(CONFIG_SMDKC110_SD_CH2_8bit)
+#if defined(CONFIG_SMDKC110_SD_CH2_8BIT)
 	s3c_sdhci2_set_platdata(&hsmmc2_platdata);	
 #endif
 };
