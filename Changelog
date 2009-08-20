@@ -1674,3 +1674,18 @@ v2.6.29.4-dev-1-3-4: Jongpill Lee
 		M       arch/arm/plat-s5pc1xx/pm.c
 		M       arch/arm/plat-s5pc1xx/s5pc1xx-time.c
 		M       arch/arm/plat-s5pc1xx/sleep.S
+
+v2.6.29.4-dev-1-3-5: Jongpill Lee
+	- Support TSADC for S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/button-smdkc110.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/mach-s5pc110/pm.c
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/adc.c
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/include/plat/pm.h
+		M       drivers/input/keyboard/Kconfig
+		M       drivers/input/keyboard/s3c-keypad.h
+		M       drivers/input/touchscreen/Kconfig
