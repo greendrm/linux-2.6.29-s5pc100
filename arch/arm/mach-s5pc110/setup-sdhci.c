@@ -41,8 +41,6 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 {
 	unsigned int gpio;
 
-	width = 8;
-
 	switch(width)
 	{
 	/* Channel 0 supports 4 and 8-bit bus width */
@@ -50,7 +48,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG1(3); gpio <= S5PC11X_GPG1(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fc0, S5PC11X_GPG1DRV);
@@ -61,7 +59,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG0(0); gpio <= S5PC11X_GPG0(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fff, S5PC11X_GPG0DRV);
@@ -111,7 +109,7 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG1(0); gpio <= S5PC11X_GPG1(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fff, S5PC11X_GPG1DRV);
@@ -131,12 +129,12 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 
 	switch(width)
 	{
-	/* Channel 0 supports 4 and 8-bit bus width */
+	/* Channel 2 supports 4 and 8-bit bus width */
 	case 8:
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG3(3); gpio <= S5PC11X_GPG3(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fc0, S5PC11X_GPG3DRV);
@@ -146,7 +144,7 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG2(0); gpio <= S5PC11X_GPG2(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fff, S5PC11X_GPG2DRV);
@@ -173,7 +171,7 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 	        /* Set all the necessary GPIO function and pull up/down */
 	        for (gpio = S5PC11X_GPG3(0); gpio <= S5PC11X_GPG3(6); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
-	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
 
 		writel(0x3fff, S5PC11X_GPG3DRV);
