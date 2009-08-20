@@ -147,7 +147,7 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	dev_dbg(ctrl->dev, "parent clock: %d, vclk: %d, vclk div: %d\n",
 			src_clk, vclk, div);
 
-	return 0;	
+	return 0;
 }
 
 int s3cfb_set_polarity(struct s3cfb_global *ctrl)
