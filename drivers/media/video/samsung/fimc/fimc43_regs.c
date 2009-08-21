@@ -461,6 +461,32 @@ int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;
 }
 
+int fimc_hwset_output_scan(struct fimc_control *ctrl, struct v4l2_pix_format *fmt)
+{
+	u32 cfg;
+
+	cfg = readl(ctrl->regs + S3C_CISCCTRL);
+	cfg &= ~S3C_CISCCTRL_SCAN_MASK;
+
+	if (fmt->field == V4L2_FIELD_INTERLACED ||
+		fmt->field == V4L2_FIELD_INTERLACED_TB)
+		cfg |= S3C_CISCCTRL_INTERLACE;
+	else
+		cfg |= S3C_CISCCTRL_PROGRESSIVE;
+
+	writel(cfg, ctrl->regs + S3C_CISCCTRL);
+
+	cfg = readl(ctrl->regs + S3C_CIOCTRL);
+	cfg &= ~S3C_CIOCTRL_WEAVE_MASK;
+
+	if (fmt->field == V4L2_FIELD_INTERLACED_TB)
+		cfg |= S3C_CIOCTRL_WEAVE_OUT;
+
+	writel(cfg, ctrl->regs + S3C_CIOCTRL);
+
+	return 0;
+}
+
 int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 {
 	u32 cfg, val;

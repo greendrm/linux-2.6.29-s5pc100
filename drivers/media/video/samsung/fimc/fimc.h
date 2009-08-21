@@ -373,6 +373,7 @@ extern int fimc_hwset_output_size(struct fimc_control *ctrl, int width, int heig
 extern int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_output_rot_flip(struct fimc_control *ctrl, u32 rot, u32 flip);
 extern int fimc_hwset_output_area(struct fimc_control *ctrl, u32 width, u32 height);
+extern int fimc_hwset_output_scan(struct fimc_control *ctrl, struct v4l2_pix_format *fmt);
 extern int fimc_hwset_enable_lastirq(struct fimc_control *ctrl);
 extern int fimc_hwset_disable_lastirq(struct fimc_control *ctrl);
 extern int fimc_hwset_prescaler(struct fimc_control *ctrl);

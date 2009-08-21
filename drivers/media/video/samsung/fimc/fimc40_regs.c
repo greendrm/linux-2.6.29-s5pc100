@@ -454,6 +454,13 @@ int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;
 }
 
+int fimc_hwset_output_scan(struct fimc_control *ctrl, struct v4l2_pix_format *fmt)
+{
+	/* nothing to do: not supported interlaced and weave output */
+
+	return 0;
+}
+
 int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 {
 	u32 cfg, val;

@@ -875,6 +875,7 @@ int fimc_streamon_capture(void *fh)
 
 	fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 	fimc_hwset_output_area(ctrl, cap->fmt.width, cap->fmt.height);
+	fimc_hwset_output_scan(ctrl, &cap->fmt);
 
 	fimc_hwset_output_rot_flip(ctrl, cap->rotate, cap->flip);
 	rot = fimc_mapping_rot_flip(cap->rotate, cap->flip);
@@ -935,6 +936,10 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	mutex_lock(&ctrl->v4l2_lock);
 
 	b->index = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
+
+	/* skip even frame: no data */
+	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)
+		b->index &= ~0x1;
 
 	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n",
 		__func__, b->index, cap->bufs[b->index].base[0]);
