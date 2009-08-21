@@ -307,7 +307,7 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 		strcpy(inp->name, cam->info->type);
 		inp->type = V4L2_INPUT_TYPE_CAMERA;
 	} else {
-		dev_err(ctrl->dev, "%s: no camera\n", __func__);
+		dev_err(ctrl->dev, "%s: no more camera input\n", __func__);
 		mutex_unlock(&ctrl->v4l2_lock);
 		return -EINVAL;
 	}
@@ -320,6 +320,14 @@ int fimc_enum_input(struct file *file, void *fh, struct v4l2_input *inp)
 int fimc_g_input(struct file *file, void *fh, unsigned int *i)
 {
 	struct fimc_control *ctrl = fh;
+
+	/* In case of isueing g_input before s_input */
+	if (!ctrl->cam) {
+		dev_err(ctrl->dev,
+				"no camera device selected yet!"
+				"do VIDIOC_S_INPUT first\n");
+		return -ENODEV;
+	}
 
 	*i = (unsigned int) ctrl->cam->id;
 
