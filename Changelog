@@ -1725,3 +1725,13 @@ v2.6.29.4-dev-1-3-8: Thomas Abraham
 		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
 		M	drivers/usb/gadget/s3c_udc.h
 
+
+ v2.6.29.4-dev-1-3-9: Taeyong Lee
+ 	- Support Slave Mode, Full-Duplex, Sampling Rates for IIS Audio on smdkc110
+M       arch/arm/mach-s5pc110/include/mach/map.h
+M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+M       sound/soc/s3c/s3c-i2s.c
+M       sound/soc/s3c/s3c-i2s.h
+M       sound/soc/s3c/smdkc100_wm8580.c	
+
+

@@ -1096,8 +1096,8 @@ static struct clksrc_clk clk_audio0 = {
 	.mask		= S5P_CLKSRC6_AUDIO0_MASK,
 	.sources	= &clkset_audio0,
 	.divider_shift	= S5P_CLKDIV6_AUDIO0_SHIFT,
-	.reg_divider	= S5P_CLK_DIV4,
-	.reg_source	= S5P_CLK_SRC3,
+	.reg_divider	= S5P_CLK_DIV6,
+	.reg_source	= S5P_CLK_SRC6,
 };
 
 static struct clk *clkset_audio1_list[] = {
