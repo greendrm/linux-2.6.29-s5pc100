@@ -127,6 +127,8 @@ static int ehci_hcd_s5pc110_drv_probe(struct platform_device *pdev)
 	/* cache this readonly data; minimize chip reads */
 	ehci->hcs_params = readl(&ehci->caps->hcs_params);
 
+	writel(0x00600040, hcd->regs + 0x94);
+
 	retval = usb_add_hcd(hcd, pdev->resource[1].start,
 				IRQF_DISABLED | IRQF_SHARED);
 
