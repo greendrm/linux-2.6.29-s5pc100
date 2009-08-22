@@ -24,6 +24,7 @@
 #include <asm/mach/irq.h>
 #include <mach/hardware.h>
 #include <mach/map.h>
+#include <mach/s3c-dma.h>
 
 #include <plat/devs.h>
 
@@ -52,6 +53,16 @@ static struct resource s5pc11x_uart0_resource[] = {
 		.end	= IRQ_S3CUART_ERR0,
 		.flags	= IORESOURCE_IRQ,
 	},
+	[4] = {
+		.start  = DMACH_UART0,
+		.end    = DMACH_UART0,
+		.flags  = IORESOURCE_DMA,
+	},
+	[5] = {
+		.start  = DMACH_UART0_SRC2,
+		.end    = DMACH_UART0_SRC2,
+		.flags  = IORESOURCE_DMA,
+	}
 };
 
 static struct resource s5pc11x_uart1_resource[] = {
@@ -76,6 +87,16 @@ static struct resource s5pc11x_uart1_resource[] = {
 		.end	= IRQ_S3CUART_ERR1,
 		.flags	= IORESOURCE_IRQ,
 	},
+	[4] = {
+		.start  = DMACH_UART1,
+		.end    = DMACH_UART1,
+		.flags  = IORESOURCE_DMA,
+	},
+	[5] = {
+		.start  = DMACH_UART1_SRC2,
+		.end    = DMACH_UART1_SRC2,
+		.flags  = IORESOURCE_DMA,
+	}
 };
 
 static struct resource s5pc11x_uart2_resource[] = {
