@@ -78,6 +78,10 @@
 #define ULCON S3C2410_LCON_CS8 | S3C2410_LCON_PNONE | S3C2410_LCON_STOPB
 #define UFCON S3C2410_UFCON_RXTRIG8 | S3C2410_UFCON_FIFOMODE
 
+#if defined(CONFIG_MMC_SDHCI_S3C)
+extern void s3c_sdhci_set_platdata(void);
+#endif
+
 extern void s3c64xx_reserve_bootmem(void);
 
 extern struct sys_timer s5p64xx_timer;
@@ -439,6 +443,17 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_smc911x,
 //	&s3c_device_lcd,
 //	&s3c_device_nand,
+#ifdef CONFIG_S3C_DEV_HSMMC
+	&s3c_device_hsmmc0,
+#endif
+
+#ifdef CONFIG_S3C_DEV_HSMMC1
+	&s3c_device_hsmmc1,
+#endif
+
+#ifdef CONFIG_S3C_DEV_HSMMC2
+	&s3c_device_hsmmc2,
+#endif
 
 #ifdef CONFIG_S5P64XX_ADC
 	&s3c_device_adc,
@@ -578,6 +593,9 @@ static void __init smdk6442_machine_init(void)
 
 //	smdk_backlight_register();
 
+#if defined(CONFIG_MMC_SDHCI_S3C)
+        s3c_sdhci_set_platdata();
+#endif
 }
 
 static void __init smdk6442_fixup(struct machine_desc *desc,

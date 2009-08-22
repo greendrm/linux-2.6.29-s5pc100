@@ -125,6 +125,16 @@ static int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable)
 	return s5p64xx_gate(S5P_CLKGATE_IP4, clk, enable);
 }
 
+int s5p64xx_clk_sclk0_ctrl(struct clk *clk, int enable)
+{
+	return s5p64xx_gate(S5P_CLKGATE_SCLK0, clk, enable);
+}
+
+int s5p64xx_clk_sclk1_ctrl(struct clk *clk, int enable)
+{
+	return s5p64xx_gate(S5P_CLKGATE_SCLK1, clk, enable);
+}
+
 static struct clk init_clocks_disable[] = {
 #if 0	
 	{
@@ -264,6 +274,24 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_pd1,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_KEYIF,
+	}, {
+		.name		= "hsmmc",
+		.id		= 0,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC0,
+	}, {
+		.name		= "hsmmc",
+		.id		= 1,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC1,
+	}, {
+		.name		= "hsmmc",
+		.id		= 2,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC2,
 	},
 };
 
