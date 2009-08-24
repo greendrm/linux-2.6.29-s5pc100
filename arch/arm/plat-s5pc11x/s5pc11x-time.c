@@ -250,7 +250,10 @@ static void s5pc11x_timer_setup (void)
 	timer_icnt = (S3C_SYSTIMER_TARGET_HZ / HZ) - 1;
 	s5pc11x_systimer_write(S3C_SYSTIMER_ICNTB, timer_icnt);
 
-	tcon = S3C_SYSTIMER_INT_AUTO | S3C_SYSTIMER_START | S3C_SYSTIMER_INT_START | S3C_SYSTIMER_AUTO_RELOAD;
+	/* set timer con */
+	tcon = S3C_SYSTIMER_INT_AUTO | S3C_SYSTIMER_START | S3C_SYSTIMER_AUTO_RELOAD;
+	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
+	tcon |= S3C_SYSTIMER_INT_START;
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
 
 	printk("timer tcon=%08lx, tcnt %04lx, icnt %04lx, tcfg %08lx, usec %08lx\n",

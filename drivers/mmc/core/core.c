@@ -26,6 +26,7 @@
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sd.h>
+#include <linux/mmc/sdio.h>
 
 #include "core.h"
 #include "bus.h"
@@ -735,6 +736,7 @@ void mmc_rescan(struct work_struct *work)
 {
 	struct mmc_host *host =
 		container_of(work, struct mmc_host, detect.work);
+	struct mmc_card card;
 	u32 ocr;
 	int err;
 
@@ -760,6 +762,8 @@ void mmc_rescan(struct work_struct *work)
 		/*
 		 * First we search for SDIO...
 		 */
+		card.host = host;
+		mmc_io_rw_direct(&card, 1, 0, SDIO_CCCR_ABORT, 0x08, NULL);
 		err = mmc_send_io_op_cond(host, 0, &ocr);
 		if (!err) {
 			if (mmc_attach_sdio(host, ocr))

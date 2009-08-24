@@ -1742,7 +1742,28 @@ v2.6.29.4-dev-1-3-10: Jingoo Han
 	Modified Files:
 		M       drivers/usb/host/ehci-s5pc110.c
 
-		
+v2.6.29.4-dev-1-3-11: Kukjin Kim
+	- Modified System Timer and Uart DMA definition for S5PC110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/dma.c
+		M	arch/arm/plat-s5pc11x/dev-uart.c
+		M	arch/arm/plat-s5pc11x/s5pc11x-time.c
+
+v2.6.29.4-dev-1-3-12: Abhilash Kesavan
+	- Added SD/MMC support for S5P6442
+	
+	Modified Files:
+		M	arch/arm/mach-s5p6442/Kconfig
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/mach-s5p6442/setup-sdhci.c
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+		M	drivers/mmc/core/core.c
+		M	drivers/mmc/host/Kconfig
+
 v2.6.29.4-dev-1-3-13: Sunil Choi
 	- Support tv-out thru composite and component on S5PC110 
 
