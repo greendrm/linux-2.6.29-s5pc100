@@ -1066,7 +1066,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
-		hdmi_v_fmt = v640x480p_60Hz;
+		hdmi_v_fmt = v720x480p_60Hz;
 		break;
 
 	case TVOUT_576P_50_16_9:

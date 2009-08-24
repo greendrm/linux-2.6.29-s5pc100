@@ -972,12 +972,12 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 	case TVOUT_480P_60_4_3:
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
-		cropcap->bounds.width = 704;
+		cropcap->bounds.width = 720;
 		cropcap->bounds.height = 480;
 
 		cropcap->defrect.top = 0;
 		cropcap->defrect.left = 0;
-		cropcap->defrect.width = 704;
+		cropcap->defrect.width = 720;
 		cropcap->defrect.height = 480;
 		break;
 
@@ -986,12 +986,12 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 	case TVOUT_576P_50_4_3:
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
-		cropcap->bounds.width = 704;
+		cropcap->bounds.width = 720;
 		cropcap->bounds.height = 576;
 
 		cropcap->defrect.top = 0;
 		cropcap->defrect.left = 0;
-		cropcap->defrect.width = 704;
+		cropcap->defrect.width = 720;
 		cropcap->defrect.height = 576;
 		break;
 
