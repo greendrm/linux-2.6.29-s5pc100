@@ -42,6 +42,7 @@
 #define VPLL_ENABLE     (1<<31)
 #define VPLL_DISABLE    (0<<31)
 #define VPLL_LOCKED(a)  ((1<<29)&a)
+#define VCO_FREQ_SEL	(1<<27)
 #define MDIV(a)         ((0xff&a)<<16)
 #define PDIV(a)         ((0x3f&a)<<8)
 #define SDIV(a)         (0x7&a)
@@ -60,10 +61,12 @@
 // C110 : must be checked..!!
 #define VMIXER_SEL_MOUT_HPLL    (1<<4)
 #define VMIXER_SEL_MASK         (~(1<<4))
+#define HDMI_SEL_HDMIPHY    	(1<<0)
+#define HDMI_SEL_MASK         	(~(1<<0))
 
 // CLK_DIV3
-#define HDMI_DIV_RATIO(a)   ((0xf&((a)-1))<<28)
-#define HDMI_DIV_RATIO_MASK (~(0xf<<28))
+#define HDMI_DIV_RATIO(a)   (0xf&(a))
+#define HDMI_DIV_RATIO_MASK (~(0xf))
 
 // CLK_GATE_D1_2
 #define CLK_HCLK_HDMI_PASS      (1<<11)

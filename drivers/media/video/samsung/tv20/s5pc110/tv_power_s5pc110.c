@@ -49,10 +49,6 @@
 // BLK_PWR_STAT
 #define TVPWR_TV_BLOCK_STATUS(a)    ((0x1<<4)&a)
 
-// OTHERS
-#define TVPWR_DAC_STATUS(a)   	((0x1<<26)&a)
-#define TVPWR_DAC_ON    	(1<<26)
-
 static unsigned short g_dacPwrOn = 0; // DAC Power
 
 
@@ -79,13 +75,12 @@ void __s5p_tv_powerset_dac_onoff(unsigned short on)
 {
 	TVPMPRINTK("(%d)\n\r", on);
 
-	if (on) {
-		writel(readl(S5P_OTHERS) | TVPWR_DAC_ON, S5P_OTHERS);
-	} else {
-		writel(readl(S5P_OTHERS) &~TVPWR_DAC_ON, S5P_OTHERS);
-	}
-
-	TVPMPRINTK("(0x%08x)\n\r", readl(S5P_OTHERS));
+	if (on) 
+		writel(S5P_DAC_ENABLE, S5P_DAC_CONTROL);
+	else 
+	 	writel(S5P_DAC_DISABLE, S5P_DAC_CONTROL);
+	
+	TVPMPRINTK("(0x%08x)\n\r", readl(S5P_DAC_CONTROL));
 }
 
 
@@ -104,9 +99,9 @@ unsigned short __s5p_tv_power_get_dac_power_status(void)
 {
 	TVPMPRINTK("()\n\r");
 
-	TVPMPRINTK("(0x%08x)\n\r", readl(S5P_OTHERS));
+	TVPMPRINTK("(0x%08x)\n\r", readl(S5P_DAC_CONTROL));
 
-	return (TVPWR_DAC_STATUS(readl(S5P_OTHERS)) ? 1 : 0);
+	return((readl(S5P_DAC_CONTROL) & S5P_DAC_ENABLE) ? 1 : 0);
 }
 
 //C110: for test. PMU modifying needed.

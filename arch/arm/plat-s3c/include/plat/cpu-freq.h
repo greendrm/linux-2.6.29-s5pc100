@@ -51,6 +51,39 @@ static u32 clkdiv0_val[5][3] = {
 };
 #endif	/* CONFIG_CPU_S5PC100 */
 
+#if defined(CONFIG_CPU_S5PC110)
+
+#define USE_FREQ_TABLE
+
+//#define USE_DVS
+
+#define KHZ_T		1000
+
+#define MPU_CLK		"dout_apll"
+
+#define CLK_OUT_PROBING	//TP80 on SMDKC100 board
+
+enum perf_level {
+	L0,
+	L1,
+	L2,
+	L3,
+//	L4,
+};
+
+static u32 clkdiv0_val[4][3] = {
+	{0, 3, 1},	/* L0 : 800/200/100 */
+	{1, 1, 1},	/* L1 : 400/200/100 */
+	{3, 0, 1},	/* L2 : 200/200/100 */
+	{7, 0, 1},	/* L3 : 100/100/50 */
+	//{7, 0, 0},	/* L4 " 83/83 */
+	/*{ APLL_RATIO, HCLK_MSYS_RATIO, PCLK_MSYS_RATIO }*/
+};
+
+#define CLK_DIV0_MASK	((0x7<<0)|(0x7<<8)|(0x7<<12))	// APLL,HCLK_MSYS,PCLK_MSYS mask value 
+
+#endif	/* CONFIG_CPU_S5PC100 */
+
 struct s3c_cpufreq_info;
 struct s3c_cpufreq_board;
 struct s3c_iotimings;

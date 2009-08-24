@@ -474,7 +474,6 @@
 #define S5P_SPDIFIN_DATA_BUF_1_3	S5P_HDMI_SPDIF_BASE(0x0078) /* SPDIFIN_DATA_BUF_1 [23:16] 0x00 */
 #define S5P_SPDIFIN_USER_BUF_1		S5P_HDMI_SPDIF_BASE(0x007C) /* SPDIFIN_DATA_BUF_1 [31:28] 0x00 */
 			
-
 ////////////////////
 // Shadow Registers   //
 ////////////////////
@@ -1144,8 +1143,8 @@
 #define GETSYNC_TYPE_DIS  (0<<4)
 #define GETSYNC_EN    (1<<3)
 #define GETSYNC_DIS   (0<<3)
-#define FIELD_EN    (1<<2)
-#define FIELD_DIS     (0<<2)
+#define FIELD_EN    (1<<1)
+#define FIELD_DIS     (0<<1)
 #define TG_EN     (1)
 #define TG_DIS      (0)
 
@@ -1530,6 +1529,25 @@
 
 
 #define HDMI_PHY_READY          (1<<0)
+
+// Color Depth
+// CD0, CD1, CD2, CD3
+
+#define GCP_CD_NOT_INDICATED		0
+#define GCP_CD_24BPP				(1<<2)
+#define GCP_CD_30BPP				(1<<0 | 1<<2)
+#define GCP_CD_36BPP				(1<<1 | 1<<2)
+#define GCP_CD_48BPP				(1<<0 | 1<<1 | 1<<2)
+
+#define GCP_DEFAULT_PHASE			1
+
+// for DC_CONTRAL
+#define HDMI_DC_CTL_8 				0
+#define HDMI_DC_CTL_10				(1<<0)
+#define HDMI_DC_CTL_12				(1<<1)
+
+#define DO_NOT_TRANSMIT		(0)
+
 
 
 #endif // __ASM_ARCH_REGS_HDMI_H

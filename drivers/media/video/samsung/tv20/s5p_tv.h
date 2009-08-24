@@ -513,6 +513,8 @@ typedef struct _s5p_tv_status {
 #define V4L2_STD_720P_50	((v4l2_std_id)0x09000000)
 #define V4L2_STD_1080P_60	((v4l2_std_id)0x0a000000)
 #define V4L2_STD_1080P_50	((v4l2_std_id)0x0b000000)
+#define V4L2_STD_1080I_60	((v4l2_std_id)0x0c000000)
+#define V4L2_STD_1080I_50	((v4l2_std_id)0x0d000000)
 
 #define FORMAT_FLAGS_DITHER       	0x01
 #define FORMAT_FLAGS_PACKED       	0x02
@@ -544,8 +546,8 @@ extern const struct v4l2_ioctl_ops s5p_tv_v4l2_v_ops;
 extern const struct v4l2_ioctl_ops s5p_tv_v4l2_vo_ops;
 
 extern void s5p_tv_v4l2_init_param(void);
-extern int s5p_tv_v_ioctl(struct file *file, u32 cmd, unsigned long arg);
-extern int s5p_tv_vo_ioctl(struct file *file, u32 cmd, unsigned long arg);
+extern long s5p_tv_v_ioctl(struct file *file, u32 cmd, unsigned long arg);
+extern long s5p_tv_vo_ioctl(struct file *file, u32 cmd, unsigned long arg);
 
 /*
  * STDA layer api - must be refine!!
@@ -762,7 +764,14 @@ s5p_tv_vp_err 	__s5p_vp_stop(void);
 void 	__s5p_vp_sw_reset(void);
 
 // TV_CLOCK
+#ifdef CONFIG_CPU_S5PC100
 void 	__s5p_tv_clk_init_hpll(u32 lock_time, u32 mdiv, u32 pdiv, u32 sdiv);
+#endif
+
+#ifdef CONFIG_CPU_S5PC110
+void 	__s5p_tv_clk_init_hpll(u32 lock_time, bool vsel, u32 mdiv, u32 pdiv, u32 sdiv);
+#endif
+
 void 	__s5p_tv_clk_hpll_onoff(bool en);
 s5p_tv_clk_err 	__s5p_tv_clk_init_href(s5p_tv_clk_hpll_ref hpll_ref);
 s5p_tv_clk_err 	__s5p_tv_clk_init_mout_hpll(s5p_tv_clk_mout_hpll mout_hpll);
