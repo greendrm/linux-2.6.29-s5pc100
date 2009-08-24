@@ -1801,3 +1801,7 @@ v2.6.29.4-dev-1-4-0: Jonghun Han
 		M	drivers/media/video/samsung/rotator/Kconfig
 		M	drivers/media/video/samsung/rotator/Makefile
 		M	drivers/media/video/samsung/rotator/s3c_rotator.c
+
+v2.6.29.4-dev-1-4-1: Jinsung Yang
+	- Internal Release (2009.08.24)
+
