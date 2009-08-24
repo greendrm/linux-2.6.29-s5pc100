@@ -781,19 +781,20 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||
 				st->src_color==VPROC_SRC_COLOR_NV12IW) ?	
 				VPROC_LINEAR_MODE : VPROC_2D_TILE_MODE;
+	st->vl_op_mode.chroma_exp = (pro) ? VPROC_USING_C_TOP 
+					: VPROC_USING_C_TOP_BOTTOM;
+	st->vl_op_mode.toggle_id = (pro) ? S5P_TV_VP_FILED_ID_TOGGLE_USER : 
+					S5P_TV_VP_FILED_ID_TOGGLE_VSYNC;
 #endif
 
 #ifdef CONFIG_CPU_S5PC110
 	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||
 				st->src_color==VPROC_SRC_COLOR_NV12IW) ?	
 				VPROC_2D_TILE_MODE:VPROC_LINEAR_MODE;
+	st->vl_op_mode.chroma_exp = VPROC_USING_C_TOP;
+	st->vl_op_mode.toggle_id = S5P_TV_VP_FILED_ID_TOGGLE_USER;
 #endif
 	
-	st->vl_op_mode.chroma_exp = (pro) ? VPROC_USING_C_TOP 
-					: VPROC_USING_C_TOP_BOTTOM;
-	st->vl_op_mode.toggle_id = (pro) ? S5P_TV_VP_FILED_ID_TOGGLE_USER : 
-					S5P_TV_VP_FILED_ID_TOGGLE_VSYNC;
-
 	_s5p_vlayer_calc_inner_values();
 
 	if (st->vl_mode) {
