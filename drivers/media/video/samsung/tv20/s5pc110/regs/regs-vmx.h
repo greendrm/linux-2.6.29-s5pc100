@@ -98,6 +98,8 @@
 #define S5P_MXR_CFG_GRAPHIC1_ENABLE		(1<<5)
 #define S5P_MXR_CFG_HD_720P		(0<<6)
 #define S5P_MXR_CFG_HD_1080I	(1<<6)
+#define S5P_MXR_CFG_TV_OUT		(0<<7)
+#define S5P_MXR_CFG_HDMI_OUT		(1<<7)
 
 // S5P_MXR_INT_EN
 #define S5P_MXR_INT_EN_GRP0_DISABLE 	(0<<8)

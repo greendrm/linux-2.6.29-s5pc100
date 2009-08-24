@@ -472,16 +472,19 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED:
 		temp_reg |= S5P_MXR_INTERLACE_MODE;
+		temp_reg &= ~S5P_MXR_CFG_HDMI_OUT;
 		break;
 
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
 
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg &= ~S5P_MXR_CFG_HDMI_OUT;
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg |= S5P_MXR_CFG_HDMI_OUT;
 		break;
 
 	default:
@@ -491,7 +494,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	}
 
 //FPGA: FOR C110 HDMI TEST
-	temp_reg |= (0x1<<7);
+//	temp_reg |= (0x1<<7);
 //FPGA: FOR C110 HDMI TEST
 
 	writel(temp_reg, mixer_base + S5P_MXR_CFG);

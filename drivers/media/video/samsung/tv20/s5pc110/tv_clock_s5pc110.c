@@ -201,7 +201,6 @@ void __s5p_tv_clk_set_sdout_hclk_onoff(bool clk_on)
 
 	if (clk_on) {
 		bit_add_l(CLK_HCLK_SDOUT_PASS, S5P_CLKGATE_MAIN1);
-		bit_add_l(VMIXER_OUT_SEL_SDOUT, S5P_MIXER_OUT_SEL);
 	} else {
 		bit_del_l(CLK_HCLK_SDOUT_PASS, S5P_CLKGATE_MAIN1);
 
@@ -218,7 +217,6 @@ void __s5p_tv_clk_set_hdmi_hclk_onoff(bool clk_on)
 
 	if (clk_on) {
 		bit_add_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_PERI1);
-		bit_add_l(VMIXER_OUT_SEL_HDMI, S5P_MIXER_OUT_SEL);
 	} else {
 		bit_del_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_PERI1) ;
 	}
