@@ -210,6 +210,10 @@
 #define I2C_HDMI_PHY_BASE	(0xFA900000)
 #define I2C_HDMI_SZ_PHY_BASE	SZ_1K
 
+/* CEC */
+#define S5PC11X_PA_CEC		(0xE1B00000)
+#define S5PC11X_SZ_CEC		SZ_4K
+
 /* compatibiltiy defines. */
 #define S3C_SZ_HSMMC		S5PC11X_SZ_HSMMC
 

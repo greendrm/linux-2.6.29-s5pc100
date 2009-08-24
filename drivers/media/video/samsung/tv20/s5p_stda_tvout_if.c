@@ -282,6 +282,11 @@ bool _s5p_tv_if_init_vm_reg(void)
 		case TVOUT_720P_50:
 
 #ifdef CONFIG_CPU_S5PC110
+// SPMOON_TEST
+		case TVOUT_1080I_60:
+
+		case TVOUT_1080I_50:
+			
 		case TVOUT_1080P_60:
 
 		case TVOUT_1080P_50:
@@ -708,6 +713,16 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		break;
 
 #ifdef CONFIG_CPU_S5PC110
+	case TVOUT_1080I_50:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_20;
+		break;
+
+	case TVOUT_1080I_60:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_5;
+		break;
+		
 	case TVOUT_1080P_50:
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_31;
@@ -831,6 +846,12 @@ bool _s5p_tv_if_start(void)
 		__s5p_tv_clk_set_sdout_sclk_onoff(true);
 		__s5p_tv_clk_set_hdmi_hclk_onoff(false);
 		__s5p_tv_clk_set_hdmi_sclk_onoff(false);
+#ifdef CONFIG_CPU_S5PC100
+		__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
+#endif
+#ifdef CONFIG_CPU_S5PC110
+		__s5p_tv_clk_init_hpll(0, 0xffff, 108, 6, 3);
+#endif		
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
@@ -853,6 +874,8 @@ bool _s5p_tv_if_start(void)
 			return false;
 		}
 
+#ifdef CONFIG_CPU_S5PC100
+
 		__s5p_tv_clk_init_hdmi_ratio(2);
 
 		switch (disp_mode) {
@@ -867,7 +890,7 @@ bool _s5p_tv_if_start(void)
 			__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
 			break;
 
-#ifdef CONFIG_CPU_S5PC100			
+	
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
@@ -876,17 +899,36 @@ bool _s5p_tv_if_start(void)
 #endif 
 
 #ifdef CONFIG_CPU_S5PC110
+
+		__s5p_tv_clk_init_hdmi_ratio(0);
+
+		switch (disp_mode) {
+
+		case TVOUT_480P_60_16_9:
+
+		case TVOUT_480P_60_4_3:
+
+		case TVOUT_576P_50_16_9:
+
+		case TVOUT_576P_50_4_3:
+//			__s5p_tv_clk_init_hpll(0, 0xffff, 108, 6, 3);
+			break;
+		
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
-			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 3);
+
+		case TVOUT_1080I_50:
+
+		case TVOUT_1080I_60:
+//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 3);
 			break;
 
 		case TVOUT_1080P_50:
 
 		case TVOUT_1080P_60:
-			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
-			break;
+//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 2);
+			break;			
 #endif			
 
 		default:
@@ -1066,6 +1108,10 @@ bool _s5p_tv_if_set_disp(void)
 	case TVOUT_720P_60:
 
 #ifdef CONFIG_CPU_S5PC110
+
+	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_60:
 
 	case TVOUT_1080P_50:
 

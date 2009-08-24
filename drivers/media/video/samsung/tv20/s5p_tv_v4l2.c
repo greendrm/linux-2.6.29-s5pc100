@@ -87,7 +87,8 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.modulator	= 0,
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
 					V4L2_STD_720P_60 | V4L2_STD_720P_50 |
-					V4L2_STD_1080P_60 | V4L2_STD_1080P_50,
+					V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
+					V4L2_STD_1080I_60 | V4L2_STD_1080I_50,
 	}
 
 };
@@ -193,6 +194,14 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.index    = 14,
 		.id     = V4L2_STD_1080P_50,
 		.name = "1080P_50",
+	}, {
+		.index    = 15,
+		.id     = V4L2_STD_1080I_60,
+		.name = "1080I_60",
+	}, {
+		.index    = 16,
+		.id     = V4L2_STD_1080I_50,
+		.name = "1080I_50",
 	}
 };
 
@@ -312,8 +321,8 @@ static int s5p_tv_v4l2_g_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT: {
 
 		struct v4l2_pix_format_s5p_tvout vparam;
-		vparam.base_y			= s5ptv_status.vl_basic_param.top_y_address;
-		vparam.base_c			= s5ptv_status.vl_basic_param.top_c_address;
+		vparam.base_y			= (void *)s5ptv_status.vl_basic_param.top_y_address;
+		vparam.base_c			= (void *)s5ptv_status.vl_basic_param.top_c_address;
 		vparam.pix_fmt.pixelformat	= s5ptv_status.src_color;		//VPROC_SRC_COLOR_NV12
 		vparam.pix_fmt.width		= s5ptv_status.vl_basic_param.src_width;
 		vparam.pix_fmt.height		= s5ptv_status.vl_basic_param.src_height;
@@ -330,8 +339,6 @@ static int s5p_tv_v4l2_g_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 	default:
 		break;
 	}
-
-	V4L2PRINTK("()--\n");
 
 	return 0;
 }
@@ -738,7 +745,15 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_50;
 		break;
 		
-#ifdef CONFIG_CPU_S5PC110		
+#ifdef CONFIG_CPU_S5PC110
+	case V4L2_STD_1080I_60:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_60;
+		break;
+		
+	case V4L2_STD_1080I_50:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_50;
+		break;
+		
 	case V4L2_STD_1080P_60:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_60;
 		break;
@@ -995,6 +1010,10 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 		break;
 
 #ifdef CONFIG_CPU_S5PC110
+
+	case TVOUT_1080I_60:
+
+	case TVOUT_1080I_50:
 		
 	case TVOUT_1080P_60:
 
@@ -1261,7 +1280,7 @@ static int s5p_tv_v4l2_s_hw_freq_seek(struct file *file, void *fh, struct v4l2_h
 #define VIDIOC_HDCP_STATUS _IOR('V', 101, unsigned int)
 #define VIDIOC_HDCP_PROT_STATUS _IOR('V', 102, unsigned int)
 
-int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
 		// TODO: must be changed into v4l2 external control.
@@ -1320,7 +1339,7 @@ int s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return video_ioctl2(file, cmd, arg);
 }
 
-int s5p_tv_vo_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+long s5p_tv_vo_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	void *fh = file->private_data;
 

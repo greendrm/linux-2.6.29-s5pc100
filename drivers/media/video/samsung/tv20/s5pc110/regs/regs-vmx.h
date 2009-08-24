@@ -141,6 +141,8 @@
 #define S5P_MXR_MIXER_STOP  (0<<0)
 
 // MIXER_CFG
+#define S5P_MXR_DST_SEL_HDMI   	(1<<7)
+#define S5P_MXR_DST_SEL_ANALOG 	~(1<<7)
 #define S5P_MXR_HD_1080I_MODE   (1<<6)
 // C110
 #define S5P_MXR_HD_1080P_MODE   S5P_MXR_HD_1080I_MODE
@@ -153,7 +155,7 @@
 #define S5P_MXR_VIDEO_LAYER_SHOW    (1<<3)
 #define S5P_MXR_VIDEO_LAYER_HIDE    (0<<3)
 #define S5P_MXR_PROGRESSVE_MODE (1<<2)
-#define S5P_MXR_INTERLACE_MODE  (0<<2)
+#define S5P_MXR_INTERLACE_MODE  ~(1<<2)
 #define S5P_MXR_PAL  (1<<1)
 #define S5P_MXR_NTSC (0<<1)
 #define S5P_MXR_HD   (1<<0)

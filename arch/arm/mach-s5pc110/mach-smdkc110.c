@@ -730,6 +730,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_i2c1,
 	&s3c_device_ipc,
 	&s3c_device_jpeg,
+	&s5p_device_cec,
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
