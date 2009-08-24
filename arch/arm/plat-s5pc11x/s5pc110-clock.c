@@ -129,24 +129,7 @@ int s5pc11x_clk_doutapll_set_rate(struct clk *clk, unsigned long rate)
 	return 0;
 }
 
-struct clk clk_dout_apll = {
-	.name = "dout_apll",
-	.id = -1,
-	.parent = &clk_mout_apll.clk,
-	.get_rate = s5pc11x_clk_doutapll_get_rate,
-	.set_rate = s5pc11x_clk_doutapll_set_rate,
-};
-
-static unsigned long s5pc11x_clk_doutarm_get_rate(struct clk *clk)
-{
-	unsigned long rate = clk_get_rate(clk->parent);
-
-	rate /= (((__raw_readl(S5P_CLK_DIV0) & S5P_CLKDIV0_APLL_MASK) >> S5P_CLKDIV0_APLL_SHIFT) + 1);
-
-	return rate;
-}
-
-static unsigned long s5pc11x_doutarm_roundrate(struct clk *clk,
+static unsigned long s5pc11x_doutapll_roundrate(struct clk *clk,
 					      unsigned long rate)
 {
 	unsigned long parent_rate = clk_get_rate(clk->parent);
@@ -165,73 +148,16 @@ static unsigned long s5pc11x_doutarm_roundrate(struct clk *clk,
 	return rate;
 }
 
-int s5pc11x_clk_doutarm_set_rate(struct clk *clk, unsigned long rate)
-{
-	struct clk *temp_clk = clk;
-	unsigned int div_arm;
-	unsigned int val;
-#ifdef PREVENT_BUS_CLOCK_CHANGE
-	unsigned int d0_bus_ratio, arm_ratio_old, ratio;
-	val = __raw_readl(S5P_CLK_DIV0);
-	d0_bus_ratio = (val & S5P_CLKDIV0_HCLK200_MASK) >> S5P_CLKDIV0_HCLK200_SHIFT;
-	arm_ratio_old = (val & S5P_CLKDIV0_APLL_MASK) >> S5P_CLKDIV0_APLL_SHIFT;
-	ratio = (arm_ratio_old + 1) * (d0_bus_ratio + 1);
-#endif
-	div_arm = clk_get_rate(temp_clk->parent) / rate;
-	
-#ifndef PREVENT_BUS_CLOCK_CHANGE
-	val = __raw_readl(S5P_CLK_DIV0);
-	val &=~ S5P_CLKDIV0_APLL_MASK;
-	val |= (div_arm - 1) << S5P_CLKDIV0_APLL_SHIFT;
-#else	
-	d0_bus_ratio = (ratio / div_arm) -1;
-	val &=~ (S5P_CLKDIV0_APLL_MASK | S5P_CLKDIV0_HCLK200_MASK);
-	val |= (div_arm - 1) << S5P_CLKDIV0_APLL_SHIFT;
-	val |= d0_bus_ratio << S5P_CLKDIV0_HCLK200_SHIFT;
-	//printk(KERN_INFO "d0_bus_ratio : %08d ,arm_ratio: %08d\n",d0_bus_ratio, (div_arm-1));
-	
-#endif
 
-#ifdef PREVENT_BUS_CLOCK_CHANGE
-
-	/* Clock Down */
-	if(arm_ratio_old < (div_arm - 1)) {
-		val = __raw_readl(S5P_CLK_DIV0);
-		val &=~ S5P_CLKDIV0_APLL_MASK;
-		val |= (div_arm - 1) << S5P_CLKDIV0_APLL_SHIFT;
-		__raw_writel(val, S5P_CLK_DIV0);
-
-		val = __raw_readl(S5P_CLK_DIV0);
-		val &=~ S5P_CLKDIV0_HCLK200_MASK;
-		val |= d0_bus_ratio << S5P_CLKDIV0_HCLK200_SHIFT;
-		__raw_writel(val, S5P_CLK_DIV0);
-		
-	} else {
-		val = __raw_readl(S5P_CLK_DIV0);
-		val &=~ S5P_CLKDIV0_HCLK200_MASK;
-		val |= d0_bus_ratio << S5P_CLKDIV0_HCLK200_SHIFT;
-		__raw_writel(val, S5P_CLK_DIV0);
-
-		val = __raw_readl(S5P_CLK_DIV0);
-		val &=~ S5P_CLKDIV0_APLL_MASK;
-		val |= (div_arm - 1) << S5P_CLKDIV0_APLL_SHIFT;
-		__raw_writel(val, S5P_CLK_DIV0);
-	}
-
-#else
-	__raw_writel(val, S5P_CLK_DIV0);
-#endif
-	return 0;
-}
-
-struct clk clk_dout_arm = {
-	.name = "dout_arm",
+struct clk clk_dout_apll = {
+	.name = "dout_apll",
 	.id = -1,
-	.parent = &clk_dout_apll,
-	.get_rate = s5pc11x_clk_doutarm_get_rate,
-	.set_rate = s5pc11x_clk_doutarm_set_rate,
-	.round_rate	= s5pc11x_doutarm_roundrate,
+	.parent = &clk_mout_apll.clk,
+	.get_rate = s5pc11x_clk_doutapll_get_rate,
+	.set_rate = s5pc11x_clk_doutapll_set_rate,
+	.round_rate = s5pc11x_doutapll_roundrate,
 };
+
 
 static int fout_enable(struct clk *clk, int enable)
 {
@@ -1303,7 +1229,6 @@ static struct clk *clks[] __initdata = {
 	&clk_pwi.clk,
 	&clk_lcd.clk,
 	&clk_dout_apll,
-	&clk_dout_arm,
 	&clk_cam0.clk,
 	&clk_cam1.clk,
 	&clk_fimc0.clk,

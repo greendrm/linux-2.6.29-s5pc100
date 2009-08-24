@@ -1125,7 +1125,7 @@ endmenu
 
 menu "CPU Power Management"
 
-if (ARCH_SA1100 || ARCH_INTEGRATOR || ARCH_OMAP || ARCH_IMX || ARCH_PXA || CPU_S5PC100 || CPU_S5P6442)
+if (ARCH_SA1100 || ARCH_INTEGRATOR || ARCH_OMAP || ARCH_IMX || ARCH_PXA || CPU_S5PC100 || CPU_S5P6442 || CPU_S5PC110)
 
 source "drivers/cpufreq/Kconfig"
 
