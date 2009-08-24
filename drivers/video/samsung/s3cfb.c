@@ -1071,6 +1071,17 @@ static int s3cfb_probe(struct platform_device *pdev)
 
 	/* init global */
 	s3cfb_init_global();
+
+	/* prepare memory */
+	if (s3cfb_alloc_framebuffer())
+		goto err_alloc;
+
+	if (s3cfb_register_framebuffer())
+		goto err_alloc;
+
+	s3cfb_set_clock(fbdev);
+	s3cfb_enable_window(pdata->default_win);
+
 	s3cfb_display_on(fbdev);
 
 	/* panel control */
@@ -1082,16 +1093,6 @@ static int s3cfb_probe(struct platform_device *pdev)
 
 	if (fbdev->lcd->init_ldi)
 		fbdev->lcd->init_ldi();
-
-	/* prepare memory */
-	if (s3cfb_alloc_framebuffer())
-		goto err_alloc;
-
-	if (s3cfb_register_framebuffer())
-		goto err_alloc;
-
-	s3cfb_set_clock(fbdev);
-	s3cfb_enable_window(pdata->default_win);
 
 	ret = device_create_file(&(pdev->dev), &dev_attr_win_power);
 	if (ret < 0)
