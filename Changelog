@@ -1049,7 +1049,7 @@ v2.6.29.4-r3d15: Jinsung Yang
 		M	arch/arm/mach-s5pc110/include/mach/map.h
 		M	arch/arm/mach-s5pc110/include/mach/memory.h
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
-
+		
 v2.6.29.4-dev-0-0-0: Jongpill Lee
 	- New tagging start
 
@@ -1742,3 +1742,14 @@ v2.6.29.4-dev-1-3-10: Jingoo Han
 	Modified Files:
 		M       drivers/usb/host/ehci-s5pc110.c
 
+		
+v2.6.29.4-dev-1-3-13: Sunil Choi
+	- Support tv-out thru composite and component on S5PC110 
+
+	Modified Files:
+		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M	drivers/media/video/samsung/tv20/s5p_stda_video_layer.c
+		M	drivers/media/video/samsung/tv20/s5pc110/tv_clock_s5pc110.c
+		M	drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
+		M	drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
+		M	drivers/media/video/samsung/tv20/s5pc110/regs/regs-vmx.h
