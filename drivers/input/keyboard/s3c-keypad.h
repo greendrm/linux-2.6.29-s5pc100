@@ -42,7 +42,11 @@ int keypad_keycode[] = {
 #define KEYPAD_DELAY		(50)
 #endif
 
+#if defined(CONFIG_CPU_S5PC110)
+#define	KEYIFCOL_CLEAR		((readl(key_base+S3C_KEYIFCOL) | 0xff00) & ~0xff)
+#else
 #define	KEYIFCOL_CLEAR		(readl(key_base+S3C_KEYIFCOL) & ~0xffff)
+#endif
 #define	KEYIFCON_CLEAR		(readl(key_base+S3C_KEYIFCON) & ~0x1f)
 #define KEYIFFC_DIV		(readl(key_base+S3C_KEYIFFC) | 0x1)
 
