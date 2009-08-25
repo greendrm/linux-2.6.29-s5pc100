@@ -24,9 +24,9 @@
 
 #include "s5p_tv.h"
 
-#ifdef COFIG_TVOUT_DBG
+//#ifdef COFIG_TVOUT_DBG
 #define S5P_STDA_TVOUTIF_DEBUG 1
-#endif
+//#endif
 
 #ifdef S5P_STDA_TVOUTIF_DEBUG
 #define TVOUTIFPRINTK(fmt, args...) \
@@ -651,8 +651,7 @@ bool _s5p_tv_if_init_hd_video_reg(void)
 	st->hdmi_tg_cmd.tg_en = true;
 	tg_en = st->hdmi_tg_cmd.tg_en;
 
-	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,
-				bt656_sync_en,disp_mode,tg_en);
+	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,bt656_sync_en,tg_en);
 
 	return true;
 }
@@ -996,10 +995,6 @@ bool _s5p_tv_if_start(void)
 
 	st->tvout_output_enable = true;
 
-	TVOUTIFPRINTK("sclk_mixer clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_mixer));
-	TVOUTIFPRINTK("sclk_hdmi clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_hdmi));
-	TVOUTIFPRINTK("sclk_tv clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_tv));
-
 	TVOUTIFPRINTK("()\n\r");
 
 	return true;
@@ -1011,7 +1006,6 @@ bool _s5p_tv_if_stop(void)
 
 	bool t_corr_en 	= st->hdmi_tg_cmd.timing_correction_en;
 	bool sync_en 	= st->hdmi_tg_cmd.bt656_sync_en;
-	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
 	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
 
 	TVOUTIFPRINTK("tvout sub sys. stopped!!\n");
@@ -1027,15 +1021,15 @@ bool _s5p_tv_if_stop(void)
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
 
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
-		__s5p_sdout_stop();
+		if(st->tvout_output_enable)
+			__s5p_sdout_stop();
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
-		__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,disp_mode,
-					false);
-
-		if(st->tvout_output_enable)
+		if(st->tvout_output_enable) {
+			__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,false);
 			__s5p_hdmi_stop();
+		}
 		break;
 
 	default:

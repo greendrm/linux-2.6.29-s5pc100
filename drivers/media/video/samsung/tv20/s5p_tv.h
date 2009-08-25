@@ -665,7 +665,7 @@ void 	__s5p_hdmi_video_init_color_range(u8 y_min, u8 y_max, u8 c_min, u8 c_max);
 s5p_tv_hdmi_err __s5p_hdmi_video_init_csc(s5p_tv_hdmi_csc_type csc_type);
 s5p_tv_hdmi_err __s5p_hdmi_video_init_avi_infoframe(s5p_hdmi_transmit trans_type, u8 check_sum, u8 *pavi_data);
 s5p_tv_hdmi_err __s5p_hdmi_video_init_mpg_infoframe(s5p_hdmi_transmit trans_type, u8 check_sum, u8 *pmpg_data);
-void 	__s5p_hdmi_video_init_tg_cmd(bool timing_correction_en, bool BT656_sync_en, s5p_tv_disp_mode disp_mode, bool tg_en);
+void 	__s5p_hdmi_video_init_tg_cmd(bool t_correction_en, bool BT656_sync_en, bool tg_en);
 bool 	__s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type, bool HDCP_en, struct i2c_client *ddc_port);
 void 	__s5p_hdmi_stop(void);
 

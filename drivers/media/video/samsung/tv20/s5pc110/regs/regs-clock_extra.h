@@ -52,14 +52,11 @@
 #define HREF_SEL_SRCLK      (1<<20)
 #define HREF_SEL_MASK       (~(1<<20))
 #define VPLL_SEL_CLK27M     (0<<12)
-#define VPLL_SEL_FOUT_HPLL  (1<<12)
+#define VPLL_SEL_FOUT_VPLL  (1<<12)
 #define VPLL_SEL_MASK       (~(1<<12))
 
 // CLK_SRC2
-#define VMIXER_SEL_CLK27M       (0<<4)
-#define VMIXER_SEL_VCLK_54      (1<<4)
-// C110 : must be checked..!!
-#define VMIXER_SEL_MOUT_HPLL    (1<<4)
+#define VMIXER_SEL_MOUT_VPLL    (1<<4)
 #define VMIXER_SEL_MASK         (~(1<<4))
 #define HDMI_SEL_HDMIPHY    	(1<<0)
 #define HDMI_SEL_MASK         	(~(1<<0))
@@ -70,9 +67,9 @@
 
 // CLK_GATE_D1_2
 #define CLK_HCLK_HDMI_PASS      (1<<11)
+#define CLK_HCLK_SDOUT_PASS     (1<<10)
 #define CLK_HCLK_VMIXER_PASS    (1<<9)
 #define CLK_HCLK_VP_PASS        (1<<8)
-#define CLK_HCLK_SDOUT_PASS     (1<<10)
 #define CLK_HCLK_MASK           (~0xf)
 
 // CLK_GATE_D1_4

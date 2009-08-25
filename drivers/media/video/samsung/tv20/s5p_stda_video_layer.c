@@ -147,8 +147,8 @@ bool _s5p_vlayer_start(void)
 	u32 by_addr = s5ptv_status.vl_bottom_y_address;
 	u32 bc_addr = s5ptv_status.vl_bottom_c_address;
 	u32 endian = param.src_img_endian;
-	u32 i_w  = param.img_width;
-	u32 i_h  = param.img_height;
+	u32 i_w  = param.src_width;
+	u32 i_h  = param.src_height;
 	u32 s_ox = s5ptv_status.vl_src_offset_x;
 	u32 s_xf = s5ptv_status.vl_src_x_fact_step;
 	u32 s_oy = s5ptv_status.vl_src_offset_y;

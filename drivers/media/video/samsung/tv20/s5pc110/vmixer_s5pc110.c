@@ -539,6 +539,8 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 	case VM_VIDEO_LAYER:
 		temp_reg = (win_blending) ? S5P_MXR_VP_BLEND_ENABLE : S5P_MXR_VP_BLEND_DISABLE;
 		temp_reg |= S5P_MXR_VP_ALPHA_VALUE(alpha);
+		/* temp yuv pxl limiter setting*/
+		temp_reg &= ~(1<<17);		
 		writel(temp_reg, mixer_base + S5P_MXR_VIDEO_CFG);
 		break;
 

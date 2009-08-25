@@ -1139,14 +1139,14 @@
 
 // TG SFR
 // TG_CMD
-#define GETSYNC_TYPE_EN   (1<<4)
-#define GETSYNC_TYPE_DIS  (0<<4)
-#define GETSYNC_EN    (1<<3)
-#define GETSYNC_DIS   (0<<3)
-#define FIELD_EN    (1<<1)
-#define FIELD_DIS     (0<<1)
-#define TG_EN     (1)
-#define TG_DIS      (0)
+#define GETSYNC_TYPE_EN   	(1<<4)
+#define GETSYNC_TYPE_DIS	(~GETSYNC_TYPE_EN)
+#define GETSYNC_EN    		(1<<3)
+#define GETSYNC_DIS   		(~GETSYNC_EN)
+#define FIELD_EN    		(1<<1)
+#define FIELD_DIS    		(~FIELD_EN)
+#define TG_EN     		(1)
+#define TG_DIS      		(~TG_EN)
 
 // TG_CFG
 // TG_CB_SZ
