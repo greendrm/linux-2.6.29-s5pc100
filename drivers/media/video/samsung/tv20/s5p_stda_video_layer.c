@@ -59,6 +59,13 @@ static void _s5p_vlayer_calc_inner_values(void)
 	u32 d_w = video->dest_width;
 	u32 d_h = video->dest_height;
 
+#ifdef CONFIG_CPU_S5PC110
+	/* TODO : temp for 1080i */
+	if(st->tvout_param.disp_mode == TVOUT_1080I_60 ||
+		st->tvout_param.disp_mode == TVOUT_1080I_50)
+		pro = false;
+#endif		
+
 	st->vl_top_y_address = t_y_addr;
 	st->vl_top_c_address = t_c_addr;
 
@@ -759,6 +766,13 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 	bool pro = ((st->tvout_param.out_mode > 
 			TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED)) ? true:false;
 
+#ifdef CONFIG_CPU_S5PC110
+	/* TODO : temp for 1080i */
+	if(st->tvout_param.disp_mode == TVOUT_1080I_60 ||
+		st->tvout_param.disp_mode == TVOUT_1080I_50)
+		pro = false;
+#endif	
+
 	st->src_color = (pro) ? VPROC_SRC_COLOR_NV12:VPROC_SRC_COLOR_NV12IW;
 
 	if (st->tvout_param.disp_mode > TVOUT_576P_50_4_3)
@@ -767,15 +781,25 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 		st->vl_csc_type = VPROC_CSC_HD_SD;
 
 	st->vl_csc_control.csc_en = false;
+
 	st->vl2d_ipc = ((st->src_color == VPROC_SRC_COLOR_NV12IW) &&
 			(st->tvout_param.out_mode) > 
 			TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED) 
 			? true : false;
+
+#ifdef CONFIG_CPU_S5PC110
+	/* TODO : temp for 1080i */
+	st->vl2d_ipc = (st->src_color == VPROC_SRC_COLOR_NV12IW &&
+			(st->tvout_param.disp_mode == TVOUT_1080I_60 ||
+			st->tvout_param.disp_mode == TVOUT_1080I_50)) 
+			? false : true;
+#endif
+
 	st->vl_op_mode.line_skip = (pro && 
 			((st->src_color == VPROC_SRC_COLOR_NV12)||
 			(st->src_color == VPROC_SRC_COLOR_TILE_NV12))) 
 			? false : true;
-
+	
 
 #ifdef CONFIG_CPU_S5PC100
 	st->vl_op_mode.mem_mode = ((st->src_color==VPROC_SRC_COLOR_NV12)||

@@ -233,7 +233,6 @@ static int __init ams320_probe(struct spi_device *spi)
 	return ret;
 }
 
-
 static struct spi_driver ams320_driver = {
 	.driver = {
 		.name	= "ams320",

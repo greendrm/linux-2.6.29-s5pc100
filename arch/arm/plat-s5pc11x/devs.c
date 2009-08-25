@@ -546,6 +546,28 @@ struct platform_device s5p_device_tvout = {
 };
 EXPORT_SYMBOL(s5p_device_tvout);
 
+/* CEC */
+static struct resource s5p_cec_resources[] = {
+	[0] = {
+		.start  = S5PC11X_PA_CEC,
+		.end    = S5PC11X_PA_CEC + S5PC11X_SZ_CEC - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start  = IRQ_CEC,
+		.end    = IRQ_CEC,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+
+struct platform_device s5p_device_cec = {
+	.name           = "s5p-cec",
+	.id             = -1,
+	.num_resources  = ARRAY_SIZE(s5p_cec_resources),
+	.resource       = s5p_cec_resources,
+};
+EXPORT_SYMBOL(s5p_device_cec);
+
 /* CFCON */
 static struct resource s3c_cfcon_resource[] = {
         [0] = {

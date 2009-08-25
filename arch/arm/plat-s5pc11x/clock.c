@@ -287,6 +287,13 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_KEYIF,
+	}, {
+		.name		= "rot",
+		.id		= -1,
+		.parent		= &clk_h166,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP0_ROTATOR,
+
 	},
 
 	/* Audio (D1_5) devices */

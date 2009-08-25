@@ -145,7 +145,7 @@ int pwm_enable(struct pwm_device *pwm)
 	local_irq_save(flags);
 
 	tcon = __raw_readl(S3C2410_TCON);
-	tcon |= pwm_tcon_start(pwm);
+	tcon |= (pwm_tcon_start(pwm)|pwm_tcon_invert(pwm));
 	__raw_writel(tcon, S3C2410_TCON);
 
 	local_irq_restore(flags);
@@ -170,6 +170,7 @@ void pwm_disable(struct pwm_device *pwm)
 	local_irq_restore(flags);
 
 	pwm->running = 0;
+	pwm->period_ns = -1;
 }
 
 EXPORT_SYMBOL(pwm_disable);

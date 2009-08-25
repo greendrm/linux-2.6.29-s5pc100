@@ -137,7 +137,7 @@ irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-#elif defined(CONFIG_CPU_S5PC100)
+#elif defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 {
 	struct s3c_rotator_ctrl	*ctrl = &s3c_rot;
@@ -159,7 +159,7 @@ int s3c_rotator_open(struct inode *inode, struct file *file)
 {
 	ro_params	*params;
 
-	// allocating the rotator instance
+	/* allocating the rotator instance */
 	params	= (ro_params *)kmalloc(sizeof(ro_params), GFP_KERNEL);
 	if (params == NULL) {
 		printk(KERN_ERR "Instance memory allocation was failed\n");
@@ -498,5 +498,5 @@ module_init(s3c_rotator_init);
 module_exit(s3c_rotator_exit);
 
 MODULE_AUTHOR("Jonghun Han <jonghun.han@samsung.com>");
-MODULE_DESCRIPTION("S3C Rotator Device Driver");
+MODULE_DESCRIPTION("S3C Image Rotator Device Driver");
 MODULE_LICENSE("GPL");
