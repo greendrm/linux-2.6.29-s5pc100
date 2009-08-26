@@ -282,10 +282,16 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 
 static int fimc_unregister_controller(struct platform_device *pdev)
 {
+	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
 	int id = pdev->id;
 
+	pdata = to_fimc_plat(&pdev->dev);
 	ctrl = get_fimc_ctrl(id);
+	
+	if (pdata->clk_off)
+		pdata->clk_off(pdev, ctrl->clk);
+
 	iounmap(ctrl->regs);
 	memset(ctrl, 0, sizeof(*ctrl));
 
@@ -954,8 +960,10 @@ static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
 
-	kfree(fimc_dev);
-	fimc_dev = NULL;
+	if (fimc_dev) {
+		kfree(fimc_dev);
+		fimc_dev = NULL;
+	}
 
 	return 0;
 }
