@@ -24,9 +24,9 @@
 
 #include "s5p_tv.h"
 
-#ifdef COFIG_TVOUT_DBG
+//#ifdef COFIG_TVOUT_DBG
 #define S5P_STDA_TVOUTIF_DEBUG 1
-#endif
+//#endif
 
 #ifdef S5P_STDA_TVOUTIF_DEBUG
 #define TVOUTIFPRINTK(fmt, args...) \
@@ -282,6 +282,11 @@ bool _s5p_tv_if_init_vm_reg(void)
 		case TVOUT_720P_50:
 
 #ifdef CONFIG_CPU_S5PC110
+// SPMOON_TEST
+		case TVOUT_1080I_60:
+
+		case TVOUT_1080I_50:
+			
 		case TVOUT_1080P_60:
 
 		case TVOUT_1080P_50:
@@ -646,8 +651,7 @@ bool _s5p_tv_if_init_hd_video_reg(void)
 	st->hdmi_tg_cmd.tg_en = true;
 	tg_en = st->hdmi_tg_cmd.tg_en;
 
-	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,
-				bt656_sync_en,disp_mode,tg_en);
+	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,bt656_sync_en,tg_en);
 
 	return true;
 }
@@ -708,6 +712,16 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		break;
 
 #ifdef CONFIG_CPU_S5PC110
+	case TVOUT_1080I_50:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_20;
+		break;
+
+	case TVOUT_1080I_60:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_5;
+		break;
+		
 	case TVOUT_1080P_50:
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_31;
@@ -831,6 +845,12 @@ bool _s5p_tv_if_start(void)
 		__s5p_tv_clk_set_sdout_sclk_onoff(true);
 		__s5p_tv_clk_set_hdmi_hclk_onoff(false);
 		__s5p_tv_clk_set_hdmi_sclk_onoff(false);
+#ifdef CONFIG_CPU_S5PC100
+		__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
+#endif
+#ifdef CONFIG_CPU_S5PC110
+		__s5p_tv_clk_init_hpll(0, 0xffff, 108, 6, 3);
+#endif		
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
@@ -853,6 +873,8 @@ bool _s5p_tv_if_start(void)
 			return false;
 		}
 
+#ifdef CONFIG_CPU_S5PC100
+
 		__s5p_tv_clk_init_hdmi_ratio(2);
 
 		switch (disp_mode) {
@@ -867,7 +889,7 @@ bool _s5p_tv_if_start(void)
 			__s5p_tv_clk_init_hpll(0xffff, 96, 6, 3);
 			break;
 
-#ifdef CONFIG_CPU_S5PC100			
+	
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
@@ -876,17 +898,36 @@ bool _s5p_tv_if_start(void)
 #endif 
 
 #ifdef CONFIG_CPU_S5PC110
+
+		__s5p_tv_clk_init_hdmi_ratio(0);
+
+		switch (disp_mode) {
+
+		case TVOUT_480P_60_16_9:
+
+		case TVOUT_480P_60_4_3:
+
+		case TVOUT_576P_50_16_9:
+
+		case TVOUT_576P_50_4_3:
+//			__s5p_tv_clk_init_hpll(0, 0xffff, 108, 6, 3);
+			break;
+		
 		case TVOUT_720P_50:
 
 		case TVOUT_720P_60:
-			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 3);
+
+		case TVOUT_1080I_50:
+
+		case TVOUT_1080I_60:
+//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 3);
 			break;
 
 		case TVOUT_1080P_50:
 
 		case TVOUT_1080P_60:
-			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
-			break;
+//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 2);
+			break;			
 #endif			
 
 		default:
@@ -954,10 +995,6 @@ bool _s5p_tv_if_start(void)
 
 	st->tvout_output_enable = true;
 
-	TVOUTIFPRINTK("sclk_mixer clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_mixer));
-	TVOUTIFPRINTK("sclk_hdmi clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_hdmi));
-	TVOUTIFPRINTK("sclk_tv clk rate : %d\n",clk_get_rate(s5ptv_status.sclk_tv));
-
 	TVOUTIFPRINTK("()\n\r");
 
 	return true;
@@ -969,7 +1006,6 @@ bool _s5p_tv_if_stop(void)
 
 	bool t_corr_en 	= st->hdmi_tg_cmd.timing_correction_en;
 	bool sync_en 	= st->hdmi_tg_cmd.bt656_sync_en;
-	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
 	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
 
 	TVOUTIFPRINTK("tvout sub sys. stopped!!\n");
@@ -985,15 +1021,15 @@ bool _s5p_tv_if_stop(void)
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
 
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
-		__s5p_sdout_stop();
+		if(st->tvout_output_enable)
+			__s5p_sdout_stop();
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
-		__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,disp_mode,
-					false);
-
-		if(st->tvout_output_enable)
+		if(st->tvout_output_enable) {
+			__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,false);
 			__s5p_hdmi_stop();
+		}
 		break;
 
 	default:
@@ -1066,6 +1102,10 @@ bool _s5p_tv_if_set_disp(void)
 	case TVOUT_720P_60:
 
 #ifdef CONFIG_CPU_S5PC110
+
+	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_60:
 
 	case TVOUT_1080P_50:
 

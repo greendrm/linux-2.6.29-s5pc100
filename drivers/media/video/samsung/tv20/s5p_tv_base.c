@@ -41,9 +41,9 @@
 
 #include "s5p_tv.h"
 
-#ifdef COFIG_TVOUT_DBG
+//#ifdef COFIG_TVOUT_DBG
 #define S5P_TV_BASE_DEBUG 1
-#endif
+//#endif
 
 #ifdef S5P_TV_BASE_DEBUG
 #define BASEPRINTK(fmt, args...) \
@@ -210,7 +210,11 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 	spin_lock_irq(&slock_hpd);
 	
 #ifdef CONFIG_CPU_S5PC110
-#else
+	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
+		? false:true;
+#endif
+
+#ifdef CONFIG_CPU_S5PC100
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
 #endif	
@@ -319,6 +323,7 @@ int s5p_tv_v_release(struct file *filp)
 /*
  * ftn for graphic(video output overlay)
  */
+ /*
 static int check_layer(dev_t dev)
 {
 	int id = 0;
@@ -334,6 +339,7 @@ static int check_layer(dev_t dev)
 	return layer;
 
 }
+*/
 
 static int vo_open(int layer, struct file *file)
 {
@@ -516,7 +522,14 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 
 	/* check EINT init state */
 #ifdef CONFIG_CPU_S5PC110
-#else
+	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+
+	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
+		? false:true;
+#endif
+
+#ifdef CONFIG_CPU_S5PC100
 	s3c_gpio_cfgpin(S5PC1XX_GPH0(5), S3C_GPIO_SFN(2));
 	s3c_gpio_setpull(S5PC1XX_GPH0(5), S3C_GPIO_PULL_UP);
 

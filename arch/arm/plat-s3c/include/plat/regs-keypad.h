@@ -33,7 +33,11 @@
 #define	DF_EN			(1<<2)	/*debouncing filter enable*/
 #define	FC_EN			(1<<3)	/*filter clock enable*/
 #define	KEYIFCON_INIT		(KEYIFCON_CLEAR |INT_F_EN|INT_R_EN|DF_EN|FC_EN)
+#if defined(CONFIG_ARCH_S5PC11X)
+#define KEYIFSTSCLR_CLEAR	(0xffffffff)
+#else
 #define KEYIFSTSCLR_CLEAR	(0xffff)
+#endif
 
 #endif /* __ASM_ARCH_REGS_KEYPAD_H */
 

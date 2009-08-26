@@ -304,7 +304,6 @@ s32 i2c_hdmi_phy_write(u8 addr, u8 nbytes, u8 *buffer)
 
 s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 {
-	u32 i;
 	s32 index;
 	s32 size;
 	u8 *buffer;
@@ -349,6 +348,7 @@ s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 
 #ifdef S5P_HDMI_DEBUG
 {
+	int i = 0;
 	u8 read_buffer[0x40]={0, };
 
 	/* read data */
@@ -463,8 +463,50 @@ s32 hdmi_set_tg(s5p_hdmi_v_fmt mode)
 		tc_cmd |= (1<<1);			
 	else
 		/* Field Mode disable */
-		tc_cmd &= ~(1<<1);			
+		tc_cmd &= ~(1<<1);	
+
+	writeb(tc_cmd, hdmi_base + S5P_TG_CMD);   
 		
+	return 0;
+}
+
+/**
+ * Set registers related to color depth.
+ */
+static s32 hdmi_set_clr_depth(s5p_hdmi_color_depth cd)
+{
+	// if color depth is supported by RX, set GCP packet
+	switch (cd) {
+		
+	case HDMI_CD_48:
+		writeb(GCP_CD_48BPP, hdmi_base + S5P_GCP_BYTE2);
+		break;
+		
+	case HDMI_CD_36:
+		writeb(GCP_CD_36BPP, hdmi_base + S5P_GCP_BYTE2);
+		// set DC register
+		writeb(HDMI_DC_CTL_12, hdmi_base + HDMI_DC_CONTROL);
+		break;
+		
+	case HDMI_CD_30:
+		writeb(GCP_CD_30BPP, hdmi_base + S5P_GCP_BYTE2);
+		// set DC register
+		writeb(HDMI_DC_CTL_10, hdmi_base + HDMI_DC_CONTROL);
+		break;
+		
+	case HDMI_CD_24:
+		writeb(GCP_CD_24BPP, hdmi_base + S5P_GCP_BYTE2);
+		// set DC register
+		writeb(HDMI_DC_CTL_8, hdmi_base + HDMI_DC_CONTROL);
+		// disable GCP
+		writeb(DO_NOT_TRANSMIT, hdmi_base + S5P_GCP_CON);
+		break;
+	
+	default:
+		HDMIPRINTK("HDMI core does not support requested Deep Color mode\n");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -588,18 +630,31 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd,
 	/* set AVI packet MM */
 	writeb(temp_reg8, hdmi_base + S5P_AVI_BYTE2);
 
-// TODO: C110 - color depth set
-#if 0
 	/* set color depth */
-	if (HDMI_Sets5p_hdmi_color_depth(cd) != 0)
-	{
-		return EINVAL;
+	if (hdmi_set_clr_depth(cd) != 0) {
+		HDMIPRINTK("[ERR] Can't set hdmi clr. depth.\n");
+		return -EINVAL;
 	}
-#endif
+
+	if(video_params[mode].interlaced == 1) {
+		u32 gcp_con;
+
+		gcp_con = readb(hdmi_base + S5P_GCP_CON);
+		gcp_con |=  (3<<2);
+
+		writeb(gcp_con, hdmi_base + S5P_GCP_CON);
+	} else {
+		u32 gcp_con;
+
+		gcp_con = readb(hdmi_base + S5P_GCP_CON);
+		gcp_con &= (~(3<<2));
+
+		writeb(gcp_con, hdmi_base + S5P_GCP_CON);
+	}
 
 	/* config Phy */
 	if (hdmi_phy_config(video_params[mode].pixel_clock, cd) == EINVAL) {
-		HDMIPRINTK("hdmi_phy_config() failed.\n");
+		HDMIPRINTK("[ERR] hdmi_phy_config() failed.\n");
 		return EINVAL;
 	}
 
@@ -781,7 +836,7 @@ void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
 	 * packet will be transmitted within 384 cycles 
 	 * after active sync. 
 	 */
-	writel(0x2 , hdmi_base + S5P_GCP_CON);  
+	//writel(0x2 , hdmi_base + S5P_GCP_CON);  
 
 }
 
@@ -968,7 +1023,7 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 						s5p_tv_o_mode out_mode)
 {
-	s5p_tv_hdmi_disp_mode hdmi_disp_num;
+//	s5p_tv_hdmi_disp_mode hdmi_disp_num;
 	s5p_hdmi_v_fmt hdmi_v_fmt;
 
 	HDMIPRINTK("%d,%d\n\r", disp_mode, out_mode);
@@ -993,6 +1048,13 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 
 		writel(INT_PRO_MODE_PROGRESSIVE, hdmi_base + S5P_INT_PRO_MODE);
 		break;
+		
+	case TVOUT_1080I_60:
+
+	case TVOUT_1080I_50:	
+
+		writel(INT_PRO_MODE_INTERLACE, hdmi_base + S5P_INT_PRO_MODE);
+		break;		
 
 	default:
 		HDMIPRINTK("invalid disp_mode parameter(%d)\n\r", disp_mode);
@@ -1005,35 +1067,37 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
-		hdmi_v_fmt = v640x480p_60Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_480P_60;
+		hdmi_v_fmt = v720x480p_60Hz;
 		break;
 
 	case TVOUT_576P_50_16_9:
 
 	case TVOUT_576P_50_4_3:
 		hdmi_v_fmt = v720x576p_50Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_576P_50;
 		break;
 
 	case TVOUT_720P_60:
 		hdmi_v_fmt = v1280x720p_60Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_720P_60;
 		break;
 
 	case TVOUT_720P_50:
 		hdmi_v_fmt = v1280x720p_50Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_720P_50;
 		break;
 
 	case TVOUT_1080P_60:
 		hdmi_v_fmt = v1920x1080p_60Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_1080P_60;
 		break;
 
 	case TVOUT_1080P_50:
 		hdmi_v_fmt = v1920x1080p_50Hz;
-		hdmi_disp_num = S5P_TV_HDMI_DISP_MODE_1080P_50;
+		break;
+
+	case TVOUT_1080I_60:
+		hdmi_v_fmt = v1920x1080i_60Hz;
+		break;
+
+	case TVOUT_1080I_50:
+		hdmi_v_fmt = v1920x1080i_50Hz;
 		break;
 		
 	default:
@@ -1425,24 +1489,32 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_mpg_infoframe(s5p_hdmi_transmit trans_type
 	return HDMI_NO_ERROR;
 }
 
-void __s5p_hdmi_video_init_tg_cmd(bool timing_correction_en,
+void __s5p_hdmi_video_init_tg_cmd(bool time_c_e,
 				bool bt656_sync_en,
-				s5p_tv_disp_mode disp_mode,
 				bool tg_en)
 {
 	u32 temp_reg = 0;
 
-	HDMIPRINTK("%d,%d,%d,%d\n\r", timing_correction_en, 
-				bt656_sync_en, disp_mode, tg_en);
+	temp_reg = readl(hdmi_base + S5P_TG_CMD);
 
-	temp_reg = (timing_correction_en) ? GETSYNC_TYPE_EN : GETSYNC_TYPE_DIS;
-	temp_reg |= (bt656_sync_en) ? GETSYNC_EN : GETSYNC_DIS;
-	temp_reg |= (tg_en) ? TG_EN : TG_DIS;
+	if(time_c_e)
+		temp_reg |= GETSYNC_TYPE_EN;
+	else
+		temp_reg &= GETSYNC_TYPE_DIS;
 
+	if(bt656_sync_en)
+		temp_reg |= GETSYNC_EN;
+	else
+		temp_reg &= GETSYNC_DIS;
+
+	if(tg_en)
+		temp_reg |= TG_EN;
+	else
+		temp_reg &= TG_DIS;		
+	
 	writel(temp_reg, hdmi_base + S5P_TG_CMD);
 
-	HDMIPRINTK("TG_CMD = 0x%08x \n\r",
-		   readl(hdmi_base + S5P_TG_CMD));
+	HDMIPRINTK("TG_CMD = 0x%08x \n\r", readl(hdmi_base + S5P_TG_CMD));
 }
 
 
@@ -1610,3 +1682,29 @@ int __init __s5p_hdmi_release(struct platform_device *pdev)
 
 	return 0;
 }
+
+void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr)
+{
+    u8 reg;
+    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+    writeb(reg | (1<<intr) | (1<<HDMI_IRQ_GLOBAL), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+}
+EXPORT_SYMBOL(s5p_hdmi_enable_interrupts);
+
+void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr)
+{
+    u8 reg;
+    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+    writeb(reg & ~(1<<intr), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+}
+EXPORT_SYMBOL(s5p_hdmi_disable_interrupts);
+
+u8 s5p_hdmi_get_interrupts(s5p_tv_hdmi_interrrupt intr)
+{
+    u8 reg;
+    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+
+    return reg;
+}
+EXPORT_SYMBOL(s5p_hdmi_get_interrupts);
+

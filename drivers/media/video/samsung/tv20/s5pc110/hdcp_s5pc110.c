@@ -38,8 +38,6 @@
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
 	printk("\t\t[HDCP] %s: " fmt, __FUNCTION__ , ## args)
-//	printk("\t\t\t[S5P_HAES_CON] 0x%08x \n",readl(hdmi_base + S5P_HDCP_Ri_0));\
-//	printk("\t\t\t[S5P_HAES_CON] 0x%08x \n",readl(hdmi_base + S5P_HDCP_Ri_1))
 #else
 #define HDCPPRINTK(fmt, args...)
 #endif
@@ -169,6 +167,7 @@ struct s5p_hdcp_info {
 	struct work_struct  	work;
 };
 
+/*
 static struct s5p_hdcp_info hdcp_info = {
 	.is_repeater 	= false,
 	.time_out	= 0,
@@ -178,11 +177,11 @@ static struct s5p_hdcp_info hdcp_info = {
 	.auth_status	= NOT_AUTHENTICATED,
 	
 };
+*/
 
 #define HDCP_RI_OFFSET          0x08
 #define INFINITE		0xffffffff
 
-#define DO_NOT_TRANSMIT		(0)
 #define HDMI_SYS_ENABLE		(1 << 0)
 #define HDMI_ASP_ENABLE		(1 << 2)
 #define HDMI_ASP_DISABLE	(~HDMI_ASP_ENABLE)
@@ -1852,11 +1851,11 @@ void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
  */
 irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 {
-	u8 flag;
-	u32 event;
+
+#if 0
+	u32 event = 0;
 
 	event = 0;
-
 	/* check HDCP Status */
 	flag = readb(hdmi_base + S5P_STATUS);
 	HDCPPRINTK("irq_status : 0x%08x\n", readb(hdmi_base + S5P_STATUS));
@@ -1910,7 +1909,7 @@ irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 	schedule_work(&hdcp_info.work);
 
 	spin_unlock_irq(&hdcp_info.lock);
-
+#endif
 	return IRQ_HANDLED;
 }
 

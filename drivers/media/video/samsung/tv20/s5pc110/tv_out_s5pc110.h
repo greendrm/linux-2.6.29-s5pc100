@@ -50,6 +50,8 @@ typedef enum {
 //C110	
 	TVOUT_1080P_60,
 	TVOUT_1080P_50,
+	TVOUT_1080I_60,
+	TVOUT_1080I_50,	
 }s5p_tv_disp_mode;
 
 typedef enum {
@@ -554,4 +556,19 @@ typedef enum
     HDMI_PIXEL_RATIO_4_3,
     HDMI_PIXEL_RATIO_16_9
 }s5p_tv_hdmi_pxl_aspect;
+
+typedef enum {
+	HDMI_IRQ_PIN_POLAR_CTL	=7,
+	HDMI_IRQ_GLOBAL		=6,
+	HDMI_IRQ_I2S		=5,
+	HDMI_IRQ_CEC		=4,
+	HDMI_IRQ_HPD_PLUG	=3,
+	HDMI_IRQ_HPD_UNPLUG	=2,
+	HDMI_IRQ_SPDIF		=1,
+	HDMI_IRQ_HDCP		=0
+}s5p_tv_hdmi_interrrupt;
+
+void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr);
+void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr);
+u8 s5p_hdmi_get_interrupts(s5p_tv_hdmi_interrrupt intr);
 

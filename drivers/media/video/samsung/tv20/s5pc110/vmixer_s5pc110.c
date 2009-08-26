@@ -419,6 +419,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 	case TVOUT_NTSC_443:
 		temp_reg = S5P_MXR_SD | S5P_MXR_NTSC;
+		temp_reg &= S5P_MXR_INTERLACE_MODE;		
 		break;
 
 	case TVOUT_PAL_BDGHI:
@@ -431,24 +432,35 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 	case TVOUT_PAL_60:
 		temp_reg = S5P_MXR_SD | S5P_MXR_PAL;
+		temp_reg &= S5P_MXR_INTERLACE_MODE;
 		break;
 
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
 		temp_reg = S5P_MXR_SD | S5P_MXR_NTSC;
+		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
 
 	case TVOUT_576P_50_16_9:
 
 	case TVOUT_576P_50_4_3:
 		temp_reg = S5P_MXR_SD | S5P_MXR_PAL;
+		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
 
 	case TVOUT_720P_50:
 
 	case TVOUT_720P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_720P_MODE;
+		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		break;
+
+	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_60:
+		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080I_MODE;
+		temp_reg &= S5P_MXR_INTERLACE_MODE;
 		break;
 
 // C110
@@ -456,6 +468,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 	case TVOUT_1080P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
+		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;		
 
 	default:
@@ -467,24 +480,15 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	switch (output_mode) {
 
 	case TVOUT_OUTPUT_COMPOSITE:
-
 	case TVOUT_OUTPUT_SVIDEO:
-
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED:
-		temp_reg |= S5P_MXR_INTERLACE_MODE;
-		temp_reg &= ~S5P_MXR_CFG_HDMI_OUT;
-		break;
-
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE:
-
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE:
-		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
-		temp_reg &= ~S5P_MXR_CFG_HDMI_OUT;
+		temp_reg &= S5P_MXR_DST_SEL_ANALOG;
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
-		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
-		temp_reg |= S5P_MXR_CFG_HDMI_OUT;
+		temp_reg |= S5P_MXR_DST_SEL_HDMI;
 		break;
 
 	default:
@@ -535,6 +539,8 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 	case VM_VIDEO_LAYER:
 		temp_reg = (win_blending) ? S5P_MXR_VP_BLEND_ENABLE : S5P_MXR_VP_BLEND_DISABLE;
 		temp_reg |= S5P_MXR_VP_ALPHA_VALUE(alpha);
+		/* temp yuv pxl limiter setting*/
+		temp_reg &= ~(1<<17);		
 		writel(temp_reg, mixer_base + S5P_MXR_VIDEO_CFG);
 		break;
 

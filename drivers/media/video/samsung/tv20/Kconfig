@@ -9,3 +9,9 @@ config VIDEO_TV20
 	---help---
 	  This is a TV driver for Samsung SMDK_S5PC100 & SMDK_S5PC110
 
+config HDMI_CEC
+	bool "HDMI CEC driver support. (only s5pc110)" 
+	depends on VIDEO_TV20 && CPU_S5PC110
+	default n
+	---help---
+	  This is a HDMI CEC driver for Samsung SMDK_S5PC110
