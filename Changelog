@@ -1827,3 +1827,11 @@ v2.6.29.4-dev-1-4-3: Jae-Cheol Lee
 		M	arch/arm/plat-s5pc11x/irq-eint.c
 		M	arch/arm/plat-s5pc11x/pm.c
 		M	arch/arm/plat-s5pc11x/s5pc110-clock.c
+
+v2.6.29.4-dev-1-4-4: Jongpill Lee
+	- Support RTC for S5P6442
+
+	Modified Files:
+		M       arch/arm/configs/smdk6442nfs_defconfig
+		M       arch/arm/plat-s3c/include/plat/regs-rtc.h
+		M       drivers/rtc/Kconfig
