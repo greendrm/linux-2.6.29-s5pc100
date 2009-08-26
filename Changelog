@@ -1805,3 +1805,15 @@ v2.6.29.4-dev-1-4-0: Jonghun Han
 v2.6.29.4-dev-1-4-1: Jinsung Yang
 	- Internal Release (2009.08.24)
 
+v2.6.29.4-dev-1-4-2: Jae-Cheol Lee
+	- Modify clock and power gating for s5pc110,
+	and Removed C100 regs definition in clock register header file.
+
+	Modified Files:
+		M	arch/arm/plat-s3c/clock.c
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc11x/irq-eint.c
+		M	arch/arm/plat-s5pc11x/pm.c
+		M	arch/arm/plat-s5pc11x/s5pc110-clock.c
