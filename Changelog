@@ -1805,3 +1805,12 @@ v2.6.29.4-dev-1-4-0: Jonghun Han
 v2.6.29.4-dev-1-4-1: Jinsung Yang
 	- Internal Release (2009.08.24)
 
+v2.6.29.4-dev-1-4-2: Jongpill Lee
+        - Support WDT for S5P6442
+
+        Modified Files:
+                M       arch/arm/mach-s5p6442/cpu.c
+                M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s3c/include/plat/regs-keypad.h
+                M	drivers/input/keyboard/s3c-keypad.h
+		M	drivers/watchdog/Kconfig
