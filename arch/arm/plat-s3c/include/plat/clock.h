@@ -11,7 +11,7 @@
 
 #include <linux/spinlock.h>
 
-#if defined(CONFIG_CPU_S5PC100)
+#if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 struct powerdomain {
 	volatile unsigned long	*pd_reg;
 	volatile unsigned long	*pd_stable_reg;
@@ -38,7 +38,7 @@ struct clk {
 	unsigned long	    (*round_rate)(struct clk *c, unsigned long rate);
 	int		    (*set_parent)(struct clk *c, struct clk *parent);
 
-#if defined(CONFIG_CPU_S5PC100)
+#if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 	struct powerdomain	*pd;
 #endif
 };

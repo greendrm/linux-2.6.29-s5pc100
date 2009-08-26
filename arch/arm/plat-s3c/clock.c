@@ -122,7 +122,7 @@ int clk_enable(struct clk *clk)
 
 	spin_lock(&clocks_lock);
 	if ((clk->usage++) == 0) {
-#if defined(CONFIG_CPU_S5PC100)
+#if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 		if (clk->pd != NULL) {
 			if (clk->pd->ref_count == 0)
 				(clk->pd->pd_set)(clk->pd, 1);
@@ -145,7 +145,7 @@ void clk_disable(struct clk *clk)
 
 	if ((--clk->usage) == 0) {
 		(clk->enable)(clk, 0);
-#if defined(CONFIG_CPU_S5PC100)
+#if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 		if (clk->pd != NULL) {
 			if (clk->pd->ref_count == 1)
 				(clk->pd->pd_set)(clk->pd, 0);

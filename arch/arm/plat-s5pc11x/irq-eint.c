@@ -27,6 +27,7 @@
 #include <mach/gpio.h>
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
+#include <plat/regs-clock.h>
 
 #define S5PC11X_GPIOREG(x)		(S5PC11X_VA_GPIO + (x))
 
@@ -157,6 +158,29 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	return 0;
 }
 
+/* s3c_irq_eint_set_wake
+ *
+ * This function controls external interrupt as a wakeup source from sleep.
+ * This feature should be called with care, because this also affects on 
+ * generating interrupt on normal mode. If eintX dosen't be used as a wakeup
+ * source but should generate interrupt on normal mode, before enterring
+ * sleep mode this function should be called to mask out eintX from wakeup sources,
+ * but after wakeup this function also should be called to enable generating interrupt.
+ */
+static int s3c_irq_eint_set_wake(unsigned int irq, unsigned int on)
+{
+	int offs = eint_offset(irq);
+	unsigned long mask_val = __raw_readl(S5P_EINT_WAKEUP_MASK);
+	
+	if (on) 
+		mask_val &=~(1<<offs);
+	else 
+		mask_val |= (1<<offs);
+
+	__raw_writel(mask_val, S5P_EINT_WAKEUP_MASK);
+
+	return 0;
+}
 
 static struct irq_chip s3c_irq_eint = {
 	.name		= "s3c-eint",
@@ -165,6 +189,7 @@ static struct irq_chip s3c_irq_eint = {
 	.mask_ack	= s3c_irq_eint_maskack,
 	.ack		= s3c_irq_eint_ack,
 	.set_type	= s3c_irq_eint_set_type,
+	.set_wake	= s3c_irq_eint_set_wake,
 };
 
 /* s3c_irq_demux_eint
