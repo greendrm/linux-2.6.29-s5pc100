@@ -148,7 +148,7 @@ static int s3cfb_map_video_memory(struct fb_info *fb)
 	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct s3cfb_window *win = fb->par;
 
-	if (win->path == DATA_PATH_FIFO)
+	if (win->path != DATA_PATH_DMA)
 		return 0;
 
 	fb->screen_base = dma_alloc_writecombine(fbdev->dev,
@@ -593,7 +593,9 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 
 	dev_dbg(fbdev->dev, "[fb%d] open fifo\n", win->id);
 
-	win->path = DATA_PATH_FIFO;
+	if (win->path == DATA_PATH_DMA)
+		win->path = DATA_PATH_FIFO;
+
 	win->local_channel = ch;
 
 	s3cfb_set_vsync_interrupt(fbdev, 1);
@@ -1155,7 +1157,7 @@ int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 
 	for (i = 0; i < pdata->nr_wins; i++) {
 		win = fbdev->fb[i]->par;
-		if (win->path == DATA_PATH_FIFO && win->suspend_fifo) {
+		if (win->path != DATA_PATH_DMA && win->suspend_fifo) {
 			if (win->suspend_fifo())
 				dev_info(fbdev->dev,
 					"failed to run the suspend for fifo\n");
@@ -1198,7 +1200,7 @@ int s3cfb_resume(struct platform_device *pdev)
 		fb = fbdev->fb[i];
 		win = fb->par;
 
-		if (win->path == DATA_PATH_FIFO && win->resume_fifo) {
+		if (win->path != DATA_PATH_DMA && win->resume_fifo) {
 			if (win->resume_fifo())
 				dev_info(fbdev->dev, 
 					"failed to run the resume for fifo\n");
