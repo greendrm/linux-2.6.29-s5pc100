@@ -189,21 +189,21 @@ static struct clk init_clocks_disable[] = {
 static struct clk init_clocks[] = {
 	/* Multimedia */
 	{
-		.name           = "fimc0",
+		.name           = "fimc",
 		.id             = 0,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
 		.pd		= &pd_cam,
 	}, {
-		.name           = "fimc1",
+		.name           = "fimc",
 		.id             = 1,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1,
 		.pd		= &pd_cam,
 	}, {
-		.name           = "fimc2",
+		.name           = "fimc",
 		.id             = 2,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,

@@ -85,10 +85,13 @@ overflow:
 
 void fimc_dma_free(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i)
 {
+	int total = bs->length[i] + bs->garbage[i];
 	mutex_lock(&ctrl->lock);
 
 	if (bs->base[i]) {
-		ctrl->mem.curr -= (bs->length[i] + bs->garbage[i]);
+		if (ctrl->mem.curr - total >= ctrl->mem.base)
+			ctrl->mem.curr -= total;
+
 		bs->base[i] = 0;
 		bs->length[i] = 0;
 		bs->garbage[i] = 0;
@@ -873,7 +876,6 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
-	struct clk *srclk;
 	int ret;
 
 	if (!fimc_dev) {
@@ -896,44 +898,15 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
-	/* fimc source clock */
-	srclk = clk_get(&pdev->dev, pdata->srclk_name);
-	if (IS_ERR(srclk)) {
-		dev_err(&pdev->dev,
-				"%s: failed to get source clock of fimc\n",
-				__func__);
-		goto err_clk_io;
-	}
-
-	/* fimc clock */
-	ctrl->clk = clk_get(&pdev->dev, pdata->clk_name);
-	if (IS_ERR(ctrl->clk)) {
-		dev_err(&pdev->dev, "%s: failed to get fimc clock source\n",
-			__func__);
-		goto err_clk_io;
-	}
-
-	/* set parent clock */
-	if (ctrl->clk->set_parent) {
-		ctrl->clk->parent = srclk;
-		ctrl->clk->set_parent(ctrl->clk, srclk);
-	}
-
-	/* set clockrate for fimc interface block */
-	if (ctrl->clk->set_rate) {
-		ctrl->clk->set_rate(ctrl->clk, pdata->clk_rate);
-		dev_info(&pdev->dev, "fimc set clock rate to %d\n",
-				pdata->clk_rate);
-	}
-
-	clk_enable(ctrl->clk);
+	if (pdata->clk_on)
+		pdata->clk_on(pdev, ctrl->clk);
 
 	/* V4L2 device-subdev registration */
 	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: v4l2 device register failed\n",
 			__func__);
-		goto err_clk_io;
+		goto err_v4l2;
 	}
 
 	/* things to initialize once */
@@ -969,7 +942,7 @@ err_global:
 	clk_disable(ctrl->clk);
 	clk_put(ctrl->clk);
 
-err_clk_io:
+err_v4l2:
 	fimc_unregister_controller(pdev);
 
 err_fimc:

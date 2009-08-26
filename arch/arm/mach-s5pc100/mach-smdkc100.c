@@ -586,9 +586,6 @@ static struct s3c_platform_camera __initdata camera_c = {
 
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
-	.srclk_name	= "dout_mpll",
-	.clk_name	= "sclk_fimc",
-	.clk_rate	= 133000000,
 	.default_cam	= CAMERA_PAR_A,
 	.camera		= { 
 		&camera_a, 

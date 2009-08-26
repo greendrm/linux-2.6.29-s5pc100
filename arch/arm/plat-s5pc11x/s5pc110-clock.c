@@ -875,7 +875,7 @@ static struct clksrc_clk clk_cam1 = {
 
 static struct clksrc_clk clk_fimc0 = {
 	.clk	= {
-		.name		= "sclk_fimc",
+		.name		= "lclk_fimc",
 		.id		= 0,
 		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
 		.enable		= s5pc11x_clk_ip0_ctrl,
@@ -894,7 +894,7 @@ static struct clksrc_clk clk_fimc0 = {
 
 static struct clksrc_clk clk_fimc1 = {
 	.clk	= {
-		.name		= "sclk_fimc",
+		.name		= "lclk_fimc",
 		.id		= 1,
 		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1,
 		.enable		= s5pc11x_clk_ip0_ctrl,
@@ -913,7 +913,7 @@ static struct clksrc_clk clk_fimc1 = {
 
 static struct clksrc_clk clk_fimc2 = {
 	.clk	= {
-		.name		= "sclk_fimc",
+		.name		= "lclk_fimc",
 		.id		= 2,
 		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2,
 		.enable		= s5pc11x_clk_ip0_ctrl,

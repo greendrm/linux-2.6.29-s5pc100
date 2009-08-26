@@ -19,4 +19,4 @@ struct platform_device; /* don't need the contents */
 #include <mach/gpio.h>
 #include <plat/gpio-cfg.h>
 
-void s3c_fimc2_cfg_gpio(struct platform_device *dev) { }
+void s3c_fimc2_cfg_gpio(struct platform_device *pdev) { }

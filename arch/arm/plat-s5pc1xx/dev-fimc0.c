@@ -41,9 +41,6 @@ struct platform_device s3c_device_fimc0 = {
 };
 
 static struct s3c_platform_fimc default_fimc0_data __initdata = {
-	.srclk_name	= "dout_mpll",
-	.clk_name	= "sclk_fimc",
-	.clk_rate	= 133000000,
 	.default_cam	= CAMERA_PAR_A,
 };
 
@@ -57,8 +54,12 @@ void __init s3c_fimc0_set_platdata(struct s3c_platform_fimc *pd)
 	npd = kmemdup(pd, sizeof(struct s3c_platform_fimc), GFP_KERNEL);
 	if (!npd)
 		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
-	else if (!npd->cfg_gpio)
+
+	if (!npd->cfg_gpio)
 		npd->cfg_gpio = s3c_fimc0_cfg_gpio;
+
+	if (!npd->clk_on)
+		npd->clk_on = s3c_fimc_clk_on;
 
 	s3c_device_fimc0.dev.platform_data = npd;
 }

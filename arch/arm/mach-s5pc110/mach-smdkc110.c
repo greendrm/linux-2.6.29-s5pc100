@@ -812,8 +812,8 @@ static int smdkc110_mipi_cam_power(int onoff)
  * 
 */
 #undef CAM_ITU_CH_A
-#undef S5K3BA_ENABLED
-#define S5K4BA_ENABLED
+#define S5K3BA_ENABLED
+#undef S5K4BA_ENABLED
 #undef S5K4EA_ENABLED
 #define S5K6AA_ENABLED
 
@@ -1039,9 +1039,6 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
-	.srclk_name	= "mout_mpll",
-	.clk_name	= "sclk_fimc",
-	.clk_rate	= 166000000,
 #if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
 	.default_cam	= CAMERA_CSI_C,
 #else
