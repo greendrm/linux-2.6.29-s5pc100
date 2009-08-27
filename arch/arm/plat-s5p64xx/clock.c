@@ -100,39 +100,29 @@ static int inline s5p64xx_gate(void __iomem *reg,
 }
 
 
-static int s5p64xx_clk_ip0_ctrl(struct clk *clk, int enable)
+int s5p64xx_clk_ip0_ctrl(struct clk *clk, int enable)
 {
 	return s5p64xx_gate(S5P_CLKGATE_IP0, clk, enable);
 }
 
-static int s5p64xx_clk_ip1_ctrl(struct clk *clk, int enable)
+int s5p64xx_clk_ip1_ctrl(struct clk *clk, int enable)
 {
 	return s5p64xx_gate(S5P_CLKGATE_IP1, clk, enable);
 }
 
-static int s5p64xx_clk_ip2_ctrl(struct clk *clk, int enable)
+int s5p64xx_clk_ip2_ctrl(struct clk *clk, int enable)
 {
 	return s5p64xx_gate(S5P_CLKGATE_IP2, clk, enable);
 }
 
-static int s5p64xx_clk_ip3_ctrl(struct clk *clk, int enable)
+int s5p64xx_clk_ip3_ctrl(struct clk *clk, int enable)
 {
 	return s5p64xx_gate(S5P_CLKGATE_IP3, clk, enable);
 }
 
-static int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable)
+int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable)
 {
 	return s5p64xx_gate(S5P_CLKGATE_IP4, clk, enable);
-}
-
-int s5p64xx_clk_sclk0_ctrl(struct clk *clk, int enable)
-{
-	return s5p64xx_gate(S5P_CLKGATE_SCLK0, clk, enable);
-}
-
-int s5p64xx_clk_sclk1_ctrl(struct clk *clk, int enable)
-{
-	return s5p64xx_gate(S5P_CLKGATE_SCLK1, clk, enable);
 }
 
 static struct clk init_clocks_disable[] = {
