@@ -1835,3 +1835,11 @@ v2.6.29.4-dev-1-4-4: Jongpill Lee
 		M       arch/arm/configs/smdk6442nfs_defconfig
 		M       arch/arm/plat-s3c/include/plat/regs-rtc.h
 		M       drivers/rtc/Kconfig
+
+v2.6.29.4-dev-1-4-5: Thomas Abraham
+
+	- The FIFO number to be used by endpoint should only be set only
+	  if Dedicated Endpoint FIFO is supported.
+
+	Modified Files:
+		M	drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
