@@ -260,7 +260,7 @@ static struct clk init_clocks[] = {
 		.enable         = s5pc11x_clk_ip1_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP1_USBOTG,
 	}, {
-		.name           = "usb_host",
+		.name           = "usb-host",
 		.id             = -1,
 		.parent         = &clk_h133,
 		.enable         = s5pc11x_clk_ip1_ctrl,
