@@ -1843,3 +1843,9 @@ v2.6.29.4-dev-1-4-5: Thomas Abraham
 
 	Modified Files:
 		M	drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+
+v2.6.29.4-dev-1-4-6: Jongpill Lee	
+	- Support Deep IDLE for S5PC110
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc1xx/pm.c
