@@ -718,6 +718,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #elif defined(CONFIG_SPI_CNTRLR_2)
 	&s3c_device_spi2,
 #endif
+	&s3c_device_usb_ohci,
 	&s3c_device_usb_ehci,
 	&s3c_device_usbgadget,
 	&s3c_device_cfcon,
@@ -1267,6 +1268,10 @@ void usb_host_clk_en(void) {
 
 	otg_clk = clk_get(NULL, "otg");
 	clk_enable(otg_clk);
+
+	if(readl(S5P_USB_PHY_CONTROL)&(0x1<<1)){
+		return;
+	}
 
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<1), S5P_USB_PHY_CONTROL);
 	//USB PHY1 Enable 

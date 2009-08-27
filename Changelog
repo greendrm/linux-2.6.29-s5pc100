@@ -1849,3 +1849,17 @@ v2.6.29.4-dev-1-4-6: Jongpill Lee
 		M       arch/arm/plat-s5pc11x/Kconfig
 		M       arch/arm/plat-s5pc11x/pm.c
 		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-4-7: Jingoo Han
+	- Implement the USB 2.0 HOST OHCI driver with S5PC110
+
+	Added Files:
+		A       drivers/usb/host/ohci-s5pc110.c
+
+	Modified Files:
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       drivers/usb/Kconfig
+		M       drivers/usb/host/ohci-hcd.c
+

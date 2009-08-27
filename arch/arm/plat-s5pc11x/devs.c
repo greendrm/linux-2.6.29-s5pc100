@@ -239,6 +239,36 @@ struct platform_device s3c_device_nand = {
 
 EXPORT_SYMBOL(s3c_device_nand);
 
+/* USB Host Controller OHCI */
+
+static struct resource s3c_usb__ohci_resource[] = {
+        [0] = {
+                .start = S5PC11X_PA_USB_OHCI ,
+                .end   = S5PC11X_PA_USB_OHCI  + S5PC11X_SZ_USB_OHCI - 1,
+                .flags = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start = IRQ_UHOST,
+                .end   = IRQ_UHOST,
+                .flags = IORESOURCE_IRQ,
+        }
+};
+
+static u64 s3c_device_usb_ohci_dmamask = 0xffffffffUL;
+
+struct platform_device s3c_device_usb_ohci = {
+        .name             = "s5pc110-ohci",
+        .id               = -1,
+        .num_resources    = ARRAY_SIZE(s3c_usb__ohci_resource),
+        .resource         = s3c_usb__ohci_resource,
+        .dev              = {
+                .dma_mask = &s3c_device_usb_ohci_dmamask,
+                .coherent_dma_mask = 0xffffffffUL
+        }
+};
+
+EXPORT_SYMBOL(s3c_device_usb_ohci);
+
 /* USB Host Controller EHCI */
 
 static struct resource s3c_usb__ehci_resource[] = {
