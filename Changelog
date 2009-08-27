@@ -1863,3 +1863,8 @@ v2.6.29.4-dev-1-4-7: Jingoo Han
 		M       drivers/usb/Kconfig
 		M       drivers/usb/host/ohci-hcd.c
 
+v2.6.29.4-dev-1-4-8: Changhwan Youn
+	- Fix wrong mmc minimum clock(mmc->f_min)
+
+	Modified Files:
+		drivers/mmc/host/sdhci.c	
