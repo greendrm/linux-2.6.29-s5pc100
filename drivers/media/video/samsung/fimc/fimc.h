@@ -386,6 +386,7 @@ extern int fimc_hwset_disable_lcdfifo(struct fimc_control *ctrl);
 extern int fimc_hwset_start_scaler(struct fimc_control *ctrl);
 extern int fimc_hwset_stop_scaler(struct fimc_control *ctrl);
 extern int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat);
+extern int fimc_hwset_intput_field(struct fimc_control *ctrl, enum v4l2_field field);
 extern int fimc_hwset_output_rgb(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_ext_rgb(struct fimc_control *ctrl, int enable);
 extern int fimc_hwset_enable_capture(struct fimc_control *ctrl);

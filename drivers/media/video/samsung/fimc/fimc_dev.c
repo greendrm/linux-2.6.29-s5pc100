@@ -6,6 +6,8 @@
  * 	http://www.samsung.com/sec/
  * Jinsung Yang, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
+ * Jonghun Han, Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
  *
  * Note: This driver supports common i2c client driver style
  * which uses i2c_board_info for backward compatibility and
@@ -1011,6 +1013,7 @@ module_exit(fimc_unregister);
 
 MODULE_AUTHOR("Dongsoo, Kim <dongsoo45.kim@samsung.com>");
 MODULE_AUTHOR("Jinsung, Yang <jsgood.yang@samsung.com>");
+MODULE_AUTHOR("Jonghun, Han <jonghun.han@samsung.com>");
 MODULE_DESCRIPTION("Samsung Camera Interface (FIMC) driver");
 MODULE_LICENSE("GPL");
 

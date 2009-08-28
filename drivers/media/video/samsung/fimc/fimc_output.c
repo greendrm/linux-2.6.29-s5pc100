@@ -23,6 +23,7 @@
 #include <plat/media.h>
 
 #include "fimc.h"
+#include "fimc-ipc.h"
 
 void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t *base)
 {
@@ -242,37 +243,47 @@ static int fimc_outdev_check_param(struct fimc_control *ctrl)
 	return ret;
 }
 
-static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt)
+static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt, enum v4l2_field field)
 {
 	fimc_hwset_input_burst_cnt(ctrl, 4);
-	fimc_hwset_input_yuv(ctrl, pixfmt);
 	fimc_hwset_input_colorspace(ctrl, pixfmt);
+	fimc_hwset_input_yuv(ctrl, pixfmt);
 	fimc_hwset_input_rgb(ctrl, pixfmt);
+	fimc_hwset_intput_field(ctrl, field);
 	fimc_hwset_ext_rgb(ctrl, 1);
 	fimc_hwset_input_addr_style(ctrl, pixfmt);
 }
 
-static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, u32 pixfmt)
+static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, struct v4l2_pix_format *pixfmt)
 {
-	fimc_hwset_output_colorspace(ctrl, pixfmt);
-	fimc_hwset_output_yuv(ctrl, pixfmt);
-	fimc_hwset_output_rgb(ctrl, pixfmt);
-	fimc_hwset_output_addr_style(ctrl, pixfmt);
+	fimc_hwset_output_colorspace(ctrl, pixfmt->pixelformat);
+	fimc_hwset_output_yuv(ctrl, pixfmt->pixelformat);
+	fimc_hwset_output_rgb(ctrl, pixfmt->pixelformat);
+	fimc_hwset_output_scan(ctrl, pixfmt);
+	fimc_hwset_output_addr_style(ctrl, pixfmt->pixelformat);
 }
 
 static void fimc_outdev_set_format(struct fimc_control *ctrl)
 {
-	u32 pixfmt = 0;
+	struct v4l2_pix_format pixfmt;
+	memset(&pixfmt, 0, sizeof(pixfmt));
 
-	pixfmt = ctrl->out->pix.pixelformat;
-	fimc_outdev_set_src_format(ctrl, pixfmt);
+	fimc_outdev_set_src_format(ctrl, ctrl->out->pix.pixelformat, ctrl->out->pix.field);
 
-	if (ctrl->out->fbuf.base)
-		pixfmt = ctrl->out->fbuf.fmt.pixelformat;
-	else 	/* FIFO mode */
-		pixfmt = V4L2_PIX_FMT_RGB32;
-	fimc_outdev_set_dst_format(ctrl, pixfmt);
+	if (ctrl->out->fbuf.base) {
+		pixfmt.pixelformat = ctrl->out->fbuf.fmt.pixelformat;
+		pixfmt.field = V4L2_FIELD_NONE;
+	} else {			/* FIFO mode */
+		if (ctrl->out->pix.field == V4L2_FIELD_NONE) {
+			pixfmt.pixelformat = V4L2_PIX_FMT_RGB32;
+			pixfmt.field = V4L2_FIELD_NONE;
+		} else if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
+			pixfmt.pixelformat = V4L2_PIX_FMT_YUV444;
+			pixfmt.field = V4L2_FIELD_INTERLACED_TB;
+		}
+	}
 
+	fimc_outdev_set_dst_format(ctrl, &pixfmt);
 }
 
 static void fimc_outdev_set_path(struct fimc_control *ctrl)
@@ -849,6 +860,20 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 	if (ret < 0)
 		return ret;
 
+#if 0
+	ret = fimc_outdev_ipc_init(ctrl);
+	if (ret < 0)
+		return ret;
+
+
+#else
+	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
+		ret = ipc_initip(ctrl->fb.lcd_hres, ctrl->fb.lcd_vres/2, IPC_2D);
+		if (ret < 0)
+			return ret;
+	} 
+#endif
+
 	return 0;
 }
 
@@ -930,7 +955,10 @@ static int fimc_start_fifo(struct fimc_control *ctrl)
 	}
 
 	/* Don't allocate the memory. */
-	ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 0);
+	if (ctrl->out->pix.field == V4L2_FIELD_NONE)
+		ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 0);
+	else if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+		ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 2);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "direct_ioctl(FBIO_ALLOC) fail\n");
 		return -EINVAL;
@@ -1045,7 +1073,18 @@ int fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 	case V4L2_CID_ROTATION:
 		c->value = ctrl->out->rotate;
 		break;
-
+	case V4L2_CID_HFLIP:
+		if (ctrl->out->flip & V4L2_CID_HFLIP)
+			c->value = 1;
+		else
+			c->value = 0;
+		break;
+	case V4L2_CID_VFLIP:
+		if (ctrl->out->flip & V4L2_CID_VFLIP)
+			c->value = 1;
+		else
+			c->value = 0;
+		break;
 	default:
 		dev_err(ctrl->dev, "Invalid control id: %d\n", c->id);
 		return -EINVAL;
@@ -1057,7 +1096,7 @@ int fimc_g_ctrl_output(void *fh, struct v4l2_control *c)
 int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
-	int ret = -1;
+	int ret = 0;
 
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running\n");
@@ -1068,7 +1107,19 @@ int fimc_s_ctrl_output(void *fh, struct v4l2_control *c)
 	case V4L2_CID_ROTATION:
 		ret = fimc_set_rot_degree(ctrl, c->value);
 		break;
+	case V4L2_CID_HFLIP:
+		if (c->value)
+			ctrl->out->flip = V4L2_CID_HFLIP;
+		else
+			ctrl->out->flip &= ~V4L2_CID_HFLIP;
+		break;
+	case V4L2_CID_VFLIP:
+		if (c->value)
+			ctrl->out->flip = V4L2_CID_VFLIP;
+		else
+			ctrl->out->flip &= ~V4L2_CID_VFLIP;
 
+		break;
 	default:
 		dev_err(ctrl->dev, "Invalid control id: %d\n", c->id);
 		ret = -EINVAL;
@@ -1307,6 +1358,9 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 			dev_err(ctrl->dev, "Fail: fimc_detach_in_queue\n");
 			return -EINVAL;
 		}
+
+		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+			ipc_on();
 
 		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
 

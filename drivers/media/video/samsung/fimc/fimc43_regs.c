@@ -283,6 +283,18 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg;
 
+	if (pixelformat == V4L2_PIX_FMT_YUV444) {
+		cfg = readl(ctrl->regs + S3C_CIEXTEN);
+		cfg |= S3C_CIEXTEN_YUV444_OUT;
+		writel(cfg, ctrl->regs + S3C_CIEXTEN);
+		
+		return 0;
+	} else {
+		cfg = readl(ctrl->regs + S3C_CIEXTEN);
+		cfg &= ~S3C_CIEXTEN_YUV444_OUT;
+		writel(cfg, ctrl->regs + S3C_CIEXTEN);
+	}
+
 	cfg = readl(ctrl->regs + S3C_CITRGFMT);
 	cfg &= ~S3C_CITRGFMT_OUTFORMAT_MASK;
 
@@ -627,6 +639,21 @@ int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_CISCCTRL_INRGB_FMT_RGB565;
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
+
+	return 0;
+}
+
+int fimc_hwset_intput_field(struct fimc_control *ctrl, enum v4l2_field field)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+	cfg &= ~S3C_MSCTRL_FIELD_MASK;
+
+	if (field == V4L2_FIELD_NONE)
+		cfg |= S3C_MSCTRL_FIELD_NORMAL;
+	else if (field == V4L2_FIELD_INTERLACED_TB)
+		cfg |= S3C_MSCTRL_FIELD_WEAVE;
+
+	writel(cfg, ctrl->regs + S3C_MSCTRL);
 
 	return 0;
 }
