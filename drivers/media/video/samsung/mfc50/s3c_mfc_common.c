@@ -1,5 +1,5 @@
 /*
- * drivers/media/video/samsung/mfc40/s3c_mfc_common.c
+ * drivers/media/video/samsung/mfc50/s3c_mfc_common.c
  *
  * C file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -38,7 +38,7 @@ MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 	chroma_size = Align(buf_size.chroma, 2*BUF_L_UNIT) * mfc_ctx->totalDPBCnt;	
 
 	/* 
-	 * Allocate chroma & (Mv in case of H264) buf 
+	 * Allocate chroma buf
 	 */
 	init_arg->out_frame_buf_size.chroma = chroma_size;	
 	
@@ -62,13 +62,13 @@ MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 	init_arg->out_p_addr.chroma = local_param.get_phys_addr.p_addr;	
 
 	/* 
-	 * Allocate luma buf 
+	 * Allocate luma buf & (Mv in case of H264) buf 
 	 */
 	init_arg->out_frame_buf_size.luma = luma_size;	
 	
 	memset(&local_param, 0, sizeof(local_param));
 	local_param.mem_alloc.buff_size = Align(luma_size, 2*BUF_S_UNIT);
-	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; // peter, it chould be checked in related to luma cases			
+	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; // It chould be checked in related to luma cases			
 
 	mfc_ctx->port_no = 1;		
 	ret_code = s3c_mfc_get_virt_addr(mfc_ctx, &(local_param));
@@ -108,7 +108,7 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 	if (mfc_ctx->MfcCodecType == H264_DEC) {
 		mv_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height/4, BUF_S_UNIT), \
 					64*BUF_L_UNIT);
-		buf_size.chroma += mv_plane_sz;
+		buf_size.luma += mv_plane_sz;
 	} 
 
 	return buf_size;
@@ -161,7 +161,7 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 	memset(&local_param, 0, sizeof(local_param));
 	/* In IOCTL_MFC_GET_IN_BUF(), Cur Y/C buf start addr should be 64KB aligned */
 	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.mv_ref_yc, 64*BUF_L_UNIT);
-	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; // peter, it chould be checked in related to luma cases			
+	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; 
 
 	mfc_ctx->port_no = 1;		
 	ret_code = s3c_mfc_get_virt_addr(mfc_ctx, &(local_param));

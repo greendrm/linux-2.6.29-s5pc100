@@ -1,5 +1,5 @@
 /*
- * drivers/media/video/samsung/mfc40/s3c_mfc_intr.c
+ * drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
  *
  * C file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -38,7 +38,6 @@ static int s3c_mfc_wait_polling(unsigned int polling_reg_addr)
 
 
 	for (i = 0; (i < waitLoop) && (reg_data == 0) ;i++) {
-	//for (i = 0; (reg_data == 0) ;i++) {	// peter for debug	
 		mdelay(1);
 		reg_data = readl(s3c_mfc_sfr_virt_base + polling_reg_addr);
 	}
@@ -55,18 +54,7 @@ static int s3c_mfc_wait_polling(unsigned int polling_reg_addr)
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 {
 	unsigned int ret_val = 1; 
-/*
-	R2H_CMD_EMPTY = 0,
-	R2H_CMD_OPEN_INSTANCE_RET = 1,	
-	R2H_CMD_CLOSE_INSTANCE_RET = 2,
-	R2H_CMD_ERROR_RET = 3,
-	R2H_CMD_SEQ_DONE_RET = 4,
-	R2H_CMD_FRAME_DONE_RET = 5,
-	R2H_CMD_SYS_INIT_RET = 8,
-	R2H_CMD_FW_STATUS_RET = 9,
-	R2H_CMD_EDFU_INIT_RET = 16,
-	R2H_CMD_DECODE_ERR_RET = 32	
-*/
+
 	switch(command) {
 	/*	
 	case R2H_CMD_FW_STATUS_RET :
@@ -77,6 +65,7 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 	case R2H_CMD_OPEN_INSTANCE_RET :	
 	case R2H_CMD_SYS_INIT_RET :
 	case R2H_CMD_SEQ_DONE_RET :
+	case R2H_CMD_INIT_BUFFERS_RET :	
 	case R2H_CMD_FRAME_DONE_RET :
 	case R2H_CMD_CLOSE_INSTANCE_RET :	
 		if (interruptible_sleep_on_timeout(&s3c_mfc_wait_queue, 5000) == 0) {
@@ -84,7 +73,7 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 			mfc_err("Interrupt Time Out(%d)\n", command);
 			break;
 		}
-		/* peter, error handling should be inserted */
+		/* error handling should be inserted */
 
 		ret_val = s3c_mfc_int_type;
 		s3c_mfc_int_type = 0;
