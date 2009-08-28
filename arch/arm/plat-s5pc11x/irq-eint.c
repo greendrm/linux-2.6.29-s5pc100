@@ -18,6 +18,7 @@
 #include <linux/io.h>
 
 #include <asm/hardware/vic.h>
+#include <asm/delay.h>
 
 #include <plat/regs-irqtype.h>
 
@@ -248,7 +249,6 @@ static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 {
 	__raw_writel(eint_irq_to_bit(irq), S5PC11X_EINTPEND(eint_pend_reg(irq)));
 }
-
 
 static void s3c_irq_vic_eint_maskack(unsigned int irq)
 {
