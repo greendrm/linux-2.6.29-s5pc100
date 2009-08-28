@@ -1903,3 +1903,10 @@ v2.6.29.4-dev-1-4-10: Jongpill Lee
 		M       arch/arm/plat-s5pc11x/irq-eint.c
 		M       drivers/net/dm9000.c
 		M       drivers/net/dm9000.h
+
+v2.6.29.4-dev-1-4-11: Changhwan Youn
+	- Add CONFIG_MMC_SDHCI_S3C definition to smdkc100XXX_defconfig  
+
+	Modified Files:
+		M	arch/arm/configs/smdkc100mtd_defconfig
+		M	arch/arm/configs/smdkc100nfs_defconfig
