@@ -1398,7 +1398,7 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 	int ret = -1;
 	struct fimc_buf *buf = (struct fimc_buf *)b->m.userptr;
 
-	dev_info(ctrl->dev, "%s: queued idx = %d\n", __func__, b->index);
+	dev_dbg(ctrl->dev, "%s: queued idx = %d\n", __func__, b->index);
 
 	if (b->index > ctrl->out->buf_num) {
 		dev_err(ctrl->dev, "The index is out of bounds" 
@@ -1466,7 +1466,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 
 	b->index = index;
 
-	dev_info(ctrl->dev, "%s: dqueued idx = %d\n", __func__, b->index);
+	dev_dbg(ctrl->dev, "%s: dqueued idx = %d\n", __func__, b->index);
 
 	return ret;
 }

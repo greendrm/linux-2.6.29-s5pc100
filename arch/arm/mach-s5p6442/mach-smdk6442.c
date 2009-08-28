@@ -335,14 +335,7 @@ static void ams320_cfg_gpio(struct platform_device *pdev)
 		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
 	}
 
-	/* drive strength to max */
-	writel(0xffffffff, S5P64XX_VA_GPIO + 0x12c);
-	writel(0xffffffff, S5P64XX_VA_GPIO + 0x14c);
-	writel(0xffffffff, S5P64XX_VA_GPIO + 0x16c);
-	writel(0x000000ff, S5P64XX_VA_GPIO + 0x18c);
-
 	writel(0x10, S5P_MDNIE_SEL);
-
 	udelay(200);
 
 	s3c_gpio_cfgpin(S5P64XX_GPH3(5), S3C_GPIO_SFN(1));	/* LCD RESET */

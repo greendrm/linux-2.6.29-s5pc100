@@ -1835,3 +1835,78 @@ v2.6.29.4-dev-1-4-4: Jongpill Lee
 		M       arch/arm/configs/smdk6442nfs_defconfig
 		M       arch/arm/plat-s3c/include/plat/regs-rtc.h
 		M       drivers/rtc/Kconfig
+
+v2.6.29.4-dev-1-4-5: Thomas Abraham
+
+	- The FIFO number to be used by endpoint should only be set only
+	  if Dedicated Endpoint FIFO is supported.
+
+	Modified Files:
+		M	drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+
+v2.6.29.4-dev-1-4-6: Jongpill Lee	
+	- Support Deep IDLE for S5PC110
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/pm.c
+		M       arch/arm/plat-s5pc1xx/pm.c
+
+v2.6.29.4-dev-1-4-7: Jingoo Han
+	- Implement the USB 2.0 HOST OHCI driver with S5PC110
+
+	Added Files:
+		A       drivers/usb/host/ohci-s5pc110.c
+
+	Modified Files:
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       drivers/usb/Kconfig
+		M       drivers/usb/host/ohci-hcd.c
+
+v2.6.29.4-dev-1-4-8: Changhwan Youn
+	- Fix wrong mmc minimum clock(mmc->f_min)
+
+	Modified Files:
+		drivers/mmc/host/sdhci.c	
+
+v2.6.29.4-dev-1-4-9: Jaeryul Oh
+	- Modified for MFC driver on SMDKC110 by the MFC fw change
+
+	Modified Files :
+		M	arch/arm/plat-s5pc11x/include/plat/regs-mfc.h
+		M	drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_common.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_common.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_errorno.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_fw.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_fw.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_intr.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_logmsg.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_memory.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_memory.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
+		M   	drivers/media/video/samsung/mfc50/s3c_mfc_types.h
+
+v2.6.29.4-dev-1-4-10: Jongpill Lee
+	- Support NFS and DM9000 for S5PC110
+
+	Modified Files:
+		M       arch/arm/configs/smdkc110nfs_defconfig
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/irq-eint.c
+		M       drivers/net/dm9000.c
+		M       drivers/net/dm9000.h
+
+v2.6.29.4-dev-1-4-11: Changhwan Youn
+	- Add CONFIG_MMC_SDHCI_S3C definition to smdkc100XXX_defconfig  
+
+	Modified Files:
+		M	arch/arm/configs/smdkc100mtd_defconfig
+		M	arch/arm/configs/smdkc100nfs_defconfig
