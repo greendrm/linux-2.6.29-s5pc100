@@ -70,6 +70,29 @@ static struct powerdomain pd_tv = {
 	.pd_set		= powerdomain_set,
 };
 
+static struct powerdomain pd_mfc = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
+	.pd_ctrlbit	= (0x1<<1),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
+
+static struct powerdomain pd_g3d = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
+	.pd_ctrlbit	= (0x1<<2),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
+
+static struct powerdomain pd_audio = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
+	.pd_ctrlbit	= (0x1<<5),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
 
 struct clk clk_27m = {
 	.name		= "clk_27m",
@@ -151,109 +174,101 @@ static int s5pc1xx_setrate_sclk_cam(struct clk *clk, unsigned long rate)
 
 static int s5pc1xx_clk_d00_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D00_RESERVED|S5P_CLKGATE_D00_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D00, clk, enable);
 }
 
 static int s5pc1xx_clk_d01_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D01_RESERVED|S5P_CLKGATE_D01_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D01, clk, enable);
 }
 
 static int s5pc1xx_clk_d02_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D02_RESERVED|S5P_CLKGATE_D02_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D02, clk, enable);
 }
 
 static int s5pc1xx_clk_d10_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D10_RESERVED|S5P_CLKGATE_D10_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D10, clk, enable);
 }
 
 static int s5pc1xx_clk_d11_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D11_RESERVED|S5P_CLKGATE_D11_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D11, clk, enable);
 }
 
 static int s5pc1xx_clk_d12_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D12_RESERVED|S5P_CLKGATE_D12_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D12, clk, enable);
 }
 
 static int s5pc1xx_clk_d13_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D13_RESERVED|S5P_CLKGATE_D13_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D13, clk, enable);
 }
 
 static int s5pc1xx_clk_d14_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D14_RESERVED|S5P_CLKGATE_D14_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D14, clk, enable);
 }
 
 static int s5pc1xx_clk_d15_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D15_RESERVED|S5P_CLKGATE_D15_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D15, clk, enable);
 }
 
 int s5pc1xx_clk_d20_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_D20_RESERVED|S5P_CLKGATE_D20_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_CLKGATE_D20, clk, enable);
 }
 
 int s5pc1xx_sclk0_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_SCLK0_RESERVED|S5P_CLKGATE_SCLK0_ALWAYS_ON))
+		return 0;
+
 	return s5pc1xx_clk_gate(S5P_SCLKGATE0, clk, enable);
 }
 
 int s5pc1xx_sclk1_ctrl(struct clk *clk, int enable)
 {
+	if ((clk->ctrlbit)&(S5P_CLKGATE_SCLK1_RESERVED|S5P_CLKGATE_SCLK1_ALWAYS_ON))
+		return 0;
 	return s5pc1xx_clk_gate(S5P_SCLKGATE1, clk, enable);
 }
 
 static struct clk init_clocks_disable[] = {
-	{
-		.name		= "mipi-dsim",
-		.id		= -1,
-		.parent		= &clk_h,
-		.enable		= s5pc1xx_clk_d11_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D11_DSI,
-	}, {
-		.name		= "mipi-csis",
-		.id		= -1,
-		.parent		= &clk_h,
-		.enable		= s5pc1xx_clk_d11_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D11_CSI,
-	}, {
-		.name		= "ccan",
-		.id		= 0,
-		.parent		= &clk_p,
-		.enable		= s5pc1xx_clk_d14_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D14_CCAN0,
-	}, {
-		.name		= "ccan",
-		.id		= 1,
-		.parent		= &clk_p,
-		.enable		= s5pc1xx_clk_d14_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D14_CCAN1,
-	}, {
-		.name		= "keypad",
-		.id		= -1,
-		.parent		= &clk_p,
-		.enable		= s5pc1xx_clk_d15_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D15_KEYIF,
-	}, {
-		.name		= "hclkd2",
-		.id		= -1,
-		.parent		= NULL,
-		.enable		= s5pc1xx_clk_d20_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D20_HCLKD2,
-	}, {
-		.name		= "otg",
-		.id		= -1,
-		.parent		= &clk_h,
-		.enable		= s5pc1xx_clk_d10_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D10_USBOTG,
-	},
-};
+	};
 
 static struct clk init_clocks[] = {
 	/* System1 (D0_0) devices */
@@ -287,6 +302,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_hd0,
 		.enable		= s5pc1xx_clk_d00_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D00_G2D,
+		.pd		= &pd_lcd,
 	}, {
 		.name		= "secss",
 		.id		= -1,
@@ -398,6 +414,12 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d10_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D10_HSMMC2,
+	}, {
+		.name		= "otg",
+		.id		= -1,
+		.parent		= &clk_h,
+		.enable		= s5pc1xx_clk_d10_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D10_USBOTG,
 	},
 
 	/* Multimedia1 (D1_1) devices */
@@ -449,12 +471,27 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_G3D,
+		.pd		= &pd_g3d,
 	}, {
 		.name		= "rot",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D11_ROTATOR,
+		.pd		= &pd_lcd,
+	}, {
+		.name		= "mipi-dsim",
+		.id		= -1,
+		.parent		= &clk_h,
+		.enable		= s5pc1xx_clk_d11_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D11_DSI,
+		.pd		= &pd_lcd,
+	}, {
+		.name		= "mipi-csis",
+		.id		= -1,
+		.parent		= &clk_h,
+		.enable		= s5pc1xx_clk_d11_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D11_CSI,
 		.pd		= &pd_lcd,
 	},
 
@@ -493,6 +530,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d12_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D12_MFC,
+		.pd		= &pd_mfc,
 	},
 
 	/* System (D1_3) devices */
@@ -619,6 +657,18 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d14_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D14_HSIRX,
+	}, {
+		.name		= "ccan",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc1xx_clk_d14_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D14_CCAN0,
+	}, {
+		.name		= "ccan",
+		.id		= 1,
+		.parent		= &clk_p,
+		.enable		= s5pc1xx_clk_d14_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D14_CCAN1,
 	},
 
 	/* Audio (D1_5) devices */
@@ -677,14 +727,29 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc1xx_clk_d15_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D15_KEYIF,
 	}, {
-		.name		= "cg",
+		.name		= "keypad",
 		.id		= -1,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
-		.ctrlbit	= S5P_CLKGATE_D15_CG,
-	},
+		.ctrlbit	= S5P_CLKGATE_D15_KEYIF,
+	}, 
 
 	/* Audio (D2_0) devices: all disabled */
+	{
+		.name		= "hclkd2",
+		.id		= -1,
+		.parent		= NULL,
+		.enable		= s5pc1xx_clk_d20_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D20_HCLKD2,
+		.pd		= &pd_audio,
+	}, {
+		.name		= "i2sd2",
+		.id		= -1,
+		.parent		= NULL,
+		.enable		= s5pc1xx_clk_d20_ctrl,
+		.ctrlbit	= S5P_CLKGATE_D20_I2SD2,
+		.pd		= &pd_audio,
+	},
 
 	/* Special Clocks 1 */
 	{
@@ -774,11 +839,54 @@ static struct clk *clks[] __initdata = {
 	&clk_54m,
 };
 
+/* Disable all IP's clock and MM power domain. This will decrease power 
+ * consumption in normal mode.
+ * In kernel booting sequence, basically disable all IP's clock and MM power domain. 
+ * If D/D uses specific clock, use clock API.
+ */
+void s5pc1xx_init_clocks_power_disabled(void)
+{
+	struct clk clk_dummy;
+	unsigned long shift = 0;
+
+	/* Disable all clock except essential clock */
+	do {
+		clk_dummy.ctrlbit = (1<<shift);
+		s5pc1xx_clk_d00_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d01_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d02_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d10_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d11_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d12_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d13_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d14_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d15_ctrl(&clk_dummy, 0);
+		s5pc1xx_clk_d20_ctrl(&clk_dummy, 0);
+
+		s5pc1xx_sclk0_ctrl(&clk_dummy, 0);
+		s5pc1xx_sclk1_ctrl(&clk_dummy, 0);
+
+		shift ++;
+		
+	} while (shift < 32);
+
+	/* Disable all power domain */
+	powerdomain_set(&pd_lcd, 0);
+	powerdomain_set(&pd_tv, 0);
+	powerdomain_set(&pd_mfc, 0);
+	powerdomain_set(&pd_g3d, 0);
+	powerdomain_set(&pd_audio, 0);
+	
+}
+
+
 void __init s5pc1xx_register_clocks(void)
 {
 	struct clk *clkp;
 	int ret;
 	int ptr;
+
+	s5pc1xx_init_clocks_power_disabled();
 
 	s3c24xx_register_clocks(clks, ARRAY_SIZE(clks));
 
