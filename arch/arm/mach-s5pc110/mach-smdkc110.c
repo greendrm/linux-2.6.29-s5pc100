@@ -1102,22 +1102,23 @@ static void __init smdkc110_map_io(void)
 
 static void __init smdkc110_dm9000_set(void)
 {
-#if 0
+#if 1
 	unsigned int tmp;
 
-	tmp = 0xfffffff0;
+	tmp = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
+	//tmp =((0<<28)|(4<<24)|(13<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
 	tmp &= ~(0xf<<20);
-	tmp |= (0xd<<20);
+	tmp |= (0x2<<20);
 	__raw_writel(tmp, S5PC11X_SROM_BW);
 
 
 	tmp = __raw_readl(S5PC11X_MP01CON);
-	tmp     &= ~(0xf<<20);
+	tmp &= ~(0xf<<20);
 	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
-/* #else */
+#else
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
