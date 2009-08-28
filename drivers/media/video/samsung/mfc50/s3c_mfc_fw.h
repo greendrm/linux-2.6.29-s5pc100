@@ -14,7 +14,7 @@
 #ifndef _S3C_MFC_FW_H_
 #define _S3C_MFC_FW_H_
 
-extern unsigned char s3c_mfc_fw_code[198336];
+extern unsigned char s3c_mfc_fw_code[207532];
 
 #endif /* _S3C_MFC_FW_H_ */
 

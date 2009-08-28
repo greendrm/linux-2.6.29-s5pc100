@@ -1,5 +1,5 @@
 /*
- * drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.c
+ * drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.c
  *
  * C file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -311,7 +311,6 @@ int s3c_mfc_init_buffer_manager(void)
 	memset(free_node, 0x00, sizeof(s3c_mfc_free_mem_t));
 	free_node->start_addr = (port_no) ? s3c_mfc_get_dpb_luma_buf_phys_addr() : 
 					s3c_mfc_get_data_buf_phys_addr();
-	//free_node->size = (port_no) ? MFC_DATA_DRAM1_BUF_SIZE : MFC_DATA_DRAM0_BUF_SIZE;
 	free_node->size = (port_no) ? s3c_get_media_memsize_node(S3C_MDEV_MFC, 1) : 
 					s3c_get_media_memsize(S3C_MDEV_MFC);	
 	// peter, it should be changed
@@ -451,7 +450,7 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr());
 		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + vir_mmap_size/2 +
 				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));		
-	} else {	// peter, check whether p_allocMem->v_addr is aligned 4KB
+	} else {	// Check whether p_allocMem->v_addr is aligned 4KB
 		p_allocMem->v_addr = s3c_mfc_get_data_buf_virt_addr() + 
 				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr());
 		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + 

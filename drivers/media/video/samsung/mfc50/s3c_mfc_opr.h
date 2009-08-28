@@ -1,5 +1,5 @@
 /* 
- * drivers/media/video/samsung/mfc40/s3c_mfc_opr.h
+ * drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -45,9 +45,11 @@
 int s3c_mfc_load_firmware(void);
 MFC_ERROR_CODE s3c_mfc_init_hw(void);
 MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);

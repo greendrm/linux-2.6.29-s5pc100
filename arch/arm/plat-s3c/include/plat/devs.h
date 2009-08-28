@@ -29,6 +29,7 @@ extern struct platform_device s3c_device_timer[];
 
 extern struct platform_device s3c_device_fb;
 extern struct platform_device s3c_device_usb;
+extern struct platform_device s3c_device_usb_ohci;
 extern struct platform_device s3c_device_usb_ehci;
 extern struct platform_device s3c_device_lcd;
 extern struct platform_device s3c_device_g2d;

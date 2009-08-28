@@ -198,40 +198,39 @@
 #define S3C_FIMV_SYS_MEM_ADR		S3C_FIMVREG(0x0600) /* firmware buffer */
 #define S3C_FIMV_CPB_BUF_ADR		S3C_FIMVREG(0x0604) /* stream buffer */
 #define S3C_FIMV_DESC_BUF_ADR		S3C_FIMVREG(0x0608) /* descriptor buffer */
+#define S3C_FIMV_LUMA_ADR		S3C_FIMVREG(0x0700) /* Luma0 ~ Luma18 */
+#define S3C_FIMV_CHROMA_ADR		S3C_FIMVREG(0x0600) /* Chroma0 ~ Chroma18 */
 /* H264 decoding */
-#define S3C_FIMV_VERT_NB_MV_ADR		S3C_FIMVREG(0x060c) /* vertical neighbor motion vector */
-#define S3C_FIMV_VERT_NB_IP_ADR		S3C_FIMVREG(0x0610) /* neighbor pixels for intra pred */
-#define S3C_FIMV_H264_LUMA_ADR		S3C_FIMVREG(0x0700) /* Luma0 ~ Luma18 */
-#define S3C_FIMV_H264_CHROMA_ADR	S3C_FIMVREG(0x0614) /* Chroma0 ~ Chroma18 */
-#define S3C_FIMV_MV_ADR			S3C_FIMVREG(0x0660) /* H264 motion vector */
+#define S3C_FIMV_VERT_NB_MV_ADR		S3C_FIMVREG(0x068c) /* vertical neighbor motion vector */
+#define S3C_FIMV_VERT_NB_IP_ADR		S3C_FIMVREG(0x0690) /* neighbor pixels for intra pred */
+#define S3C_FIMV_MV_ADR			S3C_FIMVREG(0x0780) /* H264 motion vector */
 /* H263/MPEG4/MPEG2/VC-1/ decoding */
-#define S3C_FIMV_NB_DCAC_ADR		S3C_FIMVREG(0x060c) /* neighbor AC/DC coeff. buffer */
-#define S3C_FIMV_UP_NB_MV_ADR		S3C_FIMVREG(0x0610) /* upper neighbor motion vector buffer */
-#define S3C_FIMV_SA_MV_ADR		S3C_FIMVREG(0x0614) /* subseq. anchor motion vector buffer */
-#define S3C_FIMV_OT_LINE_ADR		S3C_FIMVREG(0x0618) /* overlap transform line buffer */
-#define S3C_FIMV_BITPLANE3_ADR		S3C_FIMVREG(0x061c) /* bitplane3 addr */
-#define S3C_FIMV_BITPLANE2_ADR		S3C_FIMVREG(0x0620) /* bitplane2 addr */
-#define S3C_FIMV_BITPLANE1_ADR		S3C_FIMVREG(0x0624) /* bitplane1 addr */
-#define S3C_FIMV_SP_ADR			S3C_FIMVREG(0x0628) /* syntax parser addr */
-#define S3C_FIMV_LUMA_ADR		S3C_FIMVREG(0x0700) /* Luma0 ~ Luma5 */
-#define S3C_FIMV_CHROMA_ADR		S3C_FIMVREG(0x0630) /* Chroma0 ~ Chroma5 */
+#define S3C_FIMV_NB_DCAC_ADR		S3C_FIMVREG(0x068c) /* neighbor AC/DC coeff. buffer */
+#define S3C_FIMV_UP_NB_MV_ADR		S3C_FIMVREG(0x0690) /* upper neighbor motion vector buffer */
+#define S3C_FIMV_SA_MV_ADR		S3C_FIMVREG(0x0694) /* subseq. anchor motion vector buffer */
+#define S3C_FIMV_OT_LINE_ADR		S3C_FIMVREG(0x0698) /* overlap transform line buffer */
+#define S3C_FIMV_BITPLANE3_ADR		S3C_FIMVREG(0x069c) /* bitplane3 addr */
+#define S3C_FIMV_BITPLANE2_ADR		S3C_FIMVREG(0x06a0) /* bitplane2 addr */
+#define S3C_FIMV_BITPLANE1_ADR		S3C_FIMVREG(0x06a4) /* bitplane1 addr */
+#define S3C_FIMV_SP_ADR			S3C_FIMVREG(0x06a8) /* syntax parser addr */
+
 /* Encoder register */
-#define S3C_FIMV_ENC_UP_MV_ADR		S3C_FIMVREG(0x0610) /* upper motion vector addr */
-#define S3C_FIMV_ENC_COZERO_FLAG_ADR	S3C_FIMVREG(0x0614) /* direct cozero flag addr */
-#define S3C_FIMV_ENC_UP_INTRA_MD_ADR	S3C_FIMVREG(0x0618) /* upper intra MD addr */
-#define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x061c) /* upper intra PRED addr */
-#define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0620) /* entropy engine's neighbor inform and AC/DC coeff. */
-#define S3C_FIMV_ENC_CUR_LUMA_ADR	S3C_FIMVREG(0x0700) /* current Luma addr */
-#define S3C_FIMV_ENC_CUR_CHROMA_ADR	S3C_FIMVREG(0x0704) /* current Chroma addr */
-#define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x0600) /* ref0 Luma addr */
-#define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0710) /* ref0 Chroma addr */
-#define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0708) /* ref1 Luma addr */
-#define S3C_FIMV_ENC_REF1_CHROMA_ADR	S3C_FIMVREG(0x0714) /* ref1 Chroma addr */
-#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0604) /* ref2 Luma addr */
-#define S3C_FIMV_ENC_REF2_CHROMA_ADR	S3C_FIMVREG(0x0718) /* ref2 Chroma addr */
-#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x070c) /* ref3 Luma addr */
-#define S3C_FIMV_ENC_REF3_CHROMA_ADR	S3C_FIMVREG(0x071c) /* ref3 Chroma addr */
-#define S3C_FIMV_ENC_MV_BUF_ADR		S3C_FIMVREG(0x0720) /* motion vector buf addr */
+#define S3C_FIMV_ENC_UP_MV_ADR		S3C_FIMVREG(0x0600) /* upper motion vector addr */
+#define S3C_FIMV_ENC_COZERO_FLAG_ADR	S3C_FIMVREG(0x0610) /* direct cozero flag addr */
+#define S3C_FIMV_ENC_UP_INTRA_MD_ADR	S3C_FIMVREG(0x0608) /* upper intra MD addr */
+#define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x060c) /* upper intra PRED addr */
+#define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
+//#define S3C_FIMV_ENC_CUR_LUMA_ADR	S3C_FIMVREG(0x0718) /* current Luma addr */
+//#define S3C_FIMV_ENC_CUR_CHROMA_ADR	S3C_FIMVREG(0x071c) /* current Chroma addr */
+#define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
+#define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0700) /* ref0 Chroma addr */
+#define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0620) /* ref1 Luma addr */
+#define S3C_FIMV_ENC_REF1_CHROMA_ADR	S3C_FIMVREG(0x0704) /* ref1 Chroma addr */
+#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0710) /* ref2 Luma addr */
+#define S3C_FIMV_ENC_REF2_CHROMA_ADR	S3C_FIMVREG(0x0708) /* ref2 Chroma addr */
+#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */
+#define S3C_FIMV_ENC_REF3_CHROMA_ADR	S3C_FIMVREG(0x070c) /* ref3 Chroma addr */
+//#define S3C_FIMV_ENC_MV_BUF_ADR		S3C_FIMVREG(0x0720) /* motion vector buf addr */
 
 /* Codec common register */
 #define S3C_FIMV_ENC_HSIZE_PX		S3C_FIMVREG(0x0818) /* frame width at encoder */
@@ -265,12 +264,16 @@
 #define S3C_FIMV_SI_CH1_DESC_ADR	S3C_FIMVREG(0x204c) /* addr of descriptor buf */
 #define S3C_FIMV_SI_CH1_CPB_SIZE	S3C_FIMVREG(0x2058) /* max size of coded pic. buf */
 #define S3C_FIMV_SI_CH1_DESC_SIZE	S3C_FIMVREG(0x205c) /* max size of descriptor buf */
+#define S3C_FIMV_SI_CH1_RELEASE_BUF	S3C_FIMVREG(0x2060) /* release buffer register */
+#define S3C_FIMV_SI_CH1_HOST_WR_ADR	S3C_FIMVREG(0x2064) /* Shared memory address */
+#define S3C_FIMV_SI_CH1_DPB_CONF_CTRL 	S3C_FIMVREG(0x2068) /* DPB Configuration Control Register */
 
 #define S3C_FIMV_SI_CH2_SB_ST_ADR	S3C_FIMVREG(0x2084) /* start addr of stream buf */
 #define S3C_FIMV_SI_CH2_SB_FRM_SIZE	S3C_FIMVREG(0x2088) /* size of stream buf */
 #define S3C_FIMV_SI_CH2_DESC_ADR	S3C_FIMVREG(0x208c) /* addr of descriptor buf */
 #define S3C_FIMV_SI_CH2_CPB_SIZE	S3C_FIMVREG(0x2098) /* max size of coded pic. buf */
 #define S3C_FIMV_SI_CH2_DESC_SIZE	S3C_FIMVREG(0x209c) /* max size of descriptor buf */
+#define S3C_FIMV_SI_CH2_RELEASE_BUF	S3C_FIMVREG(0x20a0) /* release buffer register */
 
 #define S3C_FIMV_SI_DIVX311_HRESOL	S3C_FIMVREG(0x2050) /* horizontal resolution */
 #define S3C_FIMV_SI_DIVX311_VRESOL	S3C_FIMVREG(0x2054) /* vertical resolution */

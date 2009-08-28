@@ -1,5 +1,5 @@
 /* 
- * drivers/media/video/samsung/mfc40/s3c_mfc_buffer_manager.h
+ * drivers/media/video/samsung/mfc50/s3c_mfc_buffer_manager.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
