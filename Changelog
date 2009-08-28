@@ -1892,3 +1892,14 @@ v2.6.29.4-dev-1-4-9: Jaeryul Oh
 		M   	drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
 		M   	drivers/media/video/samsung/mfc50/s3c_mfc_types.h
 
+v2.6.29.4-dev-1-4-10: Jongpill Lee
+	- Support NFS and DM9000 for S5PC110
+
+	Modified Files:
+		M       arch/arm/configs/smdkc110nfs_defconfig
+		M       arch/arm/mach-s5pc110/include/mach/map.h
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/devs.c
+		M       arch/arm/plat-s5pc11x/irq-eint.c
+		M       drivers/net/dm9000.c
+		M       drivers/net/dm9000.h
