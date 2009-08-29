@@ -505,7 +505,7 @@ void s5pc11x_init_clocks_power_disabled(void)
 
 	/* Disable all power domain */
 	powerdomain_set(&pd_lcd, 0);
-	powerdomain_set(&pd_tv, 0);
+	powerdomain_set(&pd_tv, 1);
 	powerdomain_set(&pd_mfc, 0);
 	powerdomain_set(&pd_cam, 0);
 	powerdomain_set(&pd_audio, 0);
