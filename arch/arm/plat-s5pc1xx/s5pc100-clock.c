@@ -130,6 +130,8 @@ static int s5pc1xx_setparent_clksrc(struct clk *clk, struct clk *parent)
 		}
 
 	if (src_nr >= 0) {
+		clk->parent = parent;
+
 		clksrc &= ~sclk->mask;
 		clksrc |= src_nr << sclk->shift;
 

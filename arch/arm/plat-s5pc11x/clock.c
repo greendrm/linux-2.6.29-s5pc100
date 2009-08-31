@@ -102,6 +102,14 @@ static struct powerdomain pd_irom = {
 	.pd_set		= powerdomain_set,
 };
 
+static struct powerdomain pd_g3d = {
+	.pd_reg		= S5P_NORMAL_CFG,
+	.pd_stable_reg	= S5P_BLK_PWR_STAT,
+	.pd_ctrlbit	= (0x1<<2),
+	.ref_count	= 0,
+	.pd_set		= powerdomain_set,
+};
+
 struct clk clk_27m = {
 	.name		= "clk_27m",
 	.id		= -1,
@@ -250,6 +258,7 @@ static struct clk init_clocks[] = {
 		.parent         = &clk_h200,
 		.enable         = s5pc11x_clk_ip0_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP0_G3D,
+		.pd		= &pd_g3d,
 	}, 
 
 	/* Connectivity and Multimedia */
@@ -509,7 +518,7 @@ void s5pc11x_init_clocks_power_disabled(void)
 	powerdomain_set(&pd_mfc, 0);
 	powerdomain_set(&pd_cam, 0);
 	powerdomain_set(&pd_audio, 0);
-	
+	powerdomain_set(&pd_g3d, 0);
 }
 
 void __init s5pc11x_register_clocks(void)
