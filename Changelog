@@ -1910,3 +1910,7 @@ v2.6.29.4-dev-1-4-11: Changhwan Youn
 	Modified Files:
 		M	arch/arm/configs/smdkc100mtd_defconfig
 		M	arch/arm/configs/smdkc100nfs_defconfig
+
+v2.6.29.4-dev-1-4-12: Byungjae Lee
+	- Added New Tag for s5pc110(2009.08.31)
+
