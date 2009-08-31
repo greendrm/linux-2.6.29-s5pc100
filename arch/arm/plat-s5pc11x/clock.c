@@ -35,18 +35,18 @@ static int powerdomain_set(struct powerdomain *pd, int enable)
 	void __iomem *reg = (void __iomem *)(pd->pd_reg);
 	void __iomem *stable_reg = (void __iomem *)(pd->pd_stable_reg);
 	unsigned long reg_dat;
-		
+
 	if (IS_ERR(pd) || pd == NULL)
 		return -EINVAL;
-	
+
 	reg_dat = __raw_readl(reg);
 
 	if (enable) {
 		__raw_writel(reg_dat|ctrlbit, reg);
 		do {
-			
+
 		} while(!(__raw_readl(stable_reg)&ctrlbit));
-		
+
 	} else {
 		__raw_writel(reg_dat &~(ctrlbit), reg);
 	}
@@ -155,7 +155,7 @@ int s5pc11x_clk_ip2_ctrl(struct clk *clk, int enable)
 {
 	if ((clk->ctrlbit)&(S5P_CLKGATE_IP2_RESERVED|S5P_CLKGATE_IP2_ALWAYS_ON))
 		return 0;
-	
+
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP2, clk, enable);
 }
 
@@ -163,7 +163,7 @@ int s5pc11x_clk_ip3_ctrl(struct clk *clk, int enable)
 {
 	if ((clk->ctrlbit)&(S5P_CLKGATE_IP3_RESERVED|S5P_CLKGATE_IP3_ALWAYS_ON))
 		return 0;
-	
+
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP3, clk, enable);
 }
 
@@ -171,7 +171,7 @@ int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable)
 {
 	if ((clk->ctrlbit)&(S5P_CLKGATE_IP4_RESERVED|S5P_CLKGATE_IP4_ALWAYS_ON))
 		return 0;
-	
+
 	return s5pc11x_clk_gate(S5P_CLKGATE_IP4, clk, enable);
 }
 
@@ -191,7 +191,7 @@ int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable)
 }
 
 static struct clk init_clocks_disable[] = {
-	
+
 };
 
 static struct clk init_clocks[] = {
@@ -329,6 +329,12 @@ static struct clk init_clocks[] = {
                 .parent         = &clk_h133,
                 .enable         = s5pc11x_clk_ip1_ctrl,
                 .ctrlbit        = S5P_CLKGATE_IP1_CFCON,
+        },  {
+                .name           = "nandxl",
+                .id             = 0,
+                .parent         = &clk_h133,
+                .enable         = s5pc11x_clk_ip1_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP1_NANDXL,
         },
 
 	/* Connectivity */
@@ -356,8 +362,8 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_h133,
 		.enable		= s5pc11x_clk_ip2_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC3,
-        }, 
-        
+        },
+
 	/* Peripherals */
 	{
 		.name		= "systimer",
@@ -476,10 +482,10 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S2 is v3.2 */
-	}, 
+	},
 
 
-	
+
 
 };
 
@@ -489,9 +495,9 @@ static struct clk *clks[] __initdata = {
 	&clk_27m,
 };
 
-/* Disable all IP's clock and MM power domain. This will decrease power 
+/* Disable all IP's clock and MM power domain. This will decrease power
  * consumption in normal mode.
- * In kernel booting sequence, basically disable all IP's clock and MM power domain. 
+ * In kernel booting sequence, basically disable all IP's clock and MM power domain.
  * If D/D uses specific clock, use clock API.
  */
 void s5pc11x_init_clocks_power_disabled(void)
@@ -509,7 +515,7 @@ void s5pc11x_init_clocks_power_disabled(void)
 		s5pc11x_clk_ip4_ctrl(&clk_dummy, 0);
 
 		shift ++;
-		
+
 	} while (shift < 32);
 
 	/* Disable all power domain */
