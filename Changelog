@@ -1914,3 +1914,13 @@ v2.6.29.4-dev-1-4-11: Changhwan Youn
 v2.6.29.4-dev-1-4-12: Byungjae Lee
 	- Added New Tag for s5pc110(2009.08.31)
 
+v2.6.29.4-dev-1-4-13: Hatim Ali
+	- Added support for external clock in SPI on SMDKC110
+
+	Modified Files:
+		M 	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M   	arch/arm/plat-s5pc11x/dev-spi.c
+		M	arch/arm/plat-s5pc11x/s5pc110-clock.c
+		M	drivers/spi/Kconfig
+		M	drivers/spi/spi_s3c.h
+

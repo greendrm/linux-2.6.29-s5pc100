@@ -613,7 +613,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
         },
 #endif
 
-#if defined(CONFIG_SPI_CNTRLR_2)
 /* For MMC-SPI using GPIO BitBanging. MMC connected to SPI CNTRL 2 as slave 0. */
 #if defined (CONFIG_MMC_SPI_GPIO)
 #define SPI_GPIO_DEVNUM 4
@@ -628,7 +627,7 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .chip_select     = 0,
                 .controller_data = S5PC11X_GPH1(0),
         },
-#else
+#elif defined(CONFIG_SPI_CNTRLR_2)
         [4] = {
                 .modalias        = "mmc_spi", 	/* MMC SPI */
                 .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
@@ -638,7 +637,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .irq             = IRQ_SPI2,
                 .chip_select     = 0,
         },
-#endif
 #endif	
 };
 

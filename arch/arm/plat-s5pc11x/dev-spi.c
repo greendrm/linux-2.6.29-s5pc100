@@ -20,10 +20,20 @@
 #include <plat/cpu.h>
 #include <plat/irqs.h>
 
-#if 1
+#if 0
 #define dbg_printk(x...)	printk(x)
 #else
 #define dbg_printk(x...)	do{}while(0)
+#endif
+
+#if defined(CONFIG_SPICLK_EXT_MOUT_EPLL)
+#define SPICLK_SRC "mout_epll"
+
+#elif defined(CONFIG_SPICLK_EXT_MOUT_MPLL)
+#define SPICLK_SRC "mout_mpll"
+
+#elif defined(CONFIG_SPICLK_EXT_MOUT_VPLL)
+#define SPICLK_SRC "mout_vpll"
 #endif
 
 static int smi_getclcks(struct s3c_spi_mstr_info *smi)
@@ -44,6 +54,58 @@ static int smi_getclcks(struct s3c_spi_mstr_info *smi)
 	}
 	dbg_printk("%s:%d Got clk=spi\n", __func__, __LINE__);
 
+#if defined(CONFIG_SPICLK_EXT)
+	cp = clk_get(&smi->pdev->dev, "spi-bus");
+	if(IS_ERR(cp)){
+		printk("Unable to get parent clock(%s)!\n", "spi-bus");
+		if(smi->clk == NULL){
+			clk_disable(cspi);
+			clk_put(cspi);
+		}
+		return -EBUSY;
+	}
+	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, "spi-bus");
+
+	cm = clk_get(&smi->pdev->dev, SPICLK_SRC);
+	if(IS_ERR(cm)){
+		printk("Unable to get %s\n", SPICLK_SRC);
+		clk_put(cp);
+		return -EBUSY;
+	}
+	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, SPICLK_SRC);
+	if(clk_set_parent(cp, cm)){
+		printk("failed to set %s as the parent of %s\n", SPICLK_SRC, "spi-bus");
+		clk_put(cm);
+		clk_put(cp);
+		return -EBUSY;
+	}
+	dbg_printk("Set %s as the parent of %s\n", SPICLK_SRC, "spi-bus");
+	
+#if defined(CONFIG_SPICLK_EXT_MOUT_EPLL) /* MOUTepll through EPLL */
+	cf = clk_get(&smi->pdev->dev, "fout_epll");
+	if(IS_ERR(cf)){
+		printk("Unable to get fout_epll\n");
+		clk_put(cm);
+		clk_put(cp);
+		return -EBUSY;
+	}
+	dbg_printk("Got fout_epll\n");
+	dbg_printk("clk-rate of fout_epll is %lu \n",clk_get_rate(cf));
+	if(clk_set_parent(cm, cf)){
+		printk("failed to set FOUTepll as parent of %s\n", SPICLK_SRC);
+		clk_put(cf);
+		clk_put(cm);
+		clk_put(cp);
+		return -EBUSY;
+	}
+	dbg_printk("Set FOUTepll as parent of %s\n", SPICLK_SRC);
+	clk_put(cf);
+#endif
+	clk_put(cm);
+
+	smi->prnt_clk = cp;
+	
+#endif
 	smi->clk = cspi;
 	return 0;
 }
