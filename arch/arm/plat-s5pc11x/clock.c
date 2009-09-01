@@ -418,13 +418,19 @@ static struct clk init_clocks[] = {
 		.id		= 1,
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C_HDMI_DDC,
 	}, {
 		.name		= "i2c",
 		.id		= 2,
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
+	}, {
+		.name		= "i2c",
+		.id		= 3,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C_HDMI_PHY,
 	}, {
                 .name           = "spi",
                 .id             = 0,
