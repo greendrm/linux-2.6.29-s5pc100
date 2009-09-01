@@ -1117,10 +1117,12 @@ static struct clk_sources clkset_i2sclkd2 = {
 	.nr_sources	= ARRAY_SIZE(clkset_i2sclkd2_list),
 };
 
+extern struct powerdomain pd_audio;
 static struct clksrc_clk clk_i2sclkd2 = {
 	.clk	= {
 		.name		= "i2sclkd2",
 		.id		= -1,
+		.pd		= &pd_audio,
 		.ctrlbit        = S5P_CLKGATE_D20_I2SD2,
 		.enable		= s5pc1xx_clk_d20_ctrl,
 		.set_parent	= s5pc1xx_setparent_clksrc,
