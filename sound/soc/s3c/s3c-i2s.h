@@ -11,23 +11,7 @@
 #ifndef S3C_I2S_H_
 #define S3C_I2S_H_
 
-#define USE_AP_MASTER   1 // 1: AP Master Mode, 0: Codec Master Mode
-
-#if USE_AP_MASTER
-#define USE_SCLK_AUDIO
-//#define USE_EPLL - not working
-//#define USE_I2SCDCLK - not working
-//#define USE_SEMI_MASTER
-#else
-#define USE_SCLK_AUDIO
-//#define USE_EPLL - Not Working
-//#define USE_I2SCDCLK
-#endif
-
-#ifdef USE_SEMI_MASTER
-#define USE_SCLK_AUDIO
-#define USE_I2SCDCLK
-#endif
+#define USE_CLKAUDIO	1 /* use it for LPMP3 mode */
 
 /* Clock dividers */
 #define S3C_DIV_MCLK	0
@@ -111,9 +95,9 @@
 #define S3C_IISMOD_TXRX		(2<<8)
 
 #define S3C_IISMOD_IMSMASK		(3<<10)
-#define S3C_IISMOD_MSTAUDIOBUSCLK		(0<<10)
-#define S3C_IISMOD_MSTI2SCLK	(1<<10)
-#define S3C_IISMOD_SLVAUDIOBUSCLK	(2<<10)
+#define S3C_IISMOD_MSTPCLK		(0<<10)
+#define S3C_IISMOD_MSTCLKAUDIO	(1<<10)
+#define S3C_IISMOD_SLVPCLK		(2<<10)
 #define S3C_IISMOD_SLVI2SCLK	(3<<10)
 
 #define S3C_IISMOD_CDCLKCON		(1<<12)
@@ -203,13 +187,12 @@
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
 #define PCLKCLK			"i2s_v50"
-
-#if defined(SND_SMDKC100_WM8580)
-#define EXTCLK			"i2sclkd2" // - C100
+#define EXTCLK			"i2sclkd2"
+#ifdef CONFIG_SND_WM8580_MASTER /* ?? */
+#define EXTPRNT "iis_cdclk0"
 #else
-#define EXTCLK			"sclk_audio0"
+#define EXTPRNT "fout_epll"
 #endif
-
 #define PLBK_CHAN		6
 #define S3C_DESC		"S3C AP I2S-V5.0 Interface"
 

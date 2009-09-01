@@ -38,7 +38,8 @@
 /* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
  * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
  * Also, this value must be aligned at KB bounday (multiple of 1024). */
-#define LP_DMA_PERIOD (103 * 1024)
+#define LP_DMA_PERIOD (105 * 1024) //when LCD is enabled
+//#define LP_DMA_PERIOD (125 * 1024)   //when LCD is disabled
 
 struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
 
@@ -608,6 +609,7 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_params = s3c_pcm_hw_params_lp;
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_free = s3c_pcm_hw_free_lp;
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->prepare = s3c_pcm_prepare_lp;
+
 		/* Configure Playback Channel */
 		/* LP-Audio is not for playing clicks and tones.
 		 * It is for lengthy audio playback where the user isn't 
