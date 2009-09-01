@@ -98,7 +98,7 @@ static int s3c6400_serial_resetport(struct uart_port *port,
 	return 0;
 }
 
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 static struct s3c24xx_uart_info s5p_uart_inf[] = {
 	[0] = {
 		.name		= "Samsung S5PC110 UART0",
@@ -174,17 +174,17 @@ static struct s3c24xx_uart_info s5p_uart_inf = {
 };
 #endif
 
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 static int uart_port;
 #endif
 /* device management */
 static int s5p_serial_probe(struct platform_device *dev)
 {
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 	int ret;
 #endif
 	dbg("s5p_serial_probe: dev=%p\n", dev);
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 	ret = s3c24xx_serial_probe(dev, &s5p_uart_inf[uart_port]);
 	uart_port++;
 	return ret;
@@ -202,7 +202,7 @@ static struct platform_driver s5p_serial_drv = {
 	},
 };
 
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 s3c24xx_console_init(&s5p_serial_drv, s5p_uart_inf);
 #else
 s3c24xx_console_init(&s5p_serial_drv, &s5p_uart_inf);
@@ -210,7 +210,7 @@ s3c24xx_console_init(&s5p_serial_drv, &s5p_uart_inf);
 
 static int __init s5p_serial_init(void)
 {
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 	return s3c24xx_serial_init(&s5p_serial_drv, s5p_uart_inf);
 #else
 	return s3c24xx_serial_init(&s5p_serial_drv, &s5p_uart_inf);

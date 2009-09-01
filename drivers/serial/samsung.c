@@ -1702,7 +1702,7 @@ static int s3c24xx_serial_init_ports(struct s3c24xx_uart_info *info)
 
 	for (i = 0; i < CONFIG_SERIAL_SAMSUNG_UARTS; 
 				i++, ptr++, platdev_ptr++) {
-#if defined(CONFIG_CPU_S5PC110)
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 		s3c24xx_serial_init_port(ptr, &info[i], *platdev_ptr);
 #else
 		s3c24xx_serial_init_port(ptr, info, *platdev_ptr);
