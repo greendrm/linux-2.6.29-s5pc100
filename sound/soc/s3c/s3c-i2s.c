@@ -325,7 +325,8 @@ static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct 
 
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_RESUME:
-		break;
+		if(s3c_i2s_pdat.lp_mode)
+			break;
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		if (s3c_i2s.slave) {
@@ -340,7 +341,8 @@ static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct 
 			s3c_snd_txctrl(1);
 		break;
 	case SNDRV_PCM_TRIGGER_SUSPEND:
-		break;
+		if(s3c_i2s_pdat.lp_mode)
+			break;
 	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
