@@ -365,8 +365,14 @@ static struct clk_sources clkset_spi = {
 };
 
 static struct clk *clkset_uart_list[] = {
-	&clk_mout_epll.clk,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
 	NULL,
 	NULL,
 };

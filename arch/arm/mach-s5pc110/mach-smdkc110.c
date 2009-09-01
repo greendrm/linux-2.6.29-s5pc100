@@ -95,12 +95,22 @@ extern void s3c_sdhci_set_platdata(void);
 #endif
 
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
-        [0] = {
-                .name           = "pclk",
-                .divisor        = 1,
-                .min_baud       = 0,
-                .max_baud       = 0,
-        },
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+/* HS-UART Clock using SCLK */
+	[0] = {
+		.name		= "uclk1",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#else
+	[0] = {
+		.name		= "pclk",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#endif
 };
 
 static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
@@ -1096,6 +1106,10 @@ static void __init smdkc110_map_io(void)
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
 	s3c24xx_init_clocks(24000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+	/* got to have a high enough uart source clock for higher speeds */
+	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
+#endif
 	s5pc11x_reserve_bootmem();
 }
 
