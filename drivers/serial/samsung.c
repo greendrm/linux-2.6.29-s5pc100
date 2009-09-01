@@ -1496,9 +1496,16 @@ EXPORT_SYMBOL_GPL(s3c24xx_serial_remove);
 
 #ifdef CONFIG_PM
 
+#if defined(CONFIG_CPU_S5PC110)
+unsigned int ucon_reg;
+#endif
+
 static int s3c24xx_serial_suspend(struct platform_device *dev, pm_message_t state)
 {
 	struct uart_port *port = s3c24xx_dev_to_port(&dev->dev);
+#if defined(CONFIG_CPU_S5PC110)
+		ucon_reg = rd_regl(port, S3C2410_UCON);
+#endif
 
 	if (port)
 		uart_suspend_port(&s3c24xx_uart_drv, port);
@@ -1517,6 +1524,9 @@ static int s3c24xx_serial_resume(struct platform_device *dev)
 		clk_disable(ourport->clk);
 
 		uart_resume_port(&s3c24xx_uart_drv, port);
+#if defined(CONFIG_CPU_S5PC110)
+		wr_regl(port, S3C2410_UCON, ucon_reg);
+#endif
 	}
 
 	return 0;
@@ -1688,7 +1698,11 @@ static int s3c24xx_serial_init_ports(struct s3c24xx_uart_info *info)
 	platdev_ptr = s3c24xx_uart_devs;
 
 	for (i = 0; i < CONFIG_SERIAL_SAMSUNG_UARTS; i++, ptr++, platdev_ptr++) {
+#if defined(CONFIG_CPU_S5PC110)
+		s3c24xx_serial_init_port(ptr, &info[i], *platdev_ptr);
+#else
 		s3c24xx_serial_init_port(ptr, info, *platdev_ptr);
+#endif
 	}
 
 	return 0;

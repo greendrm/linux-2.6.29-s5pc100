@@ -58,9 +58,11 @@ static int s3c6400_serial_getsource(struct uart_port *port,
 	clk->divisor = 1;
 
 	switch (ucon & S3C6400_UCON_CLKMASK) {
+#if !defined(CONFIG_CPU_S5PC110) && !defined(CONFIG_CPU_S5P6442)
 	case S3C6400_UCON_UCLK0:
 		clk->name = "uclk0";
 		break;
+#endif
 
 	case S3C6400_UCON_UCLK1:
 		clk->name = "uclk1";
@@ -96,6 +98,66 @@ static int s3c6400_serial_resetport(struct uart_port *port,
 	return 0;
 }
 
+#if defined(CONFIG_CPU_S5PC110)
+static struct s3c24xx_uart_info s5p_uart_inf[] = {
+	[0] = {
+		.name		= "Samsung S5PC110 UART0",
+		.type		= PORT_S3C6400,
+		.fifosize	= 256,
+		.rx_fifomask	= S3C2410_UFSTAT_RXMASK,
+		.rx_fifoshift	= S3C2410_UFSTAT_RXSHIFT,
+		.rx_fifofull	= S3C2410_UFSTAT_RXFULL,
+		.tx_fifofull	= S3C2410_UFSTAT_TXFULL,
+		.tx_fifomask	= S3C2410_UFSTAT_TXMASK,
+		.tx_fifoshift	= S3C2410_UFSTAT_TXSHIFT,
+		.get_clksrc	= s3c6400_serial_getsource,
+		.set_clksrc	= s3c6400_serial_setsource,
+		.reset_port	= s3c6400_serial_resetport,
+	},
+        [1] = {
+                .name           = "Samsung S5PC110 UART1",
+                .type           = PORT_S3C6400,
+                .fifosize       = 64,
+                .rx_fifomask    = S3C2410_UFSTAT_RXMASK,
+                .rx_fifoshift   = S3C2410_UFSTAT_RXSHIFT,
+                .rx_fifofull    = S3C2410_UFSTAT_RXFULL,
+                .tx_fifofull    = S3C2410_UFSTAT_TXFULL,
+                .tx_fifomask    = S3C2410_UFSTAT_TXMASK,
+                .tx_fifoshift   = S3C2410_UFSTAT_TXSHIFT,
+                .get_clksrc     = s3c6400_serial_getsource,
+                .set_clksrc     = s3c6400_serial_setsource,
+                .reset_port     = s3c6400_serial_resetport,
+        },
+        [2] = {
+                .name           = "Samsung S5PC110 UART2",
+                .type           = PORT_S3C6400,
+                .fifosize       = 16,
+                .rx_fifomask    = S3C2410_UFSTAT_RXMASK,
+                .rx_fifoshift   = S3C2410_UFSTAT_RXSHIFT,
+                .rx_fifofull    = S3C2410_UFSTAT_RXFULL,
+                .tx_fifofull    = S3C2410_UFSTAT_TXFULL,
+                .tx_fifomask    = S3C2410_UFSTAT_TXMASK,
+                .tx_fifoshift   = S3C2410_UFSTAT_TXSHIFT,
+                .get_clksrc     = s3c6400_serial_getsource,
+                .set_clksrc     = s3c6400_serial_setsource,
+                .reset_port     = s3c6400_serial_resetport,
+        },
+        [3] = {
+                .name           = "Samsung S5PC110 UART3",
+                .type           = PORT_S3C6400,
+                .fifosize       = 16,
+                .rx_fifomask    = S3C2410_UFSTAT_RXMASK,
+                .rx_fifoshift   = S3C2410_UFSTAT_RXSHIFT,
+                .rx_fifofull    = S3C2410_UFSTAT_RXFULL,
+                .tx_fifofull    = S3C2410_UFSTAT_TXFULL,
+                .tx_fifomask    = S3C2410_UFSTAT_TXMASK,
+                .tx_fifoshift   = S3C2410_UFSTAT_TXSHIFT,
+                .get_clksrc     = s3c6400_serial_getsource,
+                .set_clksrc     = s3c6400_serial_setsource,
+                .reset_port     = s3c6400_serial_resetport,
+        },
+};
+#else
 static struct s3c24xx_uart_info s5p_uart_inf = {
 	.name		= "Samsung S5PC100 UART",
 	.type		= PORT_S3C6400,
@@ -110,12 +172,25 @@ static struct s3c24xx_uart_info s5p_uart_inf = {
 	.set_clksrc	= s3c6400_serial_setsource,
 	.reset_port	= s3c6400_serial_resetport,
 };
+#endif
 
+#if defined(CONFIG_CPU_S5PC110)
+static int uart_port;
+#endif
 /* device management */
 static int s5p_serial_probe(struct platform_device *dev)
 {
+#if defined(CONFIG_CPU_S5PC110)
+	int ret;
+#endif
 	dbg("s5p_serial_probe: dev=%p\n", dev);
+#if defined(CONFIG_CPU_S5PC110)
+	ret = s3c24xx_serial_probe(dev, &s5p_uart_inf[uart_port]);
+	uart_port++;
+	return ret;
+#else
 	return s3c24xx_serial_probe(dev, &s5p_uart_inf);
+#endif
 }
 
 static struct platform_driver s5p_serial_drv = {
@@ -127,11 +202,19 @@ static struct platform_driver s5p_serial_drv = {
 	},
 };
 
+#if defined(CONFIG_CPU_S5PC110)
+s3c24xx_console_init(&s5p_serial_drv, s5p_uart_inf);
+#else
 s3c24xx_console_init(&s5p_serial_drv, &s5p_uart_inf);
+#endif
 
 static int __init s5p_serial_init(void)
 {
+#if defined(CONFIG_CPU_S5PC110)
+	return s3c24xx_serial_init(&s5p_serial_drv, s5p_uart_inf);
+#else
 	return s3c24xx_serial_init(&s5p_serial_drv, &s5p_uart_inf);
+#endif
 }
 
 static void __exit s5p_serial_exit(void)
