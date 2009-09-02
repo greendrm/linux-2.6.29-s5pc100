@@ -8,10 +8,10 @@
  * Modified for AMD Alchemy Au1200 EHC
  *  by K.Boge <karsten.boge@amd.com>
  *
- * Modified for SAMSUNG S5pc110 EHCI
+ * Modified for SAMSUNG s5pc110 EHCI
  *  by Jin-goo Han <jg1.han@samsung.com>
  *
- * Modified for SAMSUNG S5pc110 OHCI
+ * Modified for SAMSUNG s5pc110 OHCI
  *  by Jin-goo Han <jg1.han@samsung.com>
  *
  * This file is licenced under the GPL.
@@ -103,8 +103,9 @@ static int ohci_hcd_s5pc110_drv_probe(struct platform_device *pdev)
 	struct usb_hcd  *hcd = NULL;
 	int retval = 0;
 
-	if (usb_disabled())
+	if (usb_disabled()) {
 		return -ENODEV;
+	}
 
 	if (pdev->resource[1].flags != IORESOURCE_IRQ) {
 		dev_err(&pdev->dev,"resource[1] is not IORESOURCE_IRQ.\n");
