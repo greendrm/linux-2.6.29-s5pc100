@@ -589,7 +589,7 @@ static void __init smdk6442_machine_init(void)
 
 	platform_add_devices(smdk6442_devices, ARRAY_SIZE(smdk6442_devices));
 
-//	s5p6442_pm_init();
+	s5p6442_pm_init();
 
 //	smdk_backlight_register();
 
