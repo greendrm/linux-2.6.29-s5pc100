@@ -6,6 +6,8 @@
  * 	http://www.samsung.com/sec/
  * Jinsung Yang, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
+ * Jonghun Han, Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
  *
  * Note: This driver supports common i2c client driver style
  * which uses i2c_board_info for backward compatibility and
@@ -85,10 +87,13 @@ overflow:
 
 void fimc_dma_free(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i)
 {
+	int total = bs->length[i] + bs->garbage[i];
 	mutex_lock(&ctrl->lock);
 
 	if (bs->base[i]) {
-		ctrl->mem.curr -= (bs->length[i] + bs->garbage[i]);
+		if (ctrl->mem.curr - total >= ctrl->mem.base)
+			ctrl->mem.curr -= total;
+
 		bs->base[i] = 0;
 		bs->length[i] = 0;
 		bs->garbage[i] = 0;
@@ -279,10 +284,16 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 
 static int fimc_unregister_controller(struct platform_device *pdev)
 {
+	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
 	int id = pdev->id;
 
+	pdata = to_fimc_plat(&pdev->dev);
 	ctrl = get_fimc_ctrl(id);
+	
+	if (pdata->clk_off)
+		pdata->clk_off(pdev, ctrl->clk);
+
 	iounmap(ctrl->regs);
 	memset(ctrl, 0, sizeof(*ctrl));
 
@@ -873,7 +884,6 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
-	struct clk *srclk;
 	int ret;
 
 	if (!fimc_dev) {
@@ -896,44 +906,15 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
-	/* fimc source clock */
-	srclk = clk_get(&pdev->dev, pdata->srclk_name);
-	if (IS_ERR(srclk)) {
-		dev_err(&pdev->dev,
-				"%s: failed to get source clock of fimc\n",
-				__func__);
-		goto err_clk_io;
-	}
-
-	/* fimc clock */
-	ctrl->clk = clk_get(&pdev->dev, pdata->clk_name);
-	if (IS_ERR(ctrl->clk)) {
-		dev_err(&pdev->dev, "%s: failed to get fimc clock source\n",
-			__func__);
-		goto err_clk_io;
-	}
-
-	/* set parent clock */
-	if (ctrl->clk->set_parent) {
-		ctrl->clk->parent = srclk;
-		ctrl->clk->set_parent(ctrl->clk, srclk);
-	}
-
-	/* set clockrate for fimc interface block */
-	if (ctrl->clk->set_rate) {
-		ctrl->clk->set_rate(ctrl->clk, pdata->clk_rate);
-		dev_info(&pdev->dev, "fimc set clock rate to %d\n",
-				pdata->clk_rate);
-	}
-
-	clk_enable(ctrl->clk);
+	if (pdata->clk_on)
+		pdata->clk_on(pdev, ctrl->clk);
 
 	/* V4L2 device-subdev registration */
 	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: v4l2 device register failed\n",
 			__func__);
-		goto err_clk_io;
+		goto err_v4l2;
 	}
 
 	/* things to initialize once */
@@ -969,7 +950,7 @@ err_global:
 	clk_disable(ctrl->clk);
 	clk_put(ctrl->clk);
 
-err_clk_io:
+err_v4l2:
 	fimc_unregister_controller(pdev);
 
 err_fimc:
@@ -981,8 +962,10 @@ static int fimc_remove(struct platform_device *pdev)
 {
 	fimc_unregister_controller(pdev);
 
-	kfree(fimc_dev);
-	fimc_dev = NULL;
+	if (fimc_dev) {
+		kfree(fimc_dev);
+		fimc_dev = NULL;
+	}
 
 	return 0;
 }
@@ -1030,6 +1013,7 @@ module_exit(fimc_unregister);
 
 MODULE_AUTHOR("Dongsoo, Kim <dongsoo45.kim@samsung.com>");
 MODULE_AUTHOR("Jinsung, Yang <jsgood.yang@samsung.com>");
+MODULE_AUTHOR("Jonghun, Han <jonghun.han@samsung.com>");
 MODULE_DESCRIPTION("Samsung Camera Interface (FIMC) driver");
 MODULE_LICENSE("GPL");
 

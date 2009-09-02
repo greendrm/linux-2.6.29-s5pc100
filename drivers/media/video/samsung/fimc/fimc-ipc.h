@@ -18,7 +18,6 @@
 #define info(args...)	do { printk(KERN_INFO S3C_IPC_NAME ": " args); } while (0)
 #define err(args...)	do { printk(KERN_ERR  S3C_IPC_NAME ": " args); } while (0)
 
-
 typedef enum {
 	DISABLED,		
 	ENABLED

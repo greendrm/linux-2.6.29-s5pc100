@@ -51,3 +51,8 @@ config SND_S5PC100_SOC_UNIVERSAL_AK4671
 	  with the AK4671.
 
 endchoice
+
+config  SND_WM8580_MASTER
+	bool "WM8580 Codec is I2S Master"
+	depends on SND_SMDKC110_WM8580 || SND_SMDKC100_WM8580
+	default n

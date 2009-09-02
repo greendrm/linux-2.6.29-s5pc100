@@ -41,9 +41,9 @@
 
 #include "s5p_tv.h"
 
-//#ifdef COFIG_TVOUT_DBG
+#ifdef COFIG_TVOUT_DBG
 #define S5P_TV_BASE_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_TV_BASE_DEBUG
 #define BASEPRINTK(fmt, args...) \
@@ -481,11 +481,41 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
 /*
  *  Probe
  */
+ 
+/* temporary must be checked hdmi_phy power & clk */
+#ifdef CONFIG_CPU_S5PC110
+#include <plat/regs-clock.h>
+#endif
+
 static int __init s5p_tv_probe(struct platform_device *pdev)
 {
 	int 	irq_num;
 	int 	ret;
 	int 	i;
+
+/* temporary must be checked hdmi_phy power & clk */
+#ifdef CONFIG_CPU_S5PC110
+#define CTRL_BIT (0x1<<4)
+{
+
+	u32 reg;
+
+	/* i2c-hdmi_phy/i2c-1 */
+	reg = readl(S5P_CLKGATE_IP3);
+
+	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY|S5P_CLKGATE_IP3_I2C_HDMI_DDC);
+
+	writel(reg, S5P_CLKGATE_IP3);
+
+	/* for tv power block */
+	reg = readl(S5P_NORMAL_CFG);
+	
+	writel(reg|CTRL_BIT, S5P_NORMAL_CFG);
+
+	do {			
+	} while(!(__raw_readl(S5P_BLK_PWR_STAT)&CTRL_BIT));
+}
+#endif
 
 	__s5p_sdout_probe(pdev, 0);
 	__s5p_vp_probe(pdev, 1);	

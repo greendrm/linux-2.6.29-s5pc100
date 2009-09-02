@@ -300,6 +300,9 @@
 #define S3C_CIREAL_ISIZE_WIDTH_MASK		(0x3FFF << 0)
 
 /* Input DMA control register */
+#define S3C_MSCTRL_FIELD_MASK			(1 << 31)
+#define S3C_MSCTRL_FIELD_WEAVE			(1 << 31)
+#define S3C_MSCTRL_FIELD_NORMAL			(0 << 31)
 #define S3C_MSCTRL_BURST_CNT			(24)
 #define S3C_MSCTRL_BURST_CNT_MASK		(0xf << 24)
 #define S3C_MSCTRL_2PLANE_MSB_CRCB		(0 << 16)
@@ -370,5 +373,6 @@
 /* Gathering Extension register */
 #define S3C_CIEXTEN_TARGETH_EXT_MASK		(1 << 26)
 #define S3C_CIEXTEN_TARGETV_EXT_MASK		(1 << 24)
+#define S3C_CIEXTEN_YUV444_OUT			(1 << 22)
 
 #endif /* _REGS_FIMC_H */

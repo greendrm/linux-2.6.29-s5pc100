@@ -133,6 +133,7 @@ static int setdma_tx(struct s3c_ep *ep, struct s3c_request *req)
 		pktcnt = (length - 1)/(ep->ep.maxpacket) + 1;
 	}
 
+#ifdef DED_TX_FIFO
 	/* Flush the endpoint's Tx FIFO */
         writel(ep_num<<6, S3C_UDC_OTG_GRSTCTL);
         writel((ep_num<<6)|0x20, S3C_UDC_OTG_GRSTCTL);
@@ -143,6 +144,7 @@ static int setdma_tx(struct s3c_ep *ep, struct s3c_request *req)
 	ctrl &= ~(0xF << 22);
 	ctrl |= (ep_num << 22);
 	writel(ctrl , S3C_UDC_OTG_DIEPCTL(ep_num));
+#endif
 
 	writel(virt_to_phys(buf), S3C_UDC_OTG_DIEPDMA(ep_num));
 	writel((pktcnt<<19)|(length<<0), S3C_UDC_OTG_DIEPTSIZ(ep_num));

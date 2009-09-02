@@ -25,11 +25,13 @@
 #include <linux/mutex.h>
 #include <linux/slab.h>
 #include <linux/dma-mapping.h>
+#include <linux/clk.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
 
 #include <plat/media.h>
+#include <plat/clock.h>
 
 #include "s3c_mfc_interface.h"
 #include "s3c_mfc_common.h"
@@ -38,6 +40,8 @@
 #include "s3c_mfc_intr.h"
 #include "s3c_mfc_memory.h"
 #include "s3c_mfc_buffer_manager.h"
+
+struct s3c_mfc_ctrl s3c_mfc;
 
 static int s3c_mfc_openhandle_count = 0;
 static struct resource	*s3c_mfc_mem;
@@ -214,7 +218,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}	
 
-		/* cache clean */
+		in_param.ret_code =  s3c_mfc_encode_header(mfc_ctx, &(in_param.args));
+		if (in_param.ret_code < 0) {
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+		}			
 		
 		mutex_unlock(&s3c_mfc_mutex);
 		break;
@@ -285,6 +294,15 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}		
+
+		/* Set DPB buffer */
+		in_param.ret_code = s3c_mfc_set_dec_frame_buffer(mfc_ctx, &(in_param.args));
+		//s3c_mfc_set_dec_frame_buffer(mfc_ctx, dec_arg->in_frm_buf, dec_arg->in_frm_size);
+		if (in_param.ret_code < 0) {
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+		}
 
 		mutex_unlock(&s3c_mfc_mutex);
 		break;
@@ -503,6 +521,7 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 	
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
 		||((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
+		||((intReason & R2H_CMD_INIT_BUFFERS_RET) == R2H_CMD_INIT_BUFFERS_RET)		
 		||((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)
 		||((intReason & R2H_CMD_OPEN_INSTANCE_RET) == R2H_CMD_OPEN_INSTANCE_RET)
 		||((intReason & R2H_CMD_CLOSE_INSTANCE_RET) == R2H_CMD_CLOSE_INSTANCE_RET)) {
@@ -531,9 +550,21 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	struct resource *res;
 	size_t		size;
 	int 		ret;
+	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 
 	/* mfc clock enable should be here */	
+	#if 1
+	/* Clock setting */
+	sprintf(ctrl->clk_name, "%s", S3C_MFC_CLK_NAME);
 
+	ctrl->clock = clk_get(&pdev->dev, ctrl->clk_name);
+	if (IS_ERR(ctrl->clock)) {
+		printk(KERN_ERR "failed to get mfc clock source\n");
+		return EPERM;
+	}
+
+	clk_enable(ctrl->clock);
+	#endif
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res == NULL) {
 		dev_err(&pdev->dev, "failed to get memory region resource\n");

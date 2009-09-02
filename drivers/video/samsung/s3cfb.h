@@ -37,6 +37,7 @@
 enum s3cfb_data_path_t {
 	DATA_PATH_FIFO = 0,
 	DATA_PATH_DMA = 1,
+	DATA_PATH_IPC = 2,
 };
 
 enum s3cfb_alpha_t {

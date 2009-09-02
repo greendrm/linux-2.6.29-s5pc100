@@ -14,6 +14,10 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/gpio.h>
+#include <linux/clk.h>
+#include <linux/err.h>
+#include <linux/platform_device.h>
+#include <plat/clock.h>
 #include <plat/gpio-cfg.h>
 #include <plat/gpio-bank-e0.h>
 #include <plat/gpio-bank-e1.h>
@@ -22,7 +26,7 @@
 
 struct platform_device; /* don't need the contents */
 
-void s3c_fimc0_cfg_gpio(struct platform_device *dev)
+void s3c_fimc0_cfg_gpio(struct platform_device *pdev)
 {
 	int i;
 	s3c_gpio_cfgpin(S5PC1XX_GPE0(0), S5PC1XX_GPE0_0_CAM_A_PCLK);
@@ -67,3 +71,60 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 		s3c_gpio_setpull(S5PC1XX_GPH3(i), S3C_GPIO_PULL_UP);
 }
 
+int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
+{
+	struct clk *parent = NULL;
+	int err;
+
+	clk = clk_get(&pdev->dev, "sclk_fimc");
+	if (IS_ERR(clk)) {
+		dev_err(&pdev->dev, "failed to get interface clock\n");
+		goto err_clk1;
+	}
+
+	if (clk->set_parent) {
+		parent = clk_get(&pdev->dev, "dout_mpll");
+		if (IS_ERR(parent)) {
+			dev_err(&pdev->dev, "failed to get parent of interface clock\n");
+			goto err_clk2;
+		}
+
+		clk->parent = parent;
+
+		err = clk->set_parent(clk, parent);
+		if (err) {
+			dev_err(&pdev->dev, "failed to set parent of interface clock\n");
+			goto err_clk3;
+		}
+
+		if (clk->set_rate) {
+			clk->set_rate(clk, 133000000);
+			dev_info(&pdev->dev, "set interface clock rate to 133000000\n");
+		}
+
+		clk_put(parent);
+	}
+
+	clk_enable(clk);
+
+	return 0;
+
+err_clk3:
+	clk_put(parent);
+
+err_clk2:
+	clk_put(clk);
+
+err_clk1:
+	return -EINVAL;
+}
+
+int s3c_fimc0_clk_off(struct platform_device *pdev, struct clk *clk)
+{
+	clk_disable(clk);
+	clk_put(clk);
+
+	clk = NULL;
+
+	return 0;
+}

@@ -95,12 +95,22 @@ extern void s3c_sdhci_set_platdata(void);
 #endif
 
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
-        [0] = {
-                .name           = "pclk",
-                .divisor        = 1,
-                .min_baud       = 0,
-                .max_baud       = 0,
-        },
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+/* HS-UART Clock using SCLK */
+	[0] = {
+		.name		= "uclk1",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#else
+	[0] = {
+		.name		= "pclk",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#endif
 };
 
 static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
@@ -613,7 +623,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
         },
 #endif
 
-#if defined(CONFIG_SPI_CNTRLR_2)
 /* For MMC-SPI using GPIO BitBanging. MMC connected to SPI CNTRL 2 as slave 0. */
 #if defined (CONFIG_MMC_SPI_GPIO)
 #define SPI_GPIO_DEVNUM 4
@@ -628,7 +637,7 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .chip_select     = 0,
                 .controller_data = S5PC11X_GPH1(0),
         },
-#else
+#elif defined(CONFIG_SPI_CNTRLR_2)
         [4] = {
                 .modalias        = "mmc_spi", 	/* MMC SPI */
                 .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
@@ -638,7 +647,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .irq             = IRQ_SPI2,
                 .chip_select     = 0,
         },
-#endif
 #endif	
 };
 
@@ -718,6 +726,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #elif defined(CONFIG_SPI_CNTRLR_2)
 	&s3c_device_spi2,
 #endif
+	&s3c_device_usb_ohci,
 	&s3c_device_usb_ehci,
 	&s3c_device_usbgadget,
 	&s3c_device_cfcon,
@@ -812,8 +821,8 @@ static int smdkc110_mipi_cam_power(int onoff)
  * 
 */
 #undef CAM_ITU_CH_A
-#undef S5K3BA_ENABLED
-#define S5K4BA_ENABLED
+#define S5K3BA_ENABLED
+#undef S5K4BA_ENABLED
 #undef S5K4EA_ENABLED
 #define S5K6AA_ENABLED
 
@@ -1039,9 +1048,6 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
-	.srclk_name	= "mout_mpll",
-	.clk_name	= "sclk_fimc",
-	.clk_rate	= 166000000,
 #if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
 	.default_cam	= CAMERA_CSI_C,
 #else
@@ -1100,27 +1106,32 @@ static void __init smdkc110_map_io(void)
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
 	s3c24xx_init_clocks(24000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+	/* got to have a high enough uart source clock for higher speeds */
+	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
+#endif
 	s5pc11x_reserve_bootmem();
 }
 
 static void __init smdkc110_dm9000_set(void)
 {
-#if 0
+#if 1
 	unsigned int tmp;
 
-	tmp = 0xfffffff0;
+	tmp = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
+	//tmp =((0<<28)|(4<<24)|(13<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
 	tmp &= ~(0xf<<20);
-	tmp |= (0xd<<20);
+	tmp |= (0x2<<20);
 	__raw_writel(tmp, S5PC11X_SROM_BW);
 
 
 	tmp = __raw_readl(S5PC11X_MP01CON);
-	tmp     &= ~(0xf<<20);
+	tmp &= ~(0xf<<20);
 	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
-/* #else */
+#else
 	tmp = 0xfffffff0;
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
 	tmp = __raw_readl(S5PC11X_SROM_BW);
@@ -1270,6 +1281,10 @@ void usb_host_clk_en(void) {
 
 	otg_clk = clk_get(NULL, "otg");
 	clk_enable(otg_clk);
+
+	if(readl(S5P_USB_PHY_CONTROL)&(0x1<<1)){
+		return;
+	}
 
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<1), S5P_USB_PHY_CONTROL);
 	//USB PHY1 Enable 

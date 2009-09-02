@@ -48,9 +48,9 @@
 #define SPI_CLKSEL_SRCMSK	(3<<9)
 #define SPI_ENCLK_ENABLE	(1<<8)
 
-#ifdef CONFIG_SPICLK_SRC_PCLK
+#if defined (CONFIG_SPICLK_SRC_PCLK) || defined (CONFIG_SPICLK_PCLK)
 #define SPI_CLKSEL_SRC	(0 << 9)
-#elif defined (CONFIG_SPICLK_SRC_SCLK48M)
+#elif defined (CONFIG_SPICLK_SRC_SCLK48M) || defined (CONFIG_SPICLK_EXT)
 #define SPI_CLKSEL_SRC	(1 << 9)
 #elif defined (CONFIG_SPICLK_SRC_EPLL)
 #define SPI_CLKSEL_SRC	(2 << 9)

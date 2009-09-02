@@ -14,6 +14,10 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/gpio.h>
+#include <linux/clk.h>
+#include <linux/err.h>
+#include <linux/platform_device.h>
+#include <plat/clock.h>
 #include <plat/gpio-cfg.h>
 #include <plat/gpio-bank-e0.h>
 #include <plat/gpio-bank-e1.h>
@@ -24,7 +28,7 @@
 
 struct platform_device; /* don't need the contents */
 
-void s3c_fimc0_cfg_gpio(struct platform_device *dev)
+void s3c_fimc0_cfg_gpio(struct platform_device *pdev)
 {
 	int i;
 
@@ -71,5 +75,72 @@ void s3c_fimc0_cfg_gpio(struct platform_device *dev)
 	/* drive strength to max */
 	writel(0xc0, S5PC11X_VA_GPIO + 0x10c);
 	writel(0x300, S5PC11X_VA_GPIO + 0x26c);
+}
+
+int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
+{
+	struct clk *lclk = NULL, *lclk_parent = NULL;
+	int err;
+
+	lclk = clk_get(&pdev->dev, "lclk_fimc");
+	if (IS_ERR(lclk)) {
+		dev_err(&pdev->dev, "failed to get local clock\n");
+		goto err_clk1;
+	}
+
+	if (lclk->set_parent) {
+		lclk_parent = clk_get(&pdev->dev, "mout_mpll");
+		if (IS_ERR(lclk_parent)) {
+			dev_err(&pdev->dev, "failed to get parent of local clock\n");
+			goto err_clk2;
+		}
+
+		lclk->parent = lclk_parent;
+
+		err = lclk->set_parent(lclk, lclk_parent);
+		if (err) {
+			dev_err(&pdev->dev, "failed to set parent of local clock\n");
+			goto err_clk3;
+		}
+
+		if (lclk->set_rate) {
+			lclk->set_rate(lclk, 166000000);
+			dev_info(&pdev->dev, "set local clock rate to 166000000\n");
+		}
+
+		clk_put(lclk_parent);
+	}
+
+	clk_put(lclk);
+
+	/* be able to handle clock on/off only with this clock */
+	clk = clk_get(&pdev->dev, "fimc");
+	if (IS_ERR(clk)) {
+		dev_err(&pdev->dev, "failed to get interface clock\n");
+		goto err_clk3;
+	}
+
+	clk_enable(clk);
+
+	return 0;
+
+err_clk3:
+	clk_put(lclk_parent);
+
+err_clk2:
+	clk_put(lclk);
+
+err_clk1:
+	return -EINVAL;
+}
+
+int s3c_fimc0_clk_off(struct platform_device *pdev, struct clk *clk)
+{
+	clk_disable(clk);
+	clk_put(clk);
+
+	clk = NULL;
+
+	return 0;
 }
 

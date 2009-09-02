@@ -142,18 +142,6 @@ static inline board_info_t *to_dm9000_board(struct net_device *dev)
 
 /* DM9000 network board routine ---------------------------- */
 
-static void
-dm9000_reset(board_info_t * db)
-{
-	dev_dbg(db->dev, "resetting device\n");
-
-	/* RESET device */
-	writeb(DM9000_NCR, db->io_addr);
-	udelay(200);
-	writeb(NCR_RST, db->io_data);
-	udelay(200);
-}
-
 /*
  *   Read a byte from I/O port
  */
@@ -173,6 +161,37 @@ iow(board_info_t * db, int reg, int value)
 {
 	writeb(reg, db->io_addr);
 	writeb(value, db->io_data);
+}
+
+static void
+dm9000_reset(board_info_t * db)
+{
+        dev_dbg(db->dev, "resetting device\n");
+#ifndef CONFIG_CPU_S5PC110
+        /* RESET device */
+        writeb(DM9000_NCR, db->io_addr);
+        udelay(200);
+        writeb(NCR_RST, db->io_data);
+        udelay(200);
+#else
+        iow(db,DM9000_GPCR,0x0f);
+        iow(db,DM9000_GPR,0);
+        iow(db,DM9000_NCR,3);
+
+        do{
+                udelay(25);
+        }while(ior(db,DM9000_NCR) & 0x1);
+
+        iow(db,DM9000_NCR, 0);
+        iow(db,DM9000_NCR, 3);
+
+        do{
+                udelay(25);
+        }while(ior(db,DM9000_NCR) & 0x1);
+
+        if((ior(db,DM9000_PIDL) != 0) || (ior(db,DM9000_PIDH) != 0x90))
+                printk("ERROR : resetting ");
+#endif
 }
 
 /* routines for sending block to chip */
@@ -930,15 +949,13 @@ static irqreturn_t dm9000_interrupt(int irq, void *dev_id)
 	struct net_device *dev = dev_id;
 	board_info_t *db = netdev_priv(dev);
 	int int_status;
-	unsigned long flags;
 	u8 reg_save;
 
 	dm9000_dbg(db, 3, "entering %s\n", __func__);
 
 	/* A real interrupt coming */
 
-	/* holders of db->lock must always block IRQs */
-	spin_lock_irqsave(&db->lock, flags);
+	spin_lock(&db->lock);
 
 	/* Save previous register address */
 	reg_save = readb(db->io_addr);
@@ -974,7 +991,7 @@ static irqreturn_t dm9000_interrupt(int irq, void *dev_id)
 	/* Restore previous register address */
 	writeb(reg_save, db->io_addr);
 
-	spin_unlock_irqrestore(&db->lock, flags);
+	spin_unlock(&db->lock);
 
 	return IRQ_HANDLED;
 }
@@ -1377,15 +1394,15 @@ dm9000_probe(struct platform_device *pdev)
 		
 		mac_src = "chip";
 #if 0
-		for (i = 0; i < 6; i++)
-			ndev->dev_addr[i] = ior(db, i+DM9000_PAR);
+                for (i = 0; i < 6; i++)
+                        ndev->dev_addr[i] = ior(db, i+DM9000_PAR);
 #else
-		ndev->dev_addr[0] = 0x00;
-		ndev->dev_addr[1] = 0x09;
-		ndev->dev_addr[2] = 0xc0;
-		ndev->dev_addr[3] = 0xff;
-		ndev->dev_addr[4] = 0xec;
-		ndev->dev_addr[5] = 0x48;
+                ndev->dev_addr[0] = 0x00;
+                ndev->dev_addr[1] = 0x09;
+                ndev->dev_addr[2] = 0xc0;
+                ndev->dev_addr[3] = 0xff;
+                ndev->dev_addr[4] = 0xec;
+                ndev->dev_addr[5] = 0x48;
 #endif
 	}
 
@@ -1396,11 +1413,13 @@ dm9000_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, ndev);
 	ret = register_netdev(ndev);
 
-	if (ret == 0)
-		printk(KERN_INFO "%s: dm9000%c at %p,%p IRQ %d MAC: %pM (%s)\n",
+	if (ret == 0) {
+		DECLARE_MAC_BUF(mac);
+		printk(KERN_INFO "%s: dm9000%c at %p,%p IRQ %d MAC: %s (%s)\n",
 		       ndev->name, dm9000_type_to_char(db->type),
 		       db->io_addr, db->io_data, ndev->irq,
-		       ndev->dev_addr, mac_src);
+		       print_mac(mac, ndev->dev_addr), mac_src);
+	}
 	return 0;
 
 out:
@@ -1497,3 +1516,5 @@ MODULE_AUTHOR("Sascha Hauer, Ben Dooks");
 MODULE_DESCRIPTION("Davicom DM9000 network driver");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:dm9000");
+
+

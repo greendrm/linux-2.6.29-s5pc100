@@ -1,5 +1,5 @@
 /* 
- * drivers/media/video/samsung/mfc40/s3c_mfc_common.h
+ * drivers/media/video/samsung/mfc50/s3c_mfc_common.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -21,6 +21,7 @@
 #define BUF_L_UNIT (1024)
 #define BUF_S_UNIT (32)
 #define Align(x, alignbyte) (((x)+(alignbyte)-1)/(alignbyte)*(alignbyte))
+#define S3C_MFC_CLK_NAME 	"mfc"
 
 typedef enum
 {
@@ -51,7 +52,8 @@ typedef enum
 {
 	SEQ_HEADER = 1,
 	FRAME = 2,
-	LAST_FRAME = 3
+	LAST_FRAME = 3,
+	INIT_BUFFER = 4
 } s3c_mfc_dec_type;
 
 typedef enum
@@ -73,6 +75,9 @@ typedef enum
 	R2H_CMD_FRAME_DONE_RET = 5,
 	R2H_CMD_SYS_INIT_RET = 8,	
 	R2H_CMD_FW_STATUS_RET = 9,
+	R2H_CMD_SLEEP_RET = 10,
+	R2H_CMD_WAKEUP_RET = 11,
+	R2H_CMD_INIT_BUFFERS_RET = 15,
 	R2H_CMD_EDFU_INIT_RET = 16,	
 	R2H_CMD_DECODE_ERR_RET = 32	
 } s3c_mfc_wait_done_type;
@@ -115,7 +120,7 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int forceSetFrameType;
 	unsigned int img_width;
 	unsigned int img_height;
-	unsigned int dwAccess;  // for Power Management.
+	unsigned int dwAccess;  	// for Power Management.
 	unsigned int IsPackedPB;
 	unsigned int interlace_mode;
 	int mem_inst_no;
@@ -124,6 +129,11 @@ typedef struct tag_mfc_inst_ctx
 	MFC_CODEC_TYPE MfcCodecType;
 	s3c_mfc_inst_state MfcState;
 } s3c_mfc_inst_ctx;
+
+struct s3c_mfc_ctrl {
+	char	clk_name[16];
+	struct clk	*clock;
+};
 
 s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);

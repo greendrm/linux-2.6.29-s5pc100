@@ -3,7 +3,7 @@
 #
 
 config VIDEO_JPEG_V2
-	bool "Samsung JPEG driver (Not available yet.)"
+	bool "Samsung JPEG driver"
 	depends on VIDEO_SAMSUNG
 	default n
 	---help---

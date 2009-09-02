@@ -35,15 +35,13 @@ typedef enum
 {
 	H264_DEC = 0x80,
 	MPEG4_DEC,
-	MP4SH_DEC,
-	H263_DEC,
-	
-	DIVX_DEC,
 	XVID_DEC,
+	H263_DEC,	
+	
 	DIVX311_DEC,
 	DIVX412_DEC,
-	DIVX502_DEC,
-	DIVX503_DEC,
+	DIVX502_DEC,	/* DivX (Ver 5.00, 5.01, 5.02) */
+	DIVX503_DEC,	/* DivX (Ver 5.03 and upper) */
 	
 	VC1AP_DEC,	/* VC1 advaced Profile decoding  */	
 	VC1RCV_DEC,	/* VC1 simple/main profile decoding  */
@@ -71,12 +69,13 @@ typedef enum
 	MFC_DEC_SETCONF_IS_LAST_FRAME,
 	MFC_DEC_GETCONF_IMG_RESOLUTION,
 	MFC_DEC_GETCONF_PHYS_ADDR,
-	MFC_DEC_GETCONF_CRC_DATA
+	MFC_DEC_GETCONF_CRC_DATA	
 }SSBSIP_MFC_DEC_CONF;
 
 typedef enum
 {
 	MFC_ENC_SETCONF_FRAME_TYPE = 100,	
+	MFC_ENC_GETCONF_HEADER_SIZE	
 }SSBSIP_MFC_ENC_CONF;
 
 typedef struct tag_strm_ref_buf_arg
@@ -128,6 +127,7 @@ typedef struct {
 	s3c_mfc_strm_ref_buf_arg_t out_u_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_p_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_buf_size;
+	unsigned int out_header_size;         
 
 	/* MPEG4 Only
 	 */
@@ -172,6 +172,7 @@ typedef struct {
 	s3c_mfc_strm_ref_buf_arg_t out_u_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_p_addr;
 	s3c_mfc_strm_ref_buf_arg_t out_buf_size;
+	unsigned int out_header_size;         
 
 	/* H264 Only
 	 */
@@ -219,8 +220,7 @@ typedef struct {
 	unsigned int in_strm_st;  /*[IN]Out-buffer start addr of encoded strm*/
 	unsigned int in_strm_end; /*[IN]Out-buffer end addr of encoded strm */
 	unsigned int out_frame_type; /* [OUT] frame type  */
-	int out_encoded_size;        /* [OUT] Length of Encoded video stream */
-	int out_header_size;         /* [OUT] Length of video stream header */
+	int out_encoded_size;        /* [OUT] Length of Encoded video stream */	
 } s3c_mfc_enc_exe_arg;
 
 typedef struct {

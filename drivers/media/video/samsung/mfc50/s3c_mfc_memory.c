@@ -1,5 +1,5 @@
 /*
- * drivers/media/video/samsung/mfc40/s3c_mfc_memory.c
+ * drivers/media/video/samsung/mfc50/s3c_mfc_memory.c
  *
  * C file for Samsung MFC (Multi Function Codec - FIMV) driver
  *
@@ -71,7 +71,7 @@ unsigned int s3c_mfc_get_fw_buf_phys_addr()
 	return phys_addr; 
 }
 
-// peter, for desc, motion vector, bitplane0/1/2, etc
+// Buf for desc, motion vector, bitplane0/1/2, etc
 unsigned int s3c_mfc_get_risc_buf_phys_addr(int inst_no)	
 {
 	unsigned int phys_addr;

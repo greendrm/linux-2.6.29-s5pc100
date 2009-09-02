@@ -3,7 +3,7 @@
  *
  * Bus Glue for SAMSUNG S5PC110
  *
- * Based on "ehci-au1xxx.c" by Matt Porter <mporter@kernel.crashing.org>
+ * Based on "ohci-au1xxx.c" by Matt Porter <mporter@kernel.crashing.org>
  *
  * Modified for AMD Alchemy Au1200 EHC
  *  by K.Boge <karsten.boge@amd.com>
@@ -105,7 +105,7 @@ static int ehci_hcd_s5pc110_drv_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
-	usb_clk = clk_get(&pdev->dev, "usb_host");
+	usb_clk = clk_get(&pdev->dev, "usb-host");
 	if (IS_ERR(usb_clk)) {
 		dev_err(&pdev->dev, "cannot get usb-host clock\n");
 		retval = -ENODEV;

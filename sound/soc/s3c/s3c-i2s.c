@@ -61,23 +61,9 @@ struct s3c_i2s_info {
 	u32           clk_rate;
 };
 
-struct s3c_audio_subsystem {
-	void __iomem  *regs;
-	struct clk    *iis_clk;
-	struct clk    *audio_bus;
-	u32           iiscon;
-	u32           iismod;
-	u32           iisfic;
-	u32           iispsr;
-	u32           slave;
-	u32           clk_rate;
-};
-
-static struct s3c_audio_subsystem s3c_audio_ss;
 static struct s3c_i2s_info s3c_i2s;
-struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
 
-bool is_playback_running, is_record_running;
+struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
 
 #define S3C_IISFIC_LP 			(s3c_i2s_pdat.lp_mode ? S3C_IISFICS : S3C_IISFIC)
 #define S3C_IISCON_TXDMACTIVE_LP 	(s3c_i2s_pdat.lp_mode ? S3C_IISCON_TXSDMACTIVE : S3C_IISCON_TXDMACTIVE)
@@ -111,16 +97,13 @@ static void s3c_snd_txctrl(int on)
 		iiscon  &= ~S3C_IISCON_TXDMAPAUSE_LP;
 		iiscon  |= S3C_IISCON_TXDMACTIVE_LP;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
-		is_playback_running = true;
 	}else{
-		if (is_record_running == false)	{
-		iiscon &= ~S3C_IISCON_I2SACTIVE;
-			}		
+		if(!(iiscon & S3C_IISCON_RXDMACTIVE)) /* Stop only if RX not active */
+			iiscon &= ~S3C_IISCON_I2SACTIVE;
 		iiscon  |= S3C_IISCON_TXCHPAUSE;
 		iiscon  |= S3C_IISCON_TXDMAPAUSE_LP;
 		iiscon  &= ~S3C_IISCON_TXDMACTIVE_LP;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
-		is_playback_running = false;
 	}
 }
 
@@ -136,21 +119,14 @@ static void s3c_snd_rxctrl(int on)
 		iiscon  &= ~S3C_IISCON_RXDMAPAUSE;
 		iiscon  |= S3C_IISCON_RXDMACTIVE;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
-		is_record_running = true;
 	}else{
-	
-		if (is_playback_running == false)
-			{
-		iiscon &= ~S3C_IISCON_I2SACTIVE;
-			}
-		
+		if(!(iiscon & S3C_IISCON_TXDMACTIVE_LP)) /* Stop only if TX not active */
+			iiscon &= ~S3C_IISCON_I2SACTIVE;
 		iiscon  |= S3C_IISCON_RXCHPAUSE;
 		iiscon  |= S3C_IISCON_RXDMAPAUSE;
 		iiscon  &= ~S3C_IISCON_RXDMACTIVE;
 		writel(iiscon,  s3c_i2s.regs + S3C_IISCON);
-		is_record_running = false;
 	}
-
 }
 
 /*
@@ -182,11 +158,6 @@ static int s3c_i2s_set_fmt(struct snd_soc_dai *cpu_dai,
 		unsigned int fmt)
 {
 	u32 iismod;
-
-	if (is_playback_running)
-		return 0;
-	else if (is_record_running)
-		return 0;
 
 	iismod = readl(s3c_i2s.regs + S3C_IISMOD);
 	iismod &= ~S3C_IISMOD_SDFMASK;
@@ -287,7 +258,6 @@ static int s3c_i2s_startup(struct snd_pcm_substream *substream, struct snd_soc_d
 {
 	u32 iiscon, iisfic;
 
-#if 0
 	iiscon = readl(s3c_i2s.regs + S3C_IISCON);
 
 	/* FIFOs must be flushed before enabling PSR and other MOD bits, so we do it here. */
@@ -322,7 +292,6 @@ static int s3c_i2s_startup(struct snd_pcm_substream *substream, struct snd_soc_d
 		iisfic &= ~S3C_IISFIC_RFLUSH;
 		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
 	}
-#endif
 
 	return 0;
 }
@@ -353,33 +322,13 @@ static int s3c_i2s_prepare(struct snd_pcm_substream *substream, struct snd_soc_d
 static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct snd_soc_dai *dai)
 {
 	int ret = 0;
-	u32 audioss;
 
 	switch (cmd) {
-	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
+		if(s3c_i2s_pdat.lp_mode)
+			break;
+	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
-
-
-#ifdef USE_SCLK_AUDIO
-		audioss  = readl(s3c_audio_ss.regs);
-		writel(((audioss&~0xF)|0x8),  s3c_audio_ss.regs);
-		audioss  = readl(s3c_audio_ss.regs);
-#endif
-
-
-#ifdef USE_I2SCDCLK
-		audioss  = readl(s3c_audio_ss.regs);
-		writel(((audioss&~0xF)|0x4),  s3c_audio_ss.regs);
-		audioss  = readl(s3c_audio_ss.regs);
-#endif
-
-#ifdef USE_EPLL
-		audioss  = readl(s3c_audio_ss.regs);
-		writel(((audioss&~0xF)|0x1),  s3c_audio_ss.regs);
-		audioss  = readl(s3c_audio_ss.regs);
-#endif
-
 		if (s3c_i2s.slave) {
 			ret = s3c_snd_lrsync();
 			if (ret)
@@ -391,8 +340,10 @@ static int s3c_i2s_trigger(struct snd_pcm_substream *substream, int cmd, struct 
 		else
 			s3c_snd_txctrl(1);
 		break;
-	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
+		if(s3c_i2s_pdat.lp_mode)
+			break;
+	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 			s3c_snd_rxctrl(0);
@@ -418,17 +369,8 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 	struct clk *clk;
 	u32 iismod = readl(s3c_i2s.regs + S3C_IISMOD);
 
-	if (is_playback_running)
-		{
-		return 0;
-		}
-	else if (is_record_running)
-		{
-		return 0;
-		}
-
 	switch (clk_id) {
-	case S3C_IISMOD_MSTAUDIOBUSCLK:
+	case S3C_CLKSRC_PCLK: /* IIS-IP is Master and derives its clocks from PCLK */
 		if(s3c_i2s.slave)
 			return -EINVAL;
 		iismod &= ~S3C_IISMOD_IMSMASK;
@@ -436,12 +378,8 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 		break;
 
-	case S3C_IISMOD_MSTI2SCLK:
-		if (dir == SND_SOC_CLOCK_OUT) {
-			iismod &= ~S3C_IISMOD_CDCLKCON;
-		}else{
-			iismod |= S3C_IISMOD_CDCLKCON;
-		}
+#ifdef USE_CLKAUDIO
+	case S3C_CLKSRC_CLKAUDIO: /* IIS-IP is Master and derives its clocks from I2SCLKD2 */
 		if(s3c_i2s.slave)
 			return -EINVAL;
 		iismod &= ~S3C_IISMOD_IMSMASK;
@@ -489,9 +427,9 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 	From the table above, we find that 49152000 gives least(0) residue 
 	for most sample rates, followed by 67738000.
 */
-		clk = clk_get(NULL, "fout_epll");
+		clk = clk_get(NULL, EXTPRNT);
 		if (IS_ERR(clk)) {
-			printk("failed to get FOUTepll\n");
+			printk("failed to get %s\n", EXTPRNT);
 			return -EBUSY;
 		}
 		clk_disable(clk);
@@ -517,18 +455,22 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		//printk("Setting FOUTepll to %dHz", s3c_i2s.clk_rate);
 		clk_put(clk);
 		break;
+#endif
 
-	case S3C_IISMOD_SLVAUDIOBUSCLK:
+	case S3C_CLKSRC_SLVPCLK: /* IIS-IP is Slave, but derives its clocks from PCLK */
+	case S3C_CLKSRC_I2SEXT:  /* IIS-IP is Slave and derives its clocks from the WM8580 Codec Chip via I2SCLKD2 */
 		iismod &= ~S3C_IISMOD_IMSMASK;
 		iismod |= clk_id;
 		break;
-	case S3C_IISMOD_SLVI2SCLK:
-		iismod &= ~S3C_IISMOD_IMSMASK;
-		iismod |= clk_id;
 
+	case S3C_CDCLKSRC_INT:
+		iismod &= ~S3C_IISMOD_CDCLKCON;
+		break;
+
+	case S3C_CDCLKSRC_EXT:
 		iismod |= S3C_IISMOD_CDCLKCON;
-
 		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -549,15 +491,6 @@ static int s3c_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai,
 	int div_id, int div)
 {
 	u32 reg;
-
-	if (is_playback_running)
-		{
-		return 0;
-		}
-	else if (is_record_running)
-		{
-		return 0;
-		}
 
 	switch (div_id) {
 	case S3C_DIV_MCLK:
@@ -586,18 +519,7 @@ static int s3c_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai,
 		reg = readl(s3c_i2s.regs + S3C_IISPSR) & ~S3C_IISPSR_PSRAEN;
 		writel(reg, s3c_i2s.regs + S3C_IISPSR);
 		reg = readl(s3c_i2s.regs + S3C_IISPSR) & ~S3C_IISPSR_PSVALA;
-
-		//Added by Taeyong
-#if USE_AP_MASTER
-#ifdef USE_SEMI_MASTER
-		div = div/10; //semi-master
-#else		
-		div = div/2; //master
-#endif
-
-#else
 		div &= 0x3f;
-#endif
 		writel(reg | (div<<8) | S3C_IISPSR_PSRAEN, s3c_i2s.regs + S3C_IISPSR);
 		break;
 	default:
@@ -621,7 +543,7 @@ static irqreturn_t s3c_iis_irq(int irqno, void *dev_id)
 		s3cdbg("TX_S underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
 	}
 	if(S3C_IISCON_FTXURSTATUS & iiscon) {
-		//iiscon &= ~S3C_IISCON_FTXURINTEN;
+		iiscon &= ~S3C_IISCON_FTXURINTEN;
 		iiscon |= S3C_IISCON_FTXURSTATUS;
 		writel(iiscon, s3c_i2s.regs + S3C_IISCON);
 		s3cdbg("TX_P underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
@@ -698,21 +620,11 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 {
 	int ret = 0;
 	struct clk *cf;
-	is_playback_running = false;
-	is_record_running = false;
 
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
 		return -ENXIO;
 
-	s3c_audio_ss.regs = ioremap(S5PC11X_PA_ASS, 0x100);
-	
-	if (s3c_audio_ss.regs == NULL)
-		{
-		printk("[error] s3c_audio_ss.regs == NULL\n");
-		return -ENXIO;
-		}
-		
 	ret = request_irq(S3C_IISIRQ, s3c_iis_irq, 0, "s3c-i2s", pdev);
 	if (ret < 0) {
 		printk("fail to claim i2s irq , ret = %d\n", ret);
@@ -728,9 +640,9 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
-#ifdef USE_SCLK_AUDIO
+#ifdef USE_CLKAUDIO
 	/* To avoid switching between sources(LP vs NM mode),
-	 * we use fout_epll as parent clock of i2sclkd2.
+	 * we use EXTPRNT as parent clock of i2sclkd2.
 	 */
 	s3c_i2s.audio_bus = clk_get(NULL, EXTCLK);
 	if (IS_ERR(s3c_i2s.audio_bus)) {
@@ -738,14 +650,9 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		goto lb3;
 	}
 
-#if defined(SND_SMDKC100_WM8580)
-	cf = clk_get(NULL, "fout_epll");
-#else	
-	cf = clk_get(NULL, "mout_epll");
-#endif
-
+	cf = clk_get(NULL, EXTPRNT);
 	if (IS_ERR(cf)) {
-		printk("failed to get fout_epll\n");
+		printk("failed to get %s\n", EXTPRNT);
 		goto lb2;
 	}
 	if(clk_set_parent(s3c_i2s.audio_bus, cf)){
@@ -770,7 +677,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 
 	return 0;
 
-#ifdef USE_SCLK_AUDIO
+#ifdef USE_CLKAUDIO
 lb1:
 	clk_put(cf);
 lb2:

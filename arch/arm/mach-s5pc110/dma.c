@@ -190,18 +190,38 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 	},
 	[DMACH_UART0_SRC2] = {
 		.name       	= "uart0-dma-rx",
-		.channels   	= MAP2(S3C_PDMA1_UART0_RX),
-		.hw_addr.from 	= S3C_PDMA1_UART0_RX,
+		.channels   	= MAP1(S3C_PDMA0_UART0_RX),
+		.hw_addr.from 	= S3C_PDMA0_UART0_RX,
 	},
 	[DMACH_UART1] = {
-               .name       	= "uart-dma-tx",
-               .channels   	= MAP1(S3C_PDMA0_UART1_TX),
-               .hw_addr.to 	= S3C_PDMA0_UART1_TX,
+		.name		= "uart1-dma-tx",
+		.channels	= MAP1(S3C_PDMA0_UART1_TX),
+		.hw_addr.to 	= S3C_PDMA0_UART1_TX,
 	},
 	[DMACH_UART1_SRC2] = {
-               .name       	= "uart-dma-rx",
-               .channels   	= MAP2(S3C_PDMA1_UART1_RX),
-               .hw_addr.from 	= S3C_PDMA1_UART1_RX,
+		.name       	= "uart1-dma-rx",
+		.channels   	= MAP1(S3C_PDMA0_UART1_RX),
+		.hw_addr.from 	= S3C_PDMA0_UART1_RX,
+	},
+	[DMACH_UART2] = {
+		.name		= "uart2-dma-tx",
+		.channels	= MAP1(S3C_PDMA0_UART2_TX),
+		.hw_addr.to 	= S3C_PDMA0_UART2_TX,
+	},
+	[DMACH_UART2_SRC2] = {
+		.name       	= "uart2-dma-rx",
+		.channels   	= MAP1(S3C_PDMA0_UART2_RX),
+		.hw_addr.from 	= S3C_PDMA0_UART2_RX,
+	},
+	[DMACH_UART3] = {
+		.name		= "uart3-dma-tx",
+		.channels	= MAP1(S3C_PDMA0_UART3_TX),
+		.hw_addr.to 	= S3C_PDMA0_UART3_TX,
+	},
+	[DMACH_UART3_SRC2] = {
+		.name       	= "uart3-dma-rx",
+		.channels   	= MAP1(S3C_PDMA0_UART3_RX),
+		.hw_addr.from 	= S3C_PDMA0_UART3_RX,
 	},
 	[DMACH_I2S_IN] = {
 		.name		= "i2s0-in",	

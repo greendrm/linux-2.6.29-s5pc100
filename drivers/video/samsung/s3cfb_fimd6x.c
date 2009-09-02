@@ -347,12 +347,17 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 		S3C_WINCON_BURSTLEN_MASK | S3C_WINCON_BPPMODE_MASK |
 		S3C_WINCON_INRGB_MASK | S3C_WINCON_DATAPATH_MASK);
 
-	if (win->path == DATA_PATH_FIFO) {
+	if (win->path != DATA_PATH_DMA) {
 		dev_dbg(ctrl->dev, "[fb%d] data path: fifo\n", id);
 
 		cfg |= S3C_WINCON_DATAPATH_LOCAL;
-		cfg |= S3C_WINCON_INRGB_RGB;
-		cfg |= S3C_WINCON_BPPMODE_24BPP_888;
+
+		if (win->path == DATA_PATH_FIFO) {
+			cfg |= S3C_WINCON_INRGB_RGB;
+			cfg |= S3C_WINCON_BPPMODE_24BPP_888;
+		} else {
+			cfg |= S3C_WINCON_INRGB_YUV;
+		}
 
 		if (id == 1) {
 			cfg &= ~(S3C_WINCON1_LOCALSEL_MASK |

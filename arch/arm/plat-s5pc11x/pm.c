@@ -607,17 +607,35 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 
 	/* flush cache back to ram */
 	flush_cache_all();
-
+#ifndef CONFIG_S5P_DEEP_IDLE_TEST
 	/* USB & OSC Clock pad Enable */
 	tmp = __raw_readl(S5P_SLEEP_CFG);
 	tmp |= (S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
 	__raw_writel(tmp , S5P_SLEEP_CFG);
-
+#endif
 	/* Power mode Config setting */
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
+
+#ifdef CONFIG_S5P_DEEP_IDLE_TEST
+	printk("deep idle mode\n");
+	tmp |= S5P_CFG_WFI_IDLE;
+#else
+	printk("sleep mode\n");
 	tmp |= S5P_CFG_WFI_SLEEP;
+#endif
 	__raw_writel(tmp,S5P_PWR_CFG);
+
+#ifdef CONFIG_S5P_DEEP_IDLE_TEST
+	/* IDLE config register set */
+	/* TOP Memory retention off */
+	/* TOP Memory LP mode       */
+	/* ARM_L2_Cacheret on       */
+	tmp = __raw_readl(S5P_IDLE_CFG);
+	tmp &= ~(0x3f << 26);
+	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
+	__raw_writel(tmp,S5P_IDLE_CFG);
+#endif
 
 	/* Set wakeup mask regsiter */
 	__raw_writel(0xFFFF , S5P_WAKEUP_MASK);
@@ -626,6 +644,12 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp &= ~(1 << 4);
 	tmp &= ~(1 << 31);
 	__raw_writel(tmp, S5P_EINT_WAKEUP_MASK);
+
+#ifdef CONFIG_S5P_DEEP_IDLE_TEST
+	tmp = __raw_readl(S5P_WAKEUP_MASK);
+	tmp &= ~((1 << 13) | (1 << 1));
+	__raw_writel(tmp , S5P_WAKEUP_MASK);
+#endif
 
 	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
@@ -684,7 +708,14 @@ static struct platform_suspend_ops s5pc11x_pm_ops = {
 
 int __init s5pc11x_pm_init(void)
 {
+	u32 tmp;
+	
 	printk("s5pc11x Power Management, (c) 2008 Samsung Electronics\n");
+
+	tmp = __raw_readl(S5P_CLK_OUT);
+	tmp |= (0xf << 12);
+	__raw_writel(tmp , S5P_CLK_OUT);
+	
 	/* set the irq configuration for wake */
 	suspend_set_ops(&s5pc11x_pm_ops);
 	return 0;

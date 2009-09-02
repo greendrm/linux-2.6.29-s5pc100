@@ -288,7 +288,7 @@ void ipc_setpolyphase_filter(volatile u32 filter_reg, const s8* filter_coef, u16
 	u16 temp_tap_sz;
 	volatile u32 filter_baseaddr;
 	
-	filter_baseaddr = filter_reg;
+	filter_baseaddr = s3c_ipc->regs + filter_reg;
 	temp_filter_coef = (u8*)filter_coef;
 
 	for (i = 0; i < tap_sz; i++)
@@ -447,7 +447,7 @@ static int s3c_ipc_probe(struct platform_device *pdev)
 	pdata = to_ipc_plat(&pdev->dev);
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
-/*
+
 	s3c_ipc->clock = clk_get(&pdev->dev, pdata->clk_name);
 	if (IS_ERR(s3c_ipc->clock)) {
 		err("failed to get ipc clock source\n");
@@ -455,7 +455,7 @@ static int s3c_ipc_probe(struct platform_device *pdev)
 	}
 
 	clk_enable(s3c_ipc->clock);
-*/
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		err("failed to get io memory region\n");

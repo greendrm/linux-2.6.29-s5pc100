@@ -38,7 +38,8 @@
 /* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
  * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
  * Also, this value must be aligned at KB bounday (multiple of 1024). */
-#define LP_DMA_PERIOD (103 * 1024)
+#define LP_DMA_PERIOD (105 * 1024) //when LCD is enabled
+//#define LP_DMA_PERIOD (125 * 1024)   //when LCD is disabled
 
 struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
 
@@ -321,6 +322,13 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 	spin_lock(&prtd->lock);
 
 	switch (cmd) {
+	case SNDRV_PCM_TRIGGER_RESUME:
+		if(s3c_pcm_pdat.lp_mode){
+			prtd->state |= ST_RUNNING;
+			s3ci2s_func->dma_ctrl(S3C_I2SDMA_RESUME);
+			break;
+		}
+		s5pc1xx_pcm_enqueue(substream);
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		prtd->state |= ST_RUNNING;
@@ -328,25 +336,16 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_START);
 		else
 		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_START);
-
-		break;
-
-	case SNDRV_PCM_TRIGGER_RESUME:
-		prtd->state |= ST_RUNNING;
-		if(s3c_pcm_pdat.lp_mode)
-		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_RESUME);
-		else
-		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_START);
 		break;
 
 	case SNDRV_PCM_TRIGGER_SUSPEND:
-		prtd->state &= ~ST_RUNNING;
-		if(s3c_pcm_pdat.lp_mode)
+		if(s3c_pcm_pdat.lp_mode){
+		   prtd->state &= ~ST_RUNNING;
 		   s3ci2s_func->dma_ctrl(S3C_I2SDMA_SUSPEND);
-		else
-		   s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_STOP);
-		break;
-
+		   break;
+		}
+		if(prtd->dma_loaded)
+		   prtd->dma_loaded--; /* we may never get buffdone callback */
 	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		prtd->state &= ~ST_RUNNING;
@@ -608,6 +607,7 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_params = s3c_pcm_hw_params_lp;
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_free = s3c_pcm_hw_free_lp;
 		s3c_pcm_pdat.pcm_pltfm.pcm_ops->prepare = s3c_pcm_prepare_lp;
+
 		/* Configure Playback Channel */
 		/* LP-Audio is not for playing clicks and tones.
 		 * It is for lengthy audio playback where the user isn't 

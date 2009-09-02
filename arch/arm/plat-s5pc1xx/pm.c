@@ -507,8 +507,6 @@ static int s5pc1xx_pm_enter(suspend_state_t state)
 	tmp &=~(1 << S5P_OTHER_STA_TYPE);
 	tmp |= (STA_TYPE_SFR << S5P_OTHER_STA_TYPE);
 	__raw_writel(tmp , S5P_OTHERS);
-	
-
 	__raw_writel(((S5P_PWR_STABLE_COUNT << S5P_PWR_STA_CNT) | (1 << S5P_PWR_STA_EXP_SCALE)), S5P_PWR_STABLE);
 
 	/* Set Syscon Interrupt */
