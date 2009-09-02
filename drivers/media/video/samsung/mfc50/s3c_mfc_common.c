@@ -99,15 +99,15 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 
 	/* frameBufSize is sizes for LumaPlane, ChromaPlane & MvPlane */
 	luma_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height, BUF_S_UNIT), \
-				64*BUF_L_UNIT);
+				4*BUF_L_UNIT);
 	chroma_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height/2, BUF_S_UNIT), \
-				64*BUF_L_UNIT);;
+				4*BUF_L_UNIT);;
 	buf_size.luma = luma_plane_sz;
 	buf_size.chroma = chroma_plane_sz;
 
 	if (mfc_ctx->MfcCodecType == H264_DEC) {
 		mv_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height/4, BUF_S_UNIT), \
-					64*BUF_L_UNIT);
+					4*BUF_L_UNIT);
 		buf_size.luma += mv_plane_sz;
 	} 
 

@@ -64,11 +64,15 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 {
 	s3c_mfc_inst_ctx *mfc_ctx;
 	int ret;
+	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 
-	mutex_lock(&s3c_mfc_mutex);
+	mutex_lock(&s3c_mfc_mutex);	
 
 	s3c_mfc_openhandle_count++;
 	if (s3c_mfc_openhandle_count == 1) {
+		 
+		clk_enable(ctrl->clock);		 
+		
 		/* MFC Hardware Initialization */	
 		if (s3c_mfc_init_hw() == FALSE)
 			return -ENODEV;
@@ -117,6 +121,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	s3c_mfc_inst_ctx *mfc_ctx;
 	s3c_mfc_alloc_mem_t *node, *tmp_node;
 	int port_no = 0;
+	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 	int ret;
 
 	mfc_debug("MFC Release..\n");
@@ -148,6 +153,11 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	kfree(mfc_ctx);
 
 	ret = 0;
+	#if 0	// peter check, In evt1, it should be tested
+	if (s3c_mfc_openhandle_count == 0) {		
+		clk_disable(ctrl->clock);
+	}	
+	#endif
 
 out_release:
 	mutex_unlock(&s3c_mfc_mutex);
@@ -551,20 +561,16 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	size_t		size;
 	int 		ret;
 	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
-
+	
 	/* mfc clock enable should be here */	
-	#if 1
-	/* Clock setting */
 	sprintf(ctrl->clk_name, "%s", S3C_MFC_CLK_NAME);
-
-	ctrl->clock = clk_get(&pdev->dev, ctrl->clk_name);
+	
+	ctrl->clock = clk_get(&pdev->dev, ctrl->clk_name);	
 	if (IS_ERR(ctrl->clock)) {
 		printk(KERN_ERR "failed to get mfc clock source\n");
 		return EPERM;
 	}
-
-	clk_enable(ctrl->clock);
-	#endif
+	 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res == NULL) {
 		dev_err(&pdev->dev, "failed to get memory region resource\n");
@@ -653,6 +659,9 @@ probe_out:
 
 static int s3c_mfc_remove(struct platform_device *pdev)
 {
+	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
+	clk_disable(ctrl->clock);
+	
 	iounmap(s3c_mfc_sfr_virt_base);
 	iounmap(s3c_mfc_virt_buf);
 

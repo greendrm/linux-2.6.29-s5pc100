@@ -29,6 +29,9 @@ extern void __iomem *s3c_mfc_sfr_virt_base;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
 
+static unsigned int shared_mem_phy_addr;
+static volatile unsigned char *shared_mem_vir_addr;
+
 #define READL(offset)		readl(s3c_mfc_sfr_virt_base + (offset))
 #define WRITEL(data, offset)	writel((data), s3c_mfc_sfr_virt_base + (offset))
 
@@ -189,13 +192,13 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 64*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
 			/* set MV address */	
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_MV_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 64*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 4*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 64*BUF_L_UNIT);						
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);						
 		}	
 
 	} else {
@@ -203,10 +206,10 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 64*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 64*BUF_L_UNIT);			
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);			
 		}	
 
 	}
@@ -365,9 +368,14 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 	}	
 	// peter added for 8/7 MFC fw
 	WRITEL((aligned_risc_phy_buf-fw_phybuf), S3C_FIMV_SI_CH1_HOST_WR_ADR);
-	aligned_risc_phy_buf += 16*BUF_L_UNIT;	
+	shared_mem_phy_addr = aligned_risc_phy_buf;	
+	shared_mem_vir_addr = phys_to_virt(shared_mem_phy_addr);
 	
-	mfc_debug("inst_no : %d, risc_buf_end : 0x%08x\n", inst_no, aligned_risc_phy_buf);
+	aligned_risc_phy_buf += 16*BUF_L_UNIT;	
+
+	mfc_debug("shared_mem_phy_addr : 0x%08x, shared_mem_vir_addr : 0x%08x\r\n", 
+			shared_mem_phy_addr, shared_mem_vir_addr);		
+	mfc_debug("inst_no : %d, risc_buf_end : 0x%08x\n", inst_no, aligned_risc_phy_buf);	
 
 	return MFCINST_RET_OK;
 }
@@ -1007,9 +1015,12 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 	
 	frame_type = READL(S3C_FIMV_SI_FRAME_TYPE); 
 	mfc_ctx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x3);
-
-	//s3c_mfc_backup_context(mfc_ctx);
-
+	
+	dec_arg->out_pic_time_top = (int)(*(shared_mem_vir_addr+0x10));
+	dec_arg->out_pic_time_bottom = (int)(*(shared_mem_vir_addr+0x14));
+	
+	//s3c_mfc_backup_context(mfc_ctx);	
+	
 	mfc_debug("(Y_ADDR : 0x%08x  C_ADDR : 0x%08x)\r\n", \
 		dec_arg->out_display_Y_addr , dec_arg->out_display_C_addr);  
 	//mfc_debug("(in_strmsize : 0x%08x  consumed byte : 0x%08x)\r\n", \
