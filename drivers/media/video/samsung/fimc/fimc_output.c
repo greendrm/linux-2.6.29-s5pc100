@@ -860,13 +860,7 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 	if (ret < 0)
 		return ret;
 
-#if 0
-	ret = fimc_outdev_ipc_init(ctrl);
-	if (ret < 0)
-		return ret;
-
-
-#else
+#if defined (CONFIG_VIDEO_IPC)
 	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
 		ret = ipc_initip(ctrl->fb.lcd_hres, ctrl->fb.lcd_vres/2, IPC_2D);
 		if (ret < 0)
@@ -1359,8 +1353,10 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 			return -EINVAL;
 		}
 
+#if defined(CONFIG_VIDEO_IPC)
 		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
 			ipc_on();
+#endif
 
 		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
 

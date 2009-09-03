@@ -277,7 +277,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
 		dev_err(ctrl->dev, "%s: request_irq failed\n", __func__);
 
-	fimc_reset(ctrl);
+	fimc_hwset_reset(ctrl);
 
 	return ctrl;
 }
@@ -630,7 +630,7 @@ static int fimc_open(struct file *filp)
 	}
 
 	/* Apply things to interface register */
-	fimc_reset(ctrl);
+	fimc_hwset_reset(ctrl);
 	filp->private_data = ctrl;
 
 	ctrl->fb.open_fifo	= s3cfb_open_fifo;
