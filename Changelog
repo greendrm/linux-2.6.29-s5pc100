@@ -1924,3 +1924,12 @@ v2.6.29.4-dev-1-4-13: Hatim Ali
 		M	drivers/spi/Kconfig
 		M	drivers/spi/spi_s3c.h
 
+v2.6.29.4-dev-1-4-14: Jae-Cheol Lee
+	- Disabling power domain control on s5pc110 to avoid unexpected
+	behavior on device drivers related to power gating function. This is
+	only applied in case of s5pc110 EVT0. After revision to EVT1, this
+	problem will be disappeared.
+
+	Modified Files:
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s3c/clock.c
