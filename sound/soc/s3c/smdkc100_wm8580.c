@@ -90,7 +90,9 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 	case 8000:
 		/* Can't have 2.048MHz from 12MHz by PLLA of WM8580 */
 		pll_out = 8192000 / 4;
+#ifdef CONFIG_SND_WM8580_MASTER
 		rfs = 512;
+#endif
 		break;
 	case 16000:
 		pll_out = 8192000 / 2;
@@ -101,12 +103,16 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 	case 64000:
 		/* Can't have 16.384MHz from 12MHz by PLLA of WM8580 */
 		pll_out = 24576000;
+#ifdef CONFIG_SND_WM8580_MASTER
 		rfs = 384;
+#endif
 		break;
 	case 11025:
 		/* Can't have 2.822MHz from 12MHz by PLLA of WM8580 */
 		pll_out = 11289600 / 4;
+#ifdef CONFIG_SND_WM8580_MASTER
 		rfs = 512;
+#endif
 		break;
 	case 22050:
 		pll_out = 11289600 / 2;
@@ -138,42 +144,12 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
+	/* Set the AP DAI configuration */
 #ifdef CONFIG_SND_WM8580_MASTER
-	/* Set the AP Prescalar */
-	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA, SMDKC100_WM8580_OSC_FREQ, pll_out);
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
 #else
-	psr = SRC_CLK / rfs / params_rate(params);
-	ret = SRC_CLK / rfs - psr * params_rate(params);
-	if(ret >= params_rate(params)/2)	// round off
-	   psr += 1;
-	psr -= 1;
-	//printk("SRC_CLK=%d PSR=%d RFS=%d BFS=%d\n", SRC_CLK, psr, rfs, bfs);
-
-	/* Set the AP Prescalar */
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_DIV_PRESCALER, psr);
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
 #endif
-	if (ret < 0)
-		return ret;
-
-	/* Set the Codec BCLK(no option to set the MCLK) */
-	/* See page 2 and 53 of Wm8580 Manual */
-#ifdef CONFIG_SND_WM8580_MASTER 
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_PLLA); /* Use PLLACLK in AP-Slave Mode */
-#else
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_MCLK); /* Use MCLK provided by CPU i/f */
-#endif
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_CLKOUTSRC, WM8580_CLKSRC_NONE); /* Pg-58 */
 	if (ret < 0)
 		return ret;
 
@@ -202,11 +178,41 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-	/* Set the AP DAI configuration */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
+	/* Set the Codec BCLK(no option to set the MCLK) */
+	/* See page 2 and 53 of Wm8580 Manual */
+#ifdef CONFIG_SND_WM8580_MASTER 
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_PLLA); /* Use PLLACLK in AP-Slave Mode */
 #else
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_MCLK); /* Use MCLK provided by CPU i/f */
+#endif
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_CLKOUTSRC, WM8580_CLKSRC_NONE); /* Pg-58 */
+	if (ret < 0)
+		return ret;
+
+#ifdef CONFIG_SND_WM8580_MASTER
+	/* Set the AP Prescalar */
+	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA, SMDKC100_WM8580_OSC_FREQ, pll_out);
+#else
+	psr = SRC_CLK / rfs / params_rate(params);
+	ret = SRC_CLK / rfs - psr * params_rate(params);
+	if(ret >= params_rate(params)/2)	// round off
+	   psr += 1;
+	psr -= 1;
+	//printk("SRC_CLK=%d PSR=%d RFS=%d BFS=%d\n", SRC_CLK, psr, rfs, bfs);
+
+	/* Set the AP Prescalar */
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_DIV_PRESCALER, psr);
 #endif
 	if (ret < 0)
 		return ret;
@@ -434,11 +440,6 @@ static int __init smdkc100_audio_init(void)
 {
 	int ret;
 
-#ifdef CONFIG_SND_WM8580_MASTER
-	printk("WM8580 is I2S Master\n");
-#else
-	printk("S5PC100 is I2S Master\n");
-#endif
 	if(lowpower){ /* LPMP3 Mode doesn't support recording */
 		wm8580_dai[0].capture.channels_min = 0;
 		wm8580_dai[0].capture.channels_max = 0;
@@ -463,6 +464,12 @@ static int __init smdkc100_audio_init(void)
 	if (ret)
 		platform_device_put(smdkc100_snd_device);
 	
+#ifdef CONFIG_SND_WM8580_MASTER
+	s3cdbg("WM8580 is I2S Master\n");
+#else
+	s3cdbg("S5PC100 is I2S Master\n");
+#endif
+
 	return ret;
 }
 

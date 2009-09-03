@@ -262,31 +262,33 @@ static int s3c_i2s_startup(struct snd_pcm_substream *substream, struct snd_soc_d
 
 	/* FIFOs must be flushed before enabling PSR and other MOD bits, so we do it here. */
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
-		if(!(iiscon & S3C_IISCON_I2SACTIVE)){
-			iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
-			iisfic |= S3C_IISFIC_TFLUSH;
-			writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
-		}
+		if(iiscon & S3C_IISCON_TXDMACTIVE_LP)
+			return 0;
+
+		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+		iisfic |= S3C_IISFIC_TFLUSH;
+		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
 
 		do{
 	   	   cpu_relax();
-		   iiscon = __raw_readl(s3c_i2s.regs + S3C_IISCON);
-		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC_LP) & 0x7f) >> 8);
+		   //iiscon = __raw_readl(s3c_i2s.regs + S3C_IISCON);
+		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC) >> 8) & 0x7f);
 
 		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
 		iisfic &= ~S3C_IISFIC_TFLUSH;
 		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
 	}else{
-		if(!(iiscon & S3C_IISCON_I2SACTIVE)){
-			iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
-			iisfic |= S3C_IISFIC_RFLUSH;
-			writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
-		}
+		if(iiscon & S3C_IISCON_RXDMACTIVE)
+			return 0;
+
+		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
+		iisfic |= S3C_IISFIC_RFLUSH;
+		writel(iisfic, s3c_i2s.regs + S3C_IISFIC_LP);
 
 		do{
 	   	   cpu_relax();
-		   iiscon = readl(s3c_i2s.regs + S3C_IISCON);
-		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC_LP) & 0x7f) >> 0);
+		   //iiscon = readl(s3c_i2s.regs + S3C_IISCON);
+		}while((__raw_readl(s3c_i2s.regs + S3C_IISFIC) >> 0) & 0x7f);
 
 		iisfic = readl(s3c_i2s.regs + S3C_IISFIC_LP);
 		iisfic &= ~S3C_IISFIC_RFLUSH;
@@ -542,7 +544,7 @@ static irqreturn_t s3c_iis_irq(int irqno, void *dev_id)
 		writel(iiscon, s3c_i2s.regs + S3C_IISCON);
 		s3cdbg("TX_S underrun interrupt IISCON = 0x%08x\n", readl(s3c_i2s.regs + S3C_IISCON));
 	}
-	if(S3C_IISCON_FTXURSTATUS & iiscon) {
+	if(iiscon & S3C_IISCON_FTXURSTATUS) {
 		iiscon &= ~S3C_IISCON_FTXURINTEN;
 		iiscon |= S3C_IISCON_FTXURSTATUS;
 		writel(iiscon, s3c_i2s.regs + S3C_IISCON);
