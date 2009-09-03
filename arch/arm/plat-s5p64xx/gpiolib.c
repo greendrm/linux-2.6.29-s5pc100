@@ -98,12 +98,14 @@ static struct s3c_gpio_cfg gpio_cfg = {
 	.set_config	= s3c_gpio_setcfg_s5p64xx,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
+	.set_pin        = s3c_gpio_setpin_updown
 };
 
 static struct s3c_gpio_cfg gpio_cfg_noint = {
 	.set_config	= s3c_gpio_setcfg_s5p64xx,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
+	.set_pin        = s3c_gpio_setpin_updown
 };
 
 static struct s3c_gpio_chip gpio_chips[] = {

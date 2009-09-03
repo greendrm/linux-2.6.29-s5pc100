@@ -50,6 +50,11 @@ config S5P64XX_SETUP_I2C1
 	help
 	  Common setup code for i2c bus 1.
 
+config S5P64XX_SETUP_I2C2
+	bool
+	help
+	  Common setup code for i2c bus 2.
+
 # FB part
 config S5P64XX_DEV_FB
 	bool

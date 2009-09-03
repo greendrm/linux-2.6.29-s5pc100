@@ -428,8 +428,9 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 
 	&s3c_device_wdt,
 	&s3c_device_rtc,
-//	&s3c_device_i2c0,
-//	&s3c_device_i2c1,
+	&s3c_device_i2c0,
+	&s3c_device_i2c1,
+	&s3c_device_i2c2,
 
 	&s3c_device_ts,
 	&s3c_device_keypad,
@@ -468,9 +469,13 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 };
 
 static struct i2c_board_info i2c_devs1[] __initdata = {
-	{ I2C_BOARD_INFO("24c128", 0x57), },	/* Samsung S524AD0XD1 */
+	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
 	{ I2C_BOARD_INFO("WM8580", 0x1a), },
 	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
+};
+
+static struct i2c_board_info i2c_devs2[] __initdata = {
+	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
 };
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
@@ -568,14 +573,15 @@ static void __init smdk6442_machine_init(void)
 	s3cfb_set_platdata(&ams320_data);
 #endif
 
-//	s3c_i2c0_set_platdata(NULL);
-//	s3c_i2c1_set_platdata(NULL);
+	s3c_i2c0_set_platdata(NULL);
+	s3c_i2c1_set_platdata(NULL);
+	s3c_i2c2_set_platdata(NULL);
+        i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
 
 	s3c_ts_set_platdata(&s3c_ts_platform);
 	s3c_adc_set_platdata(&s3c_adc_platform);
-
-//	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
-//	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 
 	/* fb */
 //	s3cfb_set_platdata(&fb_data);

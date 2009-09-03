@@ -1933,3 +1933,30 @@ v2.6.29.4-dev-1-4-14: Jae-Cheol Lee
 	Modified Files:
 		M	arch/arm/plat-s5pc11x/clock.c
 		M	arch/arm/plat-s3c/clock.c
+
+v2.6.29.4-dev-1-4-15: Hatim Ali
+	- Added I2C support on SMDK6442
+	
+	Modified Files:
+		M	arch/arm/mach-s5p6442/Kconfig
+		M	arch/arm/mach-s5p6442/cpu.c
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s3c/Kconfig
+		M	arch/arm/plat-s3c/Makefile
+		M	arch/arm/plat-s3c/include/plat/devs.h
+		M	arch/arm/plat-s3c/include/plat/iic-core.h
+		M	arch/arm/plat-s3c/include/plat/iic.h
+		M	arch/arm/plat-s5p64xx/Kconfig
+		M	arch/arm/plat-s5p64xx/Makefile
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/gpiolib.c
+		M	arch/arm/plat-s5p64xx/include/plat/irqs.h
+		M	arch/arm/plat-s5p64xx/setup-i2c0.c
+		M	arch/arm/plat-s5p64xx/setup-i2c1.c
+		M	drivers/i2c/busses/Kconfig
+
+	Added Files:
+		A	arch/arm/plat-s3c/dev-i2c2.c
+		A	arch/arm/plat-s5p64xx/setup-i2c2.c
+

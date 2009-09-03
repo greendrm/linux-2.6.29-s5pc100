@@ -282,7 +282,25 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_hd1,
 		.enable		= s5p64xx_clk_ip2_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC2,
-	},
+	},{
+		.name		= "i2c",
+		.id		= 0,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C0,
+	},{
+		.name		= "i2c",
+		.id		= 1,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
+	},{
+		.name		= "i2c",
+		.id		= 2,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
+	}, 
 };
 
 static struct clk *clks[] __initdata = {
