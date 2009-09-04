@@ -65,6 +65,10 @@ static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
 	if (ret < 0)
 		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 
+#if defined (CONFIG_VIDEO_IPC)
+	ipc_off();
+#endif
+
 	return 0;
 }
 

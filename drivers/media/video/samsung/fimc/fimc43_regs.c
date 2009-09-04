@@ -522,7 +522,7 @@ int fimc_hwset_output_scan(struct fimc_control *ctrl, struct v4l2_pix_format *fm
 	cfg = readl(ctrl->regs + S3C_CIOCTRL);
 	cfg &= ~S3C_CIOCTRL_WEAVE_MASK;
 
-	if (fmt->field == V4L2_FIELD_INTERLACED_TB)
+	if ((ctrl->cap) && (fmt->field == V4L2_FIELD_INTERLACED_TB))
 		cfg |= S3C_CIOCTRL_WEAVE_OUT;
 
 	writel(cfg, ctrl->regs + S3C_CIOCTRL);
