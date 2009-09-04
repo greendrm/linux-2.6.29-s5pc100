@@ -2,7 +2,7 @@
  *
  * Driver file for Samsung JPEG Encoder/Decoder
  *
- * Peter Oh, Copyright (c) 2009 Samsung Electronics
+ * Peter Oh, Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -97,26 +97,30 @@ jpg_return_status decode_jpg(sspc100_jpg_ctx *jpg_ctx,
 		return JPG_FAIL;
 	}
 #else //CONFIG_CPU_S5PC110
-/* set jpeg clock register : power on */
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) |
-			(S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE),
+	/* set jpeg clock register : power on */
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) 
+			| (S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE),
 			s3c_jpeg_base + S3C_JPEG_CLKCON_REG);
+			
 	/* set jpeg mod register : decode */
-	writel(readl(s3c_jpeg_base + S3C_JPEG_MOD_REG) |
-			(S3C_JPEG_MOD_REG_PROC_DEC),
+	writel(readl(s3c_jpeg_base + S3C_JPEG_MOD_REG) 
+			| (S3C_JPEG_MOD_REG_PROC_DEC),
 			s3c_jpeg_base + S3C_JPEG_MOD_REG);
+			
 	/* set jpeg interrupt setting register */
-	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) |
-			(S3C_JPEG_INTSE_REG_RSTM_INT_EN	|
-			S3C_JPEG_INTSE_REG_DATA_NUM_INT_EN |
-			S3C_JPEG_INTSE_REG_FINAL_MCU_NUM_INT_EN),
+	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) 
+			| (S3C_JPEG_INTSE_REG_RSTM_INT_EN
+			| S3C_JPEG_INTSE_REG_DATA_NUM_INT_EN 
+			| S3C_JPEG_INTSE_REG_FINAL_MCU_NUM_INT_EN),
 			s3c_jpeg_base + S3C_JPEG_INTSE_REG);
+			
 	/* set jpeg deocde ouput format register */
-	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) &
-			~(S3C_JPEG_OUTFORM_REG_YCBCY420),
+	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) 
+			& ~(S3C_JPEG_OUTFORM_REG_YCBCY420),
 			s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) |
-			(dec_param->out_format << 0),
+			
+	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) 
+			| (dec_param->out_format << 0),
 			s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
 
 	/* set the address of compressed input data */
@@ -127,8 +131,8 @@ jpg_return_status decode_jpg(sspc100_jpg_ctx *jpg_ctx,
 
 	/* start decoding */
 
-	writel(readl(s3c_jpeg_base + S3C_JPEG_JRSTART_REG) |
-			S3C_JPEG_JRSTART_REG_ENABLE,
+	writel(readl(s3c_jpeg_base + S3C_JPEG_JRSTART_REG) 
+			| S3C_JPEG_JRSTART_REG_ENABLE,
 			s3c_jpeg_base + S3C_JPEG_JSTART_REG);
 
 	ret = wait_for_interrupt();
@@ -167,18 +171,20 @@ void reset_jpg(sspc100_jpg_ctx *jpg_ctx)
 	writel(S3C_JPEG_SW_RESET_REG_ENABLE, s3c_jpeg_base + S3C_JPEG_SW_RESET_REG);
 
 	do {
-		writel(S3C_JPEG_SW_RESET_REG_ENABLE, s3c_jpeg_base + S3C_JPEG_SW_RESET_REG);
-	} while (((readl(s3c_jpeg_base + S3C_JPEG_SW_RESET_REG)) & S3C_JPEG_SW_RESET_REG_ENABLE) == S3C_JPEG_SW_RESET_REG_ENABLE);
+		writel(S3C_JPEG_SW_RESET_REG_ENABLE, 
+			s3c_jpeg_base + S3C_JPEG_SW_RESET_REG);
+	} while (((readl(s3c_jpeg_base + S3C_JPEG_SW_RESET_REG)) & 
+		S3C_JPEG_SW_RESET_REG_ENABLE) == S3C_JPEG_SW_RESET_REG_ENABLE);
 #else //CONFIG_CPU_S5PC110
-jpg_dbg("s3c_jpeg_base %p \n", s3c_jpeg_base);
+	jpg_dbg("s3c_jpeg_base %p \n", s3c_jpeg_base);
 	writel(S3C_JPEG_SW_RESET_REG_ENABLE,
 			s3c_jpeg_base + S3C_JPEG_SW_RESET_REG);
 
 	do {
 		writel(S3C_JPEG_SW_RESET_REG_ENABLE,
 				s3c_jpeg_base + S3C_JPEG_SW_RESET_REG);
-	} while (((readl(s3c_jpeg_base + S3C_JPEG_SW_RESET_REG))
-		& S3C_JPEG_SW_RESET_REG_ENABLE) == S3C_JPEG_SW_RESET_REG_ENABLE);
+	} while (((readl(s3c_jpeg_base + S3C_JPEG_SW_RESET_REG)) &
+		S3C_JPEG_SW_RESET_REG_ENABLE) == S3C_JPEG_SW_RESET_REG_ENABLE);
 #endif
 }
 
@@ -188,22 +194,51 @@ void decode_header(sspc100_jpg_ctx *jpg_ctx, jpg_dec_proc_param *dec_param)
 	jpg_dbg("decode_header function\n");
 	writel(jpg_ctx->jpg_data_addr, s3c_jpeg_base + S3C_JPEG_JPGADR_REG);
 
-	writel(readl(s3c_jpeg_base + S3C_JPEG_MOD_REG) | (S3C_JPEG_MOD_REG_PROC_DEC), s3c_jpeg_base + S3C_JPEG_MOD_REG);	//decoding mode
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG) & (~S3C_JPEG_CMOD_REG_MOD_HALF_EN_HALF), s3c_jpeg_base + S3C_JPEG_CMOD_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) | (S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE), s3c_jpeg_base + S3C_JPEG_CLKCON_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) & ~(0x7f << 0), s3c_jpeg_base + S3C_JPEG_INTSE_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) | (S3C_JPEG_INTSE_REG_ERR_INT_EN	| S3C_JPEG_INTSE_REG_HEAD_INT_EN_ENABLE | S3C_JPEG_INTSE_REG_INT_EN), s3c_jpeg_base + S3C_JPEG_INTSE_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) & ~(S3C_JPEG_OUTFORM_REG_YCBCY420), s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) | (dec_param->out_format << 0), s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_DEC_STREAM_SIZE_REG) & ~(S3C_JPEG_DEC_STREAM_SIZE_REG_PROHIBIT), s3c_jpeg_base + S3C_JPEG_DEC_STREAM_SIZE_REG);
-	//writel(dec_param->file_size, s3c_jpeg_base + S3C_JPEG_DEC_STREAM_SIZE_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) | S3C_JPEG_JSTART_REG_ENABLE, s3c_jpeg_base + S3C_JPEG_JSTART_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_MOD_REG) 
+		| (S3C_JPEG_MOD_REG_PROC_DEC), 
+		s3c_jpeg_base + S3C_JPEG_MOD_REG);	//decoding mode
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG) 
+		& (~S3C_JPEG_CMOD_REG_MOD_HALF_EN_HALF), 
+		s3c_jpeg_base + S3C_JPEG_CMOD_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) 
+		| (S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE), 
+		s3c_jpeg_base + S3C_JPEG_CLKCON_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) 
+		& ~(0x7f << 0), 
+		s3c_jpeg_base + S3C_JPEG_INTSE_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) 
+		| (S3C_JPEG_INTSE_REG_ERR_INT_EN 
+		| S3C_JPEG_INTSE_REG_HEAD_INT_EN_ENABLE 
+		| S3C_JPEG_INTSE_REG_INT_EN), 
+		s3c_jpeg_base + S3C_JPEG_INTSE_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) 
+		& ~(S3C_JPEG_OUTFORM_REG_YCBCY420), 
+		s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_OUTFORM_REG) 
+		| (dec_param->out_format << 0), 
+		s3c_jpeg_base + S3C_JPEG_OUTFORM_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_DEC_STREAM_SIZE_REG) 
+		& ~(S3C_JPEG_DEC_STREAM_SIZE_REG_PROHIBIT), 
+		s3c_jpeg_base + S3C_JPEG_DEC_STREAM_SIZE_REG);
+		
+	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) 
+		| S3C_JPEG_JSTART_REG_ENABLE, 
+		s3c_jpeg_base + S3C_JPEG_JSTART_REG);
 }
 void decode_body(sspc100_jpg_ctx *jpg_ctx)
 {
 	jpg_dbg("decode_body function\n");
 	writel(jpg_ctx->img_data_addr, s3c_jpeg_base + S3C_JPEG_IMGADR_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_JRSTART_REG) | S3C_JPEG_JRSTART_REG_ENABLE, s3c_jpeg_base + S3C_JPEG_JRSTART_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_JRSTART_REG) 
+		| S3C_JPEG_JRSTART_REG_ENABLE, 
+		s3c_jpeg_base + S3C_JPEG_JRSTART_REG);
 }
 #endif
 
@@ -230,10 +265,10 @@ void get_xy(sspc100_jpg_ctx *jpg_ctx, UINT32 *x, UINT32 *y)
 	*x = readl(s3c_jpeg_base + S3C_JPEG_X_REG);
 	*y = readl(s3c_jpeg_base + S3C_JPEG_Y_REG);
 #else //CONFIG_CPU_S5PC110
-	*x = (readl(s3c_jpeg_base + S3C_JPEG_X_U_REG)<<8)|
-		readl(s3c_jpeg_base + S3C_JPEG_X_L_REG);
-	*y = (readl(s3c_jpeg_base + S3C_JPEG_Y_U_REG)<<8)|
-		readl(s3c_jpeg_base + S3C_JPEG_Y_L_REG);
+	*x = (readl(s3c_jpeg_base + S3C_JPEG_X_U_REG)<<8)
+		| readl(s3c_jpeg_base + S3C_JPEG_X_L_REG);
+	*y = (readl(s3c_jpeg_base + S3C_JPEG_Y_U_REG)<<8)
+		| readl(s3c_jpeg_base + S3C_JPEG_Y_L_REG);
 #endif
 }
 
@@ -292,11 +327,18 @@ jpg_return_status encode_jpg(sspc100_jpg_ctx *jpg_ctx,
 	}
 #ifdef CONFIG_CPU_S5PC100
 	reset_jpg(jpg_ctx);
-	cmd_val = (enc_param->sample_mode == JPG_422) ? (S3C_JPEG_MOD_REG_SUBSAMPLE_422) : (S3C_JPEG_MOD_REG_SUBSAMPLE_420);
+	cmd_val = (enc_param->sample_mode == JPG_422) ? 
+		(S3C_JPEG_MOD_REG_SUBSAMPLE_422) : (S3C_JPEG_MOD_REG_SUBSAMPLE_420);
 	writel(cmd_val, s3c_jpeg_base + S3C_JPEG_MOD_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG)& (~S3C_JPEG_CMOD_REG_MOD_HALF_EN_HALF), s3c_jpeg_base + S3C_JPEG_CMOD_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) | (S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE), s3c_jpeg_base + S3C_JPEG_CLKCON_REG);
-	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG) | (enc_param->in_format << JPG_MODE_SEL_BIT), s3c_jpeg_base + S3C_JPEG_CMOD_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG)
+		& (~S3C_JPEG_CMOD_REG_MOD_HALF_EN_HALF), 
+		s3c_jpeg_base + S3C_JPEG_CMOD_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CLKCON_REG) 
+		| (S3C_JPEG_CLKCON_REG_POWER_ON_ACTIVATE), 
+		s3c_jpeg_base + S3C_JPEG_CLKCON_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_CMOD_REG) 
+		| (enc_param->in_format << JPG_MODE_SEL_BIT), 
+		s3c_jpeg_base + S3C_JPEG_CMOD_REG);
 	writel(JPG_RESTART_INTRAVEL, s3c_jpeg_base + S3C_JPEG_DRI_REG);
 	writel(enc_param->width, s3c_jpeg_base + S3C_JPEG_X_REG);
 	writel(enc_param->height, s3c_jpeg_base + S3C_JPEG_Y_REG);
@@ -304,25 +346,30 @@ jpg_return_status encode_jpg(sspc100_jpg_ctx *jpg_ctx,
 	jpg_dbg("enc_param->enc_type : %d\n", enc_param->enc_type);
 
 	if (enc_param->enc_type == JPG_MAIN) {
-		jpg_dbg("encode image size width: %d, height: %d\n", enc_param->width, enc_param->height);
+		jpg_dbg("encode image size width: %d, height: %d\n", 
+			enc_param->width, enc_param->height);
 		writel(jpg_ctx->img_data_addr, s3c_jpeg_base + S3C_JPEG_IMGADR_REG);
 		writel(jpg_ctx->jpg_data_addr, s3c_jpeg_base + S3C_JPEG_JPGADR_REG);
 	} else { // thumbnail encoding
-		jpg_dbg("thumb image size width: %d, height: %d\n", enc_param->width, enc_param->height);
+		jpg_dbg("thumb image size width: %d, height: %d\n", 
+			enc_param->width, enc_param->height);
 		writel(jpg_ctx->img_thumb_data_addr, s3c_jpeg_base + S3C_JPEG_IMGADR_REG);
 		writel(jpg_ctx->jpg_thumb_data_addr, s3c_jpeg_base + S3C_JPEG_JPGADR_REG);
 	}
 
-	writel(COEF1_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF1_REG); 	// Coefficient value 1 for RGB to YCbCr
-	writel(COEF2_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF2_REG); 	// Coefficient value 2 for RGB to YCbCr
-	writel(COEF3_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF3_REG);	// Coefficient value 3 for RGB to YCbCr
+	/* Coefficient value for RGB to YCbCr */
+	writel(COEF1_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF1_REG); 	
+	writel(COEF2_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF2_REG); 	
+	writel(COEF3_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF3_REG);	
 
 	// Quantiazation and Huffman Table setting
 	for (i = 0; i < 64; i++)
-		writel((UINT32)qtbl_luminance[enc_param->quality][i], s3c_jpeg_base + S3C_JPEG_QTBL0_REG + (i*0x04));
+		writel((UINT32)qtbl_luminance[enc_param->quality][i], 
+			s3c_jpeg_base + S3C_JPEG_QTBL0_REG + (i*0x04));
 
 	for (i = 0; i < 64; i++)
-		writel((UINT32)qtbl_chrominance[enc_param->quality][i], s3c_jpeg_base + S3C_JPEG_QTBL1_REG + (i*0x04));
+		writel((UINT32)qtbl_chrominance[enc_param->quality][i], 
+			s3c_jpeg_base + S3C_JPEG_QTBL1_REG + (i*0x04));
 
 	for (i = 0; i < 16; i++)
 		writel((UINT32)hdctbl0[i], s3c_jpeg_base + S3C_JPEG_HDCTBL0_REG + (i*0x04));
@@ -336,9 +383,11 @@ jpg_return_status encode_jpg(sspc100_jpg_ctx *jpg_ctx,
 	for (i = 0; i < 162; i++)
 		writel((UINT32)hactblg0[i], s3c_jpeg_base + S3C_JPEG_HACTBLG0_REG + (i*0x04));
 
-	writel(S3C_JPEG_QHTBL_REG_QT_NUM2 | S3C_JPEG_QHTBL_REG_QT_NUM3, s3c_jpeg_base + S3C_JPEG_QHTBL_REG);
+	writel(S3C_JPEG_QHTBL_REG_QT_NUM2 | S3C_JPEG_QHTBL_REG_QT_NUM3, 
+		s3c_jpeg_base + S3C_JPEG_QHTBL_REG);
 
-	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) | S3C_JPEG_JSTART_REG_ENABLE, s3c_jpeg_base + S3C_JPEG_JSTART_REG);
+	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) | S3C_JPEG_JSTART_REG_ENABLE, 
+		s3c_jpeg_base + S3C_JPEG_JSTART_REG);
 	ret = wait_for_interrupt();
 
 	if (ret != OK_ENC_OR_DEC) {
@@ -378,6 +427,7 @@ jpg_return_status encode_jpg(sspc100_jpg_ctx *jpg_ctx,
 	/* Horizontal resolution */
 	writel((enc_param->width>>8), s3c_jpeg_base + S3C_JPEG_X_U_REG);
 	writel(enc_param->width, s3c_jpeg_base + S3C_JPEG_X_L_REG);
+	
 	/* Vertical resolution */
 	writel((enc_param->height>>8), s3c_jpeg_base + S3C_JPEG_Y_U_REG);
 	writel(enc_param->height, s3c_jpeg_base + S3C_JPEG_Y_L_REG);
@@ -400,35 +450,48 @@ jpg_return_status encode_jpg(sspc100_jpg_ctx *jpg_ctx,
 	writel(COEF1_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF1_REG);
 	writel(COEF2_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF2_REG);
 	writel(COEF3_RGB_2_YUV, s3c_jpeg_base + S3C_JPEG_COEF3_REG);
+	
 	// Quantiazation and Huffman Table setting
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		writel((UINT32)qtbl_luminance[enc_param->quality][i],
 			s3c_jpeg_base + S3C_JPEG_QTBL0_REG + (i*0x04));
+	}
 
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		writel((UINT32)qtbl_chrominance[enc_param->quality][i],
 			s3c_jpeg_base + S3C_JPEG_QTBL1_REG + (i*0x04));
+	}
 
-	for (i = 0; i < 16; i++)
-		writel((UINT32)hdctbl0[i], s3c_jpeg_base + S3C_JPEG_HDCTBL0_REG + (i*0x04));
+	for (i = 0; i < 16; i++) {
+		writel((UINT32)hdctbl0[i], 
+			s3c_jpeg_base + S3C_JPEG_HDCTBL0_REG + (i*0x04));
+	}
 
-	for (i = 0; i < 12; i++)
-		writel((UINT32)hdctblg0[i], s3c_jpeg_base + S3C_JPEG_HDCTBLG0_REG + (i*0x04));
+	for (i = 0; i < 12; i++) {
+		writel((UINT32)hdctblg0[i], 
+			s3c_jpeg_base + S3C_JPEG_HDCTBLG0_REG + (i*0x04));
+	}
 
-	for (i = 0; i < 16; i++)
-		writel((UINT32)hactbl0[i], s3c_jpeg_base + S3C_JPEG_HACTBL0_REG + (i*0x04));
+	for (i = 0; i < 16; i++) {
+		writel((UINT32)hactbl0[i], 
+			s3c_jpeg_base + S3C_JPEG_HACTBL0_REG + (i*0x04));
+	}
 
-	for (i = 0; i < 162; i++)
-		writel((UINT32)hactblg0[i], s3c_jpeg_base + S3C_JPEG_HACTBLG0_REG + (i*0x04));
+	for (i = 0; i < 162; i++) {
+		writel((UINT32)hactblg0[i], 
+			s3c_jpeg_base + S3C_JPEG_HACTBLG0_REG + (i*0x04));
+	}
 
-	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) |
-			(S3C_JPEG_INTSE_REG_RSTM_INT_EN	|
-			S3C_JPEG_INTSE_REG_DATA_NUM_INT_EN |
-			S3C_JPEG_INTSE_REG_FINAL_MCU_NUM_INT_EN),
+	writel(readl(s3c_jpeg_base + S3C_JPEG_INTSE_REG) 
+			| (S3C_JPEG_INTSE_REG_RSTM_INT_EN 
+			| S3C_JPEG_INTSE_REG_DATA_NUM_INT_EN 
+			| S3C_JPEG_INTSE_REG_FINAL_MCU_NUM_INT_EN),
 			s3c_jpeg_base + S3C_JPEG_INTSE_REG);
 
-	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) | S3C_JPEG_JSTART_REG_ENABLE,
+	writel(readl(s3c_jpeg_base + S3C_JPEG_JSTART_REG) 
+			| S3C_JPEG_JSTART_REG_ENABLE,
 			s3c_jpeg_base + S3C_JPEG_JSTART_REG);
+			
 	ret = wait_for_interrupt();
 
 	if (ret != OK_ENC_OR_DEC) {
