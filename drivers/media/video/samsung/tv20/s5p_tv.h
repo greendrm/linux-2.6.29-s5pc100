@@ -800,3 +800,14 @@ void 	__s5p_tv_poweroff(void);
 extern s5p_tv_status s5ptv_status;
 extern s5p_tv_vo s5ptv_overlay[2];
 
+extern void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr);
+extern void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr);
+extern void s5p_hdmi_clear_pending(s5p_tv_hdmi_interrrupt intr);
+extern u8 s5p_hdmi_get_interrupts(void);
+extern int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num);
+extern int s5p_hpd_init(void);
+extern u8 s5p_hdmi_get_swhpd_status(void);
+extern u8 s5p_hdmi_get_hpd_status(void);
+extern void s5p_hdmi_swhpd_disable(void);
+extern void s5p_hdmi_hpd_gen(void);
+

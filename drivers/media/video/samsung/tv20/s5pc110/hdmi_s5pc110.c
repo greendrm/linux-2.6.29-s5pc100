@@ -14,7 +14,9 @@
 #include <linux/kernel.h>
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
+#include <linux/clk.h>
 
+#include <plat/clock.h>
 #include <asm/io.h>
 
 #include "tv_out_s5pc110.h"
@@ -485,19 +487,19 @@ static s32 hdmi_set_clr_depth(s5p_hdmi_color_depth cd)
 	case HDMI_CD_36:
 		writeb(GCP_CD_36BPP, hdmi_base + S5P_GCP_BYTE2);
 		// set DC register
-		writeb(HDMI_DC_CTL_12, hdmi_base + HDMI_DC_CONTROL);
+		writeb(HDMI_DC_CTL_12, hdmi_base + S5P_HDMI_DC_CONTROL);
 		break;
 		
 	case HDMI_CD_30:
 		writeb(GCP_CD_30BPP, hdmi_base + S5P_GCP_BYTE2);
 		// set DC register
-		writeb(HDMI_DC_CTL_10, hdmi_base + HDMI_DC_CONTROL);
+		writeb(HDMI_DC_CTL_10, hdmi_base + S5P_HDMI_DC_CONTROL);
 		break;
 		
 	case HDMI_CD_24:
 		writeb(GCP_CD_24BPP, hdmi_base + S5P_GCP_BYTE2);
 		// set DC register
-		writeb(HDMI_DC_CTL_8, hdmi_base + HDMI_DC_CONTROL);
+		writeb(HDMI_DC_CTL_8, hdmi_base + S5P_HDMI_DC_CONTROL);
 		// disable GCP
 		writeb(DO_NOT_TRANSMIT, hdmi_base + S5P_GCP_CON);
 		break;
@@ -1600,6 +1602,15 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	size_t	size;
 	int 	ret;
 	u32	reg;
+	struct	clk 	*hdmi_clk;
+
+	hdmi_clk = clk_get(&pdev->dev, "hdmi");
+
+	if(hdmi_clk == NULL) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "hdmi");	
+		return -ENOENT;							
+	}								
+	clk_enable(hdmi_clk);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
@@ -1661,6 +1672,10 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	/* i2c_hdmi init - set i2c filtering */	
 	writeb(0x5, i2c_hdmi_phy_base + I2C_HDMI_LC);
 
+	/* temp for test - hdmi intr. global enable */
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	writeb(reg | (1<<HDMI_IRQ_GLOBAL), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+
 	return ret;
 
 }
@@ -1685,26 +1700,63 @@ int __init __s5p_hdmi_release(struct platform_device *pdev)
 
 void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr)
 {
-    u8 reg;
-    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
-    writeb(reg | (1<<intr) | (1<<HDMI_IRQ_GLOBAL), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	writeb(reg | (1<<intr) | (1<<HDMI_IRQ_GLOBAL), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
 }
 EXPORT_SYMBOL(s5p_hdmi_enable_interrupts);
 
 void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr)
 {
-    u8 reg;
-    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
-    writeb(reg & ~(1<<intr), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	writeb(reg & ~(1<<intr), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
 }
 EXPORT_SYMBOL(s5p_hdmi_disable_interrupts);
 
-u8 s5p_hdmi_get_interrupts(s5p_tv_hdmi_interrrupt intr)
+void s5p_hdmi_clear_pending(s5p_tv_hdmi_interrrupt intr)
 {
-    u8 reg;
-    reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+	writeb(reg | (1<<intr), hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+}
+EXPORT_SYMBOL(s5p_hdmi_clear_pending);
 
-    return reg;
+u8 s5p_hdmi_get_interrupts(void)
+{
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+	return reg;
 }
 EXPORT_SYMBOL(s5p_hdmi_get_interrupts);
+
+u8 s5p_hdmi_get_swhpd_status(void)
+{
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HPD) & HPD_SW_ENABLE;
+	return reg;
+}
+
+EXPORT_SYMBOL(s5p_hdmi_get_swhpd_status);
+
+u8 s5p_hdmi_get_hpd_status(void)
+{
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_HPD);
+	return reg;
+}
+EXPORT_SYMBOL(s5p_hdmi_get_hpd_status);
+
+void s5p_hdmi_swhpd_disable(void)
+{
+	u8 reg;
+	reg = writeb(HPD_SW_DISABLE, hdmi_base+S5P_HPD);
+}
+EXPORT_SYMBOL(s5p_hdmi_swhpd_disable);
+
+void s5p_hdmi_hpd_gen(void)
+{
+	writeb(0xFF, hdmi_base+S5P_HDMI_HPD_GEN);
+}
+EXPORT_SYMBOL(s5p_hdmi_hpd_gen);
 

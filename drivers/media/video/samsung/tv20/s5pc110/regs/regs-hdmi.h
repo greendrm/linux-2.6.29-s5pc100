@@ -352,9 +352,9 @@
 #define HDMI_GAMUT_DATA26		S5P_HDMI_BASE(0x0578) /* Gamut Metadata packet body data */
 #define HDMI_GAMUT_DATA27		S5P_HDMI_BASE(0x057c) /* Gamut Metadata packet body data */
 			
-#define HDMI_DC_CONTROL			S5P_HDMI_BASE(0x05C0) /* Gamut Metadata packet body data */
-#define HDMI_VIDEO_PATTERN_GEN		S5P_HDMI_BASE(0x05C4) /* Gamut Metadata packet body data */
-#define HDMI_HPD_GEN			S5P_HDMI_BASE(0x05C8) /* Gamut Metadata packet body data */
+#define	S5P_HDMI_DC_CONTROL		S5P_HDMI_BASE(0x05C0) /* Gamut Metadata packet body data */
+#define S5P_HDMI_VIDEO_PATTERN_GEN	S5P_HDMI_BASE(0x05C4) /* Gamut Metadata packet body data */
+#define S5P_HDMI_HPD_GEN		S5P_HDMI_BASE(0x05C8) /* Gamut Metadata packet body data */
 			
 #define S5P_TG_CMD			S5P_HDMI_TG_BASE(0x0000) /* Command Register 0x00 */
 #define S5P_TG_H_FSZ_L			S5P_HDMI_TG_BASE(0x0018) /* Horizontal Full Size 0x72 */
@@ -1548,6 +1548,10 @@
 
 #define DO_NOT_TRANSMIT		(0)
 
+#define HPD_SW_ENABLE               (1<<0)
+#define HPD_SW_DISABLE              (0)
+#define HPD_ON                      (1<<1)
+#define HPD_OFF                     (0)
 
 
 #endif // __ASM_ARCH_REGS_HDMI_H

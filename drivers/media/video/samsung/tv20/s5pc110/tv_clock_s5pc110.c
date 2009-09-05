@@ -130,6 +130,7 @@ void __s5p_tv_clk_init_hdmi_ratio(unsigned int clk_div)
 /* VP */
 void __s5p_tv_clk_set_vp_clk_onoff(bool clk_on)
 {
+	/*
 	TVCLKPRINTK("VP hclk : %s\n\r", clk_on ? "on":"off");
 
 	if (clk_on) {
@@ -139,11 +140,13 @@ void __s5p_tv_clk_set_vp_clk_onoff(bool clk_on)
 	}
 
 	TVCLKPRINTK("S5P_CLKGATE_MAIN1 :0x%08x\n\r", readl(S5P_CLKGATE_IP1));
+	*/
 }
 
 /* MIXER */
 void __s5p_tv_clk_set_vmixer_hclk_onoff(bool clk_on)
 {
+	/*
 	TVCLKPRINTK("MIXER hclk : %s\n\r", clk_on ? "on":"off");
 
 	if (clk_on) {
@@ -153,11 +156,13 @@ void __s5p_tv_clk_set_vmixer_hclk_onoff(bool clk_on)
 	}
 
 	TVCLKPRINTK("S5P_CLKGATE_MAIN1 :0x%08x\n\r", readl(S5P_CLKGATE_IP1));
+	*/
 }
 
 /* TVENC */
 void __s5p_tv_clk_set_sdout_hclk_onoff(bool clk_on)
 {
+	/*
 	TVCLKPRINTK("TVENC hclk : %s\n\r", clk_on ? "on":"off");
 
 	if (clk_on) {
@@ -169,21 +174,32 @@ void __s5p_tv_clk_set_sdout_hclk_onoff(bool clk_on)
 
 	TVCLKPRINTK("S5P_CLKGATE_MAIN1 :0x%08x\n\r", readl(S5P_CLKGATE_IP1));
 	TVCLKPRINTK("clk output is %s\n\r", readl(S5P_CLKGATE_IP1) ? "HDMI":"SDOUT");
+	*/
 }
 
 /* HDMI */
+/* 
+ * CEC/HPD/HDCP/HDMI_AUDIO(I2S/SPDIF) ftn. module use INTC_CON.
+ * so, HDMI clk gate ftn. must be removed.
+ */
+
 void __s5p_tv_clk_set_hdmi_hclk_onoff(bool clk_on)
 {
+/*	
 	TVCLKPRINTK("HDMI hclk : %s\n\r", clk_on ? "on":"off");
+
+	bit_add_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_IP1);
+
 
 	if (clk_on) {
 		bit_add_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_IP1);
 	} else {
-		bit_del_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_IP1) ;
+		bit_del_l(CLK_HCLK_HDMI_PASS, S5P_CLKGATE_IP1);
 	}
-
 	TVCLKPRINTK("S5P_CLKGATE_PERI1 :0x%08x\n\r", readl(S5P_CLKGATE_IP1));
 	TVCLKPRINTK("clk output is %s\n\r", readl(S5P_CLKGATE_IP1) ? "HDMI":"SDOUT");
+*/
+	
 }
 
 /* 

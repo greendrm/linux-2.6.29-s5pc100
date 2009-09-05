@@ -568,7 +568,5 @@ typedef enum {
 	HDMI_IRQ_HDCP		=0
 }s5p_tv_hdmi_interrrupt;
 
-void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr);
-void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr);
-u8 s5p_hdmi_get_interrupts(s5p_tv_hdmi_interrrupt intr);
+typedef int (*hdmi_isr)(int irq);
 

@@ -52,6 +52,9 @@
 #define BASEPRINTK(fmt, args...)
 #endif
 
+#ifdef CONFIG_CPU_S5PC110
+#define TVOUT_CLK_INIT(dev, clk, name)
+#else
 #define TVOUT_CLK_INIT(dev, clk, name) 							\
 	clk= clk_get(dev, name);							\
 	if(clk == NULL) { 								\
@@ -59,6 +62,7 @@
 		return -ENOENT;								\
 	}										\
 	clk_enable(clk)
+#endif
 
 #define TVOUT_IRQ_INIT(x, ret, dev, num, jump, ftn, m_name) 				\
 	x = platform_get_irq(dev, num); 						\
@@ -207,17 +211,13 @@ static void set_ddc_port(void)
 
 static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 {
+#ifdef CONFIG_CPU_S5PC100
+
 	spin_lock_irq(&slock_hpd);
 	
-#ifdef CONFIG_CPU_S5PC110
-	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
-		? false:true;
-#endif
-
-#ifdef CONFIG_CPU_S5PC100
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
-#endif	
+
 	if(s5ptv_status.hpd_status){
 		
 		set_irq_type(IRQ_EINT5, IRQ_TYPE_EDGE_RISING);
@@ -233,7 +233,7 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 	spin_unlock_irq(&slock_hpd);
 
 	BASEPRINTK("hpd_status = %d\n", s5ptv_status.hpd_status);
-		
+#endif			
 	return IRQ_HANDLED;
 }
 
@@ -484,6 +484,7 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
  
 /* temporary must be checked hdmi_phy power & clk */
 #ifdef CONFIG_CPU_S5PC110
+#include <linux/delay.h>
 #include <plat/regs-clock.h>
 #endif
 
@@ -492,30 +493,6 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	int 	irq_num;
 	int 	ret;
 	int 	i;
-
-/* temporary must be checked hdmi_phy power & clk */
-#ifdef CONFIG_CPU_S5PC110
-#define CTRL_BIT (0x1<<4)
-{
-
-	u32 reg;
-
-	/* i2c-hdmi_phy/i2c-1 */
-	reg = readl(S5P_CLKGATE_IP3);
-
-	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY|S5P_CLKGATE_IP3_I2C_HDMI_DDC);
-
-	writel(reg, S5P_CLKGATE_IP3);
-
-	/* for tv power block */
-	reg = readl(S5P_NORMAL_CFG);
-	
-	writel(reg|CTRL_BIT, S5P_NORMAL_CFG);
-
-	do {			
-	} while(!(__raw_readl(S5P_BLK_PWR_STAT)&CTRL_BIT));
-}
-#endif
 
 	__s5p_sdout_probe(pdev, 0);
 	__s5p_vp_probe(pdev, 1);	
@@ -528,6 +505,22 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 #ifdef CONFIG_CPU_S5PC100	
 	__s5p_hdmi_probe(pdev, 3);
 	__s5p_tvclk_probe(pdev, 4);
+#endif
+
+
+#ifdef CONFIG_CPU_S5PC110
+{
+	u32 reg;
+
+	/* i2c-hdmi_phy/i2c-1 */
+	reg = readl(S5P_CLKGATE_IP3);
+
+	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY);
+
+	writel(reg, S5P_CLKGATE_IP3);
+}
+	/* HDMP apb block is needed by hpd/cec - always on */
+//	__s5p_tv_clk_set_hdmi_hclk_onoff(true);
 #endif
 
 	/* for dev_dbg err. */
@@ -551,13 +544,6 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	INIT_WORK(&ws_hpd, (void *)set_ddc_port);
 
 	/* check EINT init state */
-#ifdef CONFIG_CPU_S5PC110
-	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
-
-	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
-		? false:true;
-#endif
 
 #ifdef CONFIG_CPU_S5PC100
 	s3c_gpio_cfgpin(S5PC1XX_GPH0(5), S3C_GPIO_SFN(2));
@@ -574,7 +560,7 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 0, out, __s5p_mixer_irq, "mixer");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 1, out_hdmi_irq, __s5p_hdmi_irq , "hdmi");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 2, out_tvenc_irq, s5p_tvenc_irq, "tvenc");
-	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
+//	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
 
 	set_irq_type(IRQ_EINT5, IRQ_TYPE_LEVEL_LOW);
 
