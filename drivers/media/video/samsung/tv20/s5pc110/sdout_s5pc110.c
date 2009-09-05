@@ -12,7 +12,9 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/clk.h>
 
+#include <plat/clock.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/sizes.h>
@@ -2150,6 +2152,15 @@ int __init __s5p_sdout_probe(struct platform_device *pdev, u32 res_num)
 	struct resource *res;
 	size_t	size;
 	int 	ret;
+	struct	clk *tvenc_clk;
+
+	tvenc_clk = clk_get(&pdev->dev, "tvenc");
+
+	if(tvenc_clk == NULL) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "tvenc");	
+		return -ENOENT;							
+	}								
+	clk_enable(tvenc_clk);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
