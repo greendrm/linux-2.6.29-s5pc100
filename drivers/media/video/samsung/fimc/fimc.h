@@ -34,11 +34,16 @@
 #define FIMC_SUBDEVS		3
 #define FIMC_MAXCAMS		4
 #define FIMC_PHYBUFS		4
-#define FIMC_CAPBUFS		(FIMC_PHYBUFS + 1)
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
 #define FIMC_OUTQ_BUFS		3
 #define FIMC_TPID		3
+
+#ifdef CONFIG_VIDEO_FIMC_DYNAMIC_BUFFER
+#define FIMC_CAPBUFS		(FIMC_PHYBUFS + 8)
+#else
+#define FIMC_CAPBUFS		(FIMC_PHYBUFS)
+#endif
 
 #define FIMC_ONESHOT_TIMEOUT	200
 #define FIMC_DQUEUE_TIMEOUT	200
@@ -135,6 +140,12 @@ struct fimc_capinfo {
 	struct v4l2_rect	crop;
 	struct v4l2_pix_format	fmt;
 	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
+
+#ifdef CONFIG_VIDEO_FIMC_DYNAMIC_BUFFER
+	int			outgoing[FIMC_PHYBUFS];
+	int			next_buf;
+#endif
+
 	int			nr_bufs;
 	int			irq;
 	int			lastirq;

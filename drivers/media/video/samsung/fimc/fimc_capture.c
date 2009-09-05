@@ -575,6 +575,76 @@ err_alloc:
 	return -ENOMEM;
 }
 
+#ifdef CONFIG_VIDEO_FIMC_DYNAMIC_BUFFER
+int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
+{
+	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
+	int ret = 0, i;
+
+	if (!cap) {
+		dev_err(ctrl->dev, "%s: no capture device info\n", __func__);
+		return -ENODEV;
+	}
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* use fix buffer count */
+	b->count = FIMC_CAPBUFS;
+	cap->nr_bufs = b->count;
+
+	dev_dbg(ctrl->dev, "%s: requested %d buffers\n", __func__, b->count);
+
+	/* free previous buffers */
+	for (i = 0; i < b->count; i++) {
+		fimc_dma_free(ctrl, &cap->bufs[i], 0);
+		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
+	}
+
+	switch (cap->fmt.pixelformat) {
+	case V4L2_PIX_FMT_RGB32:	/* fall through */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
+	case V4L2_PIX_FMT_NV61:		/* fall through */
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
+	case V4L2_PIX_FMT_NV21:
+		ret = fimc_alloc_buffers(ctrl, 0, cap->fmt.sizeimage, 0);
+		break;
+
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV12T:
+		ret = fimc_alloc_buffers(ctrl, 0,
+			cap->fmt.width * cap->fmt.height, SZ_64K);
+		ret = fimc_alloc_buffers(ctrl, 1,
+			cap->fmt.width * cap->fmt.height / 2, SZ_64K);
+		break;
+
+	default:
+		break;
+	}
+
+	if (ret) {
+		dev_err(ctrl->dev, "%s: no memory for "
+				"capture buffer\n", __func__);
+		mutex_unlock(&ctrl->v4l2_lock);
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < FIMC_PHYBUFS; i++)
+		cap->outgoing[i] = i;
+
+	cap->next_buf = i;
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
+	return 0;
+}
+#else
 int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 {
 	struct fimc_control *ctrl = fh;
@@ -652,6 +722,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	return 0;
 }
+#endif
 
 int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 {
@@ -923,6 +994,40 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 	return 0;
 }
 
+#ifdef CONFIG_VIDEO_FIMC_DYNAMIC_BUFFER
+int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
+{
+	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
+	int pp;
+
+	mutex_lock(&ctrl->v4l2_lock);
+
+	/* get pingpong index: assumes fully 4 pingpongs used */
+	pp = (fimc_hwget_frame_count(ctrl) + 2) % 4;
+
+	/* skip even frame: no data */
+	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)
+		pp &= ~0x1;
+
+	/* get real buffer index */
+	b->index = cap->outgoing[pp];
+
+	/* swap with new buffer */
+	cap->outgoing[pp] = cap->next_buf;
+	fimc_hwset_output_address(ctrl, &cap->bufs[cap->next_buf], pp);
+
+	/* update next buffer index */
+	cap->next_buf = (cap->next_buf + 1) % cap->nr_bufs;
+
+	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n",
+		__func__, b->index, cap->bufs[b->index].base[0]);
+
+	mutex_unlock(&ctrl->v4l2_lock);
+
+	return 0;
+}
+#else
 int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = fh;
@@ -948,4 +1053,5 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	return 0;
 }
+#endif
 
