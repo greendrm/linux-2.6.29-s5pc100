@@ -629,22 +629,25 @@ static int fimc_open(struct file *filp)
 		atomic_inc(&ctrl->in_use);
 	}
 
+	if (pdata->clk_on)
+		pdata->clk_on(to_platform_device(ctrl->dev), ctrl->clk);
+
 	/* Apply things to interface register */
 	fimc_hwset_reset(ctrl);
 	filp->private_data = ctrl;
 
-	ctrl->fb.open_fifo	= s3cfb_open_fifo;
-	ctrl->fb.close_fifo	= s3cfb_close_fifo;
+	ctrl->fb.open_fifo = s3cfb_open_fifo;
+	ctrl->fb.close_fifo = s3cfb_close_fifo;
 
 	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_WIDTH,
 					(unsigned long)&ctrl->fb.lcd_hres);
 	if (ret < 0)
-		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_WIDTH\n");
+		dev_err(ctrl->dev, "Fail: S3CFB_GET_LCD_WIDTH\n");
 
 	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_GET_LCD_HEIGHT,
 					(unsigned long)&ctrl->fb.lcd_vres);
 	if (ret < 0)
-		dev_err(ctrl->dev,  "Fail: S3CFB_GET_LCD_HEIGHT\n");
+		dev_err(ctrl->dev, "Fail: S3CFB_GET_LCD_HEIGHT\n");
 
 	ctrl->status = FIMC_STREAMOFF;
 
@@ -679,8 +682,6 @@ static int fimc_release(struct file *filp)
 
 	pdata = to_fimc_plat(ctrl->dev);
 
-	mutex_lock(&ctrl->lock);
-
 	atomic_dec(&ctrl->in_use);
 	filp->private_data = NULL;
 
@@ -698,12 +699,9 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->cap) {
-		mutex_unlock(&ctrl->lock);
-
 		for (i = 0; i < FIMC_CAPBUFS; i++)
 			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 0);
 
-		mutex_lock(&ctrl->lock);
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
 	}
@@ -721,7 +719,8 @@ static int fimc_release(struct file *filp)
 		ctrl->out = NULL;
 	}
 
-	mutex_unlock(&ctrl->lock);
+	if (pdata->clk_off)
+		pdata->clk_off(to_platform_device(ctrl->dev), ctrl->clk);
 
 	dev_info(ctrl->dev, "%s: successfully released\n", __func__);
 
@@ -905,9 +904,6 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	pdata = to_fimc_plat(&pdev->dev);
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
-
-	if (pdata->clk_on)
-		pdata->clk_on(pdev, ctrl->clk);
 
 	/* V4L2 device-subdev registration */
 	ret = v4l2_device_register(&pdev->dev, &ctrl->v4l2_dev);
