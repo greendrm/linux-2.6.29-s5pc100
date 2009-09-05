@@ -843,9 +843,9 @@ static int s3cfb_init_fbinfo(int id)
 	var->lower_margin = timing->v_bp;
 
 	var->pixclock = lcd->freq * (var->left_margin + var->right_margin +
-				     var->hsync_len + var->xres) *
-	    (var->upper_margin + var->lower_margin +
-	     var->vsync_len + var->yres);
+				var->hsync_len + var->xres) *
+				(var->upper_margin + var->lower_margin +
+				var->vsync_len + var->yres);
 
 	dev_dbg(fbdev->dev, "pixclock: %d\n", var->pixclock);
 
