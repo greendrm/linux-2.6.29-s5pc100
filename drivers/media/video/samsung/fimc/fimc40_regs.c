@@ -106,6 +106,35 @@ int fimc_hwset_clear_irq(struct fimc_control *ctrl)
 	return 0;
 }
 
+static void fimc_reset_cfg(struct fimc_control *ctrl)
+{
+	int i;
+	u32 cfg[][2] = {
+		{ 0x018, 0x00000000 }, { 0x01c, 0x00000000 },
+		{ 0x020, 0x00000000 }, { 0x024, 0x00000000 },
+		{ 0x028, 0x00000000 }, { 0x02c, 0x00000000 },
+		{ 0x030, 0x00000000 }, { 0x034, 0x00000000 },
+		{ 0x038, 0x00000000 }, { 0x03c, 0x00000000 },
+		{ 0x040, 0x00000000 }, { 0x044, 0x00000000 },
+		{ 0x048, 0x00000000 }, { 0x04c, 0x00000000 },
+		{ 0x050, 0x00000000 }, { 0x054, 0x00000000 },
+		{ 0x058, 0x18000000 }, { 0x05c, 0x00000000 },
+		{ 0x0c0, 0x00000000 }, { 0x0c4, 0xffffffff },
+		{ 0x0d0, 0x00100080 }, { 0x0d4, 0x00000000 },
+		{ 0x0d8, 0x00000000 }, { 0x0dc, 0x00000000 },
+		{ 0x0f8, 0x00000000 }, { 0x0fc, 0x04000000 },
+		{ 0x168, 0x00000000 }, { 0x16c, 0x00000000 },
+		{ 0x170, 0x00000000 }, { 0x174, 0x00000000 },
+		{ 0x178, 0x00000000 }, { 0x17c, 0x00000000 },
+		{ 0x180, 0x00000000 }, { 0x184, 0x00000000 },
+		{ 0x188, 0x00000000 }, { 0x18c, 0x00000000 },
+		{ 0x194, 0x0000001e },
+	};
+
+	for (i = 0; i < sizeof(cfg) / 8; i++)
+		writel(cfg[i][1], ctrl->regs + cfg[i][0]);
+}
+
 int fimc_hwset_reset(struct fimc_control *ctrl)
 {
 	u32 cfg = 0;
@@ -130,6 +159,8 @@ int fimc_hwset_reset(struct fimc_control *ctrl)
 		cfg &= ~S3C_CISRCFMT_ITU601_8BIT;
 		writel(cfg, ctrl->regs + S3C_CISRCFMT);
 	}
+
+	fimc_reset_cfg(ctrl);
 
 	return 0;
 }
@@ -1038,64 +1069,5 @@ int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 	writel(cfg, ctrl->regs + S3C_CIDMAPARAM);
 
 	return 0;	
-}
-
-static void fimc_reset_cfg(struct fimc_control *ctrl)
-{
-	int i;
-	u32 cfg[][2] = {
-		{ 0x018, 0x00000000 }, { 0x01c, 0x00000000 },
-		{ 0x020, 0x00000000 }, { 0x024, 0x00000000 },
-		{ 0x028, 0x00000000 }, { 0x02c, 0x00000000 },
-		{ 0x030, 0x00000000 }, { 0x034, 0x00000000 },
-		{ 0x038, 0x00000000 }, { 0x03c, 0x00000000 },
-		{ 0x040, 0x00000000 }, { 0x044, 0x00000000 },
-		{ 0x048, 0x00000000 }, { 0x04c, 0x00000000 },
-		{ 0x050, 0x00000000 }, { 0x054, 0x00000000 },
-		{ 0x058, 0x18000000 }, { 0x05c, 0x00000000 },
-		{ 0x0c0, 0x00000000 }, { 0x0c4, 0xffffffff },
-		{ 0x0d0, 0x00100080 }, { 0x0d4, 0x00000000 },
-		{ 0x0d8, 0x00000000 }, { 0x0dc, 0x00000000 },
-		{ 0x0f8, 0x00000000 }, { 0x0fc, 0x04000000 },
-		{ 0x168, 0x00000000 }, { 0x16c, 0x00000000 },
-		{ 0x170, 0x00000000 }, { 0x174, 0x00000000 },
-		{ 0x178, 0x00000000 }, { 0x17c, 0x00000000 },
-		{ 0x180, 0x00000000 }, { 0x184, 0x00000000 },
-		{ 0x188, 0x00000000 }, { 0x18c, 0x00000000 },
-		{ 0x194, 0x0000001e },
-	};
-
-	for (i = 0; i < sizeof(cfg) / 8; i++)
-		writel(cfg[i][1], ctrl->regs + cfg[i][0]);
-}
-
-void fimc_reset(struct fimc_control *ctrl)
-{
-	u32 cfg = 0;
-
-	dev_dbg(ctrl->dev, "%s: called\n", __func__);
-
-	cfg = readl(ctrl->regs + S3C_CISRCFMT);
-	cfg |= S3C_CISRCFMT_ITU601_8BIT;
-	writel(cfg, ctrl->regs + S3C_CISRCFMT);
-
-	/* s/w reset */
-	cfg = readl(ctrl->regs + S3C_CIGCTRL);
-	cfg |= (S3C_CIGCTRL_SWRST);
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-	mdelay(1);
-
-	cfg = readl(ctrl->regs + S3C_CIGCTRL);
-	cfg &= ~S3C_CIGCTRL_SWRST;
-	writel(cfg, ctrl->regs + S3C_CIGCTRL);
-
-	/* in case of ITU656, CISRCFMT[31] should be 0 */
-	if ((ctrl->cap != NULL) && (ctrl->cam->fmt == ITU_656_YCBCR422_8BIT)) {
-		cfg = readl(ctrl->regs + S3C_CISRCFMT);
-		cfg &= ~S3C_CISRCFMT_ITU601_8BIT;
-		writel(cfg, ctrl->regs + S3C_CISRCFMT);
-	}
-
-	fimc_reset_cfg(ctrl);
 }
 
