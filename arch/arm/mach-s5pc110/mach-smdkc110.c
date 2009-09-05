@@ -32,6 +32,7 @@
 #include <linux/videodev2.h>
 #include <media/s5k3ba_platform.h>
 #include <media/s5k4ba_platform.h>
+#include <media/s5k4ea_platform.h>
 #include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
@@ -946,7 +947,7 @@ static struct s3c_platform_camera __initdata s5k4ba = {
 
 /* 2 MIPI Cameras */
 #ifdef S5K4EA_ENABLED
-static struct s5k6aa_platform_data s5k4ea_plat = {
+static struct s5k4ea_platform_data s5k4ea_plat = {
 	.default_width = 1920,
 	.default_height = 1080,
 	.pixelformat = V4L2_PIX_FMT_UYVY,
