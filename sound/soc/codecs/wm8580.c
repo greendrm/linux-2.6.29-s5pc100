@@ -37,7 +37,6 @@
 
 #define WM8580_VERSION "0.1"
 
-
 struct pll_state {
 	unsigned int in;
 	unsigned int out;
@@ -116,8 +115,15 @@ struct wm8580_priv {
 
 /* CLKSEL (register 8h) */
 #define WM8580_CLKSEL_DAC_CLKSEL_MASK 0x03
+#define WM8580_CLKSEL_DAC_CLKSEL_MCLK 0x00
 #define WM8580_CLKSEL_DAC_CLKSEL_PLLA 0x01
 #define WM8580_CLKSEL_DAC_CLKSEL_PLLB 0x02
+
+#define WM8580_CLKSEL_ADC_CLKSEL_MASK     0x0c
+#define WM8580_CLKSEL_ADC_CLKSEL_ADCMCLK  0x00
+#define WM8580_CLKSEL_ADC_CLKSEL_PLLA     0x04
+#define WM8580_CLKSEL_ADC_CLKSEL_PLLB     0x08
+#define WM8580_CLKSEL_ADC_CLKSEL_MCLK     0x0c
 
 /* AIF control 1 (registers 9h-bh) */
 #define WM8580_AIF_RATE_MASK       0x7
@@ -131,15 +137,16 @@ struct wm8580_priv {
 
 #define WM8580_AIF_BCLKSEL_MASK   0x18
 #define WM8580_AIF_BCLKSEL_64     0x00
-#define WM8580_AIF_BCLKSEL_128    0x08
-#define WM8580_AIF_BCLKSEL_256    0x10
+#define WM8580_AIF_BCLKSEL_32    0x08
+#define WM8580_AIF_BCLKSEL_16    0x10
 #define WM8580_AIF_BCLKSEL_SYSCLK 0x18
 
 #define WM8580_AIF_MS             0x20
 
 #define WM8580_AIF_CLKSRC_MASK    0xc0
+#define WM8580_AIF_CLKSRC_ADCMCLK 0x00
 #define WM8580_AIF_CLKSRC_PLLA    0x40
-#define WM8580_AIF_CLKSRC_PLLB    0x40
+#define WM8580_AIF_CLKSRC_PLLB    0x80
 #define WM8580_AIF_CLKSRC_MCLK    0xc0
 
 /* AIF control 2 (registers ch-eh) */
@@ -528,12 +535,12 @@ static int wm8580_set_dai_pll(struct snd_soc_dai *codec_dai,
 		return 0;
 
 	wm8580_write(codec, WM8580_PLLA1 + offset, pll_div.k & 0x1ff);
-	wm8580_write(codec, WM8580_PLLA2 + offset, (pll_div.k >> 9) & 0xff);
+	wm8580_write(codec, WM8580_PLLA2 + offset, (pll_div.k >> 9) & 0x1ff);
 	wm8580_write(codec, WM8580_PLLA3 + offset,
 		     (pll_div.k >> 18 & 0xf) | (pll_div.n << 4));
 
 	reg = wm8580_read(codec, WM8580_PLLA4 + offset);
-	reg &= ~0x3f;
+	reg &= ~0x1b;
 	reg |= pll_div.prescale | pll_div.postscale << 1 |
 		pll_div.freqmode << 3;
 
@@ -700,6 +707,7 @@ static int wm8580_set_dai_clkdiv(struct snd_soc_dai *codec_dai,
 
 		switch (div) {
 		case WM8580_CLKSRC_MCLK:
+			reg |= WM8580_CLKSEL_DAC_CLKSEL_MCLK;
 			break;
 
 		case WM8580_CLKSRC_PLLA:
@@ -708,6 +716,33 @@ static int wm8580_set_dai_clkdiv(struct snd_soc_dai *codec_dai,
 
 		case WM8580_CLKSRC_PLLB:
 			reg |= WM8580_CLKSEL_DAC_CLKSEL_PLLB;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+		wm8580_write(codec, WM8580_CLKSEL, reg);
+		break;
+
+	case WM8580_ADC_CLKSEL:
+		reg = wm8580_read(codec, WM8580_CLKSEL);
+		reg &= ~WM8580_CLKSEL_ADC_CLKSEL_MASK;
+
+		switch (div) {
+		case WM8580_CLKSRC_ADCMCLK:
+			reg |= WM8580_CLKSEL_ADC_CLKSEL_ADCMCLK;
+			break;
+
+		case WM8580_CLKSRC_MCLK:
+			reg |= WM8580_CLKSEL_ADC_CLKSEL_MCLK;
+			break;
+
+		case WM8580_CLKSRC_PLLA:
+			reg |= WM8580_CLKSEL_ADC_CLKSEL_PLLA;
+			break;
+
+		case WM8580_CLKSRC_PLLB:
+			reg |= WM8580_CLKSEL_ADC_CLKSEL_PLLB;
 			break;
 
 		default:
@@ -742,6 +777,83 @@ static int wm8580_set_dai_clkdiv(struct snd_soc_dai *codec_dai,
 		wm8580_write(codec, WM8580_PLLB4, reg);
 		break;
 
+	case WM8580_PAIF_CLKSEL:
+		reg = wm8580_read(codec, WM8580_PAIF1 + codec_dai->id);
+		reg &= ~WM8580_AIF_CLKSRC_MASK;
+		switch (div) {
+		case WM8580_CLKSRC_ADCMCLK:
+			reg |= WM8580_AIF_CLKSRC_ADCMCLK;
+			break;
+
+		case WM8580_CLKSRC_PLLA:
+			reg |= WM8580_AIF_CLKSRC_PLLA;
+			break;
+
+		case WM8580_CLKSRC_PLLB:
+			reg |= WM8580_AIF_CLKSRC_PLLB;
+			break;
+
+		case WM8580_CLKSRC_MCLK:
+			reg |= WM8580_AIF_CLKSRC_MCLK;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+		wm8580_write(codec, WM8580_PAIF1 + codec_dai->id, reg);
+		break;
+
+	case WM8580_MCLKRATIO:
+		reg = wm8580_read(codec, WM8580_PAIF1 + codec_dai->id);
+		reg &= ~WM8580_AIF_RATE_MASK;
+		switch(div) {
+		case 128:
+			reg |= WM8580_AIF_RATE_128;
+			break;
+		case 192:
+			reg |= WM8580_AIF_RATE_192;
+			break;
+		case 256:
+			reg |= WM8580_AIF_RATE_256;
+			break;
+		case 384:
+			reg |= WM8580_AIF_RATE_384;
+			break;
+		case 512:
+			reg |= WM8580_AIF_RATE_512;
+			break;
+		case 768:
+			reg |= WM8580_AIF_RATE_768;
+			break;
+		case 1152:
+			reg |= WM8580_AIF_RATE_1152;
+			break;
+		default:
+			return -EINVAL;
+		}
+		wm8580_write(codec, WM8580_PAIF1 + codec_dai->id, reg);
+		break;
+
+	case WM8580_BCLKRATIO:
+		reg = wm8580_read(codec, WM8580_PAIF1 + codec_dai->id);
+		reg &= ~WM8580_AIF_BCLKSEL_MASK;
+		switch(div) {
+		case 64:
+			reg |= WM8580_AIF_BCLKSEL_64;
+			break;
+		case 32:
+			reg |= WM8580_AIF_BCLKSEL_32;
+			break;
+		case 16:
+			reg |= WM8580_AIF_BCLKSEL_16;
+			break;
+		default:
+			reg |= WM8580_AIF_BCLKSEL_SYSCLK;
+			break;
+		}
+		wm8580_write(codec, WM8580_PAIF1 + codec_dai->id, reg);
+		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -773,8 +885,22 @@ static int wm8580_set_bias_level(struct snd_soc_codec *codec,
 	switch (level) {
 	case SND_SOC_BIAS_ON:
 	case SND_SOC_BIAS_PREPARE:
-	case SND_SOC_BIAS_STANDBY:
 		break;
+
+	case SND_SOC_BIAS_STANDBY:
+		if (codec->bias_level == SND_SOC_BIAS_OFF) {
+			/* Power up and get individual control of the DACs */
+			reg = wm8580_read(codec, WM8580_PWRDN1);
+			reg &= ~(WM8580_PWRDN1_PWDN | WM8580_PWRDN1_ALLDACPD);
+			wm8580_write(codec, WM8580_PWRDN1, reg);
+
+			/* Make VMID high impedence */
+			reg = wm8580_read(codec,  WM8580_ADC_CONTROL1);
+			reg &= ~0x100;
+			wm8580_write(codec, WM8580_ADC_CONTROL1, reg);
+		}
+		break;
+
 	case SND_SOC_BIAS_OFF:
 		reg = wm8580_read(codec, WM8580_PWRDN1);
 		wm8580_write(codec, WM8580_PWRDN1, reg | WM8580_PWRDN1_PWDN);

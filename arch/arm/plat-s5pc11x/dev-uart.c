@@ -121,6 +121,16 @@ static struct resource s5pc11x_uart2_resource[] = {
 		.end	= IRQ_S3CUART_ERR2,
 		.flags	= IORESOURCE_IRQ,
 	},
+	[4] = {
+		.start  = DMACH_UART2,
+		.end    = DMACH_UART2,
+		.flags  = IORESOURCE_DMA,
+	},
+	[5] = {
+		.start  = DMACH_UART2_SRC2,
+		.end    = DMACH_UART2_SRC2,
+		.flags  = IORESOURCE_DMA,
+	}
 };
 
 static struct resource s5pc11x_uart3_resource[] = {
@@ -145,6 +155,16 @@ static struct resource s5pc11x_uart3_resource[] = {
 		.end	= IRQ_S3CUART_ERR3,
 		.flags	= IORESOURCE_IRQ,
 	},
+	[4] = {
+		.start  = DMACH_UART3,
+		.end    = DMACH_UART3,
+		.flags  = IORESOURCE_DMA,
+	},
+	[5] = {
+		.start  = DMACH_UART3_SRC2,
+		.end    = DMACH_UART3_SRC2,
+		.flags  = IORESOURCE_DMA,
+	}
 };
 
 

@@ -36,6 +36,22 @@
 #include <plat/gpio-bank-h1.h>
 #include <plat/gpio-bank-h2.h>
 #include <plat/gpio-bank-h3.h>
+#include <plat/gpio-bank-mp01.h>
+#include <plat/gpio-bank-mp02.h>
+#include <plat/gpio-bank-mp03.h>
+#include <plat/gpio-bank-mp04.h>
+#include <plat/gpio-bank-mp05.h>
+#include <plat/gpio-bank-mp06.h>
+#include <plat/gpio-bank-mp07.h>
+#include <plat/gpio-bank-mp10.h>
+#include <plat/gpio-bank-mp11.h>
+#include <plat/gpio-bank-mp12.h>
+#include <plat/gpio-bank-mp13.h>
+#include <plat/gpio-bank-mp14.h>
+#include <plat/gpio-bank-mp15.h>
+#include <plat/gpio-bank-mp16.h>
+#include <plat/gpio-bank-mp17.h>
+#include <plat/gpio-bank-mp18.h>
 
 #include <mach/map.h>
 
@@ -68,6 +84,25 @@
 #define S5P64XX_GPH1_BASE	(S5P64XX_VA_GPIO + 0x0C20)
 #define S5P64XX_GPH2_BASE	(S5P64XX_VA_GPIO + 0x0C40)
 #define S5P64XX_GPH3_BASE	(S5P64XX_VA_GPIO + 0x0C60)
+
+#define S5P64XX_MP01_BASE	(S5P64XX_VA_GPIO + 0x02A0)
+#define S5P64XX_MP02_BASE	(S5P64XX_VA_GPIO + 0x02C0)
+#define S5P64XX_MP03_BASE	(S5P64XX_VA_GPIO + 0x02E0)
+#define S5P64XX_MP04_BASE	(S5P64XX_VA_GPIO + 0x0300)
+#define S5P64XX_MP05_BASE	(S5P64XX_VA_GPIO + 0x0320)
+#define S5P64XX_MP06_BASE	(S5P64XX_VA_GPIO + 0x0340)
+#define S5P64XX_MP07_BASE	(S5P64XX_VA_GPIO + 0x0360)
+
+#define S5P64XX_MP10_BASE	(S5P64XX_VA_GPIO + 0x0380)
+#define S5P64XX_MP11_BASE	(S5P64XX_VA_GPIO + 0x03A0)
+#define S5P64XX_MP12_BASE	(S5P64XX_VA_GPIO + 0x03C0)
+#define S5P64XX_MP13_BASE	(S5P64XX_VA_GPIO + 0x03E0)
+#define S5P64XX_MP14_BASE	(S5P64XX_VA_GPIO + 0x0400)
+#define S5P64XX_MP15_BASE	(S5P64XX_VA_GPIO + 0x0420)
+#define S5P64XX_MP16_BASE	(S5P64XX_VA_GPIO + 0x0440)
+#define S5P64XX_MP17_BASE	(S5P64XX_VA_GPIO + 0x0460)
+#define S5P64XX_MP18_BASE	(S5P64XX_VA_GPIO + 0x0480)
+
 
 #endif /* __ASM_PLAT_S5P64XX_REGS_GPIO_H */
 

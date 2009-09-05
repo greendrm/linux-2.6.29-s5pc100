@@ -86,7 +86,8 @@ static struct powerdomain pd_g3d = {
 	.pd_set		= powerdomain_set,
 };
 
-static struct powerdomain pd_audio = {
+/* No way to set .pd in s5pc100-clock.c */
+struct powerdomain pd_audio = {
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<5),
@@ -742,15 +743,16 @@ static struct clk init_clocks[] = {
 		.enable		= s5pc1xx_clk_d20_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D20_HCLKD2,
 		.pd		= &pd_audio,
+#if 0 /* need to embed in clksrc_clk b'coz it has sources */
 	}, {
-		.name		= "i2sd2",
+		.name		= "i2sclkd2",
 		.id		= -1,
 		.parent		= NULL,
 		.enable		= s5pc1xx_clk_d20_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D20_I2SD2,
 		.pd		= &pd_audio,
+#endif
 	},
-
 	/* Special Clocks 1 */
 	{
 		.name		= "sclk_hpm",

@@ -418,13 +418,19 @@ static struct clk init_clocks[] = {
 		.id		= 1,
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C_HDMI_DDC,
 	}, {
 		.name		= "i2c",
 		.id		= 2,
 		.parent		= &clk_p66,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
+	}, {
+		.name		= "i2c",
+		.id		= 3,
+		.parent		= &clk_p66,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C_HDMI_PHY,
 	}, {
                 .name           = "spi",
                 .id             = 0,
@@ -518,13 +524,16 @@ void s5pc11x_init_clocks_power_disabled(void)
 
 	} while (shift < 32);
 
-	/* Disable all power domain */
-	powerdomain_set(&pd_lcd, 0);
+/* Disable all power domain
+ * FIXME : Do not turn off power domain in case of S5PC110 EVT0.
+ *	This code should be fixed after revision.
+ */
+	powerdomain_set(&pd_lcd, 1);
 	powerdomain_set(&pd_tv, 1);
-	powerdomain_set(&pd_mfc, 0);
-	powerdomain_set(&pd_cam, 0);
-	powerdomain_set(&pd_audio, 0);
-	powerdomain_set(&pd_g3d, 0);
+	powerdomain_set(&pd_mfc, 1);
+	powerdomain_set(&pd_cam, 1);
+	powerdomain_set(&pd_audio, 1);
+	powerdomain_set(&pd_g3d, 1);
 }
 
 void __init s5pc11x_register_clocks(void)

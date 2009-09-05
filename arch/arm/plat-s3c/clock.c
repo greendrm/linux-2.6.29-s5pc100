@@ -147,8 +147,13 @@ void clk_disable(struct clk *clk)
 		(clk->enable)(clk, 0);
 #if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 		if (clk->pd != NULL) {
+/*
+ * Do not turn off power domain in case of C110 EVT0.
+ */
+#if !defined(CONFIG_CPU_S5PC110)
 			if (clk->pd->ref_count == 1)
 				(clk->pd->pd_set)(clk->pd, 0);
+#endif			
 			if (clk->pd->ref_count > 0)
 				(clk->pd->ref_count--);
 		}

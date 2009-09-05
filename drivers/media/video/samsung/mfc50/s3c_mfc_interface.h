@@ -28,8 +28,8 @@
 #define IOCTL_MFC_SET_CONFIG		(0x00800101)
 #define IOCTL_MFC_GET_CONFIG		(0x00800102)
 
-/* MFC H/W support maximum 15 extra DPB. */
-#define MFC_MAX_EXTRA_DPB		(5) 
+/* MFC H/W support maximum 32 extra DPB. */
+#define MFC_MAX_EXTRA_DPB		(3) 
 
 typedef enum
 {
@@ -252,12 +252,14 @@ typedef struct {
 	s3c_mfc_frame_buf_arg_t in_frm_size;  /* [IN] size of dpb FRAME_BUF */
 	int out_display_Y_addr; /* [OUT]  the physical address of display buf */
 	int out_display_C_addr; /* [OUT]  the physical address of display buf */
-
-	/*
-	 * [OUT] whether display frame exist or not.
-	 * (0:no more frame, 1:frame exist)
+	/* DECODING_ONLY = 0,
+	   DECODING_DISPLAY = 1,
+	   DISPLAY_ONLY = 2,
+	   DECODING_EMPTY = 3
 	 */
 	int out_display_status; 
+	int out_pic_time_top;
+	int out_pic_time_bottom;
 } s3c_mfc_dec_exe_arg_t;
 
 typedef struct {

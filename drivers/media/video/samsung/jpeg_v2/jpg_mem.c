@@ -36,7 +36,8 @@ void *phy_to_vir_addr(UINT32 phy_addr, int mem_size)
 	reserved_mem = (void *)ioremap((unsigned long)phy_addr, (int)mem_size);
 
 	if (reserved_mem == NULL) {
-		log_msg(LOG_ERROR, "phy_to_vir_addr", "DD::Phyical to virtual memory mapping was failed!\r\n");
+		log_msg(LOG_ERROR, "phy_to_vir_addr", 
+			"DD::Phyical to virtual memory mapping was failed!\r\n");
 		return NULL;
 	}
 

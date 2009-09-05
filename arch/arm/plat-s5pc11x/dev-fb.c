@@ -32,6 +32,12 @@ static struct resource s3cfb_resource[] = {
 		.end   = IRQ_LCD1,
 		.flags = IORESOURCE_IRQ,
 	},
+	[2] = {
+		.start = IRQ_LCD0,
+		.end   = IRQ_LCD0,
+		.flags = IORESOURCE_IRQ,
+	},
+
 };
 
 static u64 fb_dma_mask = 0xffffffffUL;

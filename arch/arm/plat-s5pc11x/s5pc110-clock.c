@@ -348,10 +348,15 @@ struct clk clk_sclk_hdmi = {
 };
 
 static struct clk *clkset_spi_list[] = {
-	&clk_mout_epll.clk,
+	&clk_srclk,	/*Dummy clock sources. To be changed when the */
+	&clk_srclk,	/*actual clock source gets defined*/
+	&clk_sclk_hdmi,
+	&clk_srclk,
+	&clk_srclk,
+	&clk_srclk,
 	&clk_mout_mpll.clk,
-	&clk_fin_epll,
-	&clk_mout_vpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk
 };
 
 static struct clk_sources clkset_spi = {
@@ -360,8 +365,14 @@ static struct clk_sources clkset_spi = {
 };
 
 static struct clk *clkset_uart_list[] = {
-	&clk_mout_epll.clk,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
 	NULL,
 	NULL,
 };
@@ -1179,6 +1190,10 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_set_parent(&clk_mmc1.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc2.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc3.clk, &clk_mout_mpll.clk);
+
+	clk_set_parent(&clk_spi0.clk, &clk_mout_epll.clk);
+	clk_set_parent(&clk_spi1.clk, &clk_mout_epll.clk);
+	clk_set_parent(&clk_spi2.clk, &clk_mout_epll.clk);
 
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);

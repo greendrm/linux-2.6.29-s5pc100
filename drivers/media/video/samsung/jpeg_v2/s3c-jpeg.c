@@ -53,9 +53,10 @@
 #include "log_msg.h"
 #include "regs-jpeg.h"
 
-
+#ifdef CONFIG_CPU_S5PC100
 static struct clk		*jpeg_hclk;
 static struct clk		*jpeg_sclk;
+#endif
 static struct clk		*s3c_jpeg_clk;
 
 static struct resource		*s3c_jpeg_mem;
@@ -68,7 +69,7 @@ wait_queue_head_t 		wait_queue_jpeg;
 
 DECLARE_WAIT_QUEUE_HEAD(WaitQueue_JPEG);
 #ifdef CONFIG_CPU_S5PC100
-irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
+static irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
 {
 	unsigned int	int_status;
 	unsigned int	status;
@@ -108,7 +109,7 @@ irqreturn_t s3c_jpeg_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 #else //CONFIG_CPU_S5PC110
-irqreturn_t s3c_jpeg_irq(int irq, void *dev_id, struct pt_regs *regs)
+static irqreturn_t s3c_jpeg_irq(int irq, void *dev_id, struct pt_regs *regs)
 {
 	unsigned int	int_status;
 	unsigned int	status;
@@ -154,7 +155,7 @@ static int s3c_jpeg_open(struct inode *inode, struct file *file)
 	clk_enable(jpeg_sclk);
 #else //CONFIG_CPU_S5PC110
         /* clock enable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
+	clk_enable(s3c_jpeg_clk);
 #endif
 
 	jpg_dbg("JPG_open \r\n");
@@ -215,14 +216,15 @@ static int s3c_jpeg_release(struct inode *inode, struct file *file)
 
 	unlock_jpg_mutex();
 	kfree(jpg_reg_ctx);
+
+	/* clock disable */
 #ifdef CONFIG_CPU_S5PC100
 	clk_disable(jpeg_hclk);
 	clk_disable(jpeg_sclk);
-	log_msg(LOG_TRACE, "s3c_jpeg_release end ", "JPG_Close\n");
-#else //CONFIG_CPU_S5PC110
-/* clock disable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
 #endif
+	clk_disable(s3c_jpeg_clk);
+	
+	log_msg(LOG_TRACE, "s3c_jpeg_release end ", "JPG_Close\n");
 	return 0;
 }
 
@@ -430,7 +432,14 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 
 #else //CONFIG_CPU_S5PC110
        /* clock enable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
+	s3c_jpeg_clk = clk_get(&pdev->dev, "jpeg");
+
+	if (s3c_jpeg_clk == NULL) {
+		printk(KERN_INFO "failed to find jpeg clock source\n");
+		return -ENOENT;
+	}
+
+	clk_enable(s3c_jpeg_clk);
 
 #endif
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -506,13 +515,12 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 
 	ret = misc_register(&s3c_jpeg_miscdev);
 
+/* clock disable */
 #ifdef CONFIG_CPU_S5PC100
 	clk_disable(jpeg_hclk);
 	clk_disable(jpeg_sclk);
-#else //CONFIG_CPU_S5PC110
-	/* clock disable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
-#endif
+#endif 
+	clk_disable(s3c_jpeg_clk);
 
 	return 0;
 }
@@ -534,16 +542,14 @@ static int s3c_jpeg_remove(struct platform_device *dev)
 static int s3c_jpeg_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	/* clock disable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (0<<28), S5P_CLKGATE_MAIN0);
-
+	clk_disable(s3c_jpeg_clk);
 	return 0;
 }
 
 static int s3c_jpeg_resume(struct platform_device *pdev)
 {
 	/* clock enable */
-	writel(readl(S5P_CLKGATE_MAIN0) | (1<<28), S5P_CLKGATE_MAIN0);
-
+	clk_enable(s3c_jpeg_clk);
 	return 0;
 }
 #endif
@@ -565,16 +571,15 @@ static struct platform_driver s3c_jpeg_driver = {
 	},
 };
 
-static char banner[] __initdata = KERN_INFO "S3C JPEG Driver, (c) 2007 Samsung Electronics\n";
+#ifdef CONFIG_CPU_S5PC100
+static char banner[] __initdata = KERN_INFO "S3C JPEG Driver for S5PC100, (c) 2007 Samsung Electronics\n";
+#else //CONFIG_CPU_S5PC110
+static char banner[] __initdata = KERN_INFO "S3C JPEG Driver for S5PC110, (c) 2009 Samsung Electronics\n";
+#endif
 
 static int __init s3c_jpeg_init(void)
 {
 	printk(banner);
-#ifdef CONFIG_CPU_S5PC100
-	printk("JPEG driver for S5PC100 \n");
-#else //CONFIG_CPU_S5PC110
-	printk("JPEG driver for S5PC110 \n");
-#endif
 	return platform_driver_register(&s3c_jpeg_driver);
 }
 

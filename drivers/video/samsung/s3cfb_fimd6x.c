@@ -357,6 +357,7 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 			cfg |= S3C_WINCON_BPPMODE_24BPP_888;
 		} else {
 			cfg |= S3C_WINCON_INRGB_YUV;
+			cfg |= S3C_WINCON_BPPMODE_24BPP_888;
 		}
 
 		if (id == 1) {

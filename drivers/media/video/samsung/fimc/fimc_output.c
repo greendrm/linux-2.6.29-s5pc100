@@ -65,6 +65,10 @@ static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
 	if (ret < 0)
 		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 
+#if defined (CONFIG_VIDEO_IPC)
+	ipc_off();
+#endif
+
 	return 0;
 }
 
@@ -833,6 +837,11 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 static int fimc_outdev_set_param(struct fimc_control *ctrl)
 {
 	int ret = -1;
+#if defined (CONFIG_VIDEO_IPC)
+	struct v4l2_rect src, dst;
+	memset(&src, 0, sizeof(src));
+	memset(&dst, 0, sizeof(dst));
+#endif
 
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running\n");
@@ -860,15 +869,10 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 	if (ret < 0)
 		return ret;
 
-#if 0
-	ret = fimc_outdev_ipc_init(ctrl);
-	if (ret < 0)
-		return ret;
-
-
-#else
+#if defined (CONFIG_VIDEO_IPC)
 	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
-		ret = ipc_initip(ctrl->fb.lcd_hres, ctrl->fb.lcd_vres/2, IPC_2D);
+		fimc_outdev_calibrate_scale_info(ctrl, &src, &dst);
+		ret = ipc_initip(dst.width, dst.height/2, IPC_2D);
 		if (ret < 0)
 			return ret;
 	} 
@@ -1359,8 +1363,10 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 			return -EINVAL;
 		}
 
+#if defined(CONFIG_VIDEO_IPC)
 		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
 			ipc_on();
+#endif
 
 		fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
 

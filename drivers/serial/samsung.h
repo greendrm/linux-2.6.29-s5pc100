@@ -49,14 +49,17 @@ struct s3c24xx_uart_port {
 	struct notifier_block		freq_transition;
 #endif
 #if defined(CONFIG_S5P_UART_DMA_EN)
-    int dma_ch_tx;
-    int dma_busy;       //tx
-
-    int dma_ch_rx;
+	int dma_ch_tx;
+	int dma_busy;
+	int dma_ch_rx;
 	struct circ_buf rx_buf;
-    struct timer_list rx_dma_timer;
-    dma_addr_t rx_buf_dma_handle;
-    dma_addr_t dma_phy_pos;    //rx
+	struct timer_list rx_dma_timer;
+	dma_addr_t rx_buf_dma_handle;
+	dma_addr_t dma_phy_pos;
+
+#define S3C_DMA_XFER_BYTE		(1)
+#define UART_RX_SIZE			(PAGE_SIZE)
+#define DMA_RX_FLUSH_JIFFIES		(HZ/150)
 #endif
 };
 

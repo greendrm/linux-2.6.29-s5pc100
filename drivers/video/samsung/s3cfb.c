@@ -590,8 +590,10 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 
 	dev_dbg(fbdev->dev, "[fb%d] open fifo\n", win->id);
 
-	if (win->path == DATA_PATH_DMA)
-		win->path = DATA_PATH_FIFO;
+	if (win->path == DATA_PATH_DMA) {
+		dev_err(fbdev->dev, "WIN%d is busy.\n", id);
+		return -EFAULT;
+	}
 
 	win->local_channel = ch;
 
@@ -971,11 +973,8 @@ static int s3cfb_sysfs_store_win_power(struct device *dev,
 	if (strlen(temp) != 2)
 		return -EINVAL;
 
-	strict_strtoul((const char *)temp, 10, (unsigned long *)&id);
-	strict_strtoul((const char *)temp, 10, (unsigned long *)&to);
-
-	id /= 10;
-	to &= 10;
+        id = simple_strtoul(temp, NULL, 10) / 10;
+        to = simple_strtoul(temp, NULL, 10) % 10;
 
 	if (id < 0 || id > pdata->nr_wins)
 		return -EINVAL;

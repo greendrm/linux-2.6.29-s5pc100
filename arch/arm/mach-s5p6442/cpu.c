@@ -89,6 +89,7 @@ void __init s5p6442_map_io(void)
 	/* the i2c devices are directly compatible with s3c2440 */
 	s3c_i2c0_setname("s3c2440-i2c");
 	s3c_i2c1_setname("s3c2440-i2c");
+	s3c_i2c2_setname("s3c2410-i2c");
 
 	/* set our idle function */
 	s5p64xx_idle = s5p6442_idle;

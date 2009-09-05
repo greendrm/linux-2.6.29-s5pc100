@@ -428,6 +428,9 @@
 #define S5P_PWR_STABLE_COUNT	85500
 
 #define S5P_SLEEP_CFG_OSC_EN	0
+#define S5P_SLEEP_CFG_USBOSC_EN      1
+
+#define S5P_OTHER_SYSC_INTOFF       1
 
 /* OTHERS Resgister */
 #define S5P_OTHERS_USB_SIG_MASK 	(1 << 16)

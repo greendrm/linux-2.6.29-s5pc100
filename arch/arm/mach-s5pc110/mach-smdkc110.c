@@ -95,12 +95,22 @@ extern void s3c_sdhci_set_platdata(void);
 #endif
 
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
-        [0] = {
-                .name           = "pclk",
-                .divisor        = 1,
-                .min_baud       = 0,
-                .max_baud       = 0,
-        },
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+/* HS-UART Clock using SCLK */
+	[0] = {
+		.name		= "uclk1",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#else
+	[0] = {
+		.name		= "pclk",
+		.divisor	= 1,
+		.min_baud	= 0,
+		.max_baud	= 0,
+	},
+#endif
 };
 
 static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
@@ -613,7 +623,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
         },
 #endif
 
-#if defined(CONFIG_SPI_CNTRLR_2)
 /* For MMC-SPI using GPIO BitBanging. MMC connected to SPI CNTRL 2 as slave 0. */
 #if defined (CONFIG_MMC_SPI_GPIO)
 #define SPI_GPIO_DEVNUM 4
@@ -628,7 +637,7 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .chip_select     = 0,
                 .controller_data = S5PC11X_GPH1(0),
         },
-#else
+#elif defined(CONFIG_SPI_CNTRLR_2)
         [4] = {
                 .modalias        = "mmc_spi", 	/* MMC SPI */
                 .mode            = SPI_MODE_0,  /* CPOL=0, CPHA=0 */
@@ -638,7 +647,6 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
                 .irq             = IRQ_SPI2,
                 .chip_select     = 0,
         },
-#endif
 #endif	
 };
 
@@ -1098,6 +1106,10 @@ static void __init smdkc110_map_io(void)
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
 	s3c24xx_init_clocks(24000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
+#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+	/* got to have a high enough uart source clock for higher speeds */
+	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
+#endif
 	s5pc11x_reserve_bootmem();
 }
 
