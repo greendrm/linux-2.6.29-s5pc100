@@ -1,5 +1,5 @@
 /*
- * s3c-i2s.h  --  ALSA Soc Audio Layer
+ * s5p-i2s.h  --  ALSA Soc Audio Layer
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef S3C_I2S_H_
-#define S3C_I2S_H_
+#ifndef S5P_I2S_H_
+#define S5P_I2S_H_
 
 #define USE_CLKAUDIO	1 /* use it for LPMP3 mode */
 
@@ -216,9 +216,7 @@
 #define S3C_I2SDMA_SUSPEND 4
 #define S3C_I2SDMA_RESUME  5
 
-u32 s3c_i2s_get_clockrate(void);
-
-struct s5pc1xx_i2s_pdata {
+struct s5p_i2s_pdata {
 	int lp_mode;
 	u32 *p_rate;
 	unsigned  dma_prd;
@@ -236,4 +234,4 @@ struct s5pc1xx_i2s_pdata {
 	spinlock_t lock;
 };
 
-#endif /*S3C_I2S_H_*/
+#endif /*S5P_I2S_H_*/

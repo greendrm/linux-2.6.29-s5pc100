@@ -35,14 +35,14 @@ static struct s3c2410_dma_client s3c_dma_client_in = {
 	.name = "I2S PCM Stereo in"
 };
 
-static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_out = {
+static struct s5p_pcm_dma_params s3c_i2s_pcm_stereo_out = {
 	.client		= &s3c_dma_client_out,
 	.channel	= S3C_DMACH_I2S_OUT,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISTXD,
 	.dma_size	= 4,
 };
 
-static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_in = {
+static struct s5p_pcm_dma_params s3c_i2s_pcm_stereo_in = {
 	.client		= &s3c_dma_client_in,
 	.channel	= S3C_DMACH_I2S_IN,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISRXD,
@@ -63,7 +63,7 @@ struct s3c_i2s_info {
 
 static struct s3c_i2s_info s3c_i2s;
 
-struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+struct s5p_i2s_pdata s3c_i2s_pdat;
 
 #define S3C_IISFIC_LP 			(s3c_i2s_pdat.lp_mode ? S3C_IISFICS : S3C_IISFIC)
 #define S3C_IISCON_TXDMACTIVE_LP 	(s3c_i2s_pdat.lp_mode ? S3C_IISCON_TXSDMACTIVE : S3C_IISCON_TXDMACTIVE)
@@ -886,7 +886,7 @@ static void s3c_i2sdma_ctrl(int state)
 	spin_unlock(&s3c_i2s_pdat.lock);
 }
 
-struct s5pc1xx_i2s_pdata s3c_i2s_pdat = {
+struct s5p_i2s_pdata s3c_i2s_pdat = {
 	.lp_mode = 0,
 	.set_mode = s3c_i2s_setmode,
 	.p_rate = &s3c_i2s.clk_rate,
@@ -929,17 +929,17 @@ struct s5pc1xx_i2s_pdata s3c_i2s_pdat = {
 
 EXPORT_SYMBOL_GPL(s3c_i2s_pdat);
 
-static int __init s5pc1xx_i2s_init(void)
+static int __init s5p_i2s_init(void)
 {
 	return snd_soc_register_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_init(s5pc1xx_i2s_init);
+module_init(s5p_i2s_init);
 
-static void __exit s5pc1xx_i2s_exit(void)
+static void __exit s5p_i2s_exit(void)
 {
 	snd_soc_unregister_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_exit(s5pc1xx_i2s_exit);
+module_exit(s5p_i2s_exit);
 
 /* Module information */
 MODULE_AUTHOR("Jaswinder Singh <jassi.brar@samsung.com>");

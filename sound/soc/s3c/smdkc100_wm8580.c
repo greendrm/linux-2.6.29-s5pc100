@@ -38,8 +38,8 @@
 #define REC_LINE   1
 #define REC_OFF    2
 
-extern struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
-extern struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+extern struct s5p_pcm_pdata s3c_pcm_pdat;
+extern struct s5p_i2s_pdata s3c_i2s_pdat;
 
 #define SRC_CLK	(*s3c_i2s_pdat.p_rate)
 
@@ -467,7 +467,7 @@ static int __init smdkc100_audio_init(void)
 #ifdef CONFIG_SND_WM8580_MASTER
 	s3cdbg("WM8580 is I2S Master\n");
 #else
-	s3cdbg("S5PC100 is I2S Master\n");
+	s3cdbg("S5P is I2S Master\n");
 #endif
 
 	return ret;

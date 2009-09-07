@@ -1,5 +1,5 @@
 /*
- *  s5pc1xx-pcm.h --
+ *  s5p-pcm.h --
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -9,8 +9,8 @@
  *  ALSA PCM interface for the Samsung CPU
  */
 
-#ifndef _S5PC1XX_PCM_H
-#define _S5PC1XX_PCM_H
+#ifndef _S5P_PCM_H
+#define _S5P_PCM_H
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -29,7 +29,7 @@
 
 #define LP_TXBUFF_ADDR    (0xC0000000)
 
-struct s5pc1xx_pcm_dma_params {
+struct s5p_pcm_dma_params {
 	struct s3c2410_dma_client *client;	/* stream identifier */
 	int channel;				/* Channel ID */
 	dma_addr_t dma_addr;
@@ -41,7 +41,7 @@ struct pcm_buffs {
 	dma_addr_t        dma_addr[2];  /* DMA addr of Playback and Capture stream */
 };
 
-struct s5pc1xx_pcm_pdata {
+struct s5p_pcm_pdata {
 	int               lp_mode;
 	struct pcm_buffs  nm_buffs;
 	struct pcm_buffs  lp_buffs;

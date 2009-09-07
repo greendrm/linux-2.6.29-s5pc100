@@ -1,4 +1,4 @@
-config SND_S5PC1XX_SOC
+config SND_S5P_SOC
 	tristate "Samsung SoC Audio"
 	depends on ARCH_S5PC1XX || ARCH_S5PC11X
 	help
@@ -14,7 +14,7 @@ config SND_S3C_AC97
 
 choice
 	prompt "Select the codec driver"
-	depends on SND_S5PC1XX_SOC
+	depends on SND_S5P_SOC
 
 config  SND_SMDKC110_WM8580
 	tristate "WM8580-I2S on SMDKC110"
