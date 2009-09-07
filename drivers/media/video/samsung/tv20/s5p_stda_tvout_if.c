@@ -24,9 +24,9 @@
 
 #include "s5p_tv.h"
 
-//#ifdef COFIG_TVOUT_DBG
+#ifdef COFIG_TVOUT_DBG
 #define S5P_STDA_TVOUTIF_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_STDA_TVOUTIF_DEBUG
 #define TVOUTIFPRINTK(fmt, args...) \
