@@ -534,6 +534,7 @@ static void reconfig_usbd(void)
 static void set_max_pktsize(struct s3c_udc *dev, enum usb_device_speed speed)
 {
 	unsigned int ep_ctrl;
+	int i;
 
 	if (speed == USB_SPEED_HIGH) {
 		ep0_fifo_size = 64;
@@ -548,16 +549,8 @@ static void set_max_pktsize(struct s3c_udc *dev, enum usb_device_speed speed)
 	}
 
 	dev->ep[0].ep.maxpacket = ep0_fifo_size;
-	dev->ep[1].ep.maxpacket = ep_fifo_size;
-	dev->ep[2].ep.maxpacket = ep_fifo_size;
-	dev->ep[3].ep.maxpacket = ep_fifo_size;
-	dev->ep[4].ep.maxpacket = ep_fifo_size;
-	dev->ep[5].ep.maxpacket = ep_fifo_size;
-	dev->ep[6].ep.maxpacket = ep_fifo_size;
-	dev->ep[7].ep.maxpacket = ep_fifo_size;
-	dev->ep[8].ep.maxpacket = ep_fifo_size;
-	dev->ep[9].ep.maxpacket = ep_fifo_size;
-
+	for(i = 1; i < S3C_MAX_ENDPOINTS; i++)
+		dev->ep[i].ep.maxpacket = ep_fifo_size;
 
 	/* EP0 - Control IN (64 bytes)*/
 	ep_ctrl = readl(S3C_UDC_OTG_DIEPCTL(EP0_CON));
