@@ -983,18 +983,18 @@ static struct clksrc_clk clk_mixer = {
 	.reg_source	= S5P_CLK_SRC2,
 };
 
-struct clk clk_iis_cd0 = {
-	.name		= "iis_cdclk0",
+struct clk clk_i2s_cd0 = {
+	.name		= "i2s_cdclk0",
 	.id		= -1,
 };
 
-struct clk clk_iis_cd1 = {
-	.name		= "iiscd_cdclk1",
+struct clk clk_i2s_cd1 = {
+	.name		= "i2scd_cdclk1",
 	.id		= -1,
 };
 
-struct clk clk_iis_cd2 = {
-	.name		= "iiscd_cdclk2",
+struct clk clk_i2s_cd2 = {
+	.name		= "i2scd_cdclk2",
 	.id		= -1,
 };
 
@@ -1012,7 +1012,7 @@ static struct clk *clkset_audio0_list[] = {
 	[0] = &clk_mout_epll.clk,
 	[1] = &clk_dout_mpll,
 	[2] = &clk_fin_epll,
-	[3] = &clk_iis_cd0,
+	[3] = &clk_i2s_cd0,
 	[4] = &clk_pcm_cd0,
 	[5] = &clk_mout_hpll.clk,
 };
@@ -1045,7 +1045,7 @@ static struct clk *clkset_audio1_list[] = {
 	[0] = &clk_mout_epll.clk,
 	[1] = &clk_dout_mpll,
 	[2] = &clk_fin_epll,
-	[3] = &clk_iis_cd1,
+	[3] = &clk_i2s_cd1,
 	[4] = &clk_pcm_cd1,
 	[5] = &clk_mout_hpll.clk,
 };
@@ -1078,7 +1078,7 @@ static struct clk *clkset_audio2_list[] = {
 	[0] = &clk_mout_epll.clk,
 	[1] = &clk_dout_mpll,
 	[2] = &clk_fin_epll,
-	[3] = &clk_iis_cd2,
+	[3] = &clk_i2s_cd2,
 	[4] = &clk_mout_hpll.clk,
 };
 
@@ -1108,7 +1108,7 @@ static struct clksrc_clk clk_audio2 = {
 
 static struct clk *clkset_i2sclkd2_list[] = {
 	[0] = &clk_fout_epll,
-	[1] = &clk_iis_cd0,
+	[1] = &clk_i2s_cd0,
 	[2] = &clk_audio0.clk,
 };
 
@@ -1263,9 +1263,9 @@ void __init_or_cpufreq s5pc100_setup_clocks(void)
 
 static struct clk *clks[] __initdata = {
 	&clk_ext_xtal_mux,
-	&clk_iis_cd0,
-	&clk_iis_cd1,
-	&clk_iis_cd2,
+	&clk_i2s_cd0,
+	&clk_i2s_cd1,
+	&clk_i2s_cd2,
 	&clk_pcm_cd0,
 	&clk_pcm_cd1,
 	&clk_mout_epll.clk,
