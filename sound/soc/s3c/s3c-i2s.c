@@ -429,9 +429,9 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 	From the table above, we find that 49152000 gives least(0) residue 
 	for most sample rates, followed by 67738000.
 */
-		clk = clk_get(NULL, EXTPRNT);
+		clk = clk_get(NULL, RATESRCCLK);
 		if (IS_ERR(clk)) {
-			printk("failed to get %s\n", EXTPRNT);
+			printk("failed to get %s\n", RATESRCCLK);
 			return -EBUSY;
 		}
 		clk_disable(clk);
@@ -454,7 +454,7 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		}
 		clk_enable(clk);
 		s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
-		//printk("Setting FOUTepll to %dHz", s3c_i2s.clk_rate);
+		s3cdbg("Setting FOUTepll to %dHz", s3c_i2s.clk_rate);
 		clk_put(clk);
 		break;
 #endif
@@ -621,7 +621,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 			     struct snd_soc_dai *dai)
 {
 	int ret = 0;
-	struct clk *cf;
+	struct clk *cf, *cm;
 
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
@@ -639,6 +639,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get clk(%s)\n", PCLKCLK);
 		goto lb4;
 	}
+	s3cdbg("Got Clock -> %s\n", PCLKCLK);
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
@@ -651,17 +652,38 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get clk(%s)\n", EXTCLK);
 		goto lb3;
 	}
+	s3cdbg("Got Clock -> %s\n", EXTCLK);
 
-	cf = clk_get(NULL, EXTPRNT);
-	if (IS_ERR(cf)) {
+	cm = clk_get(NULL, EXTPRNT);
+	if (IS_ERR(cm)) {
 		printk("failed to get %s\n", EXTPRNT);
 		goto lb2;
 	}
-	if(clk_set_parent(s3c_i2s.audio_bus, cf)){
-		printk("failed to set FOUTepll as parent of %s\n", EXTCLK);
+	s3cdbg("Got Clock -> %s\n", EXTPRNT);
+
+	if(clk_set_parent(s3c_i2s.audio_bus, cm)){
+		printk("failed to set %s as parent of %s\n", EXTPRNT, EXTCLK);
 		goto lb1;
 	}
+	s3cdbg("Set %s as parent of %s\n", EXTPRNT, EXTCLK);
+
+#if defined(CONFIG_MACH_SMDKC110)
+	cf = clk_get(NULL, "fout_epll");
+	if (IS_ERR(cf)) {
+		printk("failed to get fout_epll\n");
+		goto lb1;
+	}
+	s3cdbg("Got Clock -> fout_epll\n");
+
+	if(clk_set_parent(cm, cf)){
+		printk("failed to set fout_epll as parent of %s\n", EXTPRNT);
+		clk_put(cf);
+		goto lb1;
+	}
+	s3cdbg("Set fout_epll as parent of %s\n", EXTPRNT);
 	clk_put(cf);
+#endif
+	clk_put(cm);
 
 	clk_enable(s3c_i2s.audio_bus);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
@@ -681,7 +703,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 
 #ifdef USE_CLKAUDIO
 lb1:
-	clk_put(cf);
+	clk_put(cm);
 lb2:
 	clk_put(s3c_i2s.audio_bus);
 #endif

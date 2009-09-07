@@ -148,6 +148,7 @@ extern int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_block_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_audss_clkctrl(struct clk *clk, int enable);
 #elif defined(CONFIG_ARCH_S5P64XX)
 extern void s5p64xx_register_clocks(void);
 extern int s5p64xx_clk_ip0_ctrl(struct clk *clk, int enable);

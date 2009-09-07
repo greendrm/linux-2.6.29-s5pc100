@@ -63,6 +63,7 @@ static struct map_desc s5pc110_iodesc[] __initdata = {
         IODESC_ENT(SYSCON),
         IODESC_ENT(GPIO),
         IODESC_ENT(NAND),
+        IODESC_ENT(AUDSS),
 	//IODESC_ENT(HOSTIFB),
 };
 

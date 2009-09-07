@@ -25,6 +25,7 @@
 #include <plat/cpu-freq.h>
 
 #include <plat/regs-clock.h>
+#include <plat/regs-audss.c>
 #include <plat/clock.h>
 #include <plat/cpu.h>
 #include <plat/pll.h>
@@ -161,8 +162,6 @@ struct clk clk_dout_apll = {
 
 static int fout_enable(struct clk *clk, int enable)
 {
-    //printk("^^^^^^^^^^^^^^^^^enable epll_con\n");
-
 	unsigned int ctrlbit = clk->ctrlbit;
 	unsigned int epll_con = __raw_readl(S5P_EPLL_CON) & ~ ctrlbit;
 
@@ -183,57 +182,63 @@ static int fout_set_rate(struct clk *clk, unsigned long rate)
 {
 	unsigned int epll_con;
 
-	if(clk->rate == rate)	/* Return if nothing changed */
-		return 0;
-
 	epll_con = __raw_readl(S5P_EPLL_CON);
 
-	epll_con &= ~S5P_EPLLVAL(0xff, 0x3f, 0x7); /* Clear M, P & S */
+	epll_con &= ~S5P_EPLLVAL(0x1, 0x1ff, 0x3f, 0x7); /* Clear V, M, P & S */
 
 	switch (rate) {
 	case 48000000:
-			epll_con |= S5P_EPLLVAL(96, 3, 3);
+			epll_con |= S5P_EPLLVAL(0, 96, 6, 3);
 			break;
 	case 96000000:
-			epll_con |= S5P_EPLLVAL(96, 3, 2);
+			epll_con |= S5P_EPLLVAL(0, 96, 6, 2);
 			break;
 	case 144000000:
-			epll_con |= S5P_EPLLVAL(144, 3, 2);
+			epll_con |= S5P_EPLLVAL(1, 144, 6, 2);
 			break;
 	case 192000000:
-			epll_con |= S5P_EPLLVAL(96, 3, 1);
+			epll_con |= S5P_EPLLVAL(0, 96, 6, 1);
+			break;
+	case 288000000:
+			epll_con |= S5P_EPLLVAL(1, 144, 6, 1);
 			break;
 	case 32750000:
 	case 32768000:
-			epll_con |= S5P_EPLLVAL(131, 3, 4);
+			epll_con |= S5P_EPLLVAL(1, 131, 6, 4);
 			break;
 	case 45000000:
 	case 45158000:
-			epll_con |= S5P_EPLLVAL(90, 3, 3);
+			epll_con |= S5P_EPLLVAL(0, 271, 18, 3);
 			break;
 	case 49125000:
 	case 49152000:
-			epll_con |= S5P_EPLLVAL(131, 4, 3);
+			epll_con |= S5P_EPLLVAL(0, 131, 8, 3);
 			break;
 	case 67737600:
 	case 67738000:
-			epll_con |= S5P_EPLLVAL(226, 5, 3);
+			epll_con |= S5P_EPLLVAL(1, 271, 12, 3);
 			break;
 	case 73800000:
 	case 73728000:
-			epll_con |= S5P_EPLLVAL(246, 5, 3);
+			epll_con |= S5P_EPLLVAL(1, 295, 12, 3);
 			break;
 	case 36000000:
-			epll_con |= S5P_EPLLVAL(72, 3, 3); /* 36M = 0.75*48M */
+			epll_con |= S5P_EPLLVAL(0, 72, 6, 3); /* 36M = 0.75*48M */
 			break;
 	case 60000000:
-			epll_con |= S5P_EPLLVAL(120, 3, 3); /* 60M = 1.25*48M */
+			epll_con |= S5P_EPLLVAL(0, 120, 6, 3); /* 60M = 1.25*48M */
 			break;
 	case 72000000:
-			epll_con |= S5P_EPLLVAL(144, 3, 3); /* 72M = 1.5*48M */
+			epll_con |= S5P_EPLLVAL(0, 144, 6, 3); /* 72M = 1.5*48M */
+			break;
+	case 80000000:
+			epll_con |= S5P_EPLLVAL(1, 160, 6, 3);
 			break;
 	case 84000000:
-			epll_con |= S5P_EPLLVAL(168, 3, 3); /* 84M = 1.75*48M */
+			epll_con |= S5P_EPLLVAL(0, 84, 6, 2);
+			break;
+	case 50000000:
+			epll_con |= S5P_EPLLVAL(0, 100, 6, 3);
 			break;
 	default:
 			printk(KERN_ERR "Invalid Clock Freq!\n");
@@ -962,38 +967,36 @@ static struct clksrc_clk clk_csis = {
 	.reg_source	= S5P_CLK_SRC1,
 };
 
-struct clk clk_iis_cd0 = {
-	.name		= "iis_cdclk0",
+struct clk clk_i2s_cd0 = {
+	.name		= "i2s_cdclk0",
 	.id		= -1,
 };
 
-struct clk clk_iis_cd1 = {
-	.name		= "iiscd_cdclk1",
-	.id		= -1,
-};
-
-struct clk clk_iis_cd2 = {
-	.name		= "iiscd_cdclk2",
+struct clk clk_i2s_cd1 = {
+	.name		= "i2s_cdclk1",
 	.id		= -1,
 };
 
 struct clk clk_pcm_cd0 = {
-	.name		= "pcmcd_cdclk0",
+	.name		= "pcm_cdclk0",
 	.id		= -1,
 };
 
 struct clk clk_pcm_cd1 = {
-	.name		= "pcmcd_cdclk1",
+	.name		= "pcm_cdclk1",
 	.id		= -1,
 };
 
 static struct clk *clkset_audio0_list[] = {
-	[0] = &clk_mout_epll.clk,
-	[1] = &clk_mout_mpll.clk,
-	[2] = &clk_fin_epll,
-	[3] = &clk_iis_cd0,
-	[4] = &clk_pcm_cd0,
-	[5] = &clk_mout_vpll.clk,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
 };
 
 static struct clk_sources clkset_audio0 = {
@@ -1021,17 +1024,20 @@ static struct clksrc_clk clk_audio0 = {
 };
 
 static struct clk *clkset_audio1_list[] = {
-	[0] = &clk_mout_epll.clk,
-	[1] = &clk_mout_mpll.clk,
-	[2] = &clk_fin_epll,
-	[3] = &clk_iis_cd1,
-	[4] = &clk_pcm_cd1,
-	[5] = &clk_mout_vpll.clk,
+	&clk_i2s_cd1,
+	&clk_pcm_cd1,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
 };
 
 static struct clk_sources clkset_audio1 = {
 	.sources	= clkset_audio1_list,
-	.nr_sources	= ARRAY_SIZE(clkset_audio0_list),
+	.nr_sources	= ARRAY_SIZE(clkset_audio1_list),
 };
 
 static struct clksrc_clk clk_audio1 = {
@@ -1049,10 +1055,131 @@ static struct clksrc_clk clk_audio1 = {
 	.mask		= S5P_CLKSRC6_AUDIO1_MASK,
 	.sources	= &clkset_audio1,
 	.divider_shift	= S5P_CLKDIV6_AUDIO1_SHIFT,
-	.reg_divider	= S5P_CLK_DIV4,
-	.reg_source	= S5P_CLK_SRC3,
+	.reg_divider	= S5P_CLK_DIV6,
+	.reg_source	= S5P_CLK_SRC6,
 };
 
+static struct clk *clkset_audio2_list[] = {
+	NULL,
+	&clk_pcm_cd0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
+};
+
+static struct clk_sources clkset_audio2 = {
+	.sources	= clkset_audio2_list,
+	.nr_sources	= ARRAY_SIZE(clkset_audio2_list),
+};
+
+static struct clksrc_clk clk_audio2 = {
+	.clk	= {
+		.name		= "sclk_audio2",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_IP3_I2S2,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC6_AUDIO2_SHIFT,
+	.mask		= S5P_CLKSRC6_AUDIO2_MASK,
+	.sources	= &clkset_audio2,
+	.divider_shift	= S5P_CLKDIV6_AUDIO2_SHIFT,
+	.reg_divider	= S5P_CLK_DIV6,
+	.reg_source	= S5P_CLK_SRC6,
+};
+
+static struct clk *clkset_i2smain_list[] = {
+	NULL, /* XXTI */
+	&clk_fout_epll,
+};
+
+extern struct powerdomain pd_audio;
+
+static struct clk_sources clkset_i2smain_clk = {
+	.sources	= clkset_i2smain_list,
+	.nr_sources	= ARRAY_SIZE(clkset_i2smain_list),
+};
+
+static struct clksrc_clk clk_i2smain = {
+	.clk	= {
+		.name		= "i2smain_clk", /* C110 calls it Main CLK */
+		.id		= -1,
+		.pd		= &pd_audio,
+		.set_parent	= s5pc11x_setparent_clksrc,
+	},
+	.shift		= S5P_AUDSS_CLKSRC_MAIN_SHIFT,
+	.mask		= S5P_AUDSS_CLKSRC_MAIN_MASK,
+	.sources	= &clkset_i2smain_clk,
+	.reg_source	= S5P_CLKSRC_AUDSS,
+};
+
+static struct clk *clkset_audss_hclk_list[] = {
+	&clk_i2smain.clk,
+	&clk_i2s_cd0,
+};
+
+static struct clk_sources clkset_audss_hclk = {
+	.sources	= clkset_audss_hclk_list,
+	.nr_sources	= ARRAY_SIZE(clkset_audss_hclk_list),
+};
+
+static struct clksrc_clk clk_audss_hclk = {
+	.clk	= {
+		.name		= "audss_hclk", /* C110 calls it BUSCLK */
+		.id		= -1,
+		.pd		= &pd_audio,
+		.ctrlbit        = S5P_AUDSS_CLKGATE_HCLKI2S,
+		.enable		= s5pc11x_audss_clkctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_AUDSS_CLKSRC_BUSCLK_SHIFT,
+	.mask		= S5P_AUDSS_CLKSRC_BUSCLK_MASK,
+	.sources	= &clkset_audss_hclk,
+	.divider_shift	= S5P_AUDSS_CLKDIV_BUSCLK_SHIFT,
+	.reg_divider	= S5P_CLKDIV_AUDSS,
+	.reg_source	= S5P_CLKSRC_AUDSS,
+};
+
+static struct clk *clkset_i2sclk_list[] = {
+	&clk_i2smain.clk,
+	&clk_i2s_cd0,
+	&clk_audio0.clk,
+};
+
+static struct clk_sources clkset_i2sclk = {
+	.sources	= clkset_i2sclk_list,
+	.nr_sources	= ARRAY_SIZE(clkset_i2sclk_list),
+};
+
+static struct clksrc_clk clk_i2sclk = {
+	.clk	= {
+		.name		= "i2sclk",
+		.id		= -1,
+		.pd		= &pd_audio,
+		.ctrlbit        = S5P_AUDSS_CLKGATE_CLKI2S,
+		.enable		= s5pc11x_audss_clkctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_AUDSS_CLKSRC_I2SCLK_SHIFT,
+	.mask		= S5P_AUDSS_CLKSRC_I2SCLK_MASK,
+	.sources	= &clkset_i2sclk,
+	.divider_shift	= S5P_AUDSS_CLKDIV_I2SCLK_SHIFT,
+	.reg_divider	= S5P_CLKDIV_AUDSS,
+	.reg_source	= S5P_CLKSRC_AUDSS,
+};
 
 /* Clock initialisation code */
 
@@ -1071,6 +1198,10 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_spi2,
 	&clk_audio0,
 	&clk_audio1,
+	&clk_audio2,
+	&clk_i2sclk,
+	&clk_audss_hclk,
+	&clk_i2smain,
 	&clk_lcd,
 	&clk_cam0,
 	&clk_cam1,
@@ -1221,8 +1352,14 @@ static struct clk *clks[] __initdata = {
 	&clk_spi0.clk,
 	&clk_spi1.clk,
 	&clk_spi2.clk,
+	&clk_i2s_cd0,
+	&clk_i2s_cd1,
 	&clk_audio0.clk,
 	&clk_audio1.clk,
+	&clk_audio2.clk,
+	&clk_i2sclk.clk,
+	&clk_audss_hclk.clk,
+	&clk_i2smain.clk,
 	&clk_lcd.clk,
 	&clk_dout_apll,
 	&clk_cam0.clk,

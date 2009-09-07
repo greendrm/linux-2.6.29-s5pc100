@@ -25,6 +25,7 @@
 #include <mach/map.h>
 
 #include <plat/regs-clock.h>
+#include <plat/regs-audss.c>
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/clock.h>
@@ -86,7 +87,8 @@ static struct powerdomain pd_cam = {
 	.pd_set		= powerdomain_set,
 };
 
-static struct powerdomain pd_audio = {
+/* No way to set .pd in s5pc110-clock.c */
+struct powerdomain pd_audio = {
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<7),
@@ -188,6 +190,11 @@ int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable)
 int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable)
 {
 	return s5pc11x_clk_gate(S5P_CLKGATE_BUS1, clk, enable);
+}
+
+int s5pc11x_audss_clkctrl(struct clk *clk, int enable)
+{
+	return s5pc11x_clk_gate(S5P_CLKGATE_AUDSS, clk, enable);
 }
 
 static struct clk init_clocks_disable[] = {

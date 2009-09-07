@@ -187,12 +187,25 @@
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
 #define PCLKCLK			"i2s_v50"
-#define EXTCLK			"i2sclkd2"
+
 #ifdef CONFIG_SND_WM8580_MASTER /* ?? */
-#define EXTPRNT "iis_cdclk0"
+#define EXTPRNT "i2s_cdclk0"
 #else
+#if defined(CONFIG_SND_SMDKC100_WM8580)
 #define EXTPRNT "fout_epll"
+#elif defined(CONFIG_SND_SMDKC110_WM8580)
+#define EXTPRNT "i2smain_clk"
 #endif
+#endif
+
+#if defined(CONFIG_SND_SMDKC100_WM8580)
+#define EXTCLK			"i2sclkd2"
+#define RATESRCCLK 		EXTPRNT
+#else
+#define EXTCLK			"i2sclk"
+#define RATESRCCLK 		"fout_epll"
+#endif
+
 #define PLBK_CHAN		6
 #define S3C_DESC		"S3C AP I2S-V5.0 Interface"
 

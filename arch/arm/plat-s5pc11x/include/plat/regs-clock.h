@@ -66,7 +66,7 @@
 
 #define S5P_EPLL_EN     (1<<31)
 #define S5P_EPLL_MASK   0xffffffff
-#define S5P_EPLLVAL(_m,_p,_s)   ((_m) << 16 | ((_p) << 8) | ((_s)))
+#define S5P_EPLLVAL(_v,_m,_p,_s)   ((_v) << 27 | (_m) << 16 | ((_p) << 8) | ((_s)))
 
 /* CLKSRC0 */
 #define S5P_CLKSRC0_APLL_MASK		(0x1<<0)
@@ -156,7 +156,7 @@
 #define S5P_CLKSRC6_AUDIO1_MASK		(0xF<<4)
 #define S5P_CLKSRC6_AUDIO1_SHIFT	(4)
 #define S5P_CLKSRC6_AUDIO2_MASK		(0xF<<8)
-#define S5P_CLKSRC6_AUDIO02_SHIFT	(8)
+#define S5P_CLKSRC6_AUDIO2_SHIFT	(8)
 #define S5P_CLKSRC6_SPDIF_MASK		(0x3<<12)
 #define S5P_CLKSRC6_SPDIF_SHIFT		(12)
 #define S5P_CLKSRC6_HPM_MASK		(0x1<<16)
