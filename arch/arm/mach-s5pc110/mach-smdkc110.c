@@ -1277,7 +1277,8 @@ void otg_phy_off(void) {
 }
 EXPORT_SYMBOL(otg_phy_off);
 
-void usb_host_clk_en(void) {
+void usb_host_phy_init(void)
+{
 	struct clk *otg_clk;
 
 	otg_clk = clk_get(NULL, "otg");
@@ -1288,19 +1289,21 @@ void usb_host_clk_en(void) {
 	}
 
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<1), S5P_USB_PHY_CONTROL);
-	//USB PHY1 Enable 
 	writel((readl(S3C_USBOTG_PHYPWR)&~(0x1<<7)&~(0x1<<6))|(0x1<<8)|(0x1<<5), S3C_USBOTG_PHYPWR);
-	// USB PHY1:  Analog Block Power up, Suspend signal Disable, Reserved[8] [5] should be 1
 	writel((readl(S3C_USBOTG_PHYCLK)&~(0x1<<7))|(0x3<<0), S3C_USBOTG_PHYCLK);
-	// USB PHY1: 48M Clk Off in Suspend mode, Ref Clock 24MHz
 	writel((readl(S3C_USBOTG_RSTCON))|(0x1<<4)|(0x1<<3), S3C_USBOTG_RSTCON);
-	// USB Host LINK SW reset, USB PHY1 SW reset
 	udelay(10);
 	writel(readl(S3C_USBOTG_RSTCON)&~(0x1<<4)&~(0x1<<3), S3C_USBOTG_RSTCON);
-	// All SW Reset bits are  0x0 (URSTCON[4:3])
 	udelay(10);
 }
-EXPORT_SYMBOL(usb_host_clk_en);
+EXPORT_SYMBOL(usb_host_phy_init);
+
+void usb_host_phy_off(void)
+{
+	writel(readl(S3C_USBOTG_PHYPWR)|(0x1<<7)|(0x1<<6), S3C_USBOTG_PHYPWR);
+	writel(readl(S5P_USB_PHY_CONTROL)&~(1<<1), S5P_USB_PHY_CONTROL);
+}
+EXPORT_SYMBOL(usb_host_phy_off);
 #endif
 
 #if defined(CONFIG_RTC_DRV_S3C)

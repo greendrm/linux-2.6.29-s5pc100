@@ -1960,3 +1960,11 @@ v2.6.29.4-dev-1-4-15: Hatim Ali
 		A	arch/arm/plat-s3c/dev-i2c2.c
 		A	arch/arm/plat-s5p64xx/setup-i2c2.c
 
+v2.6.29.4-dev-1-4-16: Jingoo Han
+	- Implement the Power Management of USB HOST EHCI/OHCI driver for S5PC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       drivers/usb/host/ehci-s5pc110.c
+		M       drivers/usb/host/ohci-s5pc110.c
+
