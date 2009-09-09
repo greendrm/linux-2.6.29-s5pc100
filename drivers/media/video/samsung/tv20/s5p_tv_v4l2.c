@@ -51,7 +51,6 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.modulator	= 0,
 		.std		= CVBS_S_VIDEO,
 	}, {
-
 		.index		= 1,
 		.name		= "Analog  SVIDEO",
 		.type		= V4L2_OUTPUT_TYPE_SVIDEO,
@@ -86,122 +85,121 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.audioset	= 2,
 		.modulator	= 0,
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
-					V4L2_STD_720P_60 | V4L2_STD_720P_50 |
-					V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
-					V4L2_STD_1080I_60 | V4L2_STD_1080I_50,
+				V4L2_STD_720P_60 | V4L2_STD_720P_50 |
+				V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
+				V4L2_STD_1080I_60 | V4L2_STD_1080I_50,
 	}
 
 };
 
 const struct v4l2_fmtdesc s5p_tv_o_fmt_desc[] = {
 	{
-		.index    = 0,
-		.type     = V4L2_BUF_TYPE_VIDEO_OUTPUT,
-		.description = "YUV420, NV12 (Video Processor)",
-		.pixelformat   = V4L2_PIX_FMT_NV12,
-		.flags    = FORMAT_FLAGS_CrCb,
+		.index    	= 0,
+		.type     	= V4L2_BUF_TYPE_VIDEO_OUTPUT,
+		.description 	= "YUV420, NV12 (Video Processor)",
+		.pixelformat   	= V4L2_PIX_FMT_NV12,
+		.flags    	= FORMAT_FLAGS_CrCb,
 	}
 };
 
 const struct v4l2_fmtdesc s5p_tv_o_overlay_fmt_desc[] = {
 	{
-		.index    = 0,
-		.type     = V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
-		.description = "16bpp RGB, le - RGB[565]",
-		.pixelformat   = V4L2_PIX_FMT_RGB565,
-		.flags    = FORMAT_FLAGS_PACKED,
+		.index    	= 0,
+		.type     	= V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
+		.description 	= "16bpp RGB, le - RGB[565]",
+		.pixelformat   	= V4L2_PIX_FMT_RGB565,
+		.flags    	= FORMAT_FLAGS_PACKED,
 	}, {
-
-		.index    = 1,
-		.type     = V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
-		.description = "16bpp RGB, le - ARGB[1555]",
-		.pixelformat   = V4L2_PIX_FMT_RGB555,
-		.flags    = FORMAT_FLAGS_PACKED,
+		.index    	= 1,
+		.type     	= V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
+		.description 	= "16bpp RGB, le - ARGB[1555]",
+		.pixelformat   	= V4L2_PIX_FMT_RGB555,
+		.flags    	= FORMAT_FLAGS_PACKED,
 	}, {
-		.index    = 2,
-		.type     = V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
-		.description = "16bpp RGB, le - ARGB[4444]",
-		.pixelformat   = V4L2_PIX_FMT_RGB444,
-		.flags    = FORMAT_FLAGS_PACKED,
+		.index    	= 2,
+		.type     	= V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
+		.description 	= "16bpp RGB, le - ARGB[4444]",
+		.pixelformat   	= V4L2_PIX_FMT_RGB444,
+		.flags    	= FORMAT_FLAGS_PACKED,
 	}, {
-		.index    = 3,
-		.type     = V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
-		.description = "32bpp RGB, le - ARGB[8888]",
-		.pixelformat   = V4L2_PIX_FMT_RGB32,
-		.flags    = FORMAT_FLAGS_PACKED,
+		.index    	= 3,
+		.type     	= V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
+		.description 	= "32bpp RGB, le - ARGB[8888]",
+		.pixelformat   	= V4L2_PIX_FMT_RGB32,
+		.flags    	= FORMAT_FLAGS_PACKED,
 	}
 };
 
 const struct v4l2_standard s5p_tv_standards[] = {
 	{
-		.index    = 0,
+		.index  = 0,
 		.id     = V4L2_STD_NTSC_M,
-		.name = "NTSC_M",
+		.name	= "NTSC_M",
 	}, {
 
-		.index    = 1,
-		.id     = V4L2_STD_PAL_BDGHI,
-		.name = "PAL_BDGHI",
+		.index	= 1,
+		.id	= V4L2_STD_PAL_BDGHI,
+		.name	= "PAL_BDGHI",
 	}, {
-		.index    = 2,
+		.index  = 2,
 		.id     = V4L2_STD_PAL_M,
-		.name = "PAL_M",
+		.name 	= "PAL_M",
 	}, {
-		.index    = 3,
+		.index  = 3,
 		.id     = V4L2_STD_PAL_N,
-		.name = "PAL_N",
+		.name 	= "PAL_N",
 	}, {
-		.index    = 4,
+		.index  = 4,
 		.id     = V4L2_STD_PAL_Nc,
-		.name = "PAL_Nc",
+		.name 	= "PAL_Nc",
 	}, {
-		.index    = 5,
+		.index  = 5,
 		.id     = V4L2_STD_PAL_60,
-		.name = "PAL_60",
+		.name 	= "PAL_60",
 	}, {
-		.index    = 6,
+		.index  = 6,
 		.id     = V4L2_STD_NTSC_443,
-		.name = "NTSC_443",
+		.name 	= "NTSC_443",
 	}, {
-		.index    = 7,
+		.index  = 7,
 		.id     = V4L2_STD_480P_60_16_9,
-		.name = "480P_60_16_9",
+		.name 	= "480P_60_16_9",
 	}, {
-		.index    = 8,
+		.index  = 8,
 		.id     = V4L2_STD_480P_60_4_3,
-		.name = "480P_60_4_3",
+		.name 	= "480P_60_4_3",
 	}, {
-		.index    = 9,
+		.index  = 9,
 		.id     = V4L2_STD_576P_50_16_9,
-		.name = "576P_50_16_9",
+		.name 	= "576P_50_16_9",
 	}, {
-		.index    = 10,
+		.index  = 10,
 		.id     = V4L2_STD_576P_50_4_3,
-		.name = "576P_50_4_3",
+		.name 	= "576P_50_4_3",
 	}, {
-		.index    = 11,
+		.index  = 11,
 		.id     = V4L2_STD_720P_60,
-		.name = "720P_60",
+		.name 	= "720P_60",
 	}, {
-		.index    = 12,
+		.index  = 12,
 		.id     = V4L2_STD_720P_50,
-		.name = "720P_50",
+		.name 	= "720P_50",
 	}, {
-		.index    = 13,
+		.index  = 13,
 		.id     = V4L2_STD_1080P_60,
-		.name = "1080P_60",
+		.name 	= "1080P_60",
 	}, {
-		.index    = 14,
+		.index  = 14,
 		.id     = V4L2_STD_1080P_50,
-		.name = "1080P_50",
+		.name 	= "1080P_50",
 	}, {
-		.index    = 15,
+		.index  = 15,
 		.id     = V4L2_STD_1080I_60,
-		.name = "1080I_60",
+		.name 	= "1080I_60",
 	}, {
-		.index    = 16,
+		.index  = 16,
 		.id     = V4L2_STD_1080I_50,
-		.name = "1080I_50",
+		.name 	= "1080I_50",
 	}
 };
 
@@ -231,7 +229,7 @@ void s5p_tv_v4l2_init_param(void)
 	s5ptv_status.v4l2.fmt_v 	= (struct v4l2_format *) & s5p_tv_o_fmt_desc[0];
 	s5ptv_status.v4l2.fmt_vo_0 	= (struct v4l2_format *) & s5p_tv_format[1];
 	s5ptv_status.v4l2.fmt_vo_1 	= (struct v4l2_format *) & s5p_tv_format[2];
-	s5ptv_status.hdmi_audio_type  = HDMI_AUDIO_PCM;
+	s5ptv_status.hdmi_audio_type  	= HDMI_AUDIO_PCM;
 }
 
 /* VIDIOC_QUERYCAP handler */
@@ -391,7 +389,6 @@ static int s5p_tv_v4l2_g_fmt_vid_out_overlay(struct file *file, void *fh, struct
 	return 0;
 }
 
-
 /* VIDIOC_S_FMT handlers */
 static int s5p_tv_v4l2_s_fmt_vid_out(struct file *file, void *fh, struct v4l2_format *f)
 {
@@ -407,33 +404,98 @@ static int s5p_tv_v4l2_s_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 		struct v4l2_pix_format_s5p_tvout vparam;
 		memcpy(&vparam, vid_out_fmt->fmt.raw_data, sizeof(struct v4l2_pix_format_s5p_tvout));
 
-		s5ptv_status.vl_basic_param.top_y_address = (unsigned int)vparam.base_y;
-		s5ptv_status.vl_basic_param.top_c_address = (unsigned int)vparam.base_c;
-		s5ptv_status.src_color = vparam.pix_fmt.pixelformat;		//VPROC_SRC_COLOR_NV12
 		s5ptv_status.vl_basic_param.src_width  	= vparam.pix_fmt.width;
 		s5ptv_status.vl_basic_param.src_height 	= vparam.pix_fmt.height;
-		V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
-			   f->type,
-			   s5ptv_status.vl_basic_param.top_y_address,
-			   s5ptv_status.vl_basic_param.top_c_address,
-			   s5ptv_status.vl_basic_param.src_width,
-			   s5ptv_status.vl_basic_param.src_height);
+		s5ptv_status.src_color = vparam.pix_fmt.pixelformat;
 
-		if (s5ptv_status.vp_layer_enable) {
-			s5p_video_img_address temp_addr;
-			s5p_img_size	img_size;
+		s5ptv_status.vl_basic_param.top_y_address = (unsigned int)vparam.base_y;
+		s5ptv_status.vl_basic_param.top_c_address = (unsigned int)vparam.base_c;
 
-			temp_addr.y_address = (unsigned int)vparam.base_y;
-			temp_addr.c_address = (unsigned int)vparam.base_c;
-			img_size.img_width = (unsigned int)vparam.pix_fmt.width;
-			img_size.img_height = (unsigned int)vparam.pix_fmt.height;
+		/* check progressive or not */
+		if (vparam.pix_fmt.field == V4L2_FIELD_NONE){
 
-			_s5p_vlayer_set_top_address((unsigned long)&temp_addr);
-			_s5p_vlayer_set_img_size((unsigned long)&img_size);
-			_s5p_vlayer_set_src_size((unsigned long)&img_size);
+			/* progressive */
+			
+			switch (vparam.pix_fmt.pixelformat) {
 
+			case V4L2_PIX_FMT_NV12:
+				/* linear */
+				s5ptv_status.src_color = VPROC_SRC_COLOR_NV12;
+				break;
+			case V4L2_PIX_FMT_NV12T:
+				/* tiled */
+				s5ptv_status.src_color = VPROC_SRC_COLOR_TILE_NV12;
+				break;
+			default :
+				V4L2PRINTK("src img format not supported\n");
+				break;
+			}
+
+			V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
+				   f->type,
+				   s5ptv_status.vl_basic_param.top_y_address,
+				   s5ptv_status.vl_basic_param.top_c_address,
+				   s5ptv_status.vl_basic_param.src_width,
+				   s5ptv_status.vl_basic_param.src_height);
+
+			if (s5ptv_status.vp_layer_enable) {
+				s5p_video_img_address temp_addr;
+				s5p_img_size	img_size;
+
+				temp_addr.y_address = (unsigned int)vparam.base_y;
+				temp_addr.c_address = (unsigned int)vparam.base_c;
+				img_size.img_width = (unsigned int)vparam.pix_fmt.width;
+				img_size.img_height = (unsigned int)vparam.pix_fmt.height;
+
+				_s5p_vlayer_set_top_address((unsigned long)&temp_addr);
+				_s5p_vlayer_set_img_size((unsigned long)&img_size);
+				_s5p_vlayer_set_src_size((unsigned long)&img_size);
+
+			}
+		} else if (vparam.pix_fmt.field == V4L2_FIELD_INTERLACED_TB){
+
+			/* interlaced */
+		
+			switch (vparam.pix_fmt.pixelformat) {
+
+			case V4L2_PIX_FMT_NV12:
+				/* linear */
+				s5ptv_status.src_color = VPROC_SRC_COLOR_NV12IW;
+				break;
+			case V4L2_PIX_FMT_NV12T:
+				/* tiled */
+				s5ptv_status.src_color = VPROC_SRC_COLOR_TILE_NV12IW;
+				break;
+			default :
+				V4L2PRINTK("src img format not supported\n");
+				break;
+			}			
+
+			V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
+				   f->type,
+				   s5ptv_status.vl_basic_param.top_y_address,
+				   s5ptv_status.vl_basic_param.top_c_address,
+				   s5ptv_status.vl_basic_param.src_width,
+				   s5ptv_status.vl_basic_param.src_height);
+
+			if (s5ptv_status.vp_layer_enable) {
+				s5p_video_img_address temp_addr;
+				s5p_img_size	img_size;
+
+				temp_addr.y_address = (unsigned int)vparam.base_y;
+				temp_addr.c_address = (unsigned int)vparam.base_c;
+				img_size.img_width = (unsigned int)vparam.pix_fmt.width;
+				img_size.img_height = (unsigned int)vparam.pix_fmt.height;
+
+				_s5p_vlayer_set_top_address((unsigned long)&temp_addr);
+				_s5p_vlayer_set_img_size((unsigned long)&img_size);
+				_s5p_vlayer_set_src_size((unsigned long)&img_size);
+
+			}
+			
+		} else {
+			V4L2PRINTK("this field id not supported\n");
 		}
-
 		break;
 	}
 
@@ -512,8 +574,6 @@ static int s5p_tv_v4l2_try_fmt_vid_out( struct file *file, void *fh, struct v4l2
 
 static int s5p_tv_v4l2_try_fmt_vid_out_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
-//	s5p_tv_vo *layer = (s5p_tv_vo *)fh;
-
 	return 0;
 }
 
@@ -804,10 +864,6 @@ static int s5p_tv_v4l2_g_output(struct file *file, void *fh, unsigned int *i)
 	return 0;
 }
 
-//////////////
-// TV_OUT IF start // Stop ?
-//////////////
-// check environment, change output port, and open output port
 static int s5p_tv_v4l2_s_output(struct file *file, void *fh, unsigned int i)
 {
 	V4L2PRINTK("(%d)++\n", i);

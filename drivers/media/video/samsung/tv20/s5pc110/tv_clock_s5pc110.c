@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc100.c
+/* linux/drivers/media/video/samsung/tv20/s5pc100/tv_clock_s5pc110.c
  *
  * clock raw ftn  file for Samsung TVOut driver
  *

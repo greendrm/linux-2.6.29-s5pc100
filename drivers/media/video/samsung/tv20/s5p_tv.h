@@ -12,6 +12,7 @@
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/videodev2.h>
+#include <linux/videodev2_samsung.h>
 #include <linux/platform_device.h>
 
 #ifdef CONFIG_CPU_S5PC110
@@ -41,7 +42,8 @@
 
 #define USE_VMIXER_INTERRUPT		1
 
-// AVI InfoFrame
+/* AVI InfoFrame */
+
 #define AVI_RGB_IF		(0x0<<5)
 #define AVI_YCBCR444_IF		(0x2<<5)
 
@@ -63,6 +65,7 @@
 #define AVI_VIC_19		(19<<0) // 1280x720p@50Hz 16:9
 #define AVI_VIC_20		(20<<0) // 1920x1080i@50Hz 16:9
 #define AVI_VIC_31		(31<<0) // 1920x1080p@50Hz
+
 
 #define VP_UPDATE_RETRY_MAXIMUM 	30
 #define VP_WAIT_UPDATE_SLEEP 		3

@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/vp_coeff_s5pc100.h
+/* linux/drivers/media/video/samsung/tv20/s5pc110/vp_coeff_s5pc110.h
  *
  * Video Processor coefficient header file for Samsung TVOut driver
  *
