@@ -76,7 +76,7 @@ static int ehci_hcd_s5pc110_drv_resume(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
-	
+
 	s5pc110_start_ehc();
 
 	if (time_before(jiffies, ehci->next_statechange)) {
