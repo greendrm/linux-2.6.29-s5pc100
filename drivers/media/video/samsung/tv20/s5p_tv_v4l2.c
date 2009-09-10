@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/stddef.h>
 #include <linux/string.h>
+#include <linux/version.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -241,18 +242,17 @@ static int s5p_tv_v4l2_querycap(struct file *file, void *fh, struct v4l2_capabil
 	if (layer == NULL) {
 		index = 0;
 		strcpy(cap->driver, "S3C TV Vid drv");
+		cap->capabilities = V4L2_CAP_VIDEO_OUTPUT;
 	} else {
 		index = layer->index + 1;
 		strcpy(cap->driver, "S3C TV Grp drv");
+		cap->capabilities = V4L2_CAP_VIDEO_OUTPUT_OVERLAY;
 	}
 
 	strlcpy(cap->card, s5ptv_status.video_dev[index]->name, sizeof(cap->card));
 
 	sprintf(cap->bus_info, "ARM AHB BUS");
-	cap->version = 0;
-
-	/* wizardsj added type2 temporally. it's not in video_dev struct */
-//	cap->capabilities = s5ptv_status.video_dev[index]->type2;
+	cap->version = KERNEL_VERSION(2,6,29);
 
 	return 0;
 }
@@ -1338,8 +1338,20 @@ static int s5p_tv_v4l2_s_hw_freq_seek(struct file *file, void *fh, struct v4l2_h
 
 long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+	struct video_device *vfd = video_devdata(file);
+	const struct v4l2_ioctl_ops *ops = vfd->ioctl_ops;
+		
 	switch (cmd) {
-		// TODO: must be changed into v4l2 external control.
+
+	case VIDIOC_S_FMT: {
+		struct v4l2_format *f = (struct v4l2_format *)arg;
+		void *fh = file->private_data;
+		long ret = -EINVAL;
+		
+		if (ops->vidioc_s_fmt_vid_out)
+			ret = ops->vidioc_s_fmt_vid_out(file, fh, f);
+		return ret;
+	}
 
 	case VIDIOC_HDCP_ENABLE:
 		s5ptv_status.hdcp_en = (unsigned int) arg;
