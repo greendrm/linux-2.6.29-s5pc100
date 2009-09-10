@@ -1381,7 +1381,37 @@ void s3c_setup_keypad_cfg_gpio(int rows, int columns)
 {
 	unsigned int gpio;
 	unsigned int end;
+#if defined(CONFIG_KEYPAD_S3C_MSM)
 
+	s3c_gpio_cfgpin(S5PC11X_GPJ1(5),S3C_GPIO_SFN(3));
+	s3c_gpio_setpin(S5PC11X_GPJ1(5), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PC11X_GPJ1(5), S3C_GPIO_PULL_NONE);
+
+	
+	end = S5PC11X_GPJ2(columns);
+
+	for (gpio = S5PC11X_GPJ2(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+
+	end = S5PC11X_GPJ3(columns);
+
+	for (gpio = S5PC11X_GPJ3(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+
+	end = S5PC11X_GPJ4(5);
+
+	for (gpio = S5PC11X_GPJ4(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+#else
 	end = S5PC11X_GPH3(rows);
 
 	/* Set all the necessary GPH2 pins to special-function 0 */
@@ -1397,6 +1427,8 @@ void s3c_setup_keypad_cfg_gpio(int rows, int columns)
 		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
 		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 	}
+
+#endif
 }
 
 EXPORT_SYMBOL(s3c_setup_keypad_cfg_gpio);
