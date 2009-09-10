@@ -1967,4 +1967,5 @@ v2.6.29.4-dev-1-4-16: Jingoo Han
 		M       arch/arm/mach-s5pc110/mach-smdkc110.c
 		M       drivers/usb/host/ehci-s5pc110.c
 		M       drivers/usb/host/ohci-s5pc110.c
-
+v2.6.29.4-dev-1-4-17: Hyunwoong Kim
+	- Temporary Release for s5pc100(2009.09.10)
