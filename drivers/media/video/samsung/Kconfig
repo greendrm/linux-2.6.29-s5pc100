@@ -26,6 +26,10 @@ if CPU_S5PC100
 source "drivers/media/video/samsung/mfc40/Kconfig"
 endif
 
+if CPU_S5P6442
+source "drivers/media/video/samsung/mfc10/Kconfig"
+endif
+
 #if CPU_S3C6410
 #source "drivers/media/video/samsung/mfc10/Kconfig"
 #source "drivers/media/video/samsung/jpeg/Kconfig"
