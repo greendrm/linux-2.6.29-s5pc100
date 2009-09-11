@@ -1969,3 +1969,19 @@ v2.6.29.4-dev-1-4-16: Jingoo Han
 		M       drivers/usb/host/ohci-s5pc110.c
 v2.6.29.4-dev-1-4-17: Hyunwoong Kim
 	- Temporary Release for s5pc100(2009.09.10)
+
+v2.6.29.4-dev-1-4-18: Youngmok Song
+	- Support FIMC for smdk6442
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s5p64xx/Kconfig
+		M	arch/arm/plat-s5p64xx/Makefile
+		M	arch/arm/plat-s5p64xx/bootmem.c
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/include/plat/media.h
+		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+		M	drivers/media/video/samsung/fimc/Kconfig
+		M	drivers/media/video/samsung/fimc/Makefile
