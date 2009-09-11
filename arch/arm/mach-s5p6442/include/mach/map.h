@@ -17,6 +17,10 @@
 
 #include <plat/map-base.h>
 
+#define S5P64XX_PA_FIMC0	(0xEE400000)
+#define S5P64XX_PA_FIMC1	(0xEE500000)
+#define S5P64XX_PA_FIMC2	(0xEE600000)
+
 /* HSMMC units */
 #define S5P64XX_PA_HSMMC(x)	(0xED800000 + ((x) * 0x100000))
 #define S5P64XX_PA_HSMMC0	S5P64XX_PA_HSMMC(0)

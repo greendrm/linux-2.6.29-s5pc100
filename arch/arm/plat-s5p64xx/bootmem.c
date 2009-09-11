@@ -17,10 +17,39 @@
 #include <asm/setup.h>
 #include <asm/io.h>
 #include <mach/memory.h>
+#include <plat/media.h>
 
-#include "plat/media.h"
+static struct s3c_media_device media_devs[] = {
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC0
+	{
+		.id = S3C_MDEV_FIMC0,
+		.name = "fimc0",
+		.node = 1,
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC0 * SZ_1K,
+		.paddr = 0,
+	},
+#endif
 
-static struct s3c_media_device s3c_mdevs[S3C_MDEV_MAX] = {
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC1
+	{
+		.id = S3C_MDEV_FIMC1,
+		.name = "fimc1",
+		.node = 1,
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC1 * SZ_1K,
+		.paddr = 0,
+	},
+#endif
+
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2
+	{
+		.id = S3C_MDEV_FIMC2,
+		.name = "fimc2",
+		.node = 1,
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_FIMC2 * SZ_1K,
+		.paddr = 0,
+	},
+#endif
+
 	{
 		.id = S3C_MDEV_POST,
 		.name = "post",
@@ -45,7 +74,7 @@ static struct s3c_media_device s3c_mdevs[S3C_MDEV_MAX] = {
 	}
 };
 
-static struct s3c_media_device *s3c_get_media_device(int dev_id)
+static struct s3c_media_device *s3c_get_media_device(int dev_id, int node)
 {
 	struct s3c_media_device *mdev = NULL;
 	int i, found;
@@ -56,8 +85,8 @@ static struct s3c_media_device *s3c_get_media_device(int dev_id)
 	i = 0;
 	found = 0;
 	while (!found && (i < S3C_MDEV_MAX)) {
-		mdev = &s3c_mdevs[i];
-		if (mdev->id == dev_id)
+		mdev = &media_devs[i];
+		if (mdev->id == dev_id && mdev->node == node)
 			found = 1;
 		else
 			i++;
@@ -69,11 +98,11 @@ static struct s3c_media_device *s3c_get_media_device(int dev_id)
 	return mdev;
 }
 
-dma_addr_t s3c_get_media_memory(int dev_id)
+dma_addr_t s3c_get_media_memory_node(int dev_id, int node)
 {
 	struct s3c_media_device *mdev;
 
-	mdev = s3c_get_media_device(dev_id);
+	mdev = s3c_get_media_device(dev_id, node);
 	if (!mdev){
 		printk(KERN_ERR "invalid media device\n");
 		return 0;
@@ -86,12 +115,19 @@ dma_addr_t s3c_get_media_memory(int dev_id)
 
 	return mdev->paddr;
 }
+EXPORT_SYMBOL(s3c_get_media_memory_node);
 
-size_t s3c_get_media_memsize(int dev_id)
+dma_addr_t s3c_get_media_memory(int dev_id)
+{
+	return s3c_get_media_memory_node(dev_id, 0);
+}
+EXPORT_SYMBOL(s3c_get_media_memory);
+
+size_t s3c_get_media_memsize_node(int dev_id, int node)
 {
 	struct s3c_media_device *mdev;
 
-	mdev = s3c_get_media_device(dev_id);
+	mdev = s3c_get_media_device(dev_id, node);
 	if (!mdev){
 		printk(KERN_ERR "invalid media device\n");
 		return 0;
@@ -99,23 +135,30 @@ size_t s3c_get_media_memsize(int dev_id)
 
 	return mdev->memsize;
 }
+EXPORT_SYMBOL(s3c_get_media_memsize_node);
+
+size_t s3c_get_media_memsize(int dev_id)
+{
+	return s3c_get_media_memsize_node(dev_id, 0);
+}
+EXPORT_SYMBOL(s3c_get_media_memsize);
 
 void s3c64xx_reserve_bootmem(void)
 {
 	struct s3c_media_device *mdev;
-	int i;
+	int i, nr_devs;
 
-	for(i = 0; i < sizeof(s3c_mdevs) / sizeof(s3c_mdevs[0]); i++) {
-		mdev = &s3c_mdevs[i];
-		if (mdev->memsize > 0) {
-			mdev->paddr = virt_to_phys( \
-				alloc_bootmem_pages(mdev->memsize));
-			printk(KERN_INFO \
-				"s3c64xx: %lu bytes SDRAM reserved "
-				"for %s at 0x%08x\n",
-				(unsigned long) mdev->memsize, \
-				mdev->name, mdev->paddr);
-		}
+	nr_devs = sizeof(media_devs) / sizeof(media_devs[0]);
+	for (i = 0; i < nr_devs; i++) {
+		mdev = &media_devs[i];
+		if (mdev->memsize <= 0)
+			continue;
+
+		mdev->paddr = virt_to_phys(alloc_bootmem_pages_node( \
+				NODE_DATA(mdev->node), mdev->memsize));
+		printk(KERN_INFO "s5p64xx: %lu bytes system memory reserved " \
+			"for %s at 0x%08x\n", (unsigned long) mdev->memsize, \
+			mdev->name, mdev->paddr);
 	}
 }
 

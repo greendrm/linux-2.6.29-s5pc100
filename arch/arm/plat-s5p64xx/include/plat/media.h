@@ -16,18 +16,25 @@
 
 #include <linux/types.h>
 
-#define S3C_MDEV_POST		0
-#define S3C_MDEV_GVG		1
-#define S3C_MDEV_MAX		2
+/* 3 fimc indexes should be fixed as 0, 1 and 2 */
+#define S3C_MDEV_FIMC0		0
+#define S3C_MDEV_FIMC1		1
+#define S3C_MDEV_FIMC2		2
+#define S3C_MDEV_POST		3
+#define S3C_MDEV_GVG		4
+#define S3C_MDEV_MAX		5
 
 struct s3c_media_device {
 	int		id;
 	const char 	*name;
+	int		node;
 	size_t		memsize;
 	dma_addr_t	paddr;
 };
 
 extern dma_addr_t s3c_get_media_memory(int dev_id);
+extern dma_addr_t s3c_get_media_memory_node(int dev_id, int node);
 extern size_t s3c_get_media_memsize(int dev_id);
+extern size_t s3c_get_media_memsize_node(int dev_id, int node);
 
 #endif

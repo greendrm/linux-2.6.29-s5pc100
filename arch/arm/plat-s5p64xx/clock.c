@@ -300,6 +300,24 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_pd1,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
+	},{
+		.name		= "fimc",
+		.id		= 0,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP0_FIMC0,
+	},{
+		.name		= "fimc",
+		.id		= 1,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP0_FIMC1,
+	},{
+		.name		= "fimc",
+		.id		= 2,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP0_FIMC2,
 	}, 
 };
 

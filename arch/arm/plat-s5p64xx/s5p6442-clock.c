@@ -36,6 +36,8 @@
  * ext_xtal_mux for want of an actual name from the manual.
 */
 
+
+
 struct clk clk_ext_xtal_mux = {
 	.name		= "ext_xtal",
 	.id		= -1,
@@ -404,6 +406,91 @@ static struct clk_sources clkset_mmc2 = {
         .nr_sources     = ARRAY_SIZE(clkset_mmc2_list),
 };
 
+static struct clk *clkset_cam0_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	NULL,	
+};
+
+static struct clk *clkset_cam1_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	NULL,	
+};
+
+static struct clk_sources clkset_cam0 = {
+	.sources	= clkset_cam0_list,
+	.nr_sources	= ARRAY_SIZE(clkset_cam0_list),
+};
+
+static struct clk_sources clkset_cam1 = {
+	.sources	= clkset_cam1_list,
+	.nr_sources	= ARRAY_SIZE(clkset_cam0_list),
+};
+
+static struct clk *clkset_fimc0_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	NULL,	
+};
+
+static struct clk *clkset_fimc1_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	NULL,	
+};
+
+static struct clk *clkset_fimc2_list[] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,	
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	NULL,	
+};
+
+static struct clk_sources clkset_fimc0 = {
+	.sources	= clkset_fimc0_list,
+	.nr_sources	= ARRAY_SIZE(clkset_fimc0_list),
+};
+
+static struct clk_sources clkset_fimc1 = {
+	.sources	= clkset_fimc1_list,
+	.nr_sources	= ARRAY_SIZE(clkset_fimc1_list),
+};
+
+static struct clk_sources clkset_fimc2 = {
+	.sources	= clkset_fimc2_list,
+	.nr_sources	= ARRAY_SIZE(clkset_fimc2_list),
+};
+
 /* The peripheral clocks are all controlled via clocksource followed
  * by an optional divider and gate stage. We currently roll this into
  * one clock which hides the intermediate clock from the mux.
@@ -552,6 +639,100 @@ static struct clksrc_clk clk_mmc2 = {
 	.reg_source	= S5P_CLK_SRC4,
 };
 
+static struct clksrc_clk clk_cam0 = {
+	.clk	= {
+		.name		= "sclk_cam0",
+		.id		= -1,
+		.ctrlbit        = NULL,
+		.enable		= NULL,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC1_CAM0_SHIFT,
+	.mask		= S5P_CLKSRC1_CAM0_MASK,
+	.sources	= &clkset_cam0,
+	.divider_shift	= S5P_CLKDIV1_CAM0_SHIFT,
+	.reg_divider	= S5P_CLK_DIV1,
+	.reg_source	= S5P_CLK_SRC1,
+};
+
+static struct clksrc_clk clk_cam1 = {
+	.clk	= {
+		.name		= "sclk_cam1",
+		.id		= -1,
+		.ctrlbit        = NULL,
+		.enable		= NULL,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC1_CAM1_SHIFT,
+	.mask		= S5P_CLKSRC1_CAM1_MASK,
+	.sources	= &clkset_cam1,
+	.divider_shift	= S5P_CLKDIV1_CAM1_SHIFT,
+	.reg_divider	= S5P_CLK_DIV1,
+	.reg_source	= S5P_CLK_SRC1,
+};
+
+static struct clksrc_clk clk_fimc0 = {
+	.clk	= {
+		.name		= "lclk_fimc",
+		.id		= 0,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC3_FIMC0_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC0_LCLK_MASK,
+	.sources	= &clkset_fimc0,
+	.divider_shift	= S5P_CLKDIV3_FIMC0_LCLK_SHIFT,
+	.reg_divider	= S5P_CLK_DIV3,
+	.reg_source	= S5P_CLK_SRC3,
+};
+
+static struct clksrc_clk clk_fimc1 = {
+	.clk	= {
+		.name		= "lclk_fimc",
+		.id		= 1,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC3_FIMC1_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC1_LCLK_MASK,
+	.sources	= &clkset_fimc1,
+	.divider_shift	= S5P_CLKDIV3_FIMC1_LCLK_SHIFT,
+	.reg_divider	= S5P_CLK_DIV3,
+	.reg_source	= S5P_CLK_SRC3,
+};
+
+static struct clksrc_clk clk_fimc2 = {
+	.clk	= {
+		.name		= "lclk_fimc",
+		.id		= 2,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2,
+		.enable		= s5p64xx_clk_ip0_ctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
+	.sources	= &clkset_fimc2,
+	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
+	.reg_divider	= S5P_CLK_DIV3,
+	.reg_source	= S5P_CLK_SRC3,
+};
 /* Clock initialisation code */
 
 static struct clksrc_clk *init_parents[] = {
@@ -565,6 +746,11 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_mmc0,
 	&clk_mmc1,
 	&clk_mmc2,
+	&clk_cam0,
+	&clk_cam1,
+	&clk_fimc0,
+	&clk_fimc1,
+	&clk_fimc2,
 };
 
 static void __init_or_cpufreq s5p6442_set_clksrc(struct clksrc_clk *clk)
@@ -725,6 +911,11 @@ static struct clk *clks[] __initdata = {
 	&clk_mmc0.clk,
 	&clk_mmc1.clk,	
 	&clk_mmc2.clk,
+	&clk_cam0.clk,
+	&clk_cam1.clk,
+	&clk_fimc0.clk,
+	&clk_fimc1.clk,
+	&clk_fimc2.clk,	
 };
 
 void __init s5p6442_register_clocks(void)
