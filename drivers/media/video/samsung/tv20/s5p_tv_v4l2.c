@@ -431,12 +431,7 @@ static int s5p_tv_v4l2_s_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 				break;
 			}
 
-			V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
-				   f->type,
-				   s5ptv_status.vl_basic_param.top_y_address,
-				   s5ptv_status.vl_basic_param.top_c_address,
-				   s5ptv_status.vl_basic_param.src_width,
-				   s5ptv_status.vl_basic_param.src_height);
+			s5ptv_status.field_id = VPROC_TOP_FIELD;
 
 			if (s5ptv_status.vp_layer_enable) {
 				s5p_video_img_address temp_addr;
@@ -471,12 +466,10 @@ static int s5p_tv_v4l2_s_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 				break;
 			}			
 
-			V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
-				   f->type,
-				   s5ptv_status.vl_basic_param.top_y_address,
-				   s5ptv_status.vl_basic_param.top_c_address,
-				   s5ptv_status.vl_basic_param.src_width,
-				   s5ptv_status.vl_basic_param.src_height);
+			if (vparam.pix_fmt.priv == V4L2_FIELD_BOTTOM) 
+				s5ptv_status.field_id = VPROC_BOTTOM_FIELD;
+			else
+				s5ptv_status.field_id = VPROC_TOP_FIELD;
 
 			if (s5ptv_status.vp_layer_enable) {
 				s5p_video_img_address temp_addr;
@@ -503,6 +496,12 @@ static int s5p_tv_v4l2_s_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 		break;
 	}
 
+	V4L2PRINTK("[type 0x%08x] : addr_y: [0x%08x], addr_c [0x%08x], width[%d], height[%d]\n",
+		   f->type,
+		   s5ptv_status.vl_basic_param.top_y_address,
+		   s5ptv_status.vl_basic_param.top_c_address,
+		   s5ptv_status.vl_basic_param.src_width,
+		   s5ptv_status.vl_basic_param.src_height);
 	V4L2PRINTK("()--\n");
 
 	return 0;
