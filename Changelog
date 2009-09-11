@@ -2037,7 +2037,7 @@ v2.6.29.4-dev-1-4-20: Sooyoung Kang
 		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.c
 		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.h
 
-v2.6.29.4-dev-1-4-21: Hatim Ali 
+v2.6.29.4-dev-1-4-22: Hatim Ali 
 	- Added Port Group MPx for smdk6442
 
 	 Modified Files:
