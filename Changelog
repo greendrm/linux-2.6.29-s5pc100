@@ -1985,3 +1985,42 @@ v2.6.29.4-dev-1-4-18: Youngmok Song
 		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
 		M	drivers/media/video/samsung/fimc/Kconfig
 		M	drivers/media/video/samsung/fimc/Makefile
+
+v2.6.29.4-dev-1-4-19: Sooyoung Kang 
+	- Support MFCv10 for smdk6442
+
+	 Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s5p64xx/bootmem.c
+		M	arch/arm/plat-s5p64xx/devs.c
+		M	arch/arm/plat-s5p64xx/include/plat/media.h
+
+	Added Files:
+		A	arch/arm/plat-s5p64xx/include/plat/regs-mfc.h
+		A	drivers/media/video/samsung/mfc10/Kconfig
+		A	drivers/media/video/samsung/mfc10/Makefile
+		A	drivers/media/video/samsung/mfc10/prism_s.h
+		A	drivers/media/video/samsung/mfc10/prism_s_v13d.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_base.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_bitproc_buf.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_bitproc_buf.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_config.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_databuf.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_databuf.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_init_hw.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_init_hw.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_inst_pool.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_inst_pool.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_instance.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_instance.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_intr_noti.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_params.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_set_config.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_sfr.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_sfr.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_types.h
+		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.c
+		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.h
