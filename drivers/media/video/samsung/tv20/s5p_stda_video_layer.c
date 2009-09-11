@@ -113,6 +113,9 @@ static void _s5p_vlayer_calc_inner_values(void)
 	if (st->src_color == VPROC_SRC_COLOR_NV12IW) {
 		st->vl_bottom_y_address = t_y_addr + img_w;
 		st->vl_bottom_c_address = t_c_addr + img_w;
+	} else if (st->src_color == VPROC_SRC_COLOR_TILE_NV12IW) {
+		st->vl_bottom_y_address = t_y_addr + 0x40;
+		st->vl_bottom_c_address = t_c_addr + 0x40;
 	}
 
 	st->vl_src_offset_x = s_ox;
@@ -393,7 +396,8 @@ bool _s5p_vlayer_set_top_address(unsigned long buf_in)
 		return false;
 	}
 
-	if (s5ptv_status.src_color == VPROC_SRC_COLOR_NV12IW) {
+	if (check_input_mode(s5ptv_status.src_color) == INTERLACED) {
+		__s5p_vp_set_field_id(s5ptv_status.field_id);
 		verr = __s5p_vp_set_bottom_field_address(b_y_addr, b_c_addr);
 
 		if (verr != VPROC_NO_ERROR) 
@@ -790,11 +794,11 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 		
 	/* check o_mode */
 	if ( i_mode == INTERLACED) {
-		/* i to i : line skip 1, ipc 0, auto toggle 1 */
+		/* i to i : line skip 1, ipc 0, auto toggle 0 */
 		if (o_mode == INTERLACED) {
 			st->vl_op_mode.line_skip = true;
 			st->vl2d_ipc 		 = false;
-			st->vl_op_mode.toggle_id = true;
+			st->vl_op_mode.toggle_id = false;
 		} else {
 		/* i to p : line skip 1, ipc 1, auto toggle 0 */	
 			st->vl_op_mode.line_skip = true;
@@ -802,7 +806,7 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 			st->vl_op_mode.toggle_id = false;		
 		}
 	} else {
-		/* p to i : line skip 1, ipc 0, auto toggle 1 */
+		/* p to i : line skip 1, ipc 0, auto toggle 0 */
 		if (o_mode == INTERLACED) {
 			st->vl_op_mode.line_skip = true;
 			st->vl2d_ipc 		 = false;
