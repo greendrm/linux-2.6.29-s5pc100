@@ -2043,3 +2043,11 @@ v2.6.29.4-dev-1-4-22: Hatim Ali
 	 Modified Files:
 		M	arch/arm/mach-s5p6442/include/mach/gpio.h
 		M	arch/arm/plat-s5p64xx/gpiolib.c
+
+v2.6.29.4-dev-1-4-23: Sooyoung Kang 
+	- Support MFCv10 for smdk6442
+		Modified for make mfc menu on make menuconfig
+
+	 Modified Files:
+		M 	drivers/media/video/samsung/Kconfig
+		M 	drivers/media/video/samsung/Makefile
