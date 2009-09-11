@@ -83,6 +83,18 @@ config VIDEO_SAMSUNG_MEMSIZE_TV
 	depends on VIDEO_TV
 	default "8192"
 
+if CPU_S5P6442
+config VIDEO_SAMSUNG_MEMSIZE_MFC
+	int "Memory size in kbytes for MFC"
+	depends on VIDEO_MFC10
+	default "6144"
+
+config VIDEO_SAMSUNG_MEMSIZE_JPEG
+	int "Memory size in kbytes for JPEG"
+	depends on VIDEO_JPEG 
+	default "8192"
+endif
+
 if ARCH_S5PC1XX
 config VIDEO_SAMSUNG_MEMSIZE_MFC
 	int "Memory size in kbytes for MFC"
