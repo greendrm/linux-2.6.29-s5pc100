@@ -1986,7 +1986,19 @@ v2.6.29.4-dev-1-4-18: Youngmok Song
 		M	drivers/media/video/samsung/fimc/Kconfig
 		M	drivers/media/video/samsung/fimc/Makefile
 
-v2.6.29.4-dev-1-4-19: Sooyoung Kang 
+v2.6.29.4-dev-1-4-19: Youngmok Song
+	- Support FIMC for smdk6442
+	Added Files:
+		A	arch/arm/plat-s5p64xx/dev-fimc0.c
+		A	arch/arm/plat-s5p64xx/dev-fimc1.c
+		A	arch/arm/plat-s5p64xx/dev-fimc2.c
+		A	arch/arm/plat-s5p64xx/include/plat/fimc.h
+		A	arch/arm/plat-s5p64xx/include/plat/regs-fimc.h
+		A	arch/arm/plat-s5p64xx/setup-fimc0.c
+		A	arch/arm/plat-s5p64xx/setup-fimc1.c
+		A	arch/arm/plat-s5p64xx/setup-fimc2.c
+
+v2.6.29.4-dev-1-4-20: Sooyoung Kang 
 	- Support MFCv10 for smdk6442
 
 	 Modified Files:
