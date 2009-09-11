@@ -2059,9 +2059,3 @@ v2.6.29.4-dev-1-4-24: Sooyoung Kang
 		M 	drivers/media/video/samsung/Kconfig
 v2.6.29.4-s5pc110-beta:Hyunwoong Kim
 	- Official Release for s5pc110(2009.09.11)
-	p
-	y.
-	p
-	p
-	r
-	-Official Release for s5pc110(
