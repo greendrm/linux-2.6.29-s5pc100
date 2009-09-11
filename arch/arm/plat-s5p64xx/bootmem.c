@@ -71,6 +71,18 @@ static struct s3c_media_device media_devs[] = {
 		.memsize = 0,
 #endif
 		.paddr = 0,
+	},
+
+	{
+		.id = S3C_MDEV_MFC,
+		.name = "mfc",
+
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC
+		.memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_MFC * SZ_1K,
+#else
+		.memsize = 0,
+#endif
+		.paddr = 0,
 	}
 };
 
