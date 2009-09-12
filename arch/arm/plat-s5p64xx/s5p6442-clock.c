@@ -36,6 +36,8 @@
  * ext_xtal_mux for want of an actual name from the manual.
 */
 
+
+
 struct clk clk_ext_xtal_mux = {
 	.name		= "ext_xtal",
 	.id		= -1,
