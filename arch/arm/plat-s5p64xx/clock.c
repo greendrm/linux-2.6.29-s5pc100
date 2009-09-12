@@ -47,7 +47,7 @@ static const u32 s3c_cpu_clock_table[][3] = {
 	{532*MHZ, (0<<ARM_DIV_RATIO_BIT), (3<<HCLK_DIV_RATIO_BIT)},
 	{266*MHZ, (1<<ARM_DIV_RATIO_BIT), (1<<HCLK_DIV_RATIO_BIT)},
 	{133*MHZ, (3<<ARM_DIV_RATIO_BIT), (0<<HCLK_DIV_RATIO_BIT)},
-	//{APLL, DIVarm, DIVhclk}	
+	//{APLL, DIVarm, DIVhclk}
 };
 
 unsigned long s3c_fclk_get_rate(void)
@@ -126,7 +126,7 @@ int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable)
 }
 
 static struct clk init_clocks_disable[] = {
-#if 0	
+#if 0
 	{
 		.name		= "nand",
 		.id		= -1,
@@ -204,12 +204,117 @@ static struct clk init_clocks_disable[] = {
 		.enable  	= s5p64xx_hclk0_ctrl,
 		.ctrlbit 	= S3C_CLKCON_HCLK0_POST0
 	},
-#endif	
+#endif
 
 };
 
 static struct clk init_clocks[] = {
-	
+
+	/* Multimedia */
+	{
+		.name           = "fimc",
+		.id             = 0,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
+	}, {
+		.name           = "fimc",
+		.id             = 1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1,
+	}, {
+		.name           = "fimc",
+		.id             = 2,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2,
+	}, {
+		.name           = "mfc",
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_MFC,
+	}, {
+		.name           = "jpeg",
+		.id             = -1,
+		.parent         = &clk_hd0,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_JPEG,
+	}, {
+		.name           = "rotator",
+		.id             = -1,
+		.parent         = &clk_hd0,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_ROTATOR,
+	}, {
+		.name           = "g3d",
+		.id             = -1,
+		.parent         = &clk_hd0,
+		.enable         = s5p64xx_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_G3D,
+	},
+	/* Connectivity and Multimedia */
+	{
+		.name           = "otg",
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP1_USBOTG,
+	}, {
+		.name           = "tvenc",
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP1_TVENC,
+	}, {
+		.name           = "mixer",
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP1_MIXER,
+	}, {
+		.name           = "vp",
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP1_VP,
+	}, {
+		.name           = "lcd",	// fimd ?
+		.id             = -1,
+		.parent         = &clk_hd1,
+		.enable         = s5p64xx_clk_ip1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP1_FIMD,
+	},  {
+                .name           = "nandxl",
+                .id             = 0,
+                .parent         = &clk_hd1,
+                .enable         = s5p64xx_clk_ip1_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP1_NANDXL,
+        },
+
+	/* Connectivity */
+	{
+		.name		= "hsmmc",
+		.id		= 0,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC0,
+	}, {
+		.name		= "hsmmc",
+		.id		= 1,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC1,
+	}, {
+		.name		= "hsmmc",
+		.id		= 2,
+		.parent		= &clk_hd1,
+		.enable		= s5p64xx_clk_ip2_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC2,
+	},
+	/* Peripherals */
+
 	{
 		.name		= "systimer",
 		.id		= -1,
@@ -247,11 +352,35 @@ static struct clk init_clocks[] = {
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_UART2,
 	}, {
-		.name		= "lcd",
+		.name		= "i2c",
+		.id		= 0,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C0,
+	}, {
+		.name		= "i2c",
+		.id		= 1,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
+	}, {
+		.name		= "i2c",
+		.id		= 2,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
+	}, {
+                .name           = "spi",
+                .id             = 0,
+                .parent         = &clk_pd1,
+                .enable         = s5p64xx_clk_ip3_ctrl,
+                .ctrlbit        = S5P_CLKGATE_IP3_SPI0,
+        }, {
+		.name		= "timers",
 		.id		= -1,
-		.parent		= &clk_hd1,
-		.enable		= s5p64xx_clk_ip1_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP1_FIMD,
+		.parent		= &clk_pd1,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_PWM,
 	}, {
 		.name		= "adc",
 		.id		= -1,
@@ -264,43 +393,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_pd1,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_KEYIF,
-	}, {
-		.name		= "hsmmc",
-		.id		= 0,
-		.parent		= &clk_hd1,
-		.enable		= s5p64xx_clk_ip2_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC0,
-	}, {
-		.name		= "hsmmc",
-		.id		= 1,
-		.parent		= &clk_hd1,
-		.enable		= s5p64xx_clk_ip2_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC1,
-	}, {
-		.name		= "hsmmc",
-		.id		= 2,
-		.parent		= &clk_hd1,
-		.enable		= s5p64xx_clk_ip2_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP2_HSMMC2,
-	},{
-		.name		= "i2c",
-		.id		= 0,
-		.parent		= &clk_pd1,
-		.enable		= s5p64xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_I2C0,
-	},{
-		.name		= "i2c",
-		.id		= 1,
-		.parent		= &clk_pd1,
-		.enable		= s5p64xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_I2C1,
-	},{
-		.name		= "i2c",
-		.id		= 2,
-		.parent		= &clk_pd1,
-		.enable		= s5p64xx_clk_ip3_ctrl,
-		.ctrlbit	= S5P_CLKGATE_IP3_I2C2,
-	}, 
+	},
 };
 
 static struct clk *clks[] __initdata = {
