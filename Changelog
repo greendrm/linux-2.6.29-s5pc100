@@ -2067,3 +2067,16 @@ v2.6.29.4-dev-1-4-27: Sang-Beom Kim
 		M	arch/arm/plat-s5p64xx/clock.c
 		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
 		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-28: Jae-Cheol Lee
+	- Support power gating with SYNC RESET on S5PC110.
+	- Changed power gating scheme for S5PC110.
+	- Before power block is turned on, All including IP's clocks are enabled.
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/clock.c
+		M 	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc11x/devs.c
