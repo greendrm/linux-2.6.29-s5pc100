@@ -597,3 +597,15 @@ struct platform_device s3c_device_cfcon = {
         .resource         = s3c_cfcon_resource,
 };
 EXPORT_SYMBOL(s3c_device_cfcon);
+
+/* S3C-TEST driver */
+static struct resource s3c_test_resource[] = {
+};
+
+struct platform_device s3c_device_test = {
+        .name             = "s3c-test",
+        .id               = -1,
+        .num_resources    = ARRAY_SIZE(s3c_test_resource),
+        .resource         = s3c_test_resource,
+};
+EXPORT_SYMBOL(s3c_device_test);
