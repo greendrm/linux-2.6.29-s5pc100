@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/cec_s5pc110.h
+/* linux/drivers/media/video/samsung/tv20/s5pc110/cec_s5pc110.h
  *
  * cec ftn header for Samsung TVOut driver
  *

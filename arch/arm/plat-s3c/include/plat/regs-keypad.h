@@ -27,7 +27,11 @@
 #define S3C_KEYIFFC		S3C_KEYPADREG(0x10)
 
 #define KEYCOL_DMASK		(0xff)
+#if defined(CONFIG_KEYPAD_S3C_MSM)
+#define KEYROW_DMASK		(0x3fff) /*msm interface for s5pc110 */ 
+#else
 #define KEYROW_DMASK		(0xff)
+#endif
 #define	INT_F_EN		(1<<0)	/*falling edge(key-pressed) interuppt enable*/
 #define	INT_R_EN		(1<<1)	/*rising edge(key-released) interuppt enable*/
 #define	DF_EN			(1<<2)	/*debouncing filter enable*/
@@ -35,6 +39,7 @@
 #define	KEYIFCON_INIT		(KEYIFCON_CLEAR |INT_F_EN|INT_R_EN|DF_EN|FC_EN)
 #if defined(CONFIG_ARCH_S5PC11X)
 #define KEYIFSTSCLR_CLEAR	(0xffffffff)
+#define KEYIFCOL_RESET	((0x0<<8)| (0x0<<9))
 #else
 #define KEYIFSTSCLR_CLEAR	(0xffff)
 #endif

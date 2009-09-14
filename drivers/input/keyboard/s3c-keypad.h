@@ -16,10 +16,17 @@
 
 static void __iomem *key_base;
 
+#if defined(CONFIG_KEYPAD_S3C_MSM)
+#define KEYPAD_COLUMNS	8
+#define KEYPAD_ROWS     14 	 	
+#define MAX_KEYPAD_NR	112	/* 8*14 */
+#define MAX_KEYMASK_NR	56	
+#else
 #define KEYPAD_COLUMNS	8
 #define KEYPAD_ROWS	8
 #define MAX_KEYPAD_NR	64	/* 8*8 */
 #define MAX_KEYMASK_NR	32
+#endif
 
 int keypad_keycode[] = {
 		1, 2, KEY_1, KEY_Q, KEY_A, 6, 7, KEY_LEFT,
@@ -29,7 +36,15 @@ int keypad_keycode[] = {
 		33, KEY_O, KEY_5, KEY_T, KEY_G, KEY_V, KEY_DOWN, KEY_BACKSPACE,
 		KEY_P, KEY_0, KEY_6, KEY_Y, KEY_H, KEY_SPACE, 47, 48,
 		KEY_M, KEY_L, KEY_7, KEY_U, KEY_J, KEY_N, 55, KEY_ENTER,
-		KEY_LEFTSHIFT, KEY_9, KEY_8, KEY_I, KEY_K, KEY_B, 63, KEY_COMMA
+		KEY_LEFTSHIFT, KEY_9, KEY_8, KEY_I, KEY_K, KEY_B, 63, KEY_COMMA,
+#if defined(CONFIG_KEYPAD_S3C_MSM)
+	  	100,101,102,103,104,105,106,142,
+	  	107,108,109,110,111,112,113,143,
+	  	114,115,116,117,118,119,120,144,
+	  	121,122,123,124,125,126,127,145,
+	  	128,129,130,131,132,133,134,146,
+	  	135,136,137,138,139,140,141,147
+#endif
 	};
 
 #if defined(CONFIG_CPU_S3C6410)
@@ -37,16 +52,12 @@ int keypad_keycode[] = {
 #elif defined(CONFIG_CPU_S5PC100)
 #define KEYPAD_DELAY		(600)
 #elif defined(CONFIG_CPU_S5PC110)
-#define KEYPAD_DELAY		(600)
+#define KEYPAD_DELAY		(900)
 #elif defined(CONFIG_CPU_S5P6442)
 #define KEYPAD_DELAY		(50)
 #endif
 
-#if defined(CONFIG_CPU_S5PC110)
-#define	KEYIFCOL_CLEAR		((readl(key_base+S3C_KEYIFCOL) | 0xff00) & ~0xff)
-#else
 #define	KEYIFCOL_CLEAR		(readl(key_base+S3C_KEYIFCOL) & ~0xffff)
-#endif
 #define	KEYIFCON_CLEAR		(readl(key_base+S3C_KEYIFCON) & ~0x1f)
 #define KEYIFFC_DIV		(readl(key_base+S3C_KEYIFFC) | 0x1)
 

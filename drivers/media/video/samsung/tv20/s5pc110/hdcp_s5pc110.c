@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/hdcp_s5pc100.c
+/* linux/drivers/media/video/samsung/tv20/s5pc110/hdcp_s5pc110.c
  *
  * hdcp raw ftn  file for Samsung TVOut driver
  *

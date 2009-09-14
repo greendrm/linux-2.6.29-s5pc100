@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc110.h
+/* linux/drivers/media/video/samsung/tv20/s5pc110/tv_out_s5pc110.h
  *
  * tv out header file for Samsung TVOut driver
  *
@@ -188,10 +188,10 @@ typedef enum {
 
 // video processor
 typedef enum {
-	VPROC_SRC_COLOR_NV12  = 0,
+	VPROC_SRC_COLOR_NV12  	= 0,
 	VPROC_SRC_COLOR_NV12IW  = 1,
-	VPROC_SRC_COLOR_TILE_NV12  = 2,
-	VPROC_SRC_COLOR_TILE_NV12IW  = 3
+	VPROC_SRC_COLOR_TILE_NV12  	= 2,
+	VPROC_SRC_COLOR_TILE_NV12IW  	= 3
 }s5p_vp_src_color;
 
 typedef enum {

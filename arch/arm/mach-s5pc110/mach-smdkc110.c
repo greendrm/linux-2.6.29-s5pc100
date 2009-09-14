@@ -913,6 +913,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_jpeg,
 	&s3c_device_rotator,
 	&s5p_device_cec,
+	&s3c_device_test,
 };
 
 static void __init smdkc110_i2c_gpio_init(void)
@@ -1462,7 +1463,8 @@ void otg_phy_off(void) {
 }
 EXPORT_SYMBOL(otg_phy_off);
 
-void usb_host_clk_en(void) {
+void usb_host_phy_init(void)
+{
 	struct clk *otg_clk;
 
 	otg_clk = clk_get(NULL, "otg");
@@ -1473,19 +1475,21 @@ void usb_host_clk_en(void) {
 	}
 
 	writel(readl(S5P_USB_PHY_CONTROL)|(0x1<<1), S5P_USB_PHY_CONTROL);
-	//USB PHY1 Enable 
 	writel((readl(S3C_USBOTG_PHYPWR)&~(0x1<<7)&~(0x1<<6))|(0x1<<8)|(0x1<<5), S3C_USBOTG_PHYPWR);
-	// USB PHY1:  Analog Block Power up, Suspend signal Disable, Reserved[8] [5] should be 1
 	writel((readl(S3C_USBOTG_PHYCLK)&~(0x1<<7))|(0x3<<0), S3C_USBOTG_PHYCLK);
-	// USB PHY1: 48M Clk Off in Suspend mode, Ref Clock 24MHz
 	writel((readl(S3C_USBOTG_RSTCON))|(0x1<<4)|(0x1<<3), S3C_USBOTG_RSTCON);
-	// USB Host LINK SW reset, USB PHY1 SW reset
 	udelay(10);
 	writel(readl(S3C_USBOTG_RSTCON)&~(0x1<<4)&~(0x1<<3), S3C_USBOTG_RSTCON);
-	// All SW Reset bits are  0x0 (URSTCON[4:3])
 	udelay(10);
 }
-EXPORT_SYMBOL(usb_host_clk_en);
+EXPORT_SYMBOL(usb_host_phy_init);
+
+void usb_host_phy_off(void)
+{
+	writel(readl(S3C_USBOTG_PHYPWR)|(0x1<<7)|(0x1<<6), S3C_USBOTG_PHYPWR);
+	writel(readl(S5P_USB_PHY_CONTROL)&~(1<<1), S5P_USB_PHY_CONTROL);
+}
+EXPORT_SYMBOL(usb_host_phy_off);
 #endif
 
 #if defined(CONFIG_RTC_DRV_S3C)
@@ -1563,7 +1567,37 @@ void s3c_setup_keypad_cfg_gpio(int rows, int columns)
 {
 	unsigned int gpio;
 	unsigned int end;
+#if defined(CONFIG_KEYPAD_S3C_MSM)
 
+	s3c_gpio_cfgpin(S5PC11X_GPJ1(5),S3C_GPIO_SFN(3));
+	s3c_gpio_setpin(S5PC11X_GPJ1(5), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PC11X_GPJ1(5), S3C_GPIO_PULL_NONE);
+
+	
+	end = S5PC11X_GPJ2(columns);
+
+	for (gpio = S5PC11X_GPJ2(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+
+	end = S5PC11X_GPJ3(columns);
+
+	for (gpio = S5PC11X_GPJ3(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+
+	end = S5PC11X_GPJ4(5);
+
+	for (gpio = S5PC11X_GPJ4(0); gpio < end; gpio++) {
+		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+		s3c_gpio_setpin(gpio, S3C_GPIO_INPUT);
+		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
+	}
+#else
 	end = S5PC11X_GPH3(rows);
 
 	/* Set all the necessary GPH2 pins to special-function 0 */
@@ -1579,6 +1613,8 @@ void s3c_setup_keypad_cfg_gpio(int rows, int columns)
 		s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
 		s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 	}
+
+#endif
 }
 
 EXPORT_SYMBOL(s3c_setup_keypad_cfg_gpio);
