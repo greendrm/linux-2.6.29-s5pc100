@@ -19,7 +19,7 @@
 #include <linux/err.h>
 #include <linux/clk.h>
 #include <linux/io.h>
-
+#include <linux/regulator/consumer.h>
 //#include <mach/hardware.h>
 #include <asm/system.h>
 
@@ -32,6 +32,8 @@
 #include <plat/clock.h>
 
 static struct clk * mpu_clk;
+static struct regulator *arm_regulator;
+static struct regulator *internal_regulator;
 
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
@@ -41,6 +43,14 @@ static struct cpufreq_frequency_table s5pc110_freq_table[] = {
 	{L3, 100*1000},
 //	{L4, 83*1000},
 	{0, CPUFREQ_TABLE_END},
+};
+
+static const int s5pc110_volt_table[][3] = {
+	{L0, 1200000, 1200000},
+	{L1, 1100000, 1200000},
+	{L2, 1000000, 1200000},
+	{L3, 950000, 1200000},
+	/*{Lv, VDD_ARM(uV), VDD_INT(uV)}*/
 };
 
 /* TODO: Add support for SDRAM timing changes */
@@ -73,7 +83,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	struct cpufreq_freqs freqs;
 	int ret = 0;
 	unsigned long arm_clk;
-	unsigned int index,reg;
+	unsigned int index,reg,arm_volt,int_volt;
 
 	freqs.old = s5pc110_getspeed(0);
 
@@ -89,12 +99,16 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	if (freqs.new == freqs.old)
 		return -EINVAL;
-
+	
+	arm_volt = s5pc110_volt_table[index][1];
+	int_volt = s5pc110_volt_table[index][2];
+	
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	if (freqs.new > freqs.old) {
-		
-		// Add voltage up code
+		// Voltage up code
+		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
+		regulator_set_voltage(internal_regulator, int_volt, int_volt);
 	}
 		
 	reg = __raw_readl(S5P_CLK_DIV0);
@@ -104,8 +118,9 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 
 	if (freqs.new < freqs.old) {
-		
-		// Add voltage up code
+		// Voltage down
+		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
+		regulator_set_voltage(internal_regulator, int_volt, int_volt);
 	}
 	
 	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
@@ -132,6 +147,19 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 	mpu_clk = clk_get(NULL, MPU_CLK);
 	if (IS_ERR(mpu_clk))
 		return PTR_ERR(mpu_clk);
+#if defined(CONFIG_REGULATOR)
+	arm_regulator = regulator_get(NULL, "vddarm");
+	if (IS_ERR(arm_regulator)) {
+		printk(KERN_ERR "failed to get regulater resource %s\n","vddarm");
+		return PTR_ERR(arm_regulator);
+	}
+	internal_regulator = regulator_get(NULL, "vddint");
+	if (IS_ERR(internal_regulator)) {
+		printk(KERN_ERR "failed to get regulater resource %s\n","vddint");
+		return PTR_ERR(internal_regulator);
+	}
+#endif
+	
 
 	if (policy->cpu != 0)
 		return -EINVAL;
@@ -158,4 +186,4 @@ static int __init s5pc110_cpufreq_init(void)
 	return cpufreq_register_driver(&s5pc110_driver);
 }
 
-arch_initcall(s5pc110_cpufreq_init);
+late_initcall(s5pc110_cpufreq_init);
