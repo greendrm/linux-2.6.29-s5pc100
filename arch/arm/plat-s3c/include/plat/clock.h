@@ -12,7 +12,10 @@
 #include <linux/spinlock.h>
 
 #if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
+#define MAX_CLK_IN_POWERDOMAIN	8
 struct powerdomain {
+	struct clk		*pd_clks[MAX_CLK_IN_POWERDOMAIN];
+	unsigned long 		nr_clks;
 	volatile unsigned long	*pd_reg;
 	volatile unsigned long	*pd_stable_reg;
 	unsigned long		pd_ctrlbit;
