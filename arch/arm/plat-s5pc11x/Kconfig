@@ -75,6 +75,12 @@ config S5PC11X_SETUP_I2C1
 	help
 	  Common setup code for i2c bus 1.
 
+config S5PC11X_SETUP_I2C2
+	bool
+	default y
+	help
+	  Common setup code for i2c bus 2.
+
 config S5PC11X_ADC
         bool "S5PC1XX ADC Driver"
         depends on PLAT_S5PC11X

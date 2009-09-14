@@ -830,16 +830,21 @@ static struct max8698_platform_data max8698_platform_data = {
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
-	{
-		/* The address is 0xCC used since SRAD = 0 */
-		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
-		.platform_data = &max8698_platform_data,
-	},
+	/* TODO */
 };
 
 /* I2C1 */
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	/* TODO */
+};
+
+/* I2C2 */
+static struct i2c_board_info i2c_devs2[] __initdata = {
+	{
+		/* The address is 0xCC used since SRAD = 0 */
+		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
+		.platform_data = &max8698_platform_data,
+	},
 };
 
 struct map_desc smdkc110_iodesc[] = {};
@@ -909,6 +914,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_csis,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
+	&s3c_device_i2c2,
 	&s3c_device_ipc,
 	&s3c_device_jpeg,
 	&s3c_device_rotator,
@@ -1336,8 +1342,10 @@ static void __init smdkc110_machine_init(void)
 
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
+	s3c_i2c2_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
 /*
 	i2c_register_board_info(I2C_GPIO_26V_BUS, i2c_gpio_26v_devs,
 				ARRAY_SIZE(i2c_gpio_26v_devs));
