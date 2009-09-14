@@ -49,8 +49,13 @@
 #define pr_debug(fmt...)
 #endif
 
+#if defined(CONFIG_MACH_SMDK6442)
+#define SECURE_M2M_DMA_MODE_SET
+#define SECURE_M2P_DMA_MODE_SET
+#define SECURE_P2M_DMA_MODE_SET
+#else
 #undef SECURE_M2M_DMA_MODE_SET
-//#define SECURE_M2M_DMA_MODE_SET
+#endif
 
 /* io map for dma */
 static void __iomem 		*dma_base;
@@ -1173,9 +1178,17 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = chan->map->hw_addr.to;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
+
+#ifndef SECURE_M2P_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_FIXED|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;
+#else //SECURE_M2P_DMA_MODE_SET
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_FIXED|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_INC|
+				      hwcfg;
+
+#endif //SECURE_M2P_DMA_MODE_SET
 		//chan->control_flags = hwcfg;
 		return 0;
 
@@ -1184,9 +1197,16 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = chan->map->hw_addr.from;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
+
+#ifndef SECURE_P2M_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_FIXED|
 				      hwcfg;
+#else
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_FIXED|
+				      hwcfg;
+#endif
 		//chan->control_flags = hwcfg;
 		return 0;
 

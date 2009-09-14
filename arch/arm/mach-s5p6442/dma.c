@@ -50,10 +50,8 @@
 #define S3C_DMA0_PCM0_RX	11
 #define S3C_DMA0_I2S0_TX	12
 #define S3C_DMA0_I2S0_RX	13
-#define S3C_DMA0_SPI0_TX	14
-#define S3C_DMA0_SPI0_RX	15
-#define S3C_DMA0_SPI1_TX	20
-#define S3C_DMA0_SPI1_RX	21
+#define S3C_DMA0_SPI0_TX	17
+#define S3C_DMA0_SPI0_RX	16
 #define S3C_DMA0_GPS		24
 #define S3C_DMA0_PWM		29
 #define S3C_DMA0_EXTERNAL	31
@@ -82,16 +80,6 @@ static struct s3c_dma_map __initdata s5p6442_dma_mappings[] = {
 		.name		= "spi0-out",
 		.channels	= MAP0(S3C_DMA0_SPI0_TX),
 		.hw_addr.to	= S3C_DMA0_SPI0_TX,
-	},
-	[DMACH_SPI1_IN] = {
-		.name		= "spi1-in",
-		.channels	= MAP0(S3C_DMA0_SPI1_RX),
-		.hw_addr.from	= S3C_DMA0_SPI1_RX,
-	},
-	[DMACH_SPI1_OUT] = {
-		.name		= "spi1-out",
-		.channels	= MAP0(S3C_DMA0_SPI1_TX),
-		.hw_addr.to	= S3C_DMA0_SPI1_TX,
 	},
 	[DMACH_AC97_PCM_OUT] = {
 		.name		= "ac97-pcm-out",
