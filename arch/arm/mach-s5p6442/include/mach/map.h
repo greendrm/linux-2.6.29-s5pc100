@@ -17,6 +17,10 @@
 
 #include <plat/map-base.h>
 
+#define S5P64XX_PA_FIMC0	(0xEE400000)
+#define S5P64XX_PA_FIMC1	(0xEE500000)
+#define S5P64XX_PA_FIMC2	(0xEE600000)
+
 /* HSMMC units */
 #define S5P64XX_PA_HSMMC(x)	(0xED800000 + ((x) * 0x100000))
 #define S5P64XX_PA_HSMMC0	S5P64XX_PA_HSMMC(0)
@@ -97,6 +101,10 @@
 /* Watchdog */
 #define S5P64XX_PA_WATCHDOG 	(0xEA200000)
 #define S5P64XX_SZ_WATCHDOG 	SZ_4K
+
+/* MFC */
+#define S5P6442_PA_MFC		(0xF1000000)
+#define S3C_SZ_MFC		SZ_4K
 
 /* NAND flash controller */
 #define S5P64XX_PA_NAND	   	(0xE7100000)
