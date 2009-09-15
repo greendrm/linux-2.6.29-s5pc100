@@ -28,6 +28,7 @@
 #include <plat/cpu-freq.h>
 
 #include <plat/regs-clock.h>
+#include <plat/regs-audss.h>
 #include <plat/clock.h>
 #include <plat/cpu.h>
 #include <plat/pll.h>
@@ -582,6 +583,121 @@ static unsigned long s5p64xx_roundrate_clksrc(struct clk *clk,
 	return rate;
 }
 
+/* Out CLK for I2S AP Slave */
+struct clk clk_oscclk = {
+	.name		= "out_dout",
+	.id		= -1,
+};
+
+/* TODO Map the CLK_OUT sources */
+static struct clk *clkset_clk_out_list[] = {
+	[0x11] = &clk_oscclk,
+};
+
+static struct clk_sources clkset_clk_out = {
+	.sources	= clkset_clk_out_list,
+	.nr_sources	= ARRAY_SIZE(clkset_clk_out_list),
+};
+
+static struct clksrc_clk clk_clk_out = {
+	.clk	= {
+		.name		= "sclk_audio0",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_SCLK0_AUDIO0,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLK_OUT_SHIFT,
+	.mask		= S5P_CLK_OUT_MASK,
+	.sources	= &clkset_clk_out,
+//	.divider_shift	= S5P_CLKDIV6_AUDIO0_SHIFT,
+//	.reg_divider	= S5P_CLK_DCLKDIV,
+	.reg_source	= S5P_CLK_OUT,
+};
+
+/* Audio 0 */
+struct clk clk_i2s_XXTI = {
+	.name		= "i2s_XXTI",
+	.id		= -1,
+	.rate		= I2S_XTAL_FREQ,
+
+};
+
+static struct clk *clkset_audio0_list[] = {
+	[0x0] = &clk_i2s_XXTI,
+	[0x1] = NULL,
+	[0x3] = NULL,
+	[0x4] = NULL,
+	[0x6] = NULL,
+	[0x7] = &clk_fout_epll,
+};
+
+static struct clk_sources clkset_audio0 = {
+	.sources	= clkset_audio0_list,
+	.nr_sources	= ARRAY_SIZE(clkset_audio0_list),
+};
+
+
+static struct clksrc_clk clk_audio0 = {
+	.clk	= {
+		.name		= "sclk_audio0",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_SCLK0_AUDIO0,
+		.enable		= s5p64xx_clk_ip3_ctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC6_AUDIO0_SHIFT,
+	.mask		= S5P_CLKSRC6_AUDIO0_MASK,
+	.sources	= &clkset_audio0,
+	.divider_shift	= S5P_CLKDIV6_AUDIO0_SHIFT,
+	.reg_divider	= S5P_CLK_DIV6,
+	.reg_source	= S5P_CLK_SRC6,
+};
+
+/* I2S Releated Clocks */
+struct clk clk_i2s_cd0 = {
+	.name		= "i2s_cdclk0",
+	.id		= -1,
+	.rate		= I2S_XTAL_FREQ,
+};
+
+static struct clk *clkset_i2sclk_list[] = {
+	NULL ,
+	[1] = &clk_i2s_cd0,
+	[2] = &clk_audio0,
+};
+
+static struct clk_sources clkset_i2sclk = {
+	.sources	= clkset_i2sclk_list,
+	.nr_sources	= ARRAY_SIZE(clkset_i2sclk_list),
+};
+
+static struct clksrc_clk clk_i2s = {
+	.clk	= {
+		.name		= "i2sclk",
+		.id		= -1,
+//		.pd		= &pd_audio,
+		.ctrlbit        = S5P_AUDSS_CLKGATE_CLKI2S,
+		.enable		= s5p64xx_audss_clkctrl,
+		.set_parent	= s5p64xx_setparent_clksrc,
+		.get_rate	= s5p64xx_getrate_clksrc,
+		.set_rate	= s5p64xx_setrate_clksrc,
+		.round_rate	= s5p64xx_roundrate_clksrc,
+	},
+	.shift		= S5P_AUDSS_CLKSRC_I2SCLK_SHIFT,
+	.mask		= S5P_AUDSS_CLKSRC_I2SCLK_MASK,
+	.sources	= &clkset_i2sclk,
+	.divider_shift	= S5P_AUDSS_CLKDIV_I2SCLK_SHIFT,
+	.reg_divider	= S5P_CLKDIV_AUDSS,
+	.reg_source	= S5P_CLKSRC_AUDSS,
+};
+
 static struct clksrc_clk clk_mmc0 = {
 	.clk	= {
 		.name		= "mmc_bus",
@@ -751,6 +867,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc0,
 	&clk_fimc1,
 	&clk_fimc2,
+	&clk_i2s,
 };
 
 static void __init_or_cpufreq s5p6442_set_clksrc(struct clksrc_clk *clk)
@@ -895,6 +1012,10 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	clk_set_parent(&clk_mmc1.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc2.clk, &clk_mout_mpll.clk);
 
+	clk_set_parent(&clk_i2s.clk, &clk_i2s_cd0); 
+	/* For I2S CLK_OUT 12Mhz */
+	clk_set_parent(&clk_clk_out.clk, &clk_oscclk); 
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5p6442_set_clksrc(init_parents[ptr]);
 
@@ -916,6 +1037,12 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
 	&clk_fimc2.clk,	
+	&clk_i2s.clk,
+	&clk_i2s_cd0,
+	&clk_i2s_XXTI,
+	&clk_audio0.clk,
+	&clk_clk_out.clk,
+	&clk_oscclk,
 };
 
 void __init s5p6442_register_clocks(void)

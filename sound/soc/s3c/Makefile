@@ -6,6 +6,8 @@ snd-soc-smdkc100-wm9713-objs  := smdkc100_wm9713.o
 
 snd-soc-universal-ak4671-objs := universal_ak4671.o
 
+snd-soc-smdk6442-wm8580-objs  := smdk6442_wm8580.o
+
 obj-$(CONFIG_SND_S3C_I2S_V50)  += s3c-pcm-lp.o
 obj-$(CONFIG_SND_S3C_I2S_V50)  += s3c-i2s.o
 
@@ -19,5 +21,7 @@ obj-$(CONFIG_SND_SMDKC100_WM8580)  += snd-soc-smdkc100-wm8580.o
 obj-$(CONFIG_SND_SMDKC100_WM9713)  += snd-soc-smdkc100-wm9713.o
 
 obj-$(CONFIG_SND_SMDKC110_WM8580)  += snd-soc-smdkc100-wm8580.o
+
+obj-$(CONFIG_SND_SMDK6442_WM8580)  += snd-soc-smdk6442-wm8580.o
 
 obj-$(CONFIG_SND_S5PC100_SOC_UNIVERSAL_AK4671) += snd-soc-universal-ak4671.o

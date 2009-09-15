@@ -481,7 +481,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
-	{ I2C_BOARD_INFO("WM8580", 0x1a), },
+	{ I2C_BOARD_INFO("WM8580", 0x1b), },
 	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
 };
 

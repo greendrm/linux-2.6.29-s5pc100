@@ -98,7 +98,13 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.pfn		= __phys_to_pfn(S5P64XX_PA_GPIO),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
+	}, {
+		.virtual	= (unsigned long)S3C_VA_AUDSS,
+		.pfn		= __phys_to_pfn(S5P64XX_PA_AUDSS),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
 	},
+
 };
 
 /* read cpu identification code */

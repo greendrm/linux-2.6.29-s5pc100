@@ -159,6 +159,7 @@ extern int s5p64xx_clk_ip1_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip2_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip3_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable);
+extern int s5p64xx_audss_clkctrl(struct clk *clk, int enable);
 #endif
 
 /* Init for pwm clock code */
