@@ -110,6 +110,11 @@ void __init s5pc110_map_io(void)
         s3c6410_default_sdhci2();
         s3c6410_default_sdhci3();	
 
+	/* the i2c devices are directly compatible with s3c2440 */
+	s3c_i2c0_setname("s3c2440-i2c");
+	s3c_i2c1_setname("s3c2440-i2c");
+	s3c_i2c2_setname("s3c2410-i2c");
+
 	/* set s5pc110 idle function */
 	s5pc11x_idle = s5pc110_idle;
 }

@@ -586,7 +586,7 @@ v2.6.29.4-r1d9: Thomas Abraham
 	   In the functions ed_create and td_create, the memory is being
 	   allocated using GFP_KERNEL flag. Since ed_create and td_create
 	   functions are called in a context with spinlock held, the
-	   GFP_ATOMIC flag will have to be used for memory allocation. 
+	   GFP_ATOMIC flag will have to be used for memory allocation.
 	   This message was observed when in USB OTG Host mass
 	   storage test during connect, disconnect and data transfer.
 
@@ -595,14 +595,14 @@ v2.6.29.4-r1d9: Thomas Abraham
 
 v2.6.29.4-r1d10: Abhilash Kesavan
 	- Removed Old PWM driver and fixed Kconfig for C100
-	
+
 	Modified files:
 		M	arch/arm/mach-s5pc100/cpu.c
 		M	arch/arm/mach-s5pc100/mach-smdkc100.c
 		M	arch/arm/plat-s5pc1xx/Kconfig
 		M	arch/arm/plat-s5pc1xx/Makefile
 		M	drivers/video/backlight/Kconfig
-	
+
 	Deleted files:
 		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.c
 		D	arch/arm/plat-s5pc1xx/pwm-s5pc100.h
@@ -633,7 +633,7 @@ v2.6.29.4-r1d12: Hatim Ali
 		M   	drivers/spi/Kconfig
 		M   	drivers/spi/Makefile
 		M	drivers/spi/spidev.c
-		
+
 	Added Files:
 		A	drivers/spi/spi_sam.c
 		A	drivers/spi/spi_sam.h
@@ -682,7 +682,7 @@ v2.6.29.4-r1d19: Thomas Abraham
 	  crash was observed when USB Keyboard was unplugged at the OTG port.
 
 	Modified Files:
-		M	drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.c	
+		M	drivers/usb/host/s3c-otg/s3c-otg-hcdi-hcd.c
 
 v2.6.29.4-r2: Kyoungil Kim
 	- Official Release (2009.06.19)
@@ -726,11 +726,11 @@ v2.6.29.4-r2d2: Kukjin Kim
 		M	arch/arm/plat-s5pc1xx/irq-eint.c
 		M	arch/arm/plat-s5pc1xx/irq.c
 
-v2.6.29.4-r2d3: Jongpill Lee	
+v2.6.29.4-r2d3: Jongpill Lee
 	- Bug fixed on RTC driver
 
 	Modified Files:
-		M	drivers/input/keyboard/s3c-keypad.c	
+		M	drivers/input/keyboard/s3c-keypad.c
 
 v2.6.29.4-r2d4: Kukjin Kim
 	- Bug fixed for S5PC1XX S5PC11X SYSTIMER (gettimeoffset function)
@@ -741,13 +741,13 @@ v2.6.29.4-r2d4: Kukjin Kim
 		M	arch/arm/plat-s5pc11x/s5pc11x-time.c
 		M	arch/arm/plat-s5pc11x/include/plat/regs-sys-timer.h
 
-v2.6.29.4-r2d5: jongpill Lee	
+v2.6.29.4-r2d5: jongpill Lee
 	- some code modify for pm on S5PC100
 
 	Added Files:
 		A       arch/arm/mach-s5pc100/s5pc100-button.c
 		A       arch/arm/plat-s3c/s3c-button.c
-	
+
 	Modified Files:
 		M       arch/arm/mach-s5pc100/Makefile
 		M       arch/arm/mach-s5pc100/include/mach/regs-irq.h
@@ -758,7 +758,7 @@ v2.6.29.4-r2d5: jongpill Lee
 		M       arch/arm/plat-s5pc1xx/irq-eint.c
 		M       arch/arm/plat-s5pc1xx/pm.c
 
-v2.6.29.4-r2d6: SungJun Bae 
+v2.6.29.4-r2d6: SungJun Bae
 	- MFC, JPEG is added.
 		A	drivers/media/video/samsung/Kconfig
 		A	drivers/media/video/samsung/Makefile
@@ -834,7 +834,7 @@ v2.6.29.4-r2d7: Taeyong Lee
 		M       sound/soc/Makefile
 		M       sound/soc/codecs/wm8580.c
 
-v2.6.29.4-r2d8: Changhwan Youn 
+v2.6.29.4-r2d8: Changhwan Youn
 	- Modified SD/MMC clock divider value and Fixed EXT_CSD_REV-related error
 
 	Modified Files:
@@ -842,10 +842,10 @@ v2.6.29.4-r2d8: Changhwan Youn
 		M       arch/arm/mach-s5pc100/setup-sdhci.c
 		M       drivers/mmc/core/mmc.csound/soc/Kconfig
 
-v2.6.29.4-r3: Kyoungil Kim 
+v2.6.29.4-r3: Kyoungil Kim
 	- Official Release (2009.06.30)
 
-v2.6.29.4-r3d0: Kyoungil Kim 
+v2.6.29.4-r3d0: Kyoungil Kim
 
 v2.6.29.4-r3d1: Jinsung Yang
 	- DISCONTIGUOUS memory model support for s5pc110
@@ -896,7 +896,7 @@ v2.6.29.4-r3d6:Sewoon Park
 v2.6.29.4-r3d7: Thomas Abraham
 	- Add support for 4KB Page NAND device in NAND driver for c100.
 	  Add support for 8-Bit ECC for 4KB Page NAND device (SLC/MLC).
-	
+
 	Modified Files:
 		M	arch/arm/plat-s3c/include/plat/regs-nand.h
 		M	drivers/mtd/nand/nand_base.c
@@ -1023,7 +1023,7 @@ v2.6.29.4-r3d13: Jae-Cheol Lee
 		M	arch/arm/plat-s3c/include/plat/sdhci.h
 		M	drivers/serial/Kconfig
 		M	drivers/video/samsung/Kconfig
-	
+
 	Added Directories:
 		A	arch/arm/plat-s5p64xx
 		A	arch/arm/mach-s5p6442
@@ -1049,7 +1049,7 @@ v2.6.29.4-r3d15: Jinsung Yang
 		M	arch/arm/mach-s5pc110/include/mach/map.h
 		M	arch/arm/mach-s5pc110/include/mach/memory.h
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
-		
+
 v2.6.29.4-dev-0-0-0: Jongpill Lee
 	- New tagging start
 
@@ -1060,12 +1060,12 @@ v2.6.29.4-dev-1-0-1: Jongpill Lee
 	- Added ramdisk defconfig for SMDKC110
 
 	Added files:
-		
+
 		A	arch/arm/configs/smdkc110ramdisk_defconfig
 
 v2.6.29.4-dev-1-0-2: Jongpill Lee
 	- Clock Name change
-		
+
 	Modified Files:
 		M       arch/arm/mach-s5pc110/Makefile.boot
 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
@@ -1077,8 +1077,8 @@ v2.6.29.4-dev-1-0-3: Kukjin Kim
 		M	arch/arm/mach-s5pc110/Kconfig
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 
-v2.6.29.4-dev-1-0-4: Changhwan Youn 
-	- SD/MMC support using HCLK for S5PC110 SMDK board 
+v2.6.29.4-dev-1-0-4: Changhwan Youn
+	- SD/MMC support using HCLK for S5PC110 SMDK board
 
 	Modified Files:
 		M       arch/arm/mach-s5pc110/Kconfig
@@ -1102,7 +1102,7 @@ v2.6.29.4-dev-1-0-4: Changhwan Youn
 		A       arch/arm/plat-s3c/dev-hsmmc3.c
 
 v2.6.29.4-dev-1-0-5: Hyunwoong Kim
-	- Temporary Release for s5pc110(2009.07.22) 
+	- Temporary Release for s5pc110(2009.07.22)
 
 v2.6.29.4-dev-1-0-6: Ohkyoung Kwon
 	- Support onenand rfs for s5pc110
@@ -1209,7 +1209,7 @@ v2.6.29.4-dev-1-0-15: Kukjin Kim
 
 v2.6.29.4-dev-1-0-16: Jongpill Lee
 	- Support APM for S5PC110
-		
+
 	Modified Files:
 		M       arch/arm/plat-s5pc11x/pm.c
 		M       arch/arm/plat-s5pc11x/sleep.S
@@ -1223,7 +1223,7 @@ v2.6.29.4-dev-1-0-17: Jae-Cheol Lee
 
 v2.6.29.4-dev-1-0-18: Abhilash Kesavan
 	- Added Support for CF-ATA on SMDKC100 (Tested with Microdrive, SSD
-	and Extreme III cards for ramdisk) 
+	and Extreme III cards for ramdisk)
 
 	Modified Files:
 		M	arch/arm/mach-s5pc100/include/mach/map.h
@@ -1261,7 +1261,7 @@ v2.6.29.4-dev-1-0-20: Jae-Cheol Lee
 
 	Modified Files:
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
-		
+
 v2.6.29.4-dev-1-0-21: Sang Pil Moon
 	- added hdmi kernel resource for hdmi/tvuot drv.
 	- added s5pc110 hdmi drv. module
@@ -1293,7 +1293,7 @@ v2.6.29.4-dev-1-0-21: Sang Pil Moon
 		M       drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
 		M       drivers/media/video/samsung/tv20/s5pc100/vprocessor_s5pc100.c
 
-	Added Files:		
+	Added Files:
 		A       drivers/media/video/samsung/tv20/s5pc110/hdcp_s5pc110.c
 		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_param.h
 		A       drivers/media/video/samsung/tv20/s5pc110/hdmi_s5pc110.c
@@ -1308,7 +1308,7 @@ v2.6.29.4-dev-1-0-21: Sang Pil Moon
 		A       drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
 		A       drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
 		A       drivers/media/video/samsung/tv20/s5pc110/vp_coeff_s5pc110.h
-		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c	
+		A       drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c
 
 v2.6.29.4-dev-1-0-22: Jae-Hun Jung
 	- RTC support on S5PC110.
@@ -1382,7 +1382,7 @@ v2.6.29.4-dev-1-0-24: Jae-Cheol Lee
 v2.6.29.4-dev-1-0-25: Jongpill Lee
 	- Temporary update for s5p6442
 
-	Modified Files:		
+	Modified Files:
 		M       arch/arm/configs/smdk6442ramdisk_defconfig
 		M       arch/arm/mach-s5p6442/include/mach/map.h
 		M       arch/arm/plat-s5p64xx/include/plat/pll.h
@@ -1407,11 +1407,11 @@ v2.6.29.4-s5pc110-alpha:Hyunwoong Kim
 v2.6.29.4-dev-1-0-28: Thomas Abraham
 	- Enable dedicated TX FIFO operation for USB OTG gadget in S5PC110.
 	The following changes have been made
-	1. Enabled dedicated Tx FIFO operation for all IN endpoints 
+	1. Enabled dedicated Tx FIFO operation for all IN endpoints
 	   for USB OTG gadget in S5PC11X.
 	2. Modified the endpoint FIFO sizes and base addresses.
 	3. Endpoint Tx FIFO's are flushed before each transfer.
-	4. Write the FIFO number to be used by endpoint in the DIEPCTL 
+	4. Write the FIFO number to be used by endpoint in the DIEPCTL
 	   register.
 
 v2.6.29.4-dev-1-0-29: Youngmok Song
@@ -1443,7 +1443,7 @@ v2.6.29.4-dev-1-0-31: Thomas Abraham
 	- Fix for "BUG: sleeping function called ..." message in USB OTG serial
 	gadget.
 
-	The USB OTG serial gadget when used displayes the message 
+	The USB OTG serial gadget when used displayes the message
 	"BUG: sleeping function called from invalid context at kernel/mutex.c:94"
 	when the first data byte is received. This fix is based on the Serial
 	Gadget module author's suggestion as listed in the link
@@ -1505,7 +1505,7 @@ v2.6.29.4-dev-1.0.36: Thomas Abraham
 
 v2.6.29.4-dev-1-0-37: Hatim Ali
 	- Added Support for SPI for S5PC110
-	
+
 	Modified Files:
 
 		M	arch/arm/mach-s5pc110/dma.c
@@ -1534,9 +1534,9 @@ v2.6.29.4-dev-1-0-38: Jongpill Lee
 		M       arch/arm/plat-s5pc1xx/pm.c
 
 v2.6.29.4-dev-1-0-39: Jaeryul Oh
-	- Backed for MFC(Write-back allocate for L2 cache on not applied) 
+	- Backed for MFC(Write-back allocate for L2 cache on not applied)
 	- Modified MFC driver on SMDKC110
-	
+
 	Modified Files:
 
 		M	arch/arm/mm/proc-v7.S
@@ -1549,12 +1549,12 @@ v2.6.29.4-dev-1-0-39: Jaeryul Oh
 - 	- Support IIS Audio for S5PC110
 - 		M       arch/arm/plat-s5pc11x/clock.c
 - 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
-- 		M       sound/soc/s3c/s3c-i2s.c		
+- 		M       sound/soc/s3c/s3c-i2s.c
 
 
 v2.6.29.4-dev-1-0-41: Hatim Ali
 	- Added support for MMC-SPI GPIO bitbanging
-	
+
 	Modified Files:
 	M       drivers/spi/Kconfig
 	M       drivers/spi/spi_s3c.c
@@ -1734,7 +1734,7 @@ v2.6.29.4-dev-1-3-9: Taeyong Lee
 		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
 		M       sound/soc/s3c/s3c-i2s.c
 		M       sound/soc/s3c/s3c-i2s.h
-		M       sound/soc/s3c/smdkc100_wm8580.c	
+		M       sound/soc/s3c/smdkc100_wm8580.c
 
 v2.6.29.4-dev-1-3-10: Jingoo Han
 	- Modified the USB 2.0 HOST EHCI driver with S5PC110
@@ -1752,7 +1752,7 @@ v2.6.29.4-dev-1-3-11: Kukjin Kim
 
 v2.6.29.4-dev-1-3-12: Abhilash Kesavan
 	- Added SD/MMC support for S5P6442
-	
+
 	Modified Files:
 		M	arch/arm/mach-s5p6442/Kconfig
 		M	arch/arm/mach-s5p6442/mach-smdk6442.c
@@ -1765,7 +1765,7 @@ v2.6.29.4-dev-1-3-12: Abhilash Kesavan
 		M	drivers/mmc/host/Kconfig
 
 v2.6.29.4-dev-1-3-13: Sunil Choi
-	- Support tv-out thru composite and component on S5PC110 
+	- Support tv-out thru composite and component on S5PC110
 
 	Modified Files:
 		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
@@ -1774,7 +1774,7 @@ v2.6.29.4-dev-1-3-13: Sunil Choi
 		M	drivers/media/video/samsung/tv20/s5pc110/tv_power_s5pc110.c
 		M	drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
 		M	drivers/media/video/samsung/tv20/s5pc110/regs/regs-vmx.h
-	
+
 v2.6.29.4-dev-1-3-14: Jae-Cheol Lee
 	- Support DFS on S5PC110
 
@@ -1818,7 +1818,7 @@ v2.6.29.4-dev-1-4-2: Jongpill Lee
 v2.6.29.4-dev-1-4-3: Jae-Cheol Lee
 	- Modify clock and power gating for s5pc110,
 	and Removed C100 regs definition in clock register header file.
-	
+
 	Modified Files:
 		M	arch/arm/plat-s3c/clock.c
 		M	arch/arm/plat-s3c/include/plat/clock.h
@@ -1844,7 +1844,7 @@ v2.6.29.4-dev-1-4-5: Thomas Abraham
 	Modified Files:
 		M	drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
 
-v2.6.29.4-dev-1-4-6: Jongpill Lee	
+v2.6.29.4-dev-1-4-6: Jongpill Lee
 	- Support Deep IDLE for S5PC110
 		M       arch/arm/plat-s5pc11x/Kconfig
 		M       arch/arm/plat-s5pc11x/pm.c
@@ -1867,7 +1867,7 @@ v2.6.29.4-dev-1-4-8: Changhwan Youn
 	- Fix wrong mmc minimum clock(mmc->f_min)
 
 	Modified Files:
-		drivers/mmc/host/sdhci.c	
+		drivers/mmc/host/sdhci.c
 
 v2.6.29.4-dev-1-4-9: Jaeryul Oh
 	- Modified for MFC driver on SMDKC110 by the MFC fw change
@@ -1905,7 +1905,7 @@ v2.6.29.4-dev-1-4-10: Jongpill Lee
 		M       drivers/net/dm9000.h
 
 v2.6.29.4-dev-1-4-11: Changhwan Youn
-	- Add CONFIG_MMC_SDHCI_S3C definition to smdkc100XXX_defconfig  
+	- Add CONFIG_MMC_SDHCI_S3C definition to smdkc100XXX_defconfig
 
 	Modified Files:
 		M	arch/arm/configs/smdkc100mtd_defconfig
@@ -1936,7 +1936,7 @@ v2.6.29.4-dev-1-4-14: Jae-Cheol Lee
 
 v2.6.29.4-dev-1-4-15: Hatim Ali
 	- Added I2C support on SMDK6442
-	
+
 	Modified Files:
 		M	arch/arm/mach-s5p6442/Kconfig
 		M	arch/arm/mach-s5p6442/cpu.c
@@ -1985,3 +1985,98 @@ v2.6.29.4-dev-1-4-18: Youngmok Song
 		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
 		M	drivers/media/video/samsung/fimc/Kconfig
 		M	drivers/media/video/samsung/fimc/Makefile
+
+v2.6.29.4-dev-1-4-19: Youngmok Song
+	- Support FIMC for smdk6442
+	Added Files:
+		A	arch/arm/plat-s5p64xx/dev-fimc0.c
+		A	arch/arm/plat-s5p64xx/dev-fimc1.c
+		A	arch/arm/plat-s5p64xx/dev-fimc2.c
+		A	arch/arm/plat-s5p64xx/include/plat/fimc.h
+		A	arch/arm/plat-s5p64xx/include/plat/regs-fimc.h
+		A	arch/arm/plat-s5p64xx/setup-fimc0.c
+		A	arch/arm/plat-s5p64xx/setup-fimc1.c
+		A	arch/arm/plat-s5p64xx/setup-fimc2.c
+
+v2.6.29.4-dev-1-4-20: Sooyoung Kang
+	- Support MFCv10 for smdk6442
+
+	 Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s5p64xx/bootmem.c
+		M	arch/arm/plat-s5p64xx/devs.c
+		M	arch/arm/plat-s5p64xx/include/plat/media.h
+
+	Added Files:
+		A	arch/arm/plat-s5p64xx/include/plat/regs-mfc.h
+		A	drivers/media/video/samsung/mfc10/Kconfig
+		A	drivers/media/video/samsung/mfc10/Makefile
+		A	drivers/media/video/samsung/mfc10/prism_s.h
+		A	drivers/media/video/samsung/mfc10/prism_s_v13d.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_base.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_bitproc_buf.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_bitproc_buf.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_config.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_databuf.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_databuf.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_init_hw.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_init_hw.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_inst_pool.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_inst_pool.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_instance.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_instance.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_intr_noti.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_params.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_set_config.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_sfr.c
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_sfr.h
+		A	drivers/media/video/samsung/mfc10/s3c_mfc_types.h
+		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.c
+		A       drivers/media/video/samsung/mfc10/s3c_mfc_yuv_buf_manager.h
+
+v2.6.29.4-dev-1-4-22: Hatim Ali
+	- Added Port Group MPx for smdk6442
+
+	 Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/gpio.h
+		M	arch/arm/plat-s5p64xx/gpiolib.c
+
+v2.6.29.4-dev-1-4-23: Sooyoung Kang
+	- Support MFCv10 for smdk6442
+		Modified for make mfc menu on make menuconfig
+
+	 Modified Files:
+		M 	drivers/media/video/samsung/Kconfig
+		M 	drivers/media/video/samsung/Makefile
+
+v2.6.29.4-dev-1-4-24: Sooyoung Kang
+	- Support MEMSIZE for MFCv10 for smdk6442
+
+	 Modified Files:
+		M 	drivers/media/video/samsung/Kconfig
+v2.6.29.4-s5pc110-beta:Hyunwoong Kim
+	- Official Release for s5pc110(2009.09.11)
+	
+v2.6.29.4-dev-1-4-27: Sang-Beom Kim
+	- Modify CMU for SMDK6442,
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-28: Jae-Cheol Lee
+	- Support power gating with SYNC RESET on S5PC110.
+	- Changed power gating scheme for S5PC110.
+	- Before power block is turned on, All including IP's clocks are enabled.
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s3c/clock.c
+		M 	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s5pc11x/clock.c
+		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
+		M	arch/arm/plat-s5pc11x/devs.c

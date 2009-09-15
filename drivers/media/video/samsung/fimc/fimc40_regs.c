@@ -636,6 +636,11 @@ int fimc_hwset_input_rgb(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;
 }
 
+int fimc_hwset_intput_field(struct fimc_control *ctrl, enum v4l2_field field)
+{
+	return 0;
+}
+
 int fimc_hwset_output_rgb(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);

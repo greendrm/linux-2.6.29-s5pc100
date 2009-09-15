@@ -311,7 +311,136 @@ static struct s3c_gpio_chip gpio_chips[] = {
 			.ngpio	= S5P64XX_GPIO_J4_NR,
 			.label	= "GPJ4",
 		},
+	}, {
+		.base	= S5P64XX_MP01_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP01(0),
+			.ngpio	= S5P64XX_GPIO_MP01_NR,
+			.label	= "MP01",
+		},
+	}, {
+		.base	= S5P64XX_MP02_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP02(0),
+			.ngpio	= S5P64XX_GPIO_MP02_NR,
+			.label	= "MP02",
+		},
+	}, {
+		.base	= S5P64XX_MP03_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP03(0),
+			.ngpio	= S5P64XX_GPIO_MP03_NR,
+			.label	= "MP03",
+		},
+	}, {
+		.base	= S5P64XX_MP04_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP04(0),
+			.ngpio	= S5P64XX_GPIO_MP04_NR,
+			.label	= "MP04",
+		},
 	}, 
+	{
+		.base	= S5P64XX_MP05_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP05(0),
+			.ngpio	= S5P64XX_GPIO_MP05_NR,
+			.label	= "MP05",
+		},
+	}, {
+		.base	= S5P64XX_MP06_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP06(0),
+			.ngpio	= S5P64XX_GPIO_MP06_NR,
+			.label	= "MP06",
+		},
+	}, {
+		.base	= S5P64XX_MP07_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP07(0),
+			.ngpio	= S5P64XX_GPIO_MP07_NR,
+			.label	= "MP07",
+		},
+	}, {
+		.base	= S5P64XX_MP10_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP10(0),
+			.ngpio	= S5P64XX_GPIO_MP10_NR,
+			.label	= "MP10",
+		},
+	}, {
+		.base	= S5P64XX_MP11_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP11(0),
+			.ngpio	= S5P64XX_GPIO_MP11_NR,
+			.label	= "MP11",
+		},
+	}, {
+		.base	= S5P64XX_MP12_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP12(0),
+			.ngpio	= S5P64XX_GPIO_MP12_NR,
+			.label	= "MP12",
+		},
+	}, {
+		.base	= S5P64XX_MP13_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP13(0),
+			.ngpio	= S5P64XX_GPIO_MP13_NR,
+			.label	= "MP13",
+		},
+	}, {
+		.base	= S5P64XX_MP14_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP14(0),
+			.ngpio	= S5P64XX_GPIO_MP14_NR,
+			.label	= "MP14",
+		},
+	}, {
+		.base	= S5P64XX_MP15_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP15(0),
+			.ngpio	= S5P64XX_GPIO_MP15_NR,
+			.label	= "MP15",
+		},
+	}, {
+		.base	= S5P64XX_MP16_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP16(0),
+			.ngpio	= S5P64XX_GPIO_MP16_NR,
+			.label	= "MP16",
+		},
+	}, {
+		.base	= S5P64XX_MP17_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP17(0),
+			.ngpio	= S5P64XX_GPIO_MP17_NR,
+			.label	= "MP17",
+		},
+	}, {
+		.base	= S5P64XX_MP18_BASE,
+		.config	= &gpio_cfg_noint,
+		.chip	= {
+			.base	= S5P64XX_MP18(0),
+			.ngpio	= S5P64XX_GPIO_MP18_NR,
+			.label	= "MP18",
+		},
+	}
 };
 
 static __init void s5p64xx_gpiolib_link(struct s3c_gpio_chip *chip)

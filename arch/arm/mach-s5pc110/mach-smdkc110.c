@@ -21,6 +21,8 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/i2c.h>
+#include <linux/i2c-gpio.h>
+#include <linux/regulator/max8698.h>
 #include <linux/delay.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
@@ -96,7 +98,7 @@ extern void s3c_sdhci_set_platdata(void);
 #endif
 
 static struct s3c24xx_uart_clksrc smdkc110_serial_clocks[] = {
-#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+#if defined(CONFIG_SERIAL_S5PC11X_HSUART)
 /* HS-UART Clock using SCLK */
 	[0] = {
 		.name		= "uclk1",
@@ -670,6 +672,180 @@ struct platform_device s3c_device_spi_bitbang = {
 };
 #endif
 
+/* PMIC */
+static struct regulator_consumer_supply dcdc1_consumers[] = {
+	{
+		.supply		= "vddarm",
+	},
+};
+
+static struct regulator_init_data max8698_dcdc1_data = {
+	.constraints	= {
+		.name		= "VCC_ARM",
+		.min_uV		=  750000,
+		.max_uV		= 1500000,
+		.always_on	= 1,
+		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
+	.consumer_supplies	= dcdc1_consumers,
+};
+
+static struct regulator_consumer_supply dcdc2_consumers[] = {
+	{
+		.supply		= "vddint",
+	},
+};
+
+static struct regulator_init_data max8698_dcdc2_data = {
+	.constraints	= {
+		.name		= "VCC_INTERNAL",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+	.num_consumer_supplies	= ARRAY_SIZE(dcdc2_consumers),
+	.consumer_supplies	= dcdc2_consumers,
+};
+
+static struct regulator_init_data max8698_dcdc3_data = {
+	.constraints	= {
+		.name		= "VCC_MEM",
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
+		.apply_uV	= 1,
+		.state_mem	= {
+			.uV	= 1800000,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 1,
+		},
+		//.initial_state	= PM_SUSPEND_MEM,
+	},
+};
+
+static struct regulator_init_data max8698_ldo2_data = {
+	.constraints	= {
+		.name		= "VALIVE_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+		.always_on	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo3_data = {
+	.constraints	= {
+		.name		= "VUSB_1.2V/MIPI_1.2V",
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo4_data = {
+	.constraints	= {
+		.name		= "VOPTIC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+		.boot_on	= 1,
+	},
+};
+
+static struct regulator_consumer_supply smdkc110_hsmmc1_supply = {
+	.supply			= "hsmmc",	/* FIXME what's exact name? */
+	.dev			= &s3c_device_hsmmc1.dev,
+};
+
+static struct regulator_init_data max8698_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+	.num_consumer_supplies	= 1,
+	.consumer_supplies	= &smdkc110_hsmmc1_supply,
+};
+
+static struct regulator_init_data max8698_ldo6_data = {
+	.constraints	= {
+		.name		= "VCC_2.6V",
+		.min_uV		= 2600000,
+		.max_uV		= 2600000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo7_data = {
+	.constraints	= {
+		.name		= "VDAC_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo8_data = {
+	.constraints	= {
+		.name		= "{VADC/VCAM/VUSB}_3.3V",
+		.min_uV		= 3300000,
+		.max_uV		= 3300000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct regulator_init_data max8698_ldo9_data = {
+	.constraints	= {
+		.name		= "VCAM_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
+	},
+};
+
+static struct max8698_subdev_data smdkc110_regulators[] = {
+	{ MAX8698_LDO2, &max8698_ldo2_data },
+	{ MAX8698_LDO3, &max8698_ldo3_data },
+	{ MAX8698_LDO4, &max8698_ldo4_data },
+	{ MAX8698_LDO5, &max8698_ldo5_data },
+	{ MAX8698_LDO6, &max8698_ldo6_data },
+	{ MAX8698_LDO7, &max8698_ldo7_data },
+	{ MAX8698_LDO8, &max8698_ldo8_data },
+	{ MAX8698_LDO9, &max8698_ldo9_data },
+	{ MAX8698_DCDC1, &max8698_dcdc1_data },
+	{ MAX8698_DCDC2, &max8698_dcdc2_data },
+	{ MAX8698_DCDC3, &max8698_dcdc3_data },
+};
+
+static struct max8698_platform_data max8698_platform_data = {
+	.num_regulators	= ARRAY_SIZE(smdkc110_regulators),
+	.regulators	= smdkc110_regulators,
+/*
+	.set1		= S5PC11X_GPJ0(6),
+	.set2		= S5PC11X_GPJ0(7),
+	.set3		= S5PC11X_GPJ1(0),
+*/
+};
+
+/* I2C0 */
+static struct i2c_board_info i2c_devs0[] __initdata = {
+	/* TODO */
+};
+
+/* I2C1 */
+static struct i2c_board_info i2c_devs1[] __initdata = {
+	/* TODO */
+};
+
+/* I2C2 */
+static struct i2c_board_info i2c_devs2[] __initdata = {
+	{
+		/* The address is 0xCC used since SRAD = 0 */
+		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
+		.platform_data = &max8698_platform_data,
+	},
+};
 
 struct map_desc smdkc110_iodesc[] = {};
 
@@ -738,12 +914,27 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_csis,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
+	&s3c_device_i2c2,
 	&s3c_device_ipc,
 	&s3c_device_jpeg,
 	&s3c_device_rotator,
 	&s5p_device_cec,
+	&s3c_device_test,
 };
 
+static void __init smdkc110_i2c_gpio_init(void)
+{
+	s3c_gpio_setpull(S5PC11X_GPH2(4), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPH2(5), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC11X_GPJ3(6), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPJ3(7), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpull(S5PC11X_GPJ4(0), S3C_GPIO_PULL_NONE);
+	s3c_gpio_setpull(S5PC11X_GPJ4(3), S3C_GPIO_PULL_NONE);
+}
+
+ 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
 	.delay 			= 10000,
 	.presc 			= 49,
@@ -757,14 +948,6 @@ static struct s3c_adc_mach_info s3c_adc_platform __initdata = {
         .delay  = 10000,
         .presc  = 49,
         .resolution = 12,
-};
-
-static struct i2c_board_info i2c_devs0[] __initdata = {
-	{ I2C_BOARD_INFO("24c08", 0x50), },
-};
-
-static struct i2c_board_info i2c_devs1[] __initdata = {
-	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
 
 /*
@@ -1107,7 +1290,7 @@ static void __init smdkc110_map_io(void)
 	s5pc11x_init_io(smdkc110_iodesc, ARRAY_SIZE(smdkc110_iodesc));
 	s3c24xx_init_clocks(24000000);
 	s3c24xx_init_uarts(smdkc110_uartcfgs, ARRAY_SIZE(smdkc110_uartcfgs));
-#if defined(CONFIG_SERIAL_S5PC1XX_HSUART)
+#if defined(CONFIG_SERIAL_S5PC11X_HSUART)
 	/* got to have a high enough uart source clock for higher speeds */
 	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
 #endif
@@ -1155,11 +1338,22 @@ static void __init smdkc110_machine_init(void)
 	smdkc110_dm9000_set();
 
 	/* i2c */
+	smdkc110_i2c_gpio_init();
+
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
+	s3c_i2c2_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
-
+	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
+/*
+	i2c_register_board_info(I2C_GPIO_26V_BUS, i2c_gpio_26v_devs,
+				ARRAY_SIZE(i2c_gpio_26v_devs));
+	i2c_register_board_info(I2C_GPIO_HDMI_BUS, i2c_gpio_hdmi_devs,
+				ARRAY_SIZE(i2c_gpio_hdmi_devs));
+	i2c_register_board_info(I2C_GPIO_28V_BUS, i2c_gpio_28v_devs,
+				ARRAY_SIZE(i2c_gpio_28v_devs));
+*/
         /* spi */
 #if defined(CONFIG_SPI_CNTRLR_0)
         s3cspi_set_slaves(BUSNUM(0), ARRAY_SIZE(s3c_slv_pdata_0), s3c_slv_pdata_0);

@@ -85,7 +85,7 @@ static struct clk_sources clk_src_apll = {
 struct clksrc_clk clk_mout_apll = {
 	.clk	= {
 		.name		= "mout_apll",
-		.id		= -1,		
+		.id		= -1,
 	},
 	.shift		= S5P_CLKSRC0_APLL_SHIFT,
 	.mask		= S5P_CLKSRC0_APLL_MASK,
@@ -257,8 +257,8 @@ struct clksrc_clk clk_mout_d0 = {
 		.name		= "mout_d0",
 		.id		= -1,
 	},
-	.shift		= S5P_CLKSRC0_MUX166_SHIFT,
-	.mask		= S5P_CLKSRC0_MUX166_MASK,
+	.shift		= S5P_CLKSRC0_MUXD0_SHIFT,
+	.mask		= S5P_CLKSRC0_MUXD0_MASK,
 	.sources	= &clk_src_muxd0,
 	.reg_source	= S5P_CLK_SRC0,
 };
@@ -278,14 +278,14 @@ struct clksrc_clk clk_mout_d1 = {
 		.name		= "mout_d1",
 		.id		= -1,
 	},
-	.shift		= S5P_CLKSRC0_MUX133_SHIFT,
-	.mask		= S5P_CLKSRC0_MUX133_MASK,
+	.shift		= S5P_CLKSRC0_MUXD1_SHIFT,
+	.mask		= S5P_CLKSRC0_MUXD1_MASK,
 	.sources	= &clk_src_muxd1,
 	.reg_source	= S5P_CLK_SRC0,
 };
 
 static struct clk *clk_src_muxd0sync_list[] = {
-	[0] = &clk_mout_d0,
+	[0] = &clk_mout_d0.clk,
 	[1] = &clk_dout_apll,
 };
 
@@ -299,14 +299,14 @@ struct clksrc_clk clk_mout_d0sync = {
 		.name		= "mout_d0sync",
 		.id		= -1,
 	},
-	.shift		= S5P_CLKSRC2_MUX166SYNC_SEL_SHIFT,
-	.mask		= S5P_CLKSRC2_MUX166SYNC_SEL_MASK,
+	.shift		= S5P_CLKSRC2_MUXD0SYNC_SEL_SHIFT,
+	.mask		= S5P_CLKSRC2_MUXD0SYNC_SEL_MASK,
 	.sources	= &clk_src_muxd0sync,
 	.reg_source	= S5P_CLK_SRC2,
 };
 
 static struct clk *clk_src_muxd1sync_list[] = {
-	[0] = &clk_mout_d1,
+	[0] = &clk_mout_d1.clk,
 	[1] = &clk_dout_apll,
 };
 
@@ -320,8 +320,8 @@ struct clksrc_clk clk_mout_d1sync = {
 		.name		= "mout_d1sync",
 		.id		= -1,
 	},
-	.shift		= S5P_CLKSRC2_MUX133SYNC_SEL_SHIFT,
-	.mask		= S5P_CLKSRC2_MUX133SYNC_SEL_MASK,
+	.shift		= S5P_CLKSRC2_MUXD1SYNC_SEL_SHIFT,
+	.mask		= S5P_CLKSRC2_MUXD1SYNC_SEL_MASK,
 	.sources	= &clk_src_muxd1sync,
 	.reg_source	= S5P_CLK_SRC2,
 };
@@ -342,7 +342,7 @@ struct clk clk_dout_d1 = {
 
 static struct clk *clkset_uart_list[] = {
 	&clk_mout_epll.clk,
-	&clk_mout_mpll,
+	&clk_mout_mpll.clk,
 	NULL,
 	NULL
 };
@@ -564,7 +564,7 @@ static unsigned long s5p64xx_roundrate_clksrc(struct clk *clk,
 	unsigned long parent_rate = clk_get_rate(clk->parent);
 	int div;
 
-	if (rate >= parent_rate) 
+	if (rate >= parent_rate)
 		rate = parent_rate;
 	else {
 		div = parent_rate / rate;
@@ -609,7 +609,7 @@ static struct clksrc_clk clk_mmc1 = {
 		.enable		= s5p64xx_clk_ip2_ctrl,
 		.set_parent	= s5p64xx_setparent_clksrc,
 		.get_rate	= s5p64xx_getrate_clksrc,
-		.set_rate	= s5p64xx_setrate_clksrc,		
+		.set_rate	= s5p64xx_setrate_clksrc,
 		.round_rate	= s5p64xx_roundrate_clksrc,
 	},
 	.shift		= S5P_CLKSRC4_MMC1_SHIFT,
@@ -825,52 +825,52 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	mux_stat1 = __raw_readl(S5P_CLK_MUX_STAT1);
 	mux_stat0 = __raw_readl(S5P_CLK_MUX_STAT0);
 
-	switch ((mux_stat1 & S5P_CLK_MUX_STAT1_MUX166SYNC_MASK) >> S5P_CLK_MUX_STAT1_MUX166SYNC_SHIFT) {
+	switch ((mux_stat1 & S5P_CLK_MUX_STAT1_MUXD0SYNC_MASK) >> S5P_CLK_MUX_STAT1_MUXD0SYNC_SHIFT) {
 	case 0x1:	/* Asynchronous mode */
-		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUX166_MASK) >> S5P_CLK_MUX_STAT0_MUX166_SHIFT) {
+		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUXD0_MASK) >> S5P_CLK_MUX_STAT0_MUXD0_SHIFT) {
 		case 0x1:	/* MPLL source */
-			hclkd0 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK166);
-			pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK83);
+			hclkd0 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_D0CLK);
+			pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_P0CLK);
 			break;
 		case 0x2:	/* A2M source */
 			a2m = apll / GET_DIV(clkdiv0, S5P_CLKDIV0_A2M);
-			hclkd0 = a2m / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK166);
-			pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK83);
+			hclkd0 = a2m / GET_DIV(clkdiv0, S5P_CLKDIV0_D0CLK);
+			pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_P0CLK);
 			break;
 		default:
 			break;
-			
+
 		}
 
-		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUX133_MASK) >> S5P_CLK_MUX_STAT0_MUX133_SHIFT) {
+		switch ((mux_stat0 & S5P_CLK_MUX_STAT0_MUXD1_MASK) >> S5P_CLK_MUX_STAT0_MUXD1_SHIFT) {
 		case 0x1:	/* MPLL source */
-			hclkd1 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK133);
-			pclkd1 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK66);
+			hclkd1 = mpll / GET_DIV(clkdiv0, S5P_CLKDIV0_D1CLK);
+			pclkd1 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_P1CLK);
 			break;
 		case 0x2:	/* A2M source */
 			a2m = apll / GET_DIV(clkdiv0, S5P_CLKDIV0_A2M);
-			hclkd1 = a2m / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK133);
-			pclkd1 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK66);
+			hclkd1 = a2m / GET_DIV(clkdiv0, S5P_CLKDIV0_D1CLK);
+			pclkd1 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_P1CLK);
 			break;
 		default:
 			break;
-			
+
 		}
 
 		break;
 
 	case 0x2:	/* Synchronous mode */
-		hclkd0 = fclk / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK166);
-		pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK83);
-		hclkd1 = fclk / GET_DIV(clkdiv0, S5P_CLKDIV0_HCLK133);
-		pclkd1 = hclkd1 / GET_DIV(clkdiv0, S5P_CLKDIV0_PCLK66);
+		hclkd0 = fclk / GET_DIV(clkdiv0, S5P_CLKDIV0_D0CLK);
+		pclkd0 = hclkd0 / GET_DIV(clkdiv0, S5P_CLKDIV0_P0CLK);
+		hclkd1 = fclk / GET_DIV(clkdiv0, S5P_CLKDIV0_D1CLK);
+		pclkd1 = hclkd1 / GET_DIV(clkdiv0, S5P_CLKDIV0_P1CLK);
 		break;
 	default:
 		printk(KERN_ERR "failed to get sync/async mode status register\n");
 		break;
 		/* Synchronous mode */
 
-	} 
+	}
 
 	printk(KERN_INFO "S5P64XX: HCLKD0=%ld.%ldMHz, HCLKD1=%ld.%ldMHz," \
 				" PCLKD0=%ld.%ldMHz, PCLKD1=%ld.%ldMHz\n",
@@ -886,7 +886,7 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	clk_pd0.rate = pclkd0;
 	clk_hd1.rate = hclkd1;
 	clk_pd1.rate = pclkd1;
-	
+
 	/* For backward compatibility */
 	clk_h.rate = hclkd1;
 	clk_p.rate = pclkd1;
@@ -894,7 +894,7 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	clk_set_parent(&clk_mmc0.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc1.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc2.clk, &clk_mout_mpll.clk);
-	
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5p6442_set_clksrc(init_parents[ptr]);
 
@@ -909,7 +909,7 @@ static struct clk *clks[] __initdata = {
 	&clk_fout_epll,
 	&clk_mout_mpll.clk,
 	&clk_mmc0.clk,
-	&clk_mmc1.clk,	
+	&clk_mmc1.clk,
 	&clk_mmc2.clk,
 	&clk_cam0.clk,
 	&clk_cam1.clk,
