@@ -13,7 +13,7 @@
 
 #include <mach/s3c-dma.h>
 
-#define S3C_DMA_CONTROLLERS        	(1)
+#define S3C_DMA_CONTROLLERS        	(2)
 #define S3C_CHANNELS_PER_DMA       	(8)
 #define S3C_CANDIDATE_CHANNELS_PER_DMA  (32)
 #define S3C_DMA_CHANNELS		(S3C_DMA_CONTROLLERS*S3C_CHANNELS_PER_DMA)
