@@ -2080,3 +2080,16 @@ v2.6.29.4-dev-1-4-28: Jae-Cheol Lee
 		M	arch/arm/plat-s5pc11x/clock.c
 		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
 		M	arch/arm/plat-s5pc11x/devs.c
+
+v2.6.29.4-dev-1-4-29: Sooyoung Kang 
+	- Support JPEG on S5P6442.
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/include/mach/map.h
+		M	arch/arm/mach-s5p6442/mach-smdk6442.h
+		M	arch/arm/plat-s5p64XX/include/plat/media.h
+		M	arch/arm/plat-s5p64XX/bootmem.c
+		M	arch/arm/plat-s5p64XX/devs.c
+		M	drivers/media/video/samsung/Kconfig
+		M	drivers/media/video/samsung/jpeg_v2/Kconfig
+		M	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.c
