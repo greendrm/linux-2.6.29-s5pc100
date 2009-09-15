@@ -54,9 +54,10 @@
 #include "samsung.h"
 
 #if defined(CONFIG_S5P_UART_DMA_EN)
-#include <mach/s3c-dma.h>
 #include <linux/dma-mapping.h>
 #include <linux/semaphore.h>
+#include <plat/regs-gpio.h>
+#include <mach/s3c-dma.h>
 
 static struct s3c2410_dma_client uart_dma_client_tx = {
 	.name = "uart-dma-tx",
