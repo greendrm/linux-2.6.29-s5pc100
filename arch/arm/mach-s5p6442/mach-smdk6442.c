@@ -797,7 +797,7 @@ static void __init smdk6442_machine_init(void)
 
 	s5p6442_pm_init();
 
-//	smdk_backlight_register();
+	smdk_backlight_register();
 
 #if defined(CONFIG_MMC_SDHCI_S3C)
         s3c_sdhci_set_platdata();

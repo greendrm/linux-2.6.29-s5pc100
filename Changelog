@@ -2059,7 +2059,7 @@ v2.6.29.4-dev-1-4-24: Sooyoung Kang
 		M 	drivers/media/video/samsung/Kconfig
 v2.6.29.4-s5pc110-beta:Hyunwoong Kim
 	- Official Release for s5pc110(2009.09.11)
-	
+
 v2.6.29.4-dev-1-4-27: Sang-Beom Kim
 	- Modify CMU for SMDK6442,
 
@@ -2081,7 +2081,7 @@ v2.6.29.4-dev-1-4-28: Jae-Cheol Lee
 		M	arch/arm/plat-s5pc11x/include/plat/regs-clock.h
 		M	arch/arm/plat-s5pc11x/devs.c
 
-v2.6.29.4-dev-1-4-29: Sooyoung Kang 
+v2.6.29.4-dev-1-4-29: Sooyoung Kang
 	- Support JPEG on S5P6442.
 
 	Modified Files:
@@ -2093,3 +2093,31 @@ v2.6.29.4-dev-1-4-29: Sooyoung Kang
 		M	drivers/media/video/samsung/Kconfig
 		M	drivers/media/video/samsung/jpeg_v2/Kconfig
 		M	drivers/media/video/samsung/jpeg_v2/s3c-jpeg.c
+
+v2.6.29.4-dev-1-4-30: Sang-Beom Kim
+	- Modify PWM Timer Driver for SMDK6442,
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/cpu.c
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s3c/include/plat/regs-timer.h
+		M	arch/arm/plat-s3c/pwm-clock.c
+		M	arch/arm/plat-s5p64xx/Kconfig
+		M	arch/arm/plat-s5p64xx/Makefile
+		M	arch/arm/plat-s5p64xx/pwm.c
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-31: Sang-Beom Kim
+	- Re Modify PWM Timer Driver for SMDK6442,
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/cpu.c
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s3c/include/plat/regs-timer.h
+		M	arch/arm/plat-s3c/pwm-clock.c
+		M	arch/arm/plat-s5p64xx/Kconfig
+		M	arch/arm/plat-s5p64xx/Makefile
+		M	arch/arm/plat-s5p64xx/pwm.c
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c

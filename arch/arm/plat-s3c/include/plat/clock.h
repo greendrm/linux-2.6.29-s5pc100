@@ -162,6 +162,7 @@ extern int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable);
 #endif
 
 /* Init for pwm clock code */
-
+#if defined(CONFIG_HAVE_PWM) || defined(CONFIG_TIMER_PWM)
 extern void s3c_pwmclk_init(void);
+#endif
 

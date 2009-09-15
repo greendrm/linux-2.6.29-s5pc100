@@ -107,7 +107,7 @@ config S5P64XX_ADC
 
 config S5P64XX_PWM
 	bool "S5P64XX PWM support"
-	select S5P_HAVE_PWM
+	select HAVE_PWM
 	help
 	  Support for exporting the PWM timer blocks via the pwm device system.
 
