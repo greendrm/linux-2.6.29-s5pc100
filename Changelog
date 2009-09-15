@@ -2121,3 +2121,24 @@ v2.6.29.4-dev-1-4-31: Sang-Beom Kim
 		M	arch/arm/plat-s5p64xx/Makefile
 		M	arch/arm/plat-s5p64xx/pwm.c
 		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-32: SungJun Bae
+	- SMDK6410 I2S is working now on AP slave mode.
+
+	Modified Files:
+		M 	arch/arm/mach-s5p6442/include/mach/map.h
+		M 	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M 	arch/arm/mach-s5pc100/include/mach/map.h
+		M 	arch/arm/plat-s3c/include/plat/clock.h
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/cpu.c
+		M	arch/arm/plat-s5p64xx/include/plat/regs-clock.h
+		M 	arch/arm/plat-s5p64xx/s5p6442-clock.c
+		M 	sound/soc/s3c/Kconfig
+		M 	sound/soc/s3c/Makefile
+		M 	sound/soc/s3c/s3c-i2s.c
+		M 	sound/soc/s3c/s3c-i2s.h
+
+	Added Files:
+		A	arch/arm/plat-s5p64xx/include/plat/regs-audss.h
+		A	sound/soc/s3c/smdk6442_wm8580.c
