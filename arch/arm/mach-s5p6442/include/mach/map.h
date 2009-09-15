@@ -103,8 +103,12 @@
 #define S5P64XX_SZ_WATCHDOG 	SZ_4K
 
 /* MFC */
-#define S5P6442_PA_MFC		(0xF1000000)
+#define S5P64XX_PA_MFC		(0xF1000000)
 #define S3C_SZ_MFC		SZ_4K
+
+/* JPEG */
+#define S5P64XX_PA_JPEG         (0xEFC00000)
+#define S3C_SZ_JPEG             SZ_4K
 
 /* NAND flash controller */
 #define S5P64XX_PA_NAND	   	(0xE7100000)

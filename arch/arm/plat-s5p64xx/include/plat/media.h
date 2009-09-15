@@ -23,7 +23,8 @@
 #define S3C_MDEV_POST		3
 #define S3C_MDEV_GVG		4
 #define S3C_MDEV_MFC		5
-#define S3C_MDEV_MAX		6
+#define S3C_MDEV_JPEG		6
+#define S3C_MDEV_MAX		7
 
 struct s3c_media_device {
 	int		id;
