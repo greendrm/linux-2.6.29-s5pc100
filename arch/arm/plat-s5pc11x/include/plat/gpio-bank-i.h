@@ -23,13 +23,13 @@
 #define S5PC11X_GPI_INPUT(__gpio)	(0x0 << ((__gpio) * 4))
 #define S5PC11X_GPI_OUTPUT(__gpio)	(0x1 << ((__gpio) * 4))
 
-#define S5PC11X_GPI0_I2S_0_LRCK		(0x2 << 0)
+#define S5PC11X_GPI0_I2S_0_SCLK		(0x2 << 0)
 #define S5PC11X_GPI0_PCM_2_SCLK		(0x3 << 0)
 
 #define S5PC11X_GPI1_I2S_0_CDCLK	(0x2 << 4)
 #define S5PC11X_GPI1_PCM_2_EXTCLK	(0x3 << 4)
 
-#define S5PC11X_GPI2_I2S_0_SCLK		(0x2 << 8)
+#define S5PC11X_GPI2_I2S_0_LRCLK	(0x2 << 8)
 #define S5PC11X_GPI2_PCM_2_FSYNC	(0x3 << 8)
 
 #define S5PC11X_GPI3_I2S_0_SDI		(0x2 << 12)
