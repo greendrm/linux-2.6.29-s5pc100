@@ -652,14 +652,14 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get clk(%s)\n", EXTCLK);
 		goto lb3;
 	}
-	s3cdbg("Got Clock -> %s\n", EXTCLK);
+	s3cdbg("Got Audio Bus Clock -> %s\n", EXTCLK);
 
 	cm = clk_get(NULL, EXTPRNT);
 	if (IS_ERR(cm)) {
 		printk("failed to get %s\n", EXTPRNT);
 		goto lb2;
 	}
-	s3cdbg("Got Clock -> %s\n", EXTPRNT);
+	s3cdbg("Got Audio Bus Source Clock -> %s\n", EXTPRNT);
 
 	if(clk_set_parent(s3c_i2s.audio_bus, cm)){
 		printk("failed to set %s as parent of %s\n", EXTPRNT, EXTCLK);

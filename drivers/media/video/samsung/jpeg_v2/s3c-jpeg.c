@@ -410,6 +410,7 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	static int		size;
 	static int		ret;
 	HANDLE 			h_mutex;
+	printk("#### s3c_jpeg_probe ####\n");
 #ifdef CONFIG_CPU_S5PC100
 	// JPEG clock enable
 	jpeg_hclk = clk_get(NULL, "hclk_jpeg");
@@ -538,7 +539,7 @@ static int s3c_jpeg_remove(struct platform_device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_CPU_S5PC110
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 static int s3c_jpeg_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	/* clock disable */
@@ -580,7 +581,16 @@ static char banner[] __initdata = KERN_INFO "S3C JPEG Driver for S5PC110, (c) 20
 static int __init s3c_jpeg_init(void)
 {
 	printk(banner);
-	return platform_driver_register(&s3c_jpeg_driver);
+	printk("#### + s3c_jpeg_init ####\n");
+
+	if (platform_driver_register(&s3c_jpeg_driver) != 0) {
+                printk("fail to register jpeg platform device\n");
+                return -EPERM;
+        };
+
+	printk("#### - s3c_jpeg_init ####\n");
+
+	return 0;
 }
 
 static void __exit s3c_jpeg_exit(void)

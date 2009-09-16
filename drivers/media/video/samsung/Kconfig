@@ -18,8 +18,12 @@ source "drivers/media/video/samsung/fimc/Kconfig"
 
 if CPU_S5PC100 || CPU_S5PC110 
 source "drivers/media/video/samsung/tv20/Kconfig"
-source "drivers/media/video/samsung/jpeg_v2/Kconfig"
+#source "drivers/media/video/samsung/jpeg_v2/Kconfig"
 source "drivers/media/video/samsung/rotator/Kconfig"
+endif
+
+if CPU_S5PC100 || CPU_S5PC110 || CPU_S5P6442
+source "drivers/media/video/samsung/jpeg_v2/Kconfig"
 endif
 
 if CPU_S5PC100 
@@ -91,8 +95,8 @@ config VIDEO_SAMSUNG_MEMSIZE_MFC
 
 config VIDEO_SAMSUNG_MEMSIZE_JPEG
 	int "Memory size in kbytes for JPEG"
-	depends on VIDEO_JPEG 
-	default "8192"
+	depends on VIDEO_JPEG_V2
+	default "32768"
 endif
 
 if ARCH_S5PC1XX

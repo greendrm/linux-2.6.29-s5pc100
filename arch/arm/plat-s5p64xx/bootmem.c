@@ -83,7 +83,18 @@ static struct s3c_media_device media_devs[] = {
 		.memsize = 0,
 #endif
 		.paddr = 0,
+	},
+
+#ifdef CONFIG_VIDEO_SAMSUNG_MEMSIZE_JPEG
+        {
+                .id = S3C_MDEV_JPEG,
+                .name = "jpeg",
+                .node = 0,
+                .memsize = CONFIG_VIDEO_SAMSUNG_MEMSIZE_JPEG * SZ_1K,
+                .paddr = 0,
 	}
+#endif
+
 };
 
 static struct s3c_media_device *s3c_get_media_device(int dev_id, int node)

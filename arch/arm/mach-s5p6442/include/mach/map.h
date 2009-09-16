@@ -77,8 +77,15 @@
 #define S5P64XX_SZ_KEYPAD	SZ_4K
 #define S5P64XX_PA_KEYPAD	(0xF3100000)
 
-#define S5P64XX_PA_IIS	   	(0xF2000000)
-#define S3C_SZ_IIS		SZ_8K
+/* IIS */
+#define S5P64XX_PA_IIS_V50   	(0xC0B00000)
+#define S5P64XX_PA_IIS_V32   	(0xE2100000)
+#define S3C_SZ_IIS		SZ_4K
+#define S3C_PA_IIS_V50		S5P64XX_PA_IIS_V50
+#define S3C_PA_IIS_V32		S5P64XX_PA_IIS_V32
+
+/* AUDIO SUB SYSTEM */ 
+#define S5P64XX_PA_AUDSS                (0xC0900000)
 
 #define S5P64XX_PA_RTC	   	(0xEA300000)
 
@@ -103,8 +110,12 @@
 #define S5P64XX_SZ_WATCHDOG 	SZ_4K
 
 /* MFC */
-#define S5P6442_PA_MFC		(0xF1000000)
+#define S5P64XX_PA_MFC		(0xF1000000)
 #define S3C_SZ_MFC		SZ_4K
+
+/* JPEG */
+#define S5P64XX_PA_JPEG         (0xEFC00000)
+#define S3C_SZ_JPEG             SZ_4K
 
 /* NAND flash controller */
 #define S5P64XX_PA_NAND	   	(0xE7100000)

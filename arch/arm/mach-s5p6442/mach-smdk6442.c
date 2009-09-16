@@ -471,6 +471,7 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_fimc1,
 	&s3c_device_fimc2,
 	&s3c_device_mfc,
+	&s3c_device_jpeg,
 };
 
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -480,7 +481,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
-	{ I2C_BOARD_INFO("WM8580", 0x1a), },
+	{ I2C_BOARD_INFO("WM8580", 0x1b), },
 	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
 };
 
@@ -796,7 +797,7 @@ static void __init smdk6442_machine_init(void)
 
 	s5p6442_pm_init();
 
-//	smdk_backlight_register();
+	smdk_backlight_register();
 
 #if defined(CONFIG_MMC_SDHCI_S3C)
         s3c_sdhci_set_platdata();
