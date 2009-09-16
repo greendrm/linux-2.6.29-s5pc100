@@ -469,7 +469,7 @@ int fimc_hwset_output_yuv(struct fimc_control *ctrl, u32 pixelformat)
 
 	case V4L2_PIX_FMT_NV21:		/* fall through */
 	case V4L2_PIX_FMT_NV61:
-		cfg |= S3C_CIOCTRL_ORDER2P_MSB_CBCR;
+		cfg |= S3C_CIOCTRL_ORDER2P_MSB_CRCB;
 		cfg |= S3C_CIOCTRL_YCBCR_2PLANE;
 		break;
 
@@ -808,7 +808,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 {
 	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
-	cfg &= ~(S3C_MSCTRL_2PLANE_SHIFT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE |
+	cfg &= ~(S3C_MSCTRL_ORDER2P_SHIFT_MASK | S3C_MSCTRL_C_INT_IN_2PLANE |
 						S3C_MSCTRL_ORDER422_YCBYCR);
 
 	switch (pixelformat) {
@@ -817,7 +817,7 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
-		cfg |= S3C_MSCTRL_2PLANE_MSB_CRCB;
+		cfg |= S3C_MSCTRL_ORDER2P_LSB_CBCR;
 		cfg |= S3C_MSCTRL_C_INT_IN_2PLANE;
 		break;
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
