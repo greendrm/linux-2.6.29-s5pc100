@@ -745,8 +745,8 @@ static struct regulator_init_data max8698_ldo3_data = {
 static struct regulator_init_data max8698_ldo4_data = {
 	.constraints	= {
 		.name		= "VOPTIC_2.8V",
-		.min_uV		= 2800000,
-		.max_uV		= 2800000,
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.boot_on	= 1,
 	},
@@ -1005,10 +1005,10 @@ static int smdkc110_mipi_cam_power(int onoff)
  * 
 */
 #undef CAM_ITU_CH_A
-#define S5K3BA_ENABLED
+#undef S5K3BA_ENABLED
 #undef S5K4BA_ENABLED
-#undef S5K4EA_ENABLED
-#define S5K6AA_ENABLED
+#define S5K4EA_ENABLED
+#undef S5K6AA_ENABLED
 
 /* External camera module setting */
 /* 2 ITU Cameras */
