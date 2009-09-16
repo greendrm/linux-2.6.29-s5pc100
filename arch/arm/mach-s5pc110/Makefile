@@ -23,7 +23,7 @@ obj-$(CONFIG_S5PC11X_SETUP_SDHCI)       += setup-sdhci.o
 # machine support
 
 obj-$(CONFIG_MACH_SMDKC110)	+= mach-smdkc110.o
-obj-$(CONFIG_MACH_SMDKC110)	+= button-smdkc110.o
+#obj-$(CONFIG_MACH_SMDKC110)	+= button-smdkc110.o
 
 # LEDs support
 led-$(CONFIG_MACH_SMDKC110)     += leds-s5pc110.o

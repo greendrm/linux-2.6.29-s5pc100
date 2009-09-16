@@ -702,6 +702,7 @@ static struct regulator_init_data max8698_dcdc2_data = {
 		.name		= "VCC_INTERNAL",
 		.min_uV		= 1200000,
 		.max_uV		= 1200000,
+		.always_on	= 1,
 		.apply_uV	= 1,
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(dcdc2_consumers),
@@ -725,9 +726,9 @@ static struct regulator_init_data max8698_dcdc3_data = {
 
 static struct regulator_init_data max8698_ldo2_data = {
 	.constraints	= {
-		.name		= "VALIVE_1.2V",
-		.min_uV		= 1200000,
-		.max_uV		= 1200000,
+		.name		= "VALIVE_1.1V",
+		.min_uV		= 1100000,
+		.max_uV		= 1100000,
 		.apply_uV	= 1,
 		.always_on	= 1,
 	},
@@ -735,18 +736,18 @@ static struct regulator_init_data max8698_ldo2_data = {
 
 static struct regulator_init_data max8698_ldo3_data = {
 	.constraints	= {
-		.name		= "VUSB_1.2V/MIPI_1.2V",
-		.min_uV		= 1200000,
-		.max_uV		= 1200000,
+		.name		= "VUOTG_D_1.1V/VUHOST_D_1.1V",
+		.min_uV		= 1100000,
+		.max_uV		= 1100000,
 		.apply_uV	= 1,
 	},
 };
 
 static struct regulator_init_data max8698_ldo4_data = {
 	.constraints	= {
-		.name		= "VOPTIC_2.8V",
-		.min_uV		= 2800000,
-		.max_uV		= 2800000,
+		.name		= "V_MIPI_1.8V",
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.boot_on	= 1,
 	},
@@ -759,7 +760,7 @@ static struct regulator_consumer_supply smdkc110_hsmmc1_supply = {
 
 static struct regulator_init_data max8698_ldo5_data = {
 	.constraints	= {
-		.name		= "VTF_2.8V",
+		.name		= "VMMC_2.8V/VEXT_2.8V",
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
@@ -788,7 +789,7 @@ static struct regulator_init_data max8698_ldo7_data = {
 
 static struct regulator_init_data max8698_ldo8_data = {
 	.constraints	= {
-		.name		= "{VADC/VCAM/VUSB}_3.3V",
+		.name		= "VUOTG_A_3.3V/VUHOST_A_3.3V",
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 		.apply_uV	= 1,
@@ -797,9 +798,9 @@ static struct regulator_init_data max8698_ldo8_data = {
 
 static struct regulator_init_data max8698_ldo9_data = {
 	.constraints	= {
-		.name		= "VCAM_2.8V",
-		.min_uV		= 2800000,
-		.max_uV		= 2800000,
+		.name		= "{VADC/VSYS/VKEY}_2.8V",
+		.min_uV		= 3000000,
+		.max_uV		= 3000000,
 		.apply_uV	= 1,
 	},
 };
