@@ -2142,3 +2142,15 @@ v2.6.29.4-dev-1-4-32: SungJun Bae
 	Added Files:
 		A	arch/arm/plat-s5p64xx/include/plat/regs-audss.h
 		A	sound/soc/s3c/smdk6442_wm8580.c
+
+v2.6.29.4-dev-1-4-33: Jae-Cheol Lee
+	- Support DVFS with PMIC(MAX8698) on SMDKC110
+	- Removed button driver for smdkc110 for supporting PMIC GPIO
+	control. If you want to use external interrupt for wakeup testing,
+	you should modify Makefile as shown below.
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/Makefile
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/s5pc11x-cpufreq.c
+		M	drivers/regulator/max8698.c
