@@ -288,6 +288,20 @@ struct platform_device s3c_device_wdt = {
 
 EXPORT_SYMBOL(s3c_device_wdt);
 
+/* rotator interface */
+static struct resource s3c_rotator_resource[] = {
+        [0] = {
+                .start = S5P64XX_PA_ROTOTOR,
+                .end   = S5P64XX_PA_ROTOTOR + S5P64XX_SZ_ROTOTOR - 1,
+                .flags = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start = IRQ_ROTATOR,
+                .end   = IRQ_ROTATOR,
+                .flags = IORESOURCE_IRQ,
+        }
+};
+
 /* Keypad interface */
 static struct resource s3c_keypad_resource[] = {
 	[0] = {
