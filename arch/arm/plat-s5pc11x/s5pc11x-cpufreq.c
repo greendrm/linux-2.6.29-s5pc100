@@ -47,8 +47,9 @@ static struct regulator *internal_regulator;
 static unsigned long set1_gpio;
 static unsigned long set2_gpio;
 static unsigned long set3_gpio;
+static unsigned long privious_arm_volt;
 
-
+#define MAX8698_RAMP_RATE	10	// 10mV/us (default)
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
 	{L0, 800*1000},
@@ -74,6 +75,50 @@ static const int s5pc110_volt_table[][3] = {
 	{L3, DVSARM4, DVSINT1},
 	/*{Lv, VDD_ARM(uV), VDD_INT(uV)}*/
 };
+
+static const unsigned long max8698_dvs_table[16] = {
+	750, 800, 850, 900, 950, 1000, 1050, 1100,
+	1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500,
+};
+
+struct s5pc11x_dvs_conf {
+	const unsigned long	lvl;		// DVFS level : L0,L1,L2,L3...
+	const unsigned long	dvs_arm;	// MAX8698 DVSARMx register
+	const unsigned long	dvs_int;
+	unsigned long		arm_volt;	// mV
+	unsigned long		int_volt;	// mV
+};
+
+static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
+	{
+		.lvl		= L0,
+		.dvs_arm	= DVSARM1,
+		.dvs_int	= DVSINT1,
+		.arm_volt	= 0,
+		.int_volt	= 0,
+	}, {
+		.lvl		= L1,
+		.dvs_arm	= DVSARM2,
+		.dvs_int	= DVSINT1,
+		.arm_volt	= 0,
+		.int_volt	= 0,
+
+	}, {
+		.lvl		= L2,
+		.dvs_arm	= DVSARM3,
+		.dvs_int	= DVSINT1,
+		.arm_volt	= 0,
+		.int_volt	= 0,
+		
+	}, { 
+		.lvl		= L3,
+		.dvs_arm	= DVSARM4,
+		.dvs_int	= DVSINT1,
+		.arm_volt	= 0,
+		.int_volt	= 0,
+	},	
+};
+
 
 static void s5pc110_set_volt(unsigned long val)
 {
@@ -137,7 +182,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	struct cpufreq_freqs freqs;
 	int ret = 0;
 	unsigned long arm_clk;
-	unsigned int index,reg,arm_volt,int_volt;
+	unsigned int index,reg,arm_volt,int_volt, dvs_arm_index, dvs_int_index;
 
 	freqs.old = s5pc110_getspeed(0);
 
@@ -154,8 +199,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	if (freqs.new == freqs.old)
 		return -EINVAL;
 	
-	arm_volt = s5pc110_volt_table[index][1];
-	int_volt = s5pc110_volt_table[index][2];
+	dvs_arm_index = s5pc110_dvs_conf[index].dvs_arm;
+	dvs_int_index = s5pc110_dvs_conf[index].dvs_int;
 	
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
@@ -165,8 +210,9 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 		regulator_set_voltage(internal_regulator, int_volt, int_volt);
 #else
-		s5pc110_set_volt(arm_volt);
-		s5pc110_set_volt(int_volt);
+		s5pc110_set_volt(dvs_arm_index);
+		s5pc110_set_volt(dvs_int_index);
+		udelay((s5pc110_dvs_conf[index].arm_volt - privious_arm_volt)/MAX8698_RAMP_RATE);
 #endif
 	}
 		
@@ -182,8 +228,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 		regulator_set_voltage(internal_regulator, int_volt, int_volt);
 #else
-		s5pc110_set_volt(arm_volt);
-		s5pc110_set_volt(int_volt);
+		s5pc110_set_volt(dvs_arm_index);
+		s5pc110_set_volt(dvs_int_index);
 #endif
 	}
 	
@@ -249,13 +295,18 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 	}
 
 	max8698_set_dvsarm1(0x9);	// 1.2v
+	s5pc110_dvs_conf[0].arm_volt = max8698_dvs_table[0x9];
 	max8698_set_dvsarm2(0x7);	// 1.1v
+	s5pc110_dvs_conf[1].arm_volt = max8698_dvs_table[0x7];
 	max8698_set_dvsarm3(0x5);	// 1.0v
+	s5pc110_dvs_conf[2].arm_volt = max8698_dvs_table[0x5];
 	max8698_set_dvsarm4(0x3);	// 0.9v
+	s5pc110_dvs_conf[3].arm_volt = max8698_dvs_table[0x3];
 	max8698_set_dvsint1(0x9);	// 1.2v
 	max8698_set_dvsint2(0x7);	// 1.1v
+
+	privious_arm_volt = s5pc110_dvs_conf[0].arm_volt;
 #endif
-	
 
 	if (policy->cpu != 0)
 		return -EINVAL;
