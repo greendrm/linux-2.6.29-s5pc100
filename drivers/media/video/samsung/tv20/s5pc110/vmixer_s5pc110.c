@@ -442,6 +442,8 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
+
+	case TVOUT_480P_59:
 		temp_reg = S5P_MXR_SD | S5P_MXR_NTSC;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
@@ -454,13 +456,17 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		break;
 
 	case TVOUT_720P_50:
-
+		
+	case TVOUT_720P_59:
+		
 	case TVOUT_720P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_720P_MODE;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
 
 	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_59:		
 
 	case TVOUT_1080I_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080I_MODE;
@@ -469,6 +475,8 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 // C110
 	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_59:		
 
 	case TVOUT_1080P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
