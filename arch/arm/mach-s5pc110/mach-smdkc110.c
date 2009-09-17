@@ -686,6 +686,11 @@ static struct regulator_init_data max8698_dcdc1_data = {
 		.max_uV		= 1500000,
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
+		.state_mem	= {
+			.uV	= 0,
+			.mode	= REGULATOR_MODE_STANDBY,
+			.enabled = 0,
+		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
 	.consumer_supplies	= dcdc1_consumers,
@@ -704,6 +709,11 @@ static struct regulator_init_data max8698_dcdc2_data = {
 		.max_uV		= 1200000,
 		.always_on	= 1,
 		.apply_uV	= 1,
+		.state_mem	= {
+			.uV	= 0,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 0,
+		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(dcdc2_consumers),
 	.consumer_supplies	= dcdc2_consumers,
@@ -731,6 +741,11 @@ static struct regulator_init_data max8698_ldo2_data = {
 		.max_uV		= 1100000,
 		.apply_uV	= 1,
 		.always_on	= 1,
+		.state_mem	= {
+			.uV	= 1100000,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 1,
+		},
 	},
 };
 
@@ -740,6 +755,11 @@ static struct regulator_init_data max8698_ldo3_data = {
 		.min_uV		= 1100000,
 		.max_uV		= 1100000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 1100000,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
@@ -750,6 +770,11 @@ static struct regulator_init_data max8698_ldo4_data = {
 		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.boot_on	= 1,
+		.state_mem ={
+			.uV		= 1800000,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
@@ -764,6 +789,11 @@ static struct regulator_init_data max8698_ldo5_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2800000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 	.num_consumer_supplies	= 1,
 	.consumer_supplies	= &smdkc110_hsmmc1_supply,
@@ -775,6 +805,11 @@ static struct regulator_init_data max8698_ldo6_data = {
 		.min_uV		= 2600000,
 		.max_uV		= 2600000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2600000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 
@@ -784,6 +819,11 @@ static struct regulator_init_data max8698_ldo7_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2800000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 
@@ -793,6 +833,11 @@ static struct regulator_init_data max8698_ldo8_data = {
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 0,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
@@ -802,6 +847,11 @@ static struct regulator_init_data max8698_ldo9_data = {
 		.min_uV		= 3000000,
 		.max_uV		= 3000000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 3000000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 

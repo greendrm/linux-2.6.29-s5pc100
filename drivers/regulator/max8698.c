@@ -341,7 +341,7 @@ static int max8698_ldo_disable(struct regulator_dev *rdev)
 	} else {
 		value = max8698_read_reg(max8698, MAX8698_REG_ONOFF1);
 		shift = 7 - (ldo - MAX8698_DCDC1);
-		value |= (1 << shift);
+		value &= ~(1 << shift);
 		max8698_write_reg(max8698, value, MAX8698_REG_ONOFF1);
 	}
 
@@ -447,6 +447,8 @@ static struct regulator_ops max8698_ldo_ops = {
 	.disable	= max8698_ldo_disable,
 	.get_voltage	= max8698_ldo_get_voltage,
 	.set_voltage	= max8698_ldo_set_voltage,
+	.set_suspend_enable	= max8698_ldo_enable,
+	.set_suspend_disable	= max8698_ldo_disable,
 };
 
 static struct regulator_ops max8698_dcdc_ops = {
@@ -456,6 +458,8 @@ static struct regulator_ops max8698_dcdc_ops = {
 	.disable	= max8698_ldo_disable,
 	.get_voltage	= max8698_ldo_get_voltage,
 	.set_voltage	= max8698_ldo_set_voltage,
+	.set_suspend_enable	= max8698_ldo_enable,
+	.set_suspend_disable	= max8698_ldo_disable,
 };
 
 static struct regulator_desc regulators[] = {
