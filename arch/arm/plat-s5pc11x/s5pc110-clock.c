@@ -555,23 +555,6 @@ static struct clk_sources clkset_fimc2 = {
 	.nr_sources	= ARRAY_SIZE(clkset_fimc2_list),
 };
 
-static struct clk *clkset_csis_list[] = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,	
-	&clk_mout_mpll.clk,
-	&clk_mout_epll.clk,
-	&clk_mout_vpll.clk,
-};
-
-static struct clk_sources clkset_csis = {
-	.sources	= clkset_csis_list,
-	.nr_sources	= ARRAY_SIZE(clkset_csis_list),
-};
-
 static struct clk *clkset_pwi_list[] = {
 	&clk_srclk,
 	&clk_mout_epll.clk,
@@ -948,25 +931,6 @@ static struct clksrc_clk clk_fimc2 = {
 	.reg_source	= S5P_CLK_SRC3,
 };
 
-static struct clksrc_clk clk_csis = {
-	.clk	= {
-		.name		= "mipi-csis",
-		.id		= -1,
-		.ctrlbit        = S5P_CLKGATE_IP0_CSIS,
-		.enable		= s5pc11x_clk_ip0_ctrl,
-		.set_parent	= s5pc11x_setparent_clksrc,
-		.get_rate	= s5pc11x_getrate_clksrc,
-		.set_rate	= s5pc11x_setrate_clksrc,
-		.round_rate	= s5pc11x_roundrate_clksrc,
-	},
-	.shift		= S5P_CLKSRC1_CSIS_SHIFT,
-	.mask		= S5P_CLKSRC1_CSIS_MASK,
-	.sources	= &clkset_csis,
-	.divider_shift	= S5P_CLKDIV1_CSIS_SHIFT,
-	.reg_divider	= S5P_CLK_DIV1,
-	.reg_source	= S5P_CLK_SRC1,
-};
-
 struct clk clk_i2s_cd0 = {
 	.name		= "i2s_cdclk0",
 	.id		= -1,
@@ -1208,7 +1172,6 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc0,
 	&clk_fimc1,
 	&clk_fimc2,
-	&clk_csis,
 };
 
 static void __init_or_cpufreq s5pc11x_set_clksrc(struct clksrc_clk *clk)
@@ -1367,7 +1330,6 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
 	&clk_fimc2.clk,
-	&clk_csis.clk,
 };
 
 void __init s5pc110_register_clocks(void)

@@ -271,7 +271,7 @@ static struct clk init_clocks[] = {
 		.ctrlbit        = S5P_CLKGATE_IP0_IPC,
 		.pd		= &pd_cam,
 	}, {
-		.name           = "csis",
+		.name           = "mipi-csis",
 		.id             = -1,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,

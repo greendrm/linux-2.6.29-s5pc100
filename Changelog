@@ -2154,3 +2154,15 @@ v2.6.29.4-dev-1-4-33: Jae-Cheol Lee
 		M	arch/arm/mach-s5pc110/mach-smdkc110.c
 		M	arch/arm/plat-s5pc11x/s5pc11x-cpufreq.c
 		M	drivers/regulator/max8698.c
+
+v2.6.29.4-dev-1-4-34: SungJun Bae
+	- Temporary Release for s5pc100(2009.09.15)
+
+v2.6.29.4-dev-1-4-35: Jonghun Han
+	- Support S5PC110 FIMD PM on SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Makefile
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb.h
+		M       drivers/video/samsung/s3cfb_tl2796.c

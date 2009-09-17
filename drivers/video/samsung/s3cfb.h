@@ -160,6 +160,7 @@ struct s3cfb_lcd {
 	struct 	s3cfb_lcd_polarity polarity;
 
 	void 	(*init_ldi)(void);
+	void 	(*deinit_ldi)(void);	
 };
 
 /*
