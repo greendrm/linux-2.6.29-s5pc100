@@ -477,7 +477,7 @@ s32 hdmi_set_tg(s5p_hdmi_v_fmt mode)
  */
 static s32 hdmi_set_clr_depth(s5p_hdmi_color_depth cd)
 {
-	// if color depth is supported by RX, set GCP packet
+	/* if color depth is supported by RX, set GCP packet */
 	switch (cd) {
 		
 	case HDMI_CD_48:
@@ -1025,83 +1025,67 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 						s5p_tv_o_mode out_mode)
 {
-//	s5p_tv_hdmi_disp_mode hdmi_disp_num;
 	s5p_hdmi_v_fmt hdmi_v_fmt;
 
-	HDMIPRINTK("%d,%d\n\r", disp_mode, out_mode);
+	HDMIPRINTK("disp mode %d, output mode%d\n\r", disp_mode, out_mode);
 
 	switch (disp_mode) {
-
-	case TVOUT_480P_60_16_9:
-
-	case TVOUT_480P_60_4_3:
-
-	case TVOUT_576P_50_16_9:
-
-	case TVOUT_576P_50_4_3:
-
-	case TVOUT_720P_60:
-
-	case TVOUT_720P_50:
-
-	case TVOUT_1080P_60:
-
-	case TVOUT_1080P_50:		
-
-		writel(INT_PRO_MODE_PROGRESSIVE, hdmi_base + S5P_INT_PRO_MODE);
-		break;
-		
-	case TVOUT_1080I_60:
-
-	case TVOUT_1080I_50:	
-
-		writel(INT_PRO_MODE_INTERLACE, hdmi_base + S5P_INT_PRO_MODE);
-		break;		
-
-	default:
-		HDMIPRINTK("invalid disp_mode parameter(%d)\n\r", disp_mode);
-		return S5P_TV_HDMI_ERR_INVALID_PARAM;
-		break;
-	}
-
-	switch (disp_mode) {
-
+	/* 480p */
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
 		hdmi_v_fmt = v720x480p_60Hz;
 		break;
+	case TVOUT_480P_59:
+		hdmi_v_fmt = v720x480p_59Hz;
+		break;		
 
+	/* 576p */
 	case TVOUT_576P_50_16_9:
 
 	case TVOUT_576P_50_4_3:
 		hdmi_v_fmt = v720x576p_50Hz;
 		break;
 
+	/* 720p */		
 	case TVOUT_720P_60:
 		hdmi_v_fmt = v1280x720p_60Hz;
+		break;
+		
+	case TVOUT_720P_59:
+		hdmi_v_fmt = v1280x720p_59Hz;
 		break;
 
 	case TVOUT_720P_50:
 		hdmi_v_fmt = v1280x720p_50Hz;
 		break;
 
+	/* 1080p */
 	case TVOUT_1080P_60:
 		hdmi_v_fmt = v1920x1080p_60Hz;
+		break;
+
+	case TVOUT_1080P_59:
+		hdmi_v_fmt = v1920x1080p_59Hz;
 		break;
 
 	case TVOUT_1080P_50:
 		hdmi_v_fmt = v1920x1080p_50Hz;
 		break;
 
+	/* 1080i */
 	case TVOUT_1080I_60:
 		hdmi_v_fmt = v1920x1080i_60Hz;
+		break;
+
+	case TVOUT_1080I_59:
+		hdmi_v_fmt = v1920x1080i_59Hz;
 		break;
 
 	case TVOUT_1080I_50:
 		hdmi_v_fmt = v1920x1080i_50Hz;
 		break;
-		
+				
 	default:
 		HDMIPRINTK(" invalid disp_mode parameter(%d)\n\r", disp_mode);
 		return S5P_TV_HDMI_ERR_INVALID_PARAM;
@@ -1122,7 +1106,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	}
 
 // TODO: C110 - color mode check
-	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24,HDMI_PIXEL_RATIO_16_9);
+	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, HDMI_PIXEL_RATIO_16_9);
 	
 	return HDMI_NO_ERROR;
 }
@@ -1547,8 +1531,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | temp_reg,
 	       hdmi_base + S5P_HDMI_CON_0);
-// TODO: C110_HDCP
-/*
+
 	if (hdcp_en) {
 		__s5p_init_hdcp(true, ddc_port);
 		
@@ -1556,7 +1539,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 			HDMIPRINTK("HDCP start failed\n");
 		}
 	}
-*/
+	
 	HDMIPRINTK("HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
 	//	   readl(hdmi_base + S5P_HDCP_CTRL),
 		   readl(hdmi_base + S5P_HPD),
