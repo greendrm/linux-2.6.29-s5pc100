@@ -51,10 +51,9 @@ void __init s3c_ipc_set_platdata(struct s3c_platform_ipc *pd)
 	npd = kmemdup(pd, sizeof(struct s3c_platform_ipc), GFP_KERNEL);
 	if (!npd)
 		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
-
-	npd->cfg_gpio = s3c_ipc_cfg_gpio;
-
-	s3c_device_ipc.dev.platform_data = npd;
+	else {
+		npd->cfg_gpio = s3c_ipc_cfg_gpio;
+		s3c_device_ipc.dev.platform_data = npd;
+	}
 }
-
 

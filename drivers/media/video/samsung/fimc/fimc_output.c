@@ -467,6 +467,8 @@ static void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 {
 	struct v4l2_rect bound, win;
 	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
+	memset(&bound, 0, sizeof(bound));
+	memset(&win, 0, sizeof(win));
 
 	switch (ctrl->out->rotate) {
 	case 0:
@@ -1392,7 +1394,7 @@ static int fimc_update_in_queue_addr(struct fimc_control *ctrl, u32 index, dma_a
 	
 	ctrl->out->buf[index].base[FIMC_ADDR_Y] = addr[FIMC_ADDR_Y];
 	ctrl->out->buf[index].base[FIMC_ADDR_CB] = addr[FIMC_ADDR_CB];
-	ctrl->out->buf[index].base[FIMC_ADDR_CR] = addr[FIMC_ADDR_CR];	
+	ctrl->out->buf[index].base[FIMC_ADDR_CR] = addr[FIMC_ADDR_CR];
 
 	return 0;
 }
