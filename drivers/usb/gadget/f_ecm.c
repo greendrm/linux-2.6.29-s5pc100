@@ -506,6 +506,11 @@ static int ecm_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 				);
 			ecm->port.cdc_filter = DEFAULT_FILTER;
 			DBG(cdev, "activate ecm\n");
+			/* To pass the CH.9 Test on USBCV 1.3 */
+			ecm->port.in = ep_choose(cdev->gadget,
+					ecm->hs.in, ecm->fs.in);
+			ecm->port.out = ep_choose(cdev->gadget,
+					ecm->hs.out, ecm->fs.out);
 			net = gether_connect(&ecm->port);
 			if (IS_ERR(net))
 				return PTR_ERR(net);

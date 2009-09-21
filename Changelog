@@ -2180,3 +2180,18 @@ v2.6.29.4-dev-1-4-36: Jaeryul Oh
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
 
+v2.6.29.4-dev-1-4-37: Kyoungil Kim
+	- Support GadgetFS for SMDKC100 and SMDKC110
+	- Modified to pass the Ethernet Gadget CH9 Test(High Speed and Full
+			Speed) on USBCV1.3
+	- Modified to pass the Hibernation Test for USB Gadget
+
+	Modified Files :
+		M       arch/arm/configs/smdkc100mtd_defconfig
+		M       arch/arm/configs/smdkc100nfs_defconfig
+		M       arch/arm/plat-s3c/include/plat/regs-otg.h
+		M       drivers/usb/gadget/inode.c
+		M       drivers/usb/gadget/s3c_udc_otg.c
+		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+		M       drivers/usb/gadget/f_ecm.c
+		M       drivers/usb/gadget/f_rndis.c

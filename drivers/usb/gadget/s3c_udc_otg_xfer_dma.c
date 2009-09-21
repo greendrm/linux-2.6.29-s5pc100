@@ -467,7 +467,8 @@ static irqreturn_t s3c_udc_irq(int irq, void *_dev)
 				dev->ep0state = WAIT_FOR_SETUP;
 				reset_available = 0;
 				s3c_udc_pre_setup();
-			}
+			} else
+				reset_available = 1;
 
 		} else {
 			reset_available = 1;
@@ -699,7 +700,6 @@ static void s3c_ep0_read(struct s3c_udc *dev)
 		dev->ep0state = WAIT_FOR_SETUP;
 		set_conf_done = 1;
 		s3c_udc_ep0_zlp();
-		done(ep, req, 0);
 
 		DEBUG_EP0("%s: req.length = 0, bRequest = %d\n", __func__, usb_ctrl.bRequest);
 		return;
@@ -780,7 +780,7 @@ static int s3c_udc_get_status(struct s3c_udc *dev,
 		break;
 
 	case USB_RECIP_ENDPOINT:
-		if (ep_num > 4 || crq->wLength > 2) {
+		if (crq->wLength > 2) {
 			DEBUG_SETUP("\tGET_STATUS: Not support EP or wLength\n");
 			return 1;
 		}
@@ -898,8 +898,9 @@ static int s3c_udc_set_halt(struct usb_ep *_ep, int value)
 	u8		ep_num;
 
 	ep = container_of(_ep, struct s3c_ep, ep);
+	ep_num = ep_index(ep);
 
-	if (unlikely (!_ep || (!ep->desc && ep->ep.name != ep0name) ||
+	if (unlikely (!_ep || !ep->desc || ep_num == EP0_CON ||
 			ep->desc->bmAttributes == USB_ENDPOINT_XFER_ISOC)) {
 		DEBUG("%s: %s bad ep or descriptor\n", __func__, ep->ep.name);
 		return -EINVAL;
@@ -916,7 +917,6 @@ static int s3c_udc_set_halt(struct usb_ep *_ep, int value)
 	}
 
 	dev = ep->dev;
-	ep_num = ep_index(ep);
 	DEBUG("%s: ep_num = %d, value = %d\n", __func__, ep_num, value);
 
 	spin_lock_irqsave(&dev->lock, flags);
