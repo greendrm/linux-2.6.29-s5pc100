@@ -72,12 +72,13 @@ void __init s3cfb_set_platdata(struct s3c_platform_fb *pd)
 	npd = kmemdup(pd, sizeof(struct s3c_platform_fb), GFP_KERNEL);
 	if (!npd)
 		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
+	else {
+		for (i = 0; i < npd->nr_wins; i++)
+			npd->nr_buffers[i] = 1;
 
-	for (i = 0; i < npd->nr_wins; i++)
-		npd->nr_buffers[i] = 1;
+		npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP + 1;
 
-	npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP + 1;
-
-	s3c_device_fb.dev.platform_data = npd;
+		s3c_device_fb.dev.platform_data = npd;
+	}
 }
 

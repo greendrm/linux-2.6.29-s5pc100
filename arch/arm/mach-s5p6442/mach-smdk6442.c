@@ -645,7 +645,7 @@ static struct s3c_platform_camera __initdata s5k4ba = {
 #else
 	.clk_name	= "sclk_cam1",
 #endif
-	.clk_rate	= 44000000,
+	.clk_rate	= 50000000,
 	.line_length	= 1920,
 	.width		= 800,
 	.height		= 600,

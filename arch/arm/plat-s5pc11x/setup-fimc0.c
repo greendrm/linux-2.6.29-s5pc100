@@ -125,7 +125,8 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 	return 0;
 
 err_clk3:
-	clk_put(lclk_parent);
+	if (lclk_parent)
+		clk_put(lclk_parent);
 
 err_clk2:
 	clk_put(lclk);

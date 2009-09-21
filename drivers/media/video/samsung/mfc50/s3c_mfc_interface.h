@@ -29,7 +29,7 @@
 #define IOCTL_MFC_GET_CONFIG		(0x00800102)
 
 /* MFC H/W support maximum 32 extra DPB. */
-#define MFC_MAX_EXTRA_DPB		(3) 
+#define MFC_MAX_EXTRA_DPB		(5) 
 
 typedef enum
 {

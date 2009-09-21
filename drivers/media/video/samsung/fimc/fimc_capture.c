@@ -452,7 +452,7 @@ static int fimc_fmt_avail(struct fimc_control *ctrl,
 	 * Available fmt should be varied for each FIMC
 	 */
 
-	for (i = 0; i < sizeof(capture_fmts); i++) {
+	for (i = 0; i < ARRAY_SIZE(capture_fmts); i++) {
 		if (capture_fmts[i].pixelformat == f->fmt.pix.pixelformat)
 			return 0;
 	}
@@ -871,7 +871,7 @@ int fimc_streamon_capture(void *fh)
 
 	fimc_hwset_enable_irq(ctrl, 0, 1);
 
-	if (!ctrl->cam || !ctrl->cam->initialized)
+	if (!ctrl->cam->initialized)
 		fimc_init_camera(ctrl);
 
 	fimc_hwset_camera_source(ctrl);

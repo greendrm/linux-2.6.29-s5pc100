@@ -438,7 +438,7 @@ static struct clk_sources clkset_cam0 = {
 
 static struct clk_sources clkset_cam1 = {
 	.sources	= clkset_cam1_list,
-	.nr_sources	= ARRAY_SIZE(clkset_cam0_list),
+	.nr_sources	= ARRAY_SIZE(clkset_cam1_list),
 };
 
 static struct clk *clkset_fimc0_list[] = {

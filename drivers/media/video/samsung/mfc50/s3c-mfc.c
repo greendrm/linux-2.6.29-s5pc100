@@ -530,6 +530,7 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 	mfc_debug("Interrupt !! : %d\n", intReason);
 	
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
+		||((intReason & R2H_CMD_SLICE_DONE_RET) == R2H_CMD_SLICE_DONE_RET)
 		||((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
 		||((intReason & R2H_CMD_INIT_BUFFERS_RET) == R2H_CMD_INIT_BUFFERS_RET)		
 		||((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)

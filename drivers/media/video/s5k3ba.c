@@ -108,9 +108,9 @@ again:
 
 	/* abnormal case: retry 5 times */
 	if (retry < 5) {
-		dev_err(&client->dev, "%s: address: 0x%02x%02x, " \
-			"value: 0x%02x%02x\n", __func__, \
-			reg[0], reg[1], reg[2], reg[3]);
+		dev_err(&client->dev, "%s: address: 0x%02x, " \
+			"value: 0x%02x\n", __func__, \
+			reg[0], reg[1]);
 		retry++;
 		goto again;
 	}
