@@ -70,3 +70,10 @@ config SMDKC110_SD_CH2_8BIT
 	help
 		IF channel 2 uses 8-bit bus, channel 3 shoule be disabled.
 
+config DM9000_16BIT
+	bool "Use 16-bit bus for DM9000 ethernet controller"
+	depends on MACH_SMDKC110
+	default n	
+	help
+		Some SMDKC110 board have 16bit data bus for DM9000 ethernet controller..
+
