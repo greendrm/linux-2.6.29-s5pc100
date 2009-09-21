@@ -218,10 +218,10 @@
 #define S3C_FIMV_ENC_UP_MV_ADR		S3C_FIMVREG(0x0600) /* upper motion vector addr */
 #define S3C_FIMV_ENC_COZERO_FLAG_ADR	S3C_FIMVREG(0x0610) /* direct cozero flag addr */
 #define S3C_FIMV_ENC_UP_INTRA_MD_ADR	S3C_FIMVREG(0x0608) /* upper intra MD addr */
-#define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x060c) /* upper intra PRED addr */
+
+#define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x0740) /* upper intra PRED addr */
+
 #define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
-//#define S3C_FIMV_ENC_CUR_LUMA_ADR	S3C_FIMVREG(0x0718) /* current Luma addr */
-//#define S3C_FIMV_ENC_CUR_CHROMA_ADR	S3C_FIMVREG(0x071c) /* current Chroma addr */
 #define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
 #define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0700) /* ref0 Chroma addr */
 #define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0620) /* ref1 Luma addr */
@@ -230,7 +230,6 @@
 #define S3C_FIMV_ENC_REF2_CHROMA_ADR	S3C_FIMVREG(0x0708) /* ref2 Chroma addr */
 #define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */
 #define S3C_FIMV_ENC_REF3_CHROMA_ADR	S3C_FIMVREG(0x070c) /* ref3 Chroma addr */
-//#define S3C_FIMV_ENC_MV_BUF_ADR		S3C_FIMVREG(0x0720) /* motion vector buf addr */
 
 /* Codec common register */
 #define S3C_FIMV_ENC_HSIZE_PX		S3C_FIMVREG(0x0818) /* frame width at encoder */
