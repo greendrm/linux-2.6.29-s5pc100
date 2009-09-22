@@ -64,7 +64,7 @@
 #define S3C_ROT_CTRL_DEGREE_90				(1 << 4)
 #define S3C_ROT_CTRL_DEGREE_180				(2 << 4)
 #define S3C_ROT_CTRL_DEGREE_270				(3 << 4)
-#define S3C_ROT_CTRL_DEGREE_MASK			(3 << 4)
+#define S3C_ROT_CTRL_DEGREE_MASK			(0xF << 4)
 
 #define S3C_ROT_CTRL_FLIP_BYPASS			(0 << 6)
 #define S3C_ROT_CTRL_FLIP_VERTICAL			(2 << 6)
