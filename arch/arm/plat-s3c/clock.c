@@ -124,8 +124,39 @@ int clk_enable(struct clk *clk)
 	if ((clk->usage++) == 0) {
 #if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 		if (clk->pd != NULL) {
-			if (clk->pd->ref_count == 0)
+			if (clk->pd->ref_count == 0) {
+#if defined(CONFIG_CPU_S5PC110)
+/*
+ * IPs on Powerdomain are initialized with "SYNC RESET". There may be
+ * an failure on intialization when clocks disabled before power domain
+ * turned on. Before trun on the power block, all included ip's clock should
+ * be enabled.
+ * Sequence : All IP's(in the same power block) clock ON --> Power Block ON
+ * --> All IP's clock OFF --> This IP's clock ON
+ */
+				unsigned long iter = clk->pd->nr_clks, i;
+				struct clk *tmp_clks;
+				/* Enable all clocks on this power block */
+				i = iter;
+				do {
+					i--;
+					tmp_clks = clk->pd->pd_clks[i];
+					(tmp_clks->enable)(tmp_clks, 1);
+				} while(i);
+#endif			
 				(clk->pd->pd_set)(clk->pd, 1);
+#if defined(CONFIG_CPU_S5PC110)
+				/* Disable all clocks on this power block */
+				i = iter;
+				do {
+					i--;
+					tmp_clks = clk->pd->pd_clks[i];
+					(tmp_clks->enable)(tmp_clks, 0);
+				} while(i);
+	
+#endif
+
+			}
 			(clk->pd->ref_count++);
 		}
 #endif
@@ -147,13 +178,8 @@ void clk_disable(struct clk *clk)
 		(clk->enable)(clk, 0);
 #if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
 		if (clk->pd != NULL) {
-/*
- * Do not turn off power domain in case of C110 EVT0.
- */
-#if !defined(CONFIG_CPU_S5PC110)
 			if (clk->pd->ref_count == 1)
 				(clk->pd->pd_set)(clk->pd, 0);
-#endif			
 			if (clk->pd->ref_count > 0)
 				(clk->pd->ref_count--);
 		}

@@ -41,9 +41,9 @@
 #define LP_DMA_PERIOD (105 * 1024) //when LCD is enabled
 //#define LP_DMA_PERIOD (125 * 1024)   //when LCD is disabled
 
-struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
+struct s5p_pcm_pdata s3c_pcm_pdat;
 
-struct s5pc1xx_runtime_data {
+struct s5p_runtime_data {
 	spinlock_t lock;
 	int state;
 	unsigned int dma_loaded;
@@ -53,19 +53,19 @@ struct s5pc1xx_runtime_data {
 	dma_addr_t dma_start;
 	dma_addr_t dma_pos;
 	dma_addr_t dma_end;
-	struct s5pc1xx_pcm_dma_params *params;
+	struct s5p_pcm_dma_params *params;
 };
 
-static struct s5pc1xx_i2s_pdata *s3ci2s_func = NULL;
+static struct s5p_i2s_pdata *s3ci2s_func = NULL;
 
-/* s5pc1xx_pcm_enqueue
+/* s5p_pcm_enqueue
  *
  * place a dma buffer onto the queue for the dma system
  * to handle.
  */
-static void s5pc1xx_pcm_enqueue(struct snd_pcm_substream *substream)
+static void s5p_pcm_enqueue(struct snd_pcm_substream *substream)
 {
-	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
+	struct s5p_runtime_data *prtd = substream->runtime->private_data;
 	dma_addr_t pos = prtd->dma_pos;
 	int ret;
 
@@ -97,12 +97,12 @@ static void s5pc1xx_pcm_enqueue(struct snd_pcm_substream *substream)
 	prtd->dma_pos = pos;
 }
 
-static void s5pc1xx_audio_buffdone(struct s3c2410_dma_chan *channel,
+static void s5p_audio_buffdone(struct s3c2410_dma_chan *channel,
 				void *dev_id, int size,
 				enum s3c2410_dma_buffresult result)
 {
 	struct snd_pcm_substream *substream = dev_id;
-	struct s5pc1xx_runtime_data *prtd;
+	struct s5p_runtime_data *prtd;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
@@ -118,7 +118,7 @@ static void s5pc1xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 	spin_lock(&prtd->lock);
 	if (prtd->state & ST_RUNNING) {
 		prtd->dma_loaded--;
-		s5pc1xx_pcm_enqueue(substream);
+		s5p_pcm_enqueue(substream);
 	}
 	spin_unlock(&prtd->lock);
 }
@@ -126,7 +126,7 @@ static void s5pc1xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 static void pcm_dmaupdate(void *id, int bytes_xfer)
 {
 	struct snd_pcm_substream *substream = id;
-	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
+	struct s5p_runtime_data *prtd = substream->runtime->private_data;
 
 	s3cdbg("%s:%d\n", __func__, __LINE__);
 
@@ -161,13 +161,13 @@ static int s3c_pcm_hw_params_lp(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int s5pc1xx_pcm_hw_params_nm(struct snd_pcm_substream *substream,
+static int s5p_pcm_hw_params_nm(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct s5pc1xx_runtime_data *prtd = runtime->private_data;
+	struct s5p_runtime_data *prtd = runtime->private_data;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct s5pc1xx_pcm_dma_params *dma = rtd->dai->cpu_dai->dma_data;
+	struct s5p_pcm_dma_params *dma = rtd->dai->cpu_dai->dma_data;
 	unsigned long totbytes = params_buffer_bytes(params);
 	int ret=0;
 
@@ -231,7 +231,7 @@ static int s5pc1xx_pcm_hw_params_nm(struct snd_pcm_substream *substream,
 	}
 
 	s3c2410_dma_set_buffdone_fn(prtd->params->channel,
-				    s5pc1xx_audio_buffdone);
+				    s5p_audio_buffdone);
 
 	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
 
@@ -260,9 +260,9 @@ static int s3c_pcm_hw_free_lp(struct snd_pcm_substream *substream)
 	return 0;
 }
 
-static int s5pc1xx_pcm_hw_free_nm(struct snd_pcm_substream *substream)
+static int s5p_pcm_hw_free_nm(struct snd_pcm_substream *substream)
 {
-	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
+	struct s5p_runtime_data *prtd = substream->runtime->private_data;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
@@ -287,9 +287,9 @@ static int s3c_pcm_prepare_lp(struct snd_pcm_substream *substream)
 	return 0;
 }
 
-static int s5pc1xx_pcm_prepare_nm(struct snd_pcm_substream *substream)
+static int s5p_pcm_prepare_nm(struct snd_pcm_substream *substream)
 {
-	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
+	struct s5p_runtime_data *prtd = substream->runtime->private_data;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 #if !defined (CONFIG_CPU_S3C6400) && !defined (CONFIG_CPU_S3C6410) 
@@ -307,14 +307,14 @@ static int s5pc1xx_pcm_prepare_nm(struct snd_pcm_substream *substream)
 	prtd->dma_pos = prtd->dma_start;
 
 	/* enqueue dma buffers */
-	s5pc1xx_pcm_enqueue(substream);
+	s5p_pcm_enqueue(substream);
 
 	return 0;
 }
 
-static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+static int s5p_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 {
-	struct s5pc1xx_runtime_data *prtd = substream->runtime->private_data;
+	struct s5p_runtime_data *prtd = substream->runtime->private_data;
 	int ret = 0;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
@@ -328,7 +328,7 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 			s3ci2s_func->dma_ctrl(S3C_I2SDMA_RESUME);
 			break;
 		}
-		s5pc1xx_pcm_enqueue(substream);
+		s5p_pcm_enqueue(substream);
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		prtd->state |= ST_RUNNING;
@@ -366,10 +366,10 @@ static int s5pc1xx_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
 }
 
 static snd_pcm_uframes_t 
-	s5pc1xx_pcm_pointer(struct snd_pcm_substream *substream)
+	s5p_pcm_pointer(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct s5pc1xx_runtime_data *prtd = runtime->private_data;
+	struct s5p_runtime_data *prtd = runtime->private_data;
 	unsigned long res;
 	dma_addr_t src, dst;
 
@@ -403,7 +403,7 @@ static snd_pcm_uframes_t
 	return bytes_to_frames(substream->runtime, res);
 }
 
-static int s5pc1xx_pcm_mmap(struct snd_pcm_substream *substream,
+static int s5p_pcm_mmap(struct snd_pcm_substream *substream,
 	struct vm_area_struct *vma)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -431,10 +431,10 @@ static int s5pc1xx_pcm_mmap(struct snd_pcm_substream *substream,
 	return ret;
 }
 
-static int s5pc1xx_pcm_open(struct snd_pcm_substream *substream)
+static int s5p_pcm_open(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct s5pc1xx_runtime_data *prtd;
+	struct s5p_runtime_data *prtd;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
@@ -443,7 +443,7 @@ static int s5pc1xx_pcm_open(struct snd_pcm_substream *substream)
 	else
 	   snd_soc_set_runtime_hwparams(substream, &s3c_pcm_pdat.pcm_hw_rx);
 
-	prtd = kzalloc(sizeof(struct s5pc1xx_runtime_data), GFP_KERNEL);
+	prtd = kzalloc(sizeof(struct s5p_runtime_data), GFP_KERNEL);
 	if (prtd == NULL)
 		return -ENOMEM;
 
@@ -454,34 +454,34 @@ static int s5pc1xx_pcm_open(struct snd_pcm_substream *substream)
 	return 0;
 }
 
-static int s5pc1xx_pcm_close(struct snd_pcm_substream *substream)
+static int s5p_pcm_close(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct s5pc1xx_runtime_data *prtd = runtime->private_data;
+	struct s5p_runtime_data *prtd = runtime->private_data;
 
 	s3cdbg("Entered %s, prtd = %p\n", __FUNCTION__, prtd);
 
 	if (prtd)
 		kfree(prtd);
 	else
-		printk("s5pc1xx_pcm_close called with prtd == NULL\n");
+		printk("s5p_pcm_close called with prtd == NULL\n");
 
 	return 0;
 }
 
-static struct snd_pcm_ops s5pc1xx_pcm_ops = {
-	.open		= s5pc1xx_pcm_open,
-	.close		= s5pc1xx_pcm_close,
+static struct snd_pcm_ops s5p_pcm_ops = {
+	.open		= s5p_pcm_open,
+	.close		= s5p_pcm_close,
 	.ioctl		= snd_pcm_lib_ioctl,
-	//.hw_params	= s5pc1xx_pcm_hw_params,
-	//.hw_free	= s5pc1xx_pcm_hw_free,
-	//.prepare	= s5pc1xx_pcm_prepare,
-	.trigger	= s5pc1xx_pcm_trigger,
-	.pointer	= s5pc1xx_pcm_pointer,
-	.mmap		= s5pc1xx_pcm_mmap,
+	//.hw_params	= s5p_pcm_hw_params,
+	//.hw_free	= s5p_pcm_hw_free,
+	//.prepare	= s5p_pcm_prepare,
+	.trigger	= s5p_pcm_trigger,
+	.pointer	= s5p_pcm_pointer,
+	.mmap		= s5p_pcm_mmap,
 };
 
-static int s5pc1xx_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
+static int s5p_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 {
 	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
@@ -525,7 +525,7 @@ static int s5pc1xx_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 		buf->addr = s3c_pcm_pdat.nm_buffs.dma_addr[stream];
 	}
 
-	printk("%s mode: preallocate buffer(%s):  VA-%X  PA-%X  %ubytes\n", 
+	printk("%s mode: preallocate buffer(%s):  VA-%p  PA-%X  %ubytes\n", 
 			s3c_pcm_pdat.lp_mode ? "LowPower" : "Normal", 
 			stream ? "Capture": "Playback", 
 			vaddr, paddr, size);
@@ -534,7 +534,7 @@ static int s5pc1xx_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 	return 0;
 }
 
-static void s5pc1xx_pcm_free_dma_buffers(struct snd_pcm *pcm)
+static void s5p_pcm_free_dma_buffers(struct snd_pcm *pcm)
 {
 	struct snd_pcm_substream *substream;
 	struct snd_dma_buffer *buf;
@@ -567,9 +567,9 @@ static void s5pc1xx_pcm_free_dma_buffers(struct snd_pcm *pcm)
 	}
 }
 
-static u64 s5pc1xx_pcm_dmamask = DMA_32BIT_MASK;
+static u64 s5p_pcm_dmamask = DMA_32BIT_MASK;
 
-static int s5pc1xx_pcm_new(struct snd_card *card, 
+static int s5p_pcm_new(struct snd_card *card, 
 	struct snd_soc_dai *dai, struct snd_pcm *pcm)
 {
 	int ret = 0;
@@ -577,19 +577,19 @@ static int s5pc1xx_pcm_new(struct snd_card *card,
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
 	if (!card->dev->dma_mask)
-		card->dev->dma_mask = &s5pc1xx_pcm_dmamask;
+		card->dev->dma_mask = &s5p_pcm_dmamask;
 	if (!card->dev->coherent_dma_mask)
 		card->dev->coherent_dma_mask = 0xffffffff;
 
 	if (dai->playback.channels_min) {
-		ret = s5pc1xx_pcm_preallocate_dma_buffer(pcm,
+		ret = s5p_pcm_preallocate_dma_buffer(pcm,
 			SNDRV_PCM_STREAM_PLAYBACK);
 		if (ret)
 			goto out;
 	}
 
 	if (dai->capture.channels_min) {
-		ret = s5pc1xx_pcm_preallocate_dma_buffer(pcm,
+		ret = s5p_pcm_preallocate_dma_buffer(pcm,
 			SNDRV_PCM_STREAM_CAPTURE);
 		if (ret)
 			goto out;
@@ -600,7 +600,7 @@ static int s5pc1xx_pcm_new(struct snd_card *card,
 
 static void s3c_pcm_setmode(int lpmd, void *ptr)
 {
-	s3ci2s_func = (struct s5pc1xx_i2s_pdata *) ptr;
+	s3ci2s_func = (struct s5p_i2s_pdata *) ptr;
 	s3c_pcm_pdat.lp_mode = lpmd;
 
 	if(s3c_pcm_pdat.lp_mode){
@@ -631,9 +631,9 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 		s3c_pcm_pdat.pcm_hw_rx.channels_min = 0;
 		s3c_pcm_pdat.pcm_hw_rx.channels_max = 0;
 	}else{
-		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_params = s5pc1xx_pcm_hw_params_nm;
-		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_free = s5pc1xx_pcm_hw_free_nm;
-		s3c_pcm_pdat.pcm_pltfm.pcm_ops->prepare = s5pc1xx_pcm_prepare_nm;
+		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_params = s5p_pcm_hw_params_nm;
+		s3c_pcm_pdat.pcm_pltfm.pcm_ops->hw_free = s5p_pcm_hw_free_nm;
+		s3c_pcm_pdat.pcm_pltfm.pcm_ops->prepare = s5p_pcm_prepare_nm;
 
 		/* Configure Playback Channel */
 		s3c_pcm_pdat.pcm_hw_tx.buffer_bytes_max = MAX_LP_BUFF/2;
@@ -651,7 +651,7 @@ static void s3c_pcm_setmode(int lpmd, void *ptr)
 					s3c_pcm_pdat.pcm_hw_tx.period_bytes_min, s3c_pcm_pdat.pcm_hw_tx.period_bytes_max);
 }
 
-struct s5pc1xx_pcm_pdata s3c_pcm_pdat = {
+struct s5p_pcm_pdata s3c_pcm_pdat = {
 	.lp_mode   = 0,
 	.lp_buffs = {
 		.dma_addr[SNDRV_PCM_STREAM_PLAYBACK] = LP_TXBUFF_ADDR,
@@ -660,9 +660,9 @@ struct s5pc1xx_pcm_pdata s3c_pcm_pdat = {
 	.set_mode = s3c_pcm_setmode,
 	.pcm_pltfm = {
 		.name		= "s3c-audio",
-		.pcm_ops 	= &s5pc1xx_pcm_ops,
-		.pcm_new	= s5pc1xx_pcm_new,
-		.pcm_free	= s5pc1xx_pcm_free_dma_buffers,
+		.pcm_ops 	= &s5p_pcm_ops,
+		.pcm_new	= s5p_pcm_new,
+		.pcm_free	= s5p_pcm_free_dma_buffers,
 	},
 	.pcm_hw_tx = {
 		.info			= SNDRV_PCM_INFO_INTERLEAVED |
@@ -702,18 +702,18 @@ struct s5pc1xx_pcm_pdata s3c_pcm_pdat = {
 };
 EXPORT_SYMBOL_GPL(s3c_pcm_pdat);
 
-static int __init s5pc1xx_soc_platform_init(void)
+static int __init s5p_soc_platform_init(void)
 {
 	return snd_soc_register_platform(&s3c_pcm_pdat.pcm_pltfm);
 }
-module_init(s5pc1xx_soc_platform_init);
+module_init(s5p_soc_platform_init);
 
-static void __exit s5pc1xx_soc_platform_exit(void)
+static void __exit s5p_soc_platform_exit(void)
 {
 	snd_soc_unregister_platform(&s3c_pcm_pdat.pcm_pltfm);
 }
-module_exit(s5pc1xx_soc_platform_exit);
+module_exit(s5p_soc_platform_exit);
 
 MODULE_AUTHOR("Ben Dooks, Jassi");
-MODULE_DESCRIPTION("Samsung S5PC1XX PCM module");
+MODULE_DESCRIPTION("Samsung S5P PCM module");
 MODULE_LICENSE("GPL");

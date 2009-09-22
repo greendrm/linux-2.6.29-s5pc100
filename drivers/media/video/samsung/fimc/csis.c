@@ -287,14 +287,6 @@ static int s3c_csis_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	if (s3c_csis->clock->set_parent) {
-		s3c_csis->clock->parent = parent;
-		s3c_csis->clock->set_parent(s3c_csis->clock, parent);
-	}
-
-	if (s3c_csis->clock->set_rate)
-		s3c_csis->clock->set_rate(s3c_csis->clock, pdata->clk_rate);
-
 	clk_enable(s3c_csis->clock);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);

@@ -3,6 +3,7 @@ obj-$(CONFIG_VIDEO_FIMC_MIPI)	+= csis.o
 obj-$(CONFIG_VIDEO_IPC)		+= ipc.o
 obj-$(CONFIG_CPU_S5PC100)	+= fimc40_regs.o
 obj-$(CONFIG_CPU_S5PC110)	+= fimc43_regs.o
+obj-$(CONFIG_CPU_S5P6442)	+= fimc43_regs.o
 
 ifeq ($(CONFIG_CPU_S5PC110),y)
 EXTRA_CFLAGS += -DCONFIG_MIPI_CSI_ADV_FEATURE

@@ -467,6 +467,8 @@ static void fimc_outdev_set_dst_dma_offset(struct fimc_control *ctrl)
 {
 	struct v4l2_rect bound, win;
 	u32 pixfmt = ctrl->out->fbuf.fmt.pixelformat;
+	memset(&bound, 0, sizeof(bound));
+	memset(&win, 0, sizeof(win));
 
 	switch (ctrl->out->rotate) {
 	case 0:
@@ -837,6 +839,11 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 static int fimc_outdev_set_param(struct fimc_control *ctrl)
 {
 	int ret = -1;
+#if defined (CONFIG_VIDEO_IPC)
+	struct v4l2_rect src, dst;
+	memset(&src, 0, sizeof(src));
+	memset(&dst, 0, sizeof(dst));
+#endif
 
 	if (ctrl->status != FIMC_STREAMOFF) {
 		dev_err(ctrl->dev, "FIMC is running\n");
@@ -866,7 +873,8 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 
 #if defined (CONFIG_VIDEO_IPC)
 	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
-		ret = ipc_initip(ctrl->fb.lcd_hres, ctrl->fb.lcd_vres/2, IPC_2D);
+		fimc_outdev_calibrate_scale_info(ctrl, &src, &dst);
+		ret = ipc_initip(dst.width, dst.height/2, IPC_2D);
 		if (ret < 0)
 			return ret;
 	} 
@@ -1386,7 +1394,7 @@ static int fimc_update_in_queue_addr(struct fimc_control *ctrl, u32 index, dma_a
 	
 	ctrl->out->buf[index].base[FIMC_ADDR_Y] = addr[FIMC_ADDR_Y];
 	ctrl->out->buf[index].base[FIMC_ADDR_CB] = addr[FIMC_ADDR_CB];
-	ctrl->out->buf[index].base[FIMC_ADDR_CR] = addr[FIMC_ADDR_CR];	
+	ctrl->out->buf[index].base[FIMC_ADDR_CR] = addr[FIMC_ADDR_CR];
 
 	return 0;
 }

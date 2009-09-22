@@ -103,7 +103,7 @@ void __init s5p6442_init_clocks(int xtal)
 	s5p6442_register_clocks();
 	s5p6442_setup_clocks();
 #ifdef CONFIG_HAVE_PWM
-	s3c24xx_pwmclk_init();
+	s3c_pwmclk_init();
 #endif
 }
 

@@ -1,4 +1,4 @@
-/* linux/drivers/media/video/samsung/tv20/s5pc100/vmixer_s5pc100.c
+/* linux/drivers/media/video/samsung/tv20/s5pc110/vmixer_s5pc110.c
  *
  * Mixer raw ftn  file for Samsung TVOut driver
  *
@@ -15,8 +15,12 @@
 #include <linux/string.h>
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
+#include <linux/clk.h>
+
+#include <plat/clock.h>
 
 #include <asm/io.h>
+
 
 #include "tv_out_s5pc110.h"
 
@@ -438,6 +442,8 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
+
+	case TVOUT_480P_59:
 		temp_reg = S5P_MXR_SD | S5P_MXR_NTSC;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
@@ -450,13 +456,17 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		break;
 
 	case TVOUT_720P_50:
-
+		
+	case TVOUT_720P_59:
+		
 	case TVOUT_720P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_720P_MODE;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;
 
 	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_59:		
 
 	case TVOUT_1080I_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080I_MODE;
@@ -465,6 +475,8 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 
 // C110
 	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_59:		
 
 	case TVOUT_1080P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
@@ -925,6 +937,16 @@ int __init __s5p_mixer_probe(struct platform_device *pdev, u32 res_num)
 	struct resource *res;
 	size_t	size;
 	int 	ret;
+
+	struct	clk *mixer_clk;
+
+	mixer_clk = clk_get(&pdev->dev, "mixer");
+
+	if(mixer_clk == NULL) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "mixer");	
+		return -ENOENT;							
+	}								
+	clk_enable(mixer_clk);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 

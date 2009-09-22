@@ -534,6 +534,7 @@ static void reconfig_usbd(void)
 static void set_max_pktsize(struct s3c_udc *dev, enum usb_device_speed speed)
 {
 	unsigned int ep_ctrl;
+	int i;
 
 	if (speed == USB_SPEED_HIGH) {
 		ep0_fifo_size = 64;
@@ -548,16 +549,8 @@ static void set_max_pktsize(struct s3c_udc *dev, enum usb_device_speed speed)
 	}
 
 	dev->ep[0].ep.maxpacket = ep0_fifo_size;
-	dev->ep[1].ep.maxpacket = ep_fifo_size;
-	dev->ep[2].ep.maxpacket = ep_fifo_size;
-	dev->ep[3].ep.maxpacket = ep_fifo_size;
-	dev->ep[4].ep.maxpacket = ep_fifo_size;
-	dev->ep[5].ep.maxpacket = ep_fifo_size;
-	dev->ep[6].ep.maxpacket = ep_fifo_size;
-	dev->ep[7].ep.maxpacket = ep_fifo_size;
-	dev->ep[8].ep.maxpacket = ep_fifo_size;
-	dev->ep[9].ep.maxpacket = ep_fifo_size;
-
+	for(i = 1; i < S3C_MAX_ENDPOINTS; i++)
+		dev->ep[i].ep.maxpacket = ep_fifo_size;
 
 	/* EP0 - Control IN (64 bytes)*/
 	ep_ctrl = readl(S3C_UDC_OTG_DIEPCTL(EP0_CON));
@@ -943,6 +936,90 @@ static struct s3c_udc memory = {
 
 		  .ep_type = ep_interrupt,
 		  .fifo = (unsigned int) S3C_UDC_OTG_EP9_FIFO,
+		  },
+	.ep[10] = {
+		  .ep = {
+			 .name = "ep10-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_OUT | 10,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_out,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP10_FIFO,
+		  },
+	.ep[11] = {
+		  .ep = {
+			 .name = "ep11-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 11, 
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_in,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP11_FIFO,
+		  },
+	.ep[12] = {
+		  .ep = {
+			 .name = "ep12-int",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 12,
+		  .bmAttributes = USB_ENDPOINT_XFER_INT,
+
+		  .ep_type = ep_interrupt,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP12_FIFO,
+		  },
+	.ep[13] = {
+		  .ep = {
+			 .name = "ep13-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_OUT | 13,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_out,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP13_FIFO,
+		  },
+	.ep[14] = {
+		  .ep = {
+			 .name = "ep14-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 14,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_in,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP14_FIFO,
+		  },
+	.ep[15] = {
+		  .ep = {
+			 .name = "ep15-int",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 15,
+		  .bmAttributes = USB_ENDPOINT_XFER_INT,
+
+		  .ep_type = ep_interrupt,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP15_FIFO,
 		  },
 };
 

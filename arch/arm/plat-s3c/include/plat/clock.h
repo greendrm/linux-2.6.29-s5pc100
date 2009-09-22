@@ -12,7 +12,10 @@
 #include <linux/spinlock.h>
 
 #if defined(CONFIG_CPU_S5PC100) || defined(CONFIG_CPU_S5PC110)
+#define MAX_CLK_IN_POWERDOMAIN	8
 struct powerdomain {
+	struct clk		*pd_clks[MAX_CLK_IN_POWERDOMAIN];
+	unsigned long 		nr_clks;
 	volatile unsigned long	*pd_reg;
 	volatile unsigned long	*pd_stable_reg;
 	unsigned long		pd_ctrlbit;
@@ -148,6 +151,7 @@ extern int s5pc11x_clk_ip4_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_block_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_bus0_ctrl(struct clk *clk, int enable);
 extern int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable);
+extern int s5pc11x_audss_clkctrl(struct clk *clk, int enable);
 #elif defined(CONFIG_ARCH_S5P64XX)
 extern void s5p64xx_register_clocks(void);
 extern int s5p64xx_clk_ip0_ctrl(struct clk *clk, int enable);
@@ -155,9 +159,11 @@ extern int s5p64xx_clk_ip1_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip2_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip3_ctrl(struct clk *clk, int enable);
 extern int s5p64xx_clk_ip4_ctrl(struct clk *clk, int enable);
+extern int s5p64xx_audss_clkctrl(struct clk *clk, int enable);
 #endif
 
 /* Init for pwm clock code */
-
+#if defined(CONFIG_HAVE_PWM) || defined(CONFIG_TIMER_PWM)
 extern void s3c_pwmclk_init(void);
+#endif
 

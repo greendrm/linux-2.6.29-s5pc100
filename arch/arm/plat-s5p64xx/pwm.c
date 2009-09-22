@@ -4,7 +4,7 @@
  * Copyright (c) 2008 Simtec Electronics
  *	Ben Dooks <ben@simtec.co.uk>, <ben-linux@fluff.org>
  *
- * S3C24XX PWM device core
+ * S5P64XX PWM device core
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include <plat/regs-timer.h>
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
-#include <plat/gpio-bank-f.h>
+#include <plat/irqs.h>
 
 struct pwm_device {
 	struct list_head	 list;
@@ -145,7 +145,8 @@ int pwm_enable(struct pwm_device *pwm)
 	local_irq_save(flags);
 
 	tcon = __raw_readl(S3C2410_TCON);
-	tcon |= pwm_tcon_start(pwm);
+	tcon |= (pwm_tcon_start(pwm)|pwm_tcon_invert(pwm));
+
 	__raw_writel(tcon, S3C2410_TCON);
 
 	local_irq_restore(flags);
@@ -170,6 +171,7 @@ void pwm_disable(struct pwm_device *pwm)
 	local_irq_restore(flags);
 
 	pwm->running = 0;
+	pwm->period_ns = -1;
 }
 
 EXPORT_SYMBOL(pwm_disable);
@@ -299,24 +301,24 @@ static int s3c_pwm_probe(struct platform_device *pdev)
 	int ret;
 
 	if (id == 0) {
-		if(gpio_is_valid(S5P64XX_GPF(14))) {
-			ret = gpio_request(S5P64XX_GPF(14), "GPF");
+		if(gpio_is_valid(S5P64XX_GPD0(0))) {
+			ret = gpio_request(S5P64XX_GPD0(14), "GPD0");
 
 			if (ret) {
-				printk(KERN_ERR "failed to request GPF for PWM-OUT 0\n");
+				printk(KERN_ERR "failed to request GPD0 for PWM-OUT 0\n");
 			}
-			s3c_gpio_cfgpin(S5P64XX_GPF(14),S5P64XX_GPF14_PWM_TOUT0);			 
+			s3c_gpio_cfgpin(S5P64XX_GPD0(1),S5P64XX_GPD_0_0_TOUT_0);
 		}
 	} else if(id == 1) {
-		if(gpio_is_valid(S5P64XX_GPF(15))) {
-			ret = gpio_request(S5P64XX_GPF(15), "GPF");
+		if(gpio_is_valid(S5P64XX_GPD0(1))) {
+			ret = gpio_request(S5P64XX_GPD0(1), "GPD0");
 
 			if (ret) {
-				printk(KERN_ERR "failed to request GPF for PWM-OUT 1\n");
+				printk(KERN_ERR "failed to request GPD0 for PWM-OUT 1\n");
 			}
-			s3c_gpio_cfgpin(S5P64XX_GPF(15),S5P64XX_GPF15_PWM_TOUT1);			 
+			s3c_gpio_cfgpin(S5P64XX_GPD0(1),S5P64XX_GPD_0_1_TOUT_1);
 		}
-	
+
 	} else {
 		printk(KERN_ERR "This PWM dosen't support PWM out\n");
 	}

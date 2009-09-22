@@ -23,11 +23,7 @@
 #ifndef __REGS_CEC_H
 #define __REGS_CEC_H
 
-#ifdef HDMI_TX13_REV_05
-    #define HDMIDP_CECREG(x)    (0x00BA0000 + x)
-#else
-    #define HDMIDP_CECREG(x)    (0x00B70000 + x)
-#endif
+#define HDMIDP_CECREG(x)    (x)
 
 //@{
 /**
@@ -104,18 +100,6 @@
 /**
  * @name Bit values
  */
-#define CEC_STATUS_TX_RUNNING       (1<<0)
-#define CEC_STATUS_TX_TRANSFERRING  (1<<1)
-#define CEC_STATUS_TX_DONE          (1<<2)
-#define CEC_STATUS_TX_ERROR         (1<<3)
-#define CEC_STATUS_TX_BYTES         (0xFF<<8)
-#define CEC_STATUS_RX_RUNNING       (1<<16)
-#define CEC_STATUS_RX_RECEIVING     (1<<17)
-#define CEC_STATUS_RX_DONE          (1<<18)
-#define CEC_STATUS_RX_ERROR         (1<<19)
-#define CEC_STATUS_RX_BCAST         (1<<20)
-#define CEC_STATUS_RX_BYTES         (0xFF<<24)
-
 #define CEC_IRQ_TX_DONE             (1<<0)
 #define CEC_IRQ_TX_ERROR            (1<<1)
 #define CEC_IRQ_RX_DONE             (1<<4)
@@ -129,11 +113,6 @@
 #define CEC_RX_CTRL_ENABLE          (1<<0)
 #define CEC_RX_CTRL_RESET           (1<<7)
 //@}
-
-/** CEC Rx buffer size */
-#define CEC_RX_BUFF_SIZE            16
-/** CEC Tx buffer size */
-#define CEC_TX_BUFF_SIZE            16
 
 #define CEC_LOGIC_ADDR_MASK         0x0F
 

@@ -223,13 +223,32 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 	return 0;
 }
 
-static int fimc_update_hwaddr(struct fimc_control *ctrl)
+static int fimc_add_inqueue(struct fimc_control *ctrl, int i)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
-	int i;
 
-	for (i = 0; i < FIMC_PHYBUFS; i++)
-		fimc_hwset_output_address(ctrl, &cap->bufs[i], i);
+	list_add_tail(&cap->bufs[i].list, &cap->inq);
+
+	return 0;
+}
+
+static int fimc_add_outqueue(struct fimc_control *ctrl, int i)
+{
+	struct fimc_capinfo *cap = ctrl->cap;
+	struct fimc_buf_set *buf;
+
+	if (cap->nr_bufs > FIMC_PHYBUFS) {
+		if (list_empty(&cap->inq))
+			return -ENOENT;
+
+		buf = list_first_entry(&cap->inq, struct fimc_buf_set, list);
+		cap->outq[i] = buf->id;
+		list_del(&buf->list);
+	} else {
+		buf = &cap->bufs[i];
+	}
+
+	fimc_hwset_output_address(ctrl, buf, i);
 
 	return 0;
 }
@@ -433,7 +452,7 @@ static int fimc_fmt_avail(struct fimc_control *ctrl,
 	 * Available fmt should be varied for each FIMC
 	 */
 
-	for (i = 0; i < sizeof(capture_fmts); i++) {
+	for (i = 0; i < ARRAY_SIZE(capture_fmts); i++) {
 		if (capture_fmts[i].pixelformat == f->fmt.pix.pixelformat)
 			return 0;
 	}
@@ -581,11 +600,6 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	struct fimc_capinfo *cap = ctrl->cap;
 	int ret = 0, i;
 
-	if (b->memory != V4L2_MEMORY_MMAP) {
-		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
-		return -EINVAL;
-	}
-
 	if (!cap) {
 		dev_err(ctrl->dev, "%s: no capture device info\n", __func__);
 		return -ENODEV;
@@ -593,20 +607,23 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	/* buffer count correction */
-	if (b->count > 2)
-		b->count = 4;
-	else if (b->count < 1)
-		b->count = 1;
+	if (b->count < 1 || b->count == 3) {
+		dev_err(ctrl->dev, "%s: invalid buffer count\n", __func__);
+		return -EINVAL;
+	}
 
 	cap->nr_bufs = b->count;
-
 	dev_dbg(ctrl->dev, "%s: requested %d buffers\n", __func__, b->count);
 
-	/* free previous buffers */
-	for (i = 0; i < FIMC_PHYBUFS; i++) {
+	INIT_LIST_HEAD(&cap->inq);
+	for (i = 0; i < FIMC_CAPBUFS; i++) {
+		/* free previous buffers */
 		fimc_dma_free(ctrl, &cap->bufs[i], 0);
+		cap->bufs[i].id = i;
 		cap->bufs[i].state = VIDEOBUF_NEEDS_INIT;
+
+		/* initialize list */
+		INIT_LIST_HEAD(&cap->bufs[i].list);
 	}
 
 	switch (cap->fmt.pixelformat) {
@@ -623,7 +640,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	case V4L2_PIX_FMT_NV21:
 		ret = fimc_alloc_buffers(ctrl, 0, cap->fmt.sizeimage, 0);
 		break;
-	
+
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		ret = fimc_alloc_buffers(ctrl, 0,
@@ -644,7 +661,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	}
 
 	for (i = cap->nr_bufs; i < FIMC_PHYBUFS; i++) {
-		memcpy(&cap->bufs[i], \
+		memcpy(&cap->bufs[i],
 			&cap->bufs[i - cap->nr_bufs], sizeof(cap->bufs[i]));
 	}
 
@@ -845,7 +862,7 @@ int fimc_streamon_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int rot;
+	int rot, i;
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
@@ -854,7 +871,7 @@ int fimc_streamon_capture(void *fh)
 
 	fimc_hwset_enable_irq(ctrl, 0, 1);
 
-	if (!ctrl->cam || !ctrl->cam->initialized)
+	if (!ctrl->cam->initialized)
 		fimc_init_camera(ctrl);
 
 	fimc_hwset_camera_source(ctrl);
@@ -888,7 +905,9 @@ int fimc_streamon_capture(void *fh)
 						cap->fmt.height);
 	}
 
-	fimc_update_hwaddr(ctrl);
+	for (i = 0; i < FIMC_PHYBUFS; i++)
+		fimc_add_outqueue(ctrl, i);
+
 	fimc_start_capture(ctrl);
 
 	ctrl->status = FIMC_STREAMON;
@@ -903,9 +922,7 @@ int fimc_streamoff_capture(void *fh)
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	ctrl->status = FIMC_READY_OFF;
-
 	fimc_stop_capture(ctrl);
-
 	ctrl->status = FIMC_STREAMOFF;
 
 	return 0;
@@ -920,6 +937,12 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	if (ctrl->cap->nr_bufs > FIMC_PHYBUFS) {
+		mutex_lock(&ctrl->v4l2_lock);
+		fimc_add_inqueue(ctrl, b->index);
+		mutex_unlock(&ctrl->v4l2_lock);
+	}
+
 	return 0;
 }
 
@@ -927,6 +950,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
+	int pp, ret = 0;
 
 	if (b->memory != V4L2_MEMORY_MMAP) {
 		dev_err(ctrl->dev, "%s: invalid memory type\n", __func__);
@@ -935,17 +959,26 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	b->index = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
+	/* find out the real index */
+	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
 
 	/* skip even frame: no data */
 	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)
-		b->index &= ~0x1;
+		pp &= ~0x1;
 
-	dev_dbg(ctrl->dev, "%s: index %d, addr: %08x\n",
-		__func__, b->index, cap->bufs[b->index].base[0]);
+	if (cap->nr_bufs > FIMC_PHYBUFS) {
+		b->index = cap->outq[pp];
+		ret = fimc_add_outqueue(ctrl, pp);
+		if (ret) {
+			b->index = -1;
+			dev_err(ctrl->dev, "%s: no inqueue buffer\n", __func__);
+		}
+	} else {
+		b->index = pp;
+	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
 
-	return 0;
+	return ret;
 }
 

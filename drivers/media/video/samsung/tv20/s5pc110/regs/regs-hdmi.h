@@ -36,9 +36,6 @@
 #define S5P_HDMI_EFUSE_BASE(x)		(x + 0x00060000)
 
 
-//////////////
-// Registers   //
-//////////////
 #define S5P_HDMI_CTRL_INTC_CON		S5P_HDMI_CTRL_BASE(0x0000) /* Interrupt Control Register */
 #define S5P_HDMI_CTRL_INTC_FLAG		S5P_HDMI_CTRL_BASE(0x0004) /* Interrupt Flag Register */
 #define S5P_HDMI_CTRL_HDCP_KEY_LOAD	S5P_HDMI_CTRL_BASE(0x0008) /* HDCP KEY Status */
@@ -352,9 +349,9 @@
 #define HDMI_GAMUT_DATA26		S5P_HDMI_BASE(0x0578) /* Gamut Metadata packet body data */
 #define HDMI_GAMUT_DATA27		S5P_HDMI_BASE(0x057c) /* Gamut Metadata packet body data */
 			
-#define HDMI_DC_CONTROL			S5P_HDMI_BASE(0x05C0) /* Gamut Metadata packet body data */
-#define HDMI_VIDEO_PATTERN_GEN		S5P_HDMI_BASE(0x05C4) /* Gamut Metadata packet body data */
-#define HDMI_HPD_GEN			S5P_HDMI_BASE(0x05C8) /* Gamut Metadata packet body data */
+#define	S5P_HDMI_DC_CONTROL		S5P_HDMI_BASE(0x05C0) /* Gamut Metadata packet body data */
+#define S5P_HDMI_VIDEO_PATTERN_GEN	S5P_HDMI_BASE(0x05C4) /* Gamut Metadata packet body data */
+#define S5P_HDMI_HPD_GEN		S5P_HDMI_BASE(0x05C8) /* Gamut Metadata packet body data */
 			
 #define S5P_TG_CMD			S5P_HDMI_TG_BASE(0x0000) /* Command Register 0x00 */
 #define S5P_TG_H_FSZ_L			S5P_HDMI_TG_BASE(0x0018) /* Horizontal Full Size 0x72 */
@@ -474,52 +471,39 @@
 #define S5P_SPDIFIN_DATA_BUF_1_3	S5P_HDMI_SPDIF_BASE(0x0078) /* SPDIFIN_DATA_BUF_1 [23:16] 0x00 */
 #define S5P_SPDIFIN_USER_BUF_1		S5P_HDMI_SPDIF_BASE(0x007C) /* SPDIFIN_DATA_BUF_1 [31:28] 0x00 */
 			
-////////////////////
-// Shadow Registers   //
-////////////////////
 
-/////////////////////////
-// Registers Bit Description   //
-/////////////////////////
-
-/////////////////////////
-// Macros				  //
-/////////////////////////
-
-// HDMI_CON0
-#define BLUE_SCR_EN   (1<<5)
-#define BLUE_SCR_DIS  (0<<5)
-#define ASP_EN    (1<<2)
-#define ASP_DIS   (0<<2)
+/* HDMI_CON0 */
+#define BLUE_SCR_EN	(1<<5)
+#define BLUE_SCR_DIS	(0<<5)
+#define ASP_EN    	(1<<2)
+#define ASP_DIS   	(0<<2)
 #define PWDN_ENB_NORMAL (1<<1)
-#define PWDN_ENB_PD   (0<<1)
-#define HDMI_EN   (1<<0)
-#define HDMI_DIS    (~HDMI_EN)
+#define PWDN_ENB_PD	(0<<1)
+#define HDMI_EN   	(1<<0)
+#define HDMI_DIS    	(~HDMI_EN)
 
-// HDMI_CON1
-#define PX_LMT_CTRL_BYPASS  (0<<5)
-#define PX_LMT_CTRL_RGB   (1<<5)
-#define PX_LMT_CTRL_YPBPR   (2<<5)
-#define PX_LMT_CTRL_RESERVED  (3<<5)
+/* HDMI_CON1 */
+#define PX_LMT_CTRL_BYPASS	(0<<5)
+#define PX_LMT_CTRL_RGB		(1<<5)
+#define PX_LMT_CTRL_YPBPR	(2<<5)
+#define PX_LMT_CTRL_RESERVED	(3<<5)
 
-// HDMI_CON2
-#define VID_PREAMBLE_EN (0<<5)
-#define VID_PREAMBLE_DIS  (1<<5)
-#define GUARD_BAND_EN   (0<<1)
-#define GUARD_BAND_DIS  (1<<1)
+/* HDMI_CON2 */
+#define VID_PREAMBLE_EN		(0<<5)
+#define VID_PREAMBLE_DIS	(1<<5)
+#define GUARD_BAND_EN		(0<<1)
+#define GUARD_BAND_DIS		(1<<1)
 
-// HDMI_SIM_MODE
-
-// HDMI_STATUS
-#define AUTHEN_ACK_AUTH   (1<<7)
-#define AUTHEN_ACK_NOT    (0<<7)
-#define AUD_FIFO_OVF_FULL   (1<<6)
-#define AUD_FIFO_OVF_NOT    (0<<6)
-#define UPDATE_RI_INT_OCC   (1<<4)
-#define UPDATE_RI_INT_NOT   (0<<4)
-#define UPDATE_RI_INT_CLEAR   (1<<4)
-#define UPDATE_PJ_INT_OCC   (1<<3)
-#define UPDATE_PJ_INT_NOT   (0<<3)
+/* HDMI_STATUS */
+#define AUTHEN_ACK_AUTH		(1<<7)
+#define AUTHEN_ACK_NOT		(0<<7)
+#define AUD_FIFO_OVF_FULL	(1<<6)
+#define AUD_FIFO_OVF_NOT	(0<<6)
+#define UPDATE_RI_INT_OCC	(1<<4)
+#define UPDATE_RI_INT_NOT	(0<<4)
+#define UPDATE_RI_INT_CLEAR	(1<<4)
+#define UPDATE_PJ_INT_OCC	(1<<3)
+#define UPDATE_PJ_INT_NOT	(0<<3)
 #define UPDATE_PJ_INT_CLEAR   (1<<3)
 #define EXCHANGEKSV_INT_OCC   (1<<2)
 #define EXCHANGEKSV_INT_NOT   (0<<2)
@@ -527,23 +511,23 @@
 #define WATCHDOG_INT_OCC    (1<<1)
 #define WATCHDOG_INT_NOT    (0<<1)
 #define WATCHDOG_INT_CLEAR  (1<<1)
-#define WTFORACTIVERX_INT_OCC (1)
-#define WTFORACTIVERX_INT_NOT (0)
+#define WTFORACTIVERX_INT_OCC	(1)
+#define WTFORACTIVERX_INT_NOT	(0)
 #define WTFORACTIVERX_INT_CLEAR (1)
 
-// HDMI_STATUS_EN
-#define AUD_FIFO_OVF_EN   (1<<6)
-#define AUD_FIFO_OVF_DIS    (0<<6)
-#define UPDATE_RI_INT_EN    (1<<4)
-#define UPDATE_RI_INT_DIS   (0<<4)
-#define UPDATE_PJ_INT_EN    (1<<3)
-#define UPDATE_PJ_INT_DIS   (0<<3)
-#define EXCHANGEKSV_INT_EN  (1<<2)
-#define EXCHANGEKSV_INT_DIS   (0<<2)
-#define WATCHDOG_INT_EN   (1<<1)
-#define WATCHDOG_INT_DIS    (0<<1)
-#define WTFORACTIVERX_INT_EN  (1)
-#define WTFORACTIVERX_INT_DIS (0)
+/* HDMI_STATUS_EN */
+#define AUD_FIFO_OVF_EN		(1<<6)
+#define AUD_FIFO_OVF_DIS	(0<<6)
+#define UPDATE_RI_INT_EN	(1<<4)
+#define UPDATE_RI_INT_DIS	(0<<4)
+#define UPDATE_PJ_INT_EN 	(1<<3)
+#define UPDATE_PJ_INT_DIS	(0<<3)
+#define EXCHANGEKSV_INT_EN	(1<<2)
+#define EXCHANGEKSV_INT_DIS	(0<<2)
+#define WATCHDOG_INT_EN		(1<<1)
+#define WATCHDOG_INT_DIS	(0<<1)
+#define WTFORACTIVERX_INT_EN	(1)
+#define WTFORACTIVERX_INT_DIS	(0)
 #define HDCP_STATUS_EN_ALL 	UPDATE_RI_INT_EN|\
 				UPDATE_PJ_INT_DIS|\
 				EXCHANGEKSV_INT_EN|\
@@ -1426,7 +1410,6 @@
 #define CABLE_PLUGGED  1<<1
 #define CABLE_UNPLUGGED  0<<1
 
-// ===================================== Implemented by shin ==
 #define DDC_Addr   0xA0
 #define eDDC_Addr    0x60
 #define HDCPLink_Addr  0x74
@@ -1534,20 +1517,24 @@
 // CD0, CD1, CD2, CD3
 
 #define GCP_CD_NOT_INDICATED		0
-#define GCP_CD_24BPP				(1<<2)
-#define GCP_CD_30BPP				(1<<0 | 1<<2)
-#define GCP_CD_36BPP				(1<<1 | 1<<2)
-#define GCP_CD_48BPP				(1<<0 | 1<<1 | 1<<2)
+#define GCP_CD_24BPP			(1<<2)
+#define GCP_CD_30BPP			(1<<0 | 1<<2)
+#define GCP_CD_36BPP			(1<<1 | 1<<2)
+#define GCP_CD_48BPP			(1<<0 | 1<<1 | 1<<2)
 
-#define GCP_DEFAULT_PHASE			1
+#define GCP_DEFAULT_PHASE		1
 
 // for DC_CONTRAL
-#define HDMI_DC_CTL_8 				0
-#define HDMI_DC_CTL_10				(1<<0)
-#define HDMI_DC_CTL_12				(1<<1)
+#define HDMI_DC_CTL_8 			0
+#define HDMI_DC_CTL_10			(1<<0)
+#define HDMI_DC_CTL_12			(1<<1)
 
-#define DO_NOT_TRANSMIT		(0)
+#define DO_NOT_TRANSMIT			(0)
 
+#define HPD_SW_ENABLE               	(1<<0)
+#define HPD_SW_DISABLE              	(0)
+#define HPD_ON                      	(1<<1)
+#define HPD_OFF                     	(0)
 
 
 #endif // __ASM_ARCH_REGS_HDMI_H

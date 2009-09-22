@@ -320,15 +320,12 @@ void ipc_setpolyphase_filterset(ipc_filter_h_pp h_filter, ipc_filter_v_pp v_filt
 
 void ipc_setfilter(void)
 {
-
 	u32 h_ratio, v_ratio;
 	ipc_filter_h_pp h_filter;
 	ipc_filter_v_pp v_filter;
 
-
 	h_ratio = readl(s3c_ipc->regs + S3C_IPC_H_RATIO);
 	v_ratio = readl(s3c_ipc->regs + S3C_IPC_V_RATIO);
-
 
 	// 	For the real interlace mode, the vertical ratio should be used after divided by 2.
 	//	Because in the interlace mode, all the IPC output is used for FIMD display
@@ -339,7 +336,6 @@ void ipc_setfilter(void)
 
 	//Horizontal Y 8tap 
 	//Horizontal C 4tap	
-	
 	if (h_ratio <= (0x1<<16))			// 720->720 or zoom in
 		h_filter = IPC_PP_H_NORMAL;
 	else if (h_ratio <= (0x9<<13))		// 720->640
@@ -356,8 +352,11 @@ void ipc_setfilter(void)
 		v_filter = IPC_PP_V_NORMAL;
 	else if (v_ratio <= (0x3<<15))		//*6->5
 		v_filter = IPC_PP_V_5_6;
+#if 0	/* dead code from F/W */
+	/* If you have any problem, check it from System Application part. */
 	else if(v_ratio <= (0x5<<14))		// 4->3
 		v_filter = IPC_PP_V_3_4;
+#endif
 	else if (v_ratio <= (0x1<<17))		// 2->1
 		v_filter = IPC_PP_V_1_2;
 	else if (v_ratio <= (0x3<<16))		// 3->1

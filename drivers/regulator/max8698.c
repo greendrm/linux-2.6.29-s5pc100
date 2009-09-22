@@ -54,6 +54,8 @@ static u8 max8698_cache_regs[16] = {
 	0x0E, 0x33, 0x0E, 0x16,
 };
 
+struct max8698_data *data_p = NULL;
+
 static int max8698_i2c_cache_read(struct i2c_client *client, u8 reg, u8 *dest)
 {
 	*dest = max8698_cache_regs[reg];
@@ -101,6 +103,126 @@ static int max8698_write_reg(struct max8698_data *max8698, u8 value, u8 reg)
 
 	return 0;
 }
+
+int max8698_set_dvsarm1(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSARM12;
+
+	value &=~0xf0;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsarm1);
+
+int max8698_set_dvsarm2(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSARM12;
+	
+	value = (value<<4);
+	
+	value &=~0xf;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf0;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsarm2);
+
+int max8698_set_dvsarm3(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSARM34;
+
+	value &=~0xf0;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsarm3);
+
+int max8698_set_dvsarm4(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSARM34;
+	
+	value = (value<<4);
+
+	value &=~0xf;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf0;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsarm4);
+
+int max8698_set_dvsint1(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSINT12;
+
+	value &=~0xf0;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsint1);
+
+int max8698_set_dvsint2(u8 value)
+{
+	u8 val = 0;
+	u8 reg = MAX8698_REG_DVSINT12;
+
+	value = (value<<4);
+	
+	value &=~0xf;
+	
+	val = max8698_read_reg(data_p, reg);
+	
+	val &=~0xf0;
+	val |= value;
+
+	max8698_write_reg(data_p, val, reg);
+	
+	return 0;		
+}
+
+EXPORT_SYMBOL_GPL(max8698_set_dvsint2);
 
 static const int ldo23_voltage_map[] = {
 	 800,  850,  900,  950, 1000,
@@ -219,7 +341,7 @@ static int max8698_ldo_disable(struct regulator_dev *rdev)
 	} else {
 		value = max8698_read_reg(max8698, MAX8698_REG_ONOFF1);
 		shift = 7 - (ldo - MAX8698_DCDC1);
-		value |= (1 << shift);
+		value &= ~(1 << shift);
 		max8698_write_reg(max8698, value, MAX8698_REG_ONOFF1);
 	}
 
@@ -325,6 +447,8 @@ static struct regulator_ops max8698_ldo_ops = {
 	.disable	= max8698_ldo_disable,
 	.get_voltage	= max8698_ldo_get_voltage,
 	.set_voltage	= max8698_ldo_set_voltage,
+	.set_suspend_enable	= max8698_ldo_enable,
+	.set_suspend_disable	= max8698_ldo_disable,
 };
 
 static struct regulator_ops max8698_dcdc_ops = {
@@ -334,6 +458,8 @@ static struct regulator_ops max8698_dcdc_ops = {
 	.disable	= max8698_ldo_disable,
 	.get_voltage	= max8698_ldo_get_voltage,
 	.set_voltage	= max8698_ldo_set_voltage,
+	.set_suspend_enable	= max8698_ldo_enable,
+	.set_suspend_disable	= max8698_ldo_disable,
 };
 
 static struct regulator_desc regulators[] = {
@@ -461,8 +587,14 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 	rdev = max8698->rdev;
 
 	max8698_i2c_read(client, MAX8698_REG_ONOFF1, (u8 *) &ret);
-
+	max8698_i2c_read(client, MAX8698_REG_DVSARM12, (u8 *) &ret);
+	max8698_i2c_read(client, MAX8698_REG_DVSARM34, (u8 *) &ret);
+	max8698_i2c_read(client, MAX8698_REG_DVSINT12, (u8 *) &ret);
+	
 	i2c_set_clientdata(client, max8698);
+
+	data_p = max8698;
+
 	return 0;
 }
 
@@ -478,7 +610,7 @@ static int __devexit max8698_pmic_remove(struct i2c_client *client)
 	kfree(max8698->rdev);
 	kfree(max8698);
 	i2c_set_clientdata(client, NULL);
-
+	data_p = NULL;
 	return 0;
 }
 

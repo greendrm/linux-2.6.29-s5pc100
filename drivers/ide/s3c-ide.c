@@ -461,12 +461,12 @@ int s3c_ide_irq_hook(void *data)
 		return 1;
 	}
 
-	for (i = 0; i < 0x100000; i++) {
+	for (i = 0; i < 0x1000000; i++) {
 		stat = readl(s3c_ide_regbase + S5P_BUS_FIFO_STATUS);
 		if (stat == 0)
 			break;
 	}
-	if (i == 0x100000)
+	if (i == 0x1000000)
 		printk("BUS has a problem\n");
 
 #endif

@@ -41,7 +41,7 @@
 #include "dma-pl330-mcode.h"
 
 #undef pr_debug
-//#define dma_dbg
+/*#define dma_dbg*/
 
 #ifdef dma_dbg
 #define pr_debug(fmt...) 	printk( fmt)
@@ -49,8 +49,13 @@
 #define pr_debug(fmt...)
 #endif
 
+#if defined(CONFIG_MACH_SMDK6442)
+#define SECURE_M2M_DMA_MODE_SET
+#define SECURE_M2P_DMA_MODE_SET
+#define SECURE_P2M_DMA_MODE_SET
+#else
 #undef SECURE_M2M_DMA_MODE_SET
-//#define SECURE_M2M_DMA_MODE_SET
+#endif
 
 /* io map for dma */
 static void __iomem 		*dma_base;
@@ -414,6 +419,11 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
 	start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_NON_SECURE_DMA);
 #else	/* SECURE_M2M_DMA_MODE */
+
+#if defined(CONFIG_MACH_SMDK6442)
+	start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+					chan->curr->mcptr, PL330_SECURE_DMA);
+#else  /* CONFIG_MACH_SMDK6442 */
 	if (chan->dma_con->number == 0) {
 		start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_SECURE_DMA);
@@ -421,7 +431,9 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
 		start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 					chan->curr->mcptr, PL330_NON_SECURE_DMA);
 	}
-#endif
+#endif /* CONFIG_MACH_SMDK6442 */
+
+#endif /* SECURE_M2M_DMA_MODE */
 
 	/* Start the DMA operation on Peripheral */
 	s3c_dma_call_op(chan, S3C2410_DMAOP_START);
@@ -721,6 +733,10 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 				start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_NON_SECURE_DMA);
 #else	/* SECURE_M2M_DMA_MODE */
+#if defined(CONFIG_MACH_SMDK6442)
+				start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
+							chan->curr->mcptr, PL330_SECURE_DMA);
+#else  /* CONFIG_MACH_SMDK6442 */
 				if (chan->dma_con->number == 0) {
 					start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_SECURE_DMA);
@@ -728,7 +744,8 @@ static irqreturn_t s3c_dma_irq(int irq, void *devpw)
 					start_DMA_channel(dma_regaddr(chan->dma_con, S3C_DMAC_DBGSTATUS), chan->number,
 								chan->curr->mcptr, PL330_NON_SECURE_DMA);
 				}
-#endif
+#endif /* CONFIG_MACH_SMDK6442 */
+#endif /* SECURE_M2M_DMA_MODE */
 				local_irq_restore(flags);
 
 			} else {
@@ -1173,9 +1190,17 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = chan->map->hw_addr.to;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
+
+#ifndef SECURE_M2P_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_FIXED|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
 				      hwcfg;
+#else	/* SECURE_M2M_DMA_MODE */
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_FIXED|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_INC|
+				      hwcfg;
+#endif /* SECURE_M2M_DMA_MODE */
+
 		//chan->control_flags = hwcfg;
 		return 0;
 
@@ -1184,9 +1209,16 @@ int s3c2410_dma_devconfig(int channel,
 		chan->config_flags = chan->map->hw_addr.from;
 
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
+
+#ifndef SECURE_P2M_DMA_MODE_SET
 		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
 				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_FIXED|
 				      hwcfg;
+#else /*SECURE_P2M_DMA_MODE_SET*/
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
+				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_FIXED|
+				      hwcfg;
+#endif /*SECURE_P2M_DMA_MODE_SET*/
 		//chan->control_flags = hwcfg;
 		return 0;
 

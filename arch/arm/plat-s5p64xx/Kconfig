@@ -55,6 +55,43 @@ config S5P64XX_SETUP_I2C2
 	help
 	  Common setup code for i2c bus 2.
 
+# FIMC part
+config S5P64XX_DEV_FIMC0
+	bool
+	default y
+	help
+	  Compile in platform device definitions for FIMC controller 0
+
+config S5P64XX_DEV_FIMC1
+	bool
+	default y
+	help
+	  Compile in platform device definitions for FIMC controller 1
+
+config S5P64XX_DEV_FIMC2
+	bool
+	default y
+	help
+	  Compile in platform device definitions for FIMC controller 2
+
+config S5P64XX_SETUP_FIMC0
+	bool
+	default y
+	help
+	  Common setup code for FIMC controller 0.
+
+config S5P64XX_SETUP_FIMC1
+	bool
+	default y
+	help
+	  Common setup code for FIMC controller 1.
+
+config S5P64XX_SETUP_FIMC2
+	bool
+	default y
+	help
+	  Common setup code for FIMC controller 2.
+	  
 # FB part
 config S5P64XX_DEV_FB
 	bool
@@ -70,7 +107,7 @@ config S5P64XX_ADC
 
 config S5P64XX_PWM
 	bool "S5P64XX PWM support"
-	select S5P_HAVE_PWM
+	select HAVE_PWM
 	help
 	  Support for exporting the PWM timer blocks via the pwm device system.
 

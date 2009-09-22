@@ -52,6 +52,9 @@
 #define BASEPRINTK(fmt, args...)
 #endif
 
+#ifdef CONFIG_CPU_S5PC110
+#define TVOUT_CLK_INIT(dev, clk, name)
+#else
 #define TVOUT_CLK_INIT(dev, clk, name) 							\
 	clk= clk_get(dev, name);							\
 	if(clk == NULL) { 								\
@@ -59,6 +62,7 @@
 		return -ENOENT;								\
 	}										\
 	clk_enable(clk)
+#endif
 
 #define TVOUT_IRQ_INIT(x, ret, dev, num, jump, ftn, m_name) 				\
 	x = platform_get_irq(dev, num); 						\
@@ -75,12 +79,18 @@
 	while(0)
 
 
+#ifdef CONFIG_CPU_S5PC100
+#define I2C_BASE
+#endif 
+
 static struct mutex	*mutex_for_fo = NULL;
-static struct mutex	*mutex_for_i2c= NULL;	
+	
 
 s5p_tv_status 	s5ptv_status;
 s5p_tv_vo 	s5ptv_overlay[2];
 
+#ifdef I2C_BASE
+static struct mutex	*mutex_for_i2c= NULL;
 static struct work_struct ws_hpd;
 spinlock_t slock_hpd;
 
@@ -161,14 +171,6 @@ static struct i2c_driver hdcp_i2c_driver = {
 	.detach_client = hdcp_i2c_detach,
 };
 
-/*
- * ftn for irq 
- */
-static irqreturn_t s5p_tvenc_irq(int irq, void *dev_id)
-{
-	return IRQ_HANDLED;
-}
-
 static void set_ddc_port(void)
 {
 	mutex_lock(mutex_for_i2c);
@@ -204,20 +206,17 @@ static void set_ddc_port(void)
 	
 	mutex_unlock(mutex_for_i2c);
 }
+#endif 
 
 static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 {
+#ifdef CONFIG_CPU_S5PC100
+
 	spin_lock_irq(&slock_hpd);
 	
-#ifdef CONFIG_CPU_S5PC110
-	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
-		? false:true;
-#endif
-
-#ifdef CONFIG_CPU_S5PC100
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
-#endif	
+
 	if(s5ptv_status.hpd_status){
 		
 		set_irq_type(IRQ_EINT5, IRQ_TYPE_EDGE_RISING);
@@ -233,10 +232,17 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 	spin_unlock_irq(&slock_hpd);
 
 	BASEPRINTK("hpd_status = %d\n", s5ptv_status.hpd_status);
-		
+#endif			
 	return IRQ_HANDLED;
 }
 
+/*
+ * ftn for irq 
+ */
+static irqreturn_t s5p_tvenc_irq(int irq, void *dev_id)
+{
+	return IRQ_HANDLED;
+}
 /*
  * ftn for video
  */
@@ -258,6 +264,9 @@ static int s5p_tv_v_open(struct file *file)
 
 	mutex_unlock(mutex_for_fo);
 
+/* c110 test */	//s5ptv_status.hpd_status = true;
+	
+#ifdef I2C_BASE
 	mutex_lock(mutex_for_i2c);
 	/* for ddc(hdcp port) */
 	if(s5ptv_status.hpd_status) {
@@ -270,6 +279,7 @@ static int s5p_tv_v_open(struct file *file)
 	mutex_unlock(mutex_for_i2c);
 	/* for i2c probing */
 	udelay(100);
+#endif
 	
 	return 0;
 
@@ -308,6 +318,7 @@ int s5p_tv_v_release(struct file *filp)
 	 * drv. release
 	 *        - just check drv. state reg. or not.
 	 */
+#ifdef I2C_BASE	 
 	mutex_lock(mutex_for_i2c);
 	
 	if (hdcp_i2c_drv_state) {
@@ -316,7 +327,7 @@ int s5p_tv_v_release(struct file *filp)
 	}
 
 	mutex_unlock(mutex_for_i2c);
-
+#endif
 	return 0;
 }
 
@@ -484,38 +495,15 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
  
 /* temporary must be checked hdmi_phy power & clk */
 #ifdef CONFIG_CPU_S5PC110
+#include <linux/delay.h>
 #include <plat/regs-clock.h>
 #endif
 
-static int __init s5p_tv_probe(struct platform_device *pdev)
+static int __devinit s5p_tv_probe(struct platform_device *pdev)
 {
 	int 	irq_num;
 	int 	ret;
 	int 	i;
-
-/* temporary must be checked hdmi_phy power & clk */
-#ifdef CONFIG_CPU_S5PC110
-#define CTRL_BIT (0x1<<4)
-{
-
-	u32 reg;
-
-	/* i2c-hdmi_phy/i2c-1 */
-	reg = readl(S5P_CLKGATE_IP3);
-
-	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY|S5P_CLKGATE_IP3_I2C_HDMI_DDC);
-
-	writel(reg, S5P_CLKGATE_IP3);
-
-	/* for tv power block */
-	reg = readl(S5P_NORMAL_CFG);
-	
-	writel(reg|CTRL_BIT, S5P_NORMAL_CFG);
-
-	do {			
-	} while(!(__raw_readl(S5P_BLK_PWR_STAT)&CTRL_BIT));
-}
-#endif
 
 	__s5p_sdout_probe(pdev, 0);
 	__s5p_vp_probe(pdev, 1);	
@@ -523,6 +511,7 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 
 #ifdef CONFIG_CPU_S5PC110	
 	__s5p_hdmi_probe(pdev, 3, 4);
+//	__s5p_hdcp_init( );
 #endif
 
 #ifdef CONFIG_CPU_S5PC100	
@@ -530,8 +519,21 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	__s5p_tvclk_probe(pdev, 4);
 #endif
 
-	/* for dev_dbg err. */
-	spin_lock_init(&slock_hpd);
+
+#ifdef CONFIG_CPU_S5PC110
+{
+	u32 reg;
+
+	/* i2c-hdmi_phy/i2c-1 */
+	reg = readl(S5P_CLKGATE_IP3);
+
+	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY);
+
+	writel(reg, S5P_CLKGATE_IP3);
+}
+	/* HDMP apb block is needed by hpd/cec - always on */
+//	__s5p_tv_clk_set_hdmi_hclk_onoff(true);
+#endif
 
 	/* clock */
 	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.tvenc_clk, "tv");
@@ -547,17 +549,15 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 #ifdef FIX_27M_UNSTABLE_ISSUE /* for smdkc100 pop */
 	writel(0x1, S5PC1XX_GPA0_BASE + 0x56c);
 #endif
+
+#ifdef I2C_BASE
+	/* for dev_dbg err. */
+	spin_lock_init(&slock_hpd);
+
 	/* for bh */
 	INIT_WORK(&ws_hpd, (void *)set_ddc_port);
-
-	/* check EINT init state */
-#ifdef CONFIG_CPU_S5PC110
-	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
-
-	s5ptv_status.hpd_status = gpio_get_value(S5PC11X_GPH1(5)) 
-		? false:true;
 #endif
+	/* check EINT init state */
 
 #ifdef CONFIG_CPU_S5PC100
 	s3c_gpio_cfgpin(S5PC1XX_GPH0(5), S3C_GPIO_SFN(2));
@@ -574,7 +574,7 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 0, out, __s5p_mixer_irq, "mixer");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 1, out_hdmi_irq, __s5p_hdmi_irq , "hdmi");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 2, out_tvenc_irq, s5p_tvenc_irq, "tvenc");
-	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
+//	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
 
 	set_irq_type(IRQ_EINT5, IRQ_TYPE_LEVEL_LOW);
 
@@ -599,6 +599,7 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 		goto out;
 	}
 
+#ifdef I2C_BASE
 	mutex_for_i2c= (struct mutex *)kmalloc(sizeof(struct mutex), GFP_KERNEL);
 	
 	if (mutex_for_i2c == NULL) {
@@ -606,10 +607,10 @@ static int __init s5p_tv_probe(struct platform_device *pdev)
 			"failed to create mutex handle\n");
 		goto out;
 	}
-
-	mutex_init(mutex_for_fo);
 	mutex_init(mutex_for_i2c);
-	
+#endif
+	mutex_init(mutex_for_fo);
+
 	return 0;
 
 out_hpd_irq:
@@ -639,8 +640,9 @@ static int s5p_tv_remove(struct platform_device *pdev)
 #ifdef CONFIG_CPU_S5PC100	
 	__s5p_tvclk_release(pdev);
 #endif
+#ifdef I2C_BASE
 	i2c_del_driver(&hdcp_i2c_driver);
-
+#endif
 	clk_disable(s5ptv_status.tvenc_clk);
 	clk_disable(s5ptv_status.vp_clk);
 	clk_disable(s5ptv_status.mixer_clk);
@@ -663,7 +665,9 @@ static int s5p_tv_remove(struct platform_device *pdev)
 	free_irq(IRQ_EINT5, pdev);
 
 	mutex_destroy(mutex_for_fo);
+#ifdef I2C_BASE	
 	mutex_destroy(mutex_for_i2c);
+#endif
 
 	return 0;
 }

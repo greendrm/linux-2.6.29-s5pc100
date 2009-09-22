@@ -443,6 +443,17 @@ static inline void flush_ioremap_region(unsigned long phys, void __iomem *virt,
  */
 static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 {
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5PC100)
+/*
+ * SAMSUNG SoC(S5PC100,S5PC110) have a L2 cache. L2 cache type is 
+ * VIPT type but L2 is PIPT type cache. If disabling L2 cache, this 
+ * code works well. But enabling L2 cache, there is data corruption
+ * problem. In case of these 2 AP, just call flush_cache_all() function
+ * like as 2.6.28 kernel. 
+ * jc.lee@samsung.com
+ */
+	flush_cache_all();
+#else
 	if (!cache_is_vipt_nonaliasing())
 		flush_cache_all();
 	else
@@ -451,12 +462,17 @@ static inline void flush_cache_vmap(unsigned long start, unsigned long end)
 		 * have a DSB after cleaning the cache line.
 		 */
 		dsb();
+#endif
 }
 
 static inline void flush_cache_vunmap(unsigned long start, unsigned long end)
 {
+#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5PC100)
+	flush_cache_all();
+#else
 	if (!cache_is_vipt_nonaliasing())
 		flush_cache_all();
+#endif
 }
 
 #endif

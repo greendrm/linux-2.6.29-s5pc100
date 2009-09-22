@@ -42,18 +42,20 @@ static unsigned int s3c_button_gpio_init(void)
 {
 	u32 err;
 
-	err = gpio_request(S5P64XX_GPH0(1),"GPH0");
+	err = gpio_request(S5P64XX_GPH1(2),"GPH1");
 	if (err){
 		printk("gpio request error : %d\n",err);
 	}else{
-		s3c_gpio_cfgpin(S5P64XX_GPH0(1),S5P64XX_GPH0_1_EXT_INT0_1);
+		s3c_gpio_cfgpin(S5P64XX_GPH1(2),S5P64XX_GPH1_2_EXT_INT1_2);
+		s3c_gpio_setpull(S5P64XX_GPH1(2), S3C_GPIO_PULL_NONE);
 	}
 
-	err = gpio_request(S5P64XX_GPH3(7),"GPH3");
+	err = gpio_request(S5P64XX_GPH1(7),"GPH1");
 	if (err){
 		printk("gpio request error : %d\n",err);
 	}else{
-		s3c_gpio_cfgpin(S5P64XX_GPH3(7),S5P64XX_GPH3_7_EXT_INT3_7);
+		s3c_gpio_cfgpin(S5P64XX_GPH1(7),S5P64XX_GPH1_7_EXT_INT1_7);
+		s3c_gpio_setpull(S5P64XX_GPH1(7), S3C_GPIO_PULL_NONE);
 	}
 
 	return err;
@@ -70,11 +72,12 @@ static void __init s3c_button_init(void)
 		return;
 	}	
 	
-	set_irq_type(IRQ_EINT1, IRQF_TRIGGER_FALLING);
-	setup_irq(IRQ_EINT1, &s3c_button_irq);
+	set_irq_type(IRQ_EINT10, IRQF_TRIGGER_FALLING);
+	setup_irq(IRQ_EINT10, &s3c_button_irq);
 
-	set_irq_type(IRQ_EINT(31), IRQF_TRIGGER_FALLING);
-	setup_irq(IRQ_EINT(31), &s3c_button_irq);	
+	set_irq_type(IRQ_EINT15, IRQF_TRIGGER_FALLING);
+	setup_irq(IRQ_EINT15, &s3c_button_irq);	
+
 }
 
 device_initcall(s3c_button_init);

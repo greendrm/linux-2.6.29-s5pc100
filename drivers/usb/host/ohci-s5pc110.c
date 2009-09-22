@@ -9,7 +9,7 @@
  *  by K.Boge <karsten.boge@amd.com>
  *
  * Modified for SAMSUNG s5pc110 EHCI
- *  by Jin-goo Han <jg1.han@samsung.com>
+ *  by Jingoo Han <jg1.han@samsung.com>
  *
  * Modified for SAMSUNG s5pc110 OHCI
  *  by Jin-goo Han <jg1.han@samsung.com>
@@ -24,7 +24,8 @@ static struct clk *usb_clk;
 
 extern int usb_disabled(void);
 
-extern void usb_host_clk_en(void);
+extern void usb_host_phy_init(void);
+extern void usb_host_phy_off(void);
 
 static void s5pc110_start_ohc(void);
 static void s5pc110_stop_ohc(void);
@@ -32,8 +33,54 @@ static int ohci_hcd_s5pc110_drv_probe(struct platform_device *pdev);
 static int ohci_hcd_s5pc110_drv_remove(struct platform_device *pdev);
 
 #ifdef CONFIG_PM
-static int ohci_hcd_s5pc110_drv_suspend(struct platform_device *pdev)
+static int ohci_hcd_s5pc110_drv_suspend(struct platform_device *pdev, pm_message_t message)
+{
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
+	unsigned long flags;
+	int rc = 0;
+
+	/* Root hub was already suspended. Disable irq emission and
+	 * mark HW unaccessible, bail out if RH has been resumed. Use
+	 * the spinlock to properly synchronize with possible pending
+	 * RH suspend or resume activity.
+	 *
+	 * This is still racy as hcd->state is manipulated outside of
+	 * any locks =P But that will be a different fix.
+	 */
+	spin_lock_irqsave(&ohci->lock, flags);
+	if (hcd->state != HC_STATE_SUSPENDED) {
+		rc = -EINVAL;
+		goto bail;
+	}
+
+	/* make sure snapshot being resumed re-enumerates everything */
+	if (message.event == PM_EVENT_PRETHAW) {
+		ohci_usb_reset(ohci);
+	}
+
+	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+
+	s5pc110_stop_ohc();
+bail:
+	spin_unlock_irqrestore(&ohci->lock, flags);
+
+	return rc;
+}
 static int ohci_hcd_s5pc110_drv_resume(struct platform_device *pdev)
+{
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	int rc = 0;
+	
+	s5pc110_start_ohc();
+
+	/* Mark hardware accessible again as we are out of D3 state by now */
+	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+
+	ohci_finish_controller_resume(hcd);
+
+	return rc;
+}
 #else
 #define ohci_hcd_s5pc110_drv_suspend NULL
 #define ohci_hcd_s5pc110_drv_resume NULL
@@ -43,13 +90,13 @@ static int ohci_hcd_s5pc110_drv_resume(struct platform_device *pdev)
 static void s5pc110_start_ohc(void)
 {
 	clk_enable(usb_clk);
-	usb_host_clk_en();
+	usb_host_phy_init();
 }
 
 static void s5pc110_stop_ohc(void)
 {
+	usb_host_phy_off();
 	clk_disable(usb_clk);
-	clk_put(usb_clk);
 }
 
 static int __devinit ohci_s5pc110_start(struct usb_hcd *hcd)
@@ -158,6 +205,7 @@ static int ohci_hcd_s5pc110_drv_probe(struct platform_device *pdev)
 err2:
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 err1:
+	clk_put(usb_clk);
 	usb_put_hcd(hcd);
 	return retval;
 }
@@ -171,6 +219,7 @@ static int ohci_hcd_s5pc110_drv_remove(struct platform_device *pdev)
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 	usb_put_hcd(hcd);
 	s5pc110_stop_ohc();
+	clk_put(usb_clk);
 	platform_set_drvdata(pdev, NULL);
 
 	return 0;

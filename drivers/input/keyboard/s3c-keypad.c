@@ -50,7 +50,9 @@ static struct clk *keypad_clock;
 static int keypad_scan(u32 *keymask_low, u32 *keymask_high)
 {
 	int i,j = 0;
-	u32 cval,rval;
+	u32 cval,rval,cscan,rscan;
+
+	writel(readl(key_base+S3C_KEYIFCON) & ~(INT_F_EN|INT_R_EN), key_base+S3C_KEYIFCON);
 
 	for (i=0; i<KEYPAD_COLUMNS; i++) {
 		cval = readl(key_base+S3C_KEYIFCOL) | KEYCOL_DMASK;
@@ -62,9 +64,17 @@ static int keypad_scan(u32 *keymask_low, u32 *keymask_high)
 		rval = ~(readl(key_base+S3C_KEYIFROW)) & KEYROW_DMASK;
 		
 		if ((i*KEYPAD_ROWS) < MAX_KEYMASK_NR)
+#if defined(CONFIG_CPU_S5PC110)			
+			*keymask_low |= (rval << (i * KEYPAD_COLUMNS));
+#else			
 			*keymask_low |= (rval << (i * KEYPAD_ROWS));
+#endif
 		else {
+#if defined(CONFIG_CPU_S5PC110)			
+			*keymask_high |= (rval << (j * KEYPAD_COLUMNS));
+#else
 			*keymask_high |= (rval << (j * KEYPAD_ROWS));
+#endif
 			j = j +1;
 		}
 	}

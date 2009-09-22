@@ -24,6 +24,7 @@ config MACH_SMDKC110
 	select CPU_S5PC110
 	select S3C_DMA_PL330
 	select S3C_DEV_I2C1
+	select S3C_DEV_I2C2
 	select S3C_DEV_HSMMC
 	select S3C_DEV_HSMMC1 if !SMDKC110_SD_CH0_8BIT
 	select S3C_DEV_HSMMC2
@@ -68,4 +69,11 @@ config SMDKC110_SD_CH2_8BIT
 	default n	
 	help
 		IF channel 2 uses 8-bit bus, channel 3 shoule be disabled.
+
+config DM9000_16BIT
+	bool "Use 16-bit bus for DM9000 ethernet controller"
+	depends on MACH_SMDKC110
+	default n	
+	help
+		Some SMDKC110 board have 16bit data bus for DM9000 ethernet controller..
 

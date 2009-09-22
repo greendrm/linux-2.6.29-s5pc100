@@ -17,6 +17,10 @@
 
 #include <plat/map-base.h>
 
+#define S5P64XX_PA_FIMC0	(0xEE400000)
+#define S5P64XX_PA_FIMC1	(0xEE500000)
+#define S5P64XX_PA_FIMC2	(0xEE600000)
+
 /* HSMMC units */
 #define S5P64XX_PA_HSMMC(x)	(0xED800000 + ((x) * 0x100000))
 #define S5P64XX_PA_HSMMC0	S5P64XX_PA_HSMMC(0)
@@ -73,8 +77,15 @@
 #define S5P64XX_SZ_KEYPAD	SZ_4K
 #define S5P64XX_PA_KEYPAD	(0xF3100000)
 
-#define S5P64XX_PA_IIS	   	(0xF2000000)
-#define S3C_SZ_IIS		SZ_8K
+/* IIS */
+#define S5P64XX_PA_IIS_V50   	(0xC0B00000)
+#define S5P64XX_PA_IIS_V32   	(0xE2100000)
+#define S3C_SZ_IIS		SZ_4K
+#define S3C_PA_IIS_V50		S5P64XX_PA_IIS_V50
+#define S3C_PA_IIS_V32		S5P64XX_PA_IIS_V32
+
+/* AUDIO SUB SYSTEM */ 
+#define S5P64XX_PA_AUDSS                (0xC0900000)
 
 #define S5P64XX_PA_RTC	   	(0xEA300000)
 
@@ -98,6 +109,14 @@
 #define S5P64XX_PA_WATCHDOG 	(0xEA200000)
 #define S5P64XX_SZ_WATCHDOG 	SZ_4K
 
+/* MFC */
+#define S5P64XX_PA_MFC		(0xF1000000)
+#define S3C_SZ_MFC		SZ_4K
+
+/* JPEG */
+#define S5P64XX_PA_JPEG         (0xEFC00000)
+#define S3C_SZ_JPEG             SZ_4K
+
 /* NAND flash controller */
 #define S5P64XX_PA_NAND	   	(0xE7100000)
 #define S5P64XX_SZ_NAND	   	SZ_1M
@@ -119,6 +138,10 @@
 #define S5P64XX_PA_SYSTIMER	(0xEA100000)
 #define S5P64XX_VA_SYSTIMER   	S3C_VA_SYSTIMER
 #define S5P64XX_SZ_SYSTIMER	SZ_1M
+
+/* ROTATOR */
+#define S5P64XX_PA_ROTOTOR	(0xEF500000)
+#define S5P64XX_SZ_ROTOTOR	SZ_1M
 
 /* compatibiltiy defines. */
 #define S3C_PA_TIMER		S5P64XX_PA_TIMER

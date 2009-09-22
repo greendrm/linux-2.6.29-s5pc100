@@ -1,5 +1,5 @@
 /*
- * smdkc100_wm8580.c
+ * smdks5p_wm8580.c
  *
  * Copyright (C) 2009, Samsung Elect. Ltd. - Jaswinder Singh <jassisinghbrar@gmail.com>
  *
@@ -27,8 +27,8 @@
 #include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
-/* SMDKC100 has 12MHZ Osc attached to WM8580 */
-#define SMDKC100_WM8580_OSC_FREQ (12000000)
+/* SMDK has 12MHZ Osc attached to WM8580 */
+#define SMDK_WM8580_OSC_FREQ (12000000)
 
 #define PLAY_51       0
 #define PLAY_STEREO   1
@@ -38,19 +38,19 @@
 #define REC_LINE   1
 #define REC_OFF    2
 
-extern struct s5pc1xx_pcm_pdata s3c_pcm_pdat;
-extern struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+extern struct s5p_pcm_pdata s3c_pcm_pdat;
+extern struct s5p_i2s_pdata s3c_i2s_pdat;
 
 #define SRC_CLK	(*s3c_i2s_pdat.p_rate)
 
 static int lowpower = 0;
-static int smdkc100_play_opt;
-static int smdkc100_rec_opt;
+static int smdks5p_play_opt;
+static int smdks5p_rec_opt;
 
 /* XXX BLC(bits-per-channel) --> BFS(bit clock shud be >= FS*(Bit-per-channel)*2) XXX */
 /* XXX BFS --> RFS(must be a multiple of BFS)                                 XXX */
 /* XXX RFS & SRC_CLK --> Prescalar Value(SRC_CLK / RFS_VAL / fs - 1)          XXX */
-static int smdkc100_hw_params(struct snd_pcm_substream *substream,
+static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
@@ -202,7 +202,7 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 
 #ifdef CONFIG_SND_WM8580_MASTER
 	/* Set the AP Prescalar */
-	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA, SMDKC100_WM8580_OSC_FREQ, pll_out);
+	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA, SMDK_WM8580_OSC_FREQ, pll_out);
 #else
 	psr = SRC_CLK / rfs / params_rate(params);
 	ret = SRC_CLK / rfs - psr * params_rate(params);
@@ -243,18 +243,18 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 /*
  * WM8580 DAI operations.
  */
-static struct snd_soc_ops smdkc100_ops = {
-	.hw_params = smdkc100_hw_params,
+static struct snd_soc_ops smdks5p_ops = {
+	.hw_params = smdks5p_hw_params,
 };
 
-static void smdkc100_ext_control(struct snd_soc_codec *codec)
+static void smdks5p_ext_control(struct snd_soc_codec *codec)
 {
 	/* set up jack connection */
-	if(smdkc100_play_opt == PLAY_51){
+	if(smdks5p_play_opt == PLAY_51){
 		snd_soc_dapm_enable_pin(codec, "Front-L/R");
 		snd_soc_dapm_enable_pin(codec, "Center/Sub");
 		snd_soc_dapm_enable_pin(codec, "Rear-L/R");
-	}else if(smdkc100_play_opt == PLAY_STEREO){
+	}else if(smdks5p_play_opt == PLAY_STEREO){
 		snd_soc_dapm_enable_pin(codec, "Front-L/R");
 		snd_soc_dapm_disable_pin(codec, "Center/Sub");
 		snd_soc_dapm_disable_pin(codec, "Rear-L/R");
@@ -264,10 +264,10 @@ static void smdkc100_ext_control(struct snd_soc_codec *codec)
 		snd_soc_dapm_disable_pin(codec, "Rear-L/R");
 	}
 
-	if(smdkc100_rec_opt == REC_MIC){
+	if(smdks5p_rec_opt == REC_MIC){
 		snd_soc_dapm_enable_pin(codec, "MicIn");
 		snd_soc_dapm_disable_pin(codec, "LineIn");
-	}else if(smdkc100_rec_opt == REC_LINE){
+	}else if(smdks5p_rec_opt == REC_LINE){
 		snd_soc_dapm_disable_pin(codec, "MicIn");
 		snd_soc_dapm_enable_pin(codec, "LineIn");
 	}else{
@@ -279,47 +279,47 @@ static void smdkc100_ext_control(struct snd_soc_codec *codec)
 	snd_soc_dapm_sync(codec);
 }
 
-static int smdkc100_get_pt(struct snd_kcontrol *kcontrol,
+static int smdks5p_get_pt(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	ucontrol->value.integer.value[0] = smdkc100_play_opt;
+	ucontrol->value.integer.value[0] = smdks5p_play_opt;
 	return 0;
 }
 
-static int smdkc100_set_pt(struct snd_kcontrol *kcontrol,
+static int smdks5p_set_pt(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 
-	if(smdkc100_play_opt == ucontrol->value.integer.value[0])
+	if(smdks5p_play_opt == ucontrol->value.integer.value[0])
 		return 0;
 
-	smdkc100_play_opt = ucontrol->value.integer.value[0];
-	smdkc100_ext_control(codec);
+	smdks5p_play_opt = ucontrol->value.integer.value[0];
+	smdks5p_ext_control(codec);
 	return 1;
 }
 
-static int smdkc100_get_cs(struct snd_kcontrol *kcontrol,
+static int smdks5p_get_cs(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	ucontrol->value.integer.value[0] = smdkc100_rec_opt;
+	ucontrol->value.integer.value[0] = smdks5p_rec_opt;
 	return 0;
 }
 
-static int smdkc100_set_cs(struct snd_kcontrol *kcontrol,
+static int smdks5p_set_cs(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_codec *codec =  snd_kcontrol_chip(kcontrol);
 
-	if(smdkc100_rec_opt == ucontrol->value.integer.value[0])
+	if(smdks5p_rec_opt == ucontrol->value.integer.value[0])
 		return 0;
 
-	smdkc100_rec_opt = ucontrol->value.integer.value[0];
-	smdkc100_ext_control(codec);
+	smdks5p_rec_opt = ucontrol->value.integer.value[0];
+	smdks5p_ext_control(codec);
 	return 1;
 }
 
-/* smdkc100 card dapm widgets */
+/* smdks5p card dapm widgets */
 static const struct snd_soc_dapm_widget wm8580_dapm_widgets[] = {
 	SND_SOC_DAPM_HP("Front-L/R", NULL),
 	SND_SOC_DAPM_HP("Center/Sub", NULL),
@@ -362,35 +362,35 @@ static const char *rec_function[] = {
 	[REC_OFF] = "Off",
 };
 
-static const struct soc_enum smdkc100_enum[] = {
+static const struct soc_enum smdks5p_enum[] = {
 	SOC_ENUM_SINGLE_EXT(3, play_function),
 	SOC_ENUM_SINGLE_EXT(3, rec_function),
 };
 
-static const struct snd_kcontrol_new wm8580_smdkc100_controls[] = {
-	SOC_ENUM_EXT("Playback Target", smdkc100_enum[0], smdkc100_get_pt,
-		smdkc100_set_pt),
-	SOC_ENUM_EXT("Capture Source", smdkc100_enum[1], smdkc100_get_cs,
-		smdkc100_set_cs),
+static const struct snd_kcontrol_new wm8580_smdks5p_controls[] = {
+	SOC_ENUM_EXT("Playback Target", smdks5p_enum[0], smdks5p_get_pt,
+		smdks5p_set_pt),
+	SOC_ENUM_EXT("Capture Source", smdks5p_enum[1], smdks5p_get_cs,
+		smdks5p_set_cs),
 };
 
-static int smdkc100_wm8580_init(struct snd_soc_codec *codec)
+static int smdks5p_wm8580_init(struct snd_soc_codec *codec)
 {
 	int i, err;
 
-	/* Add smdkc100 specific controls */
-	for (i = 0; i < ARRAY_SIZE(wm8580_smdkc100_controls); i++) {
+	/* Add smdks5p specific controls */
+	for (i = 0; i < ARRAY_SIZE(wm8580_smdks5p_controls); i++) {
 		err = snd_ctl_add(codec->card,
-			snd_soc_cnew(&wm8580_smdkc100_controls[i], codec, NULL));
+			snd_soc_cnew(&wm8580_smdks5p_controls[i], codec, NULL));
 		if (err < 0)
 			return err;
 	}
 
-	/* Add smdkc100 specific widgets */
+	/* Add smdks5p specific widgets */
 	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets,
 				  ARRAY_SIZE(wm8580_dapm_widgets));
 
-	/* Set up smdkc100 specific audio path audio_map */
+	/* Set up smdks5p specific audio path audio_map */
 	snd_soc_dapm_add_routes(codec, audio_map, ARRAY_SIZE(audio_map));
 
 	/* No jack detect - mark all jacks as enabled */
@@ -398,91 +398,91 @@ static int smdkc100_wm8580_init(struct snd_soc_codec *codec)
 		snd_soc_dapm_enable_pin(codec, wm8580_dapm_widgets[i].name);
 
 	/* Setup Default Route */
-	smdkc100_play_opt = PLAY_STEREO;
-	smdkc100_rec_opt = REC_LINE;
-	smdkc100_ext_control(codec);
+	smdks5p_play_opt = PLAY_STEREO;
+	smdks5p_rec_opt = REC_LINE;
+	smdks5p_ext_control(codec);
 
 	return 0;
 }
 
-static struct snd_soc_dai_link smdkc100_dai[] = {
+static struct snd_soc_dai_link smdks5p_dai[] = {
 {
 	.name = "WM8580",
 	.stream_name = "WM8580 HiFi Playback",
 	.cpu_dai = &s3c_i2s_pdat.i2s_dai,
 	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
-	.init = smdkc100_wm8580_init,
-	.ops = &smdkc100_ops,
+	.init = smdks5p_wm8580_init,
+	.ops = &smdks5p_ops,
 },
 };
 
-static struct snd_soc_card smdkc100 = {
-	.name = "smdkc100",
+static struct snd_soc_card smdks5p = {
+	.name = "smdks5p",
 	.lp_mode = 0,
 	.platform = &s3c_pcm_pdat.pcm_pltfm,
-	.dai_link = smdkc100_dai,
-	.num_links = ARRAY_SIZE(smdkc100_dai),
+	.dai_link = smdks5p_dai,
+	.num_links = ARRAY_SIZE(smdks5p_dai),
 };
 
-static struct wm8580_setup_data smdkc100_wm8580_setup = {
+static struct wm8580_setup_data smdks5p_wm8580_setup = {
 	.i2c_address = 0x1b,
 };
 
-static struct snd_soc_device smdkc100_snd_devdata = {
-	.card = &smdkc100,
+static struct snd_soc_device smdks5p_snd_devdata = {
+	.card = &smdks5p,
 	.codec_dev = &soc_codec_dev_wm8580,
-	.codec_data = &smdkc100_wm8580_setup,
+	.codec_data = &smdks5p_wm8580_setup,
 };
 
-static struct platform_device *smdkc100_snd_device;
+static struct platform_device *smdks5p_snd_device;
 
-static int __init smdkc100_audio_init(void)
+static int __init smdks5p_audio_init(void)
 {
 	int ret;
 
 	if(lowpower){ /* LPMP3 Mode doesn't support recording */
 		wm8580_dai[0].capture.channels_min = 0;
 		wm8580_dai[0].capture.channels_max = 0;
-		smdkc100.lp_mode = 1;
+		smdks5p.lp_mode = 1;
 	}else{
 		wm8580_dai[0].capture.channels_min = 2;
 		wm8580_dai[0].capture.channels_max = 2;
-		smdkc100.lp_mode = 0;
+		smdks5p.lp_mode = 0;
 	}
 
 	s3c_pcm_pdat.set_mode(lowpower, &s3c_i2s_pdat);
 	s3c_i2s_pdat.set_mode(lowpower);
 
-	smdkc100_snd_device = platform_device_alloc("soc-audio", 0);
-	if (!smdkc100_snd_device)
+	smdks5p_snd_device = platform_device_alloc("soc-audio", 0);
+	if (!smdks5p_snd_device)
 		return -ENOMEM;
 
-	platform_set_drvdata(smdkc100_snd_device, &smdkc100_snd_devdata);
-	smdkc100_snd_devdata.dev = &smdkc100_snd_device->dev;
-	ret = platform_device_add(smdkc100_snd_device);
+	platform_set_drvdata(smdks5p_snd_device, &smdks5p_snd_devdata);
+	smdks5p_snd_devdata.dev = &smdks5p_snd_device->dev;
+	ret = platform_device_add(smdks5p_snd_device);
 
 	if (ret)
-		platform_device_put(smdkc100_snd_device);
+		platform_device_put(smdks5p_snd_device);
 	
 #ifdef CONFIG_SND_WM8580_MASTER
 	s3cdbg("WM8580 is I2S Master\n");
 #else
-	s3cdbg("S5PC100 is I2S Master\n");
+	s3cdbg("S5P is I2S Master\n");
 #endif
 
 	return ret;
 }
 
-static void __exit smdkc100_audio_exit(void)
+static void __exit smdks5p_audio_exit(void)
 {
-	platform_device_unregister(smdkc100_snd_device);
+	platform_device_unregister(smdks5p_snd_device);
 }
 
-module_init(smdkc100_audio_init);
-module_exit(smdkc100_audio_exit);
+module_init(smdks5p_audio_init);
+module_exit(smdks5p_audio_exit);
 
 module_param (lowpower, int, 0444);
 
 /* Module information */
-MODULE_DESCRIPTION("ALSA SoC SMDKC100 WM8580");
+MODULE_DESCRIPTION("ALSA SoC SMDK WM8580");
 MODULE_LICENSE("GPL");

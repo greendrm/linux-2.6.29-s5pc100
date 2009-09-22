@@ -34,12 +34,11 @@
 #define FIMC_SUBDEVS		3
 #define FIMC_MAXCAMS		4
 #define FIMC_PHYBUFS		4
-#define FIMC_CAPBUFS		(FIMC_PHYBUFS + 1)
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
 #define FIMC_OUTQ_BUFS		3
 #define FIMC_TPID		3
-
+#define FIMC_CAPBUFS		16
 #define FIMC_ONESHOT_TIMEOUT	200
 #define FIMC_DQUEUE_TIMEOUT	200
 
@@ -121,12 +120,14 @@ struct fimc_buf {
 
 /* general buffer */
 struct fimc_buf_set {
+	int			id;
 	dma_addr_t		base[3];
 	size_t			length[3];
 	size_t			garbage[3];
 	enum videobuf_state	state;
 	u32			flags;
 	atomic_t		mapped_cnt;
+	struct list_head	list;
 };
 
 /* for capture device */
@@ -135,6 +136,8 @@ struct fimc_capinfo {
 	struct v4l2_rect	crop;
 	struct v4l2_pix_format	fmt;
 	struct fimc_buf_set	bufs[FIMC_CAPBUFS];
+	struct list_head	inq;
+	int			outq[FIMC_PHYBUFS];
 	int			nr_bufs;
 	int			irq;
 	int			lastirq;

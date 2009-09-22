@@ -36,12 +36,21 @@ static struct resource s3c_dm9000_resources[] = {
                 .end   = S5PC11X_PA_DM9000,
                 .flags = IORESOURCE_MEM,
         },
+
+#if defined(CONFIG_DM9000_16BIT)
+	[1] = {
+                .start = S5PC11X_PA_DM9000 + 2,
+                .end   = S5PC11X_PA_DM9000 + 2,
+                .flags = IORESOURCE_MEM,
+        },
+#else
         [1] = {
                 .start = S5PC11X_PA_DM9000 + 1,
                 .end   = S5PC11X_PA_DM9000 + 1,
                 .flags = IORESOURCE_MEM,
         },
-        [2] = {
+#endif
+	[2] = {
                 .start = IRQ_EINT9,
                 .end   = IRQ_EINT9,
                 .flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
@@ -49,7 +58,12 @@ static struct resource s3c_dm9000_resources[] = {
 };
 
 static struct dm9000_plat_data s3c_dm9000_platdata = {
+#if defined(CONFIG_DM9000_16BIT)
+        .flags          = DM9000_PLATF_16BITONLY | DM9000_PLATF_NO_EEPROM,
+#else
         .flags          = DM9000_PLATF_8BITONLY | DM9000_PLATF_NO_EEPROM,
+#endif
+
 };
 
 struct platform_device s3c_device_dm9000 = {
@@ -597,3 +611,15 @@ struct platform_device s3c_device_cfcon = {
         .resource         = s3c_cfcon_resource,
 };
 EXPORT_SYMBOL(s3c_device_cfcon);
+
+/* S3C-TEST driver */
+static struct resource s3c_test_resource[] = {
+};
+
+struct platform_device s3c_device_test = {
+        .name             = "s3c-test",
+        .id               = -1,
+        .num_resources    = ARRAY_SIZE(s3c_test_resource),
+        .resource         = s3c_test_resource,
+};
+EXPORT_SYMBOL(s3c_device_test);

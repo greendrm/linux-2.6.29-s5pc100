@@ -845,9 +845,9 @@ static int s3cfb_init_fbinfo(int id)
 	var->lower_margin = timing->v_bp;
 
 	var->pixclock = lcd->freq * (var->left_margin + var->right_margin +
-				     var->hsync_len + var->xres) *
-	    (var->upper_margin + var->lower_margin +
-	     var->vsync_len + var->yres);
+				var->hsync_len + var->xres) *
+				(var->upper_margin + var->lower_margin +
+				var->vsync_len + var->yres);
 
 	dev_dbg(fbdev->dev, "pixclock: %d\n", var->pixclock);
 
@@ -1092,9 +1092,6 @@ static int s3cfb_probe(struct platform_device *pdev)
 	if (pdata->reset_lcd)
 		pdata->reset_lcd(pdev);
 
-	if (fbdev->lcd->init_ldi)
-		fbdev->lcd->init_ldi();
-
 	ret = device_create_file(&(pdev->dev), &dev_attr_win_power);
 	if (ret < 0)
 		dev_err(fbdev->dev, "failed to add sysfs entries\n");
@@ -1154,6 +1151,9 @@ int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 	struct s3cfb_window *win;
 	int i;
 
+	if (fbdev->lcd->deinit_ldi)
+		fbdev->lcd->deinit_ldi();
+
 	for (i = 0; i < pdata->nr_wins; i++) {
 		win = fbdev->fb[i]->par;
 		if (win->path != DATA_PATH_DMA && win->suspend_fifo) {
@@ -1178,18 +1178,6 @@ int s3cfb_resume(struct platform_device *pdev)
 
 	dev_dbg(fbdev->dev, "wake up from suspend\n");
 
-	if (pdata->cfg_gpio)
-		pdata->cfg_gpio(pdev);
-
-	if (pdata->backlight_on)
-		pdata->backlight_on(pdev);
-
-	if (pdata->reset_lcd)
-		pdata->reset_lcd(pdev);
-
-	if (fbdev->lcd->init_ldi)
-		fbdev->lcd->init_ldi();
-
 	clk_enable(fbdev->clock);
 	s3cfb_init_global();
 	s3cfb_set_clock(fbdev);
@@ -1211,6 +1199,18 @@ int s3cfb_resume(struct platform_device *pdev)
 			}
 		}
 	}
+
+	if (pdata->cfg_gpio)
+		pdata->cfg_gpio(pdev);
+
+	if (pdata->backlight_on)
+		pdata->backlight_on(pdev);
+
+	if (pdata->reset_lcd)
+		pdata->reset_lcd(pdev);
+
+	if (fbdev->lcd->init_ldi)
+		fbdev->lcd->init_ldi();
 
 	return 0;
 }

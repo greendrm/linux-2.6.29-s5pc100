@@ -53,7 +53,7 @@ const unsigned short SEQ_DISPLAY_OFF[] = {
 
 const unsigned short SEQ_STANDBY_ON[] = {
 	0x1D, 0xA1,
-	SLEEPMSEC, 200,
+	SLEEPMSEC, 250,
 
 	ENDDEF, 0x0000
 };
@@ -253,21 +253,19 @@ void tl2796_ldi_init(void)
 {
 	tl2796_panel_send_sequence(SEQ_SETTING);
 	tl2796_panel_send_sequence(SEQ_STANDBY_OFF);
-}
-
-void tl2796_ldi_enable(void)
-{
 	tl2796_panel_send_sequence(SEQ_DISPLAY_ON);
 }
 
-static void tl2796_ldi_disable(void)
+void tl2796_ldi_deinit(void)
 {
 	tl2796_panel_send_sequence(SEQ_DISPLAY_OFF);
+	tl2796_panel_send_sequence(SEQ_STANDBY_ON);
 }
 
 void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 {
-	tl2796.init_ldi = NULL;
+	tl2796.init_ldi = tl2796_ldi_init;
+	tl2796.deinit_ldi = tl2796_ldi_deinit;	
 	ctrl->lcd = &tl2796;
 }
 
@@ -281,14 +279,12 @@ static int __init tl2796_probe(struct spi_device *spi)
 	g_spi = spi;
 
 	tl2796_ldi_init();
-	tl2796_ldi_enable();
 
 	if (ret < 0)
 		return 0;
 
 	return ret;
 }
-
 
 static struct spi_driver tl2796_driver = {
 	.driver = {

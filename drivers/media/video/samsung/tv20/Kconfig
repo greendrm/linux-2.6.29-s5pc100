@@ -12,6 +12,15 @@ config VIDEO_TV20
 config HDMI_CEC
 	bool "HDMI CEC driver support. (only s5pc110)" 
 	depends on VIDEO_TV20 && CPU_S5PC110
-	default n
+	default y
 	---help---
 	  This is a HDMI CEC driver for Samsung SMDK_S5PC110
+	  Check dev node (major 10, minor 242)
+
+config HDMI_HPD
+	bool "HDMI HPD driver support. (only s5pc110)" 
+	depends on VIDEO_TV20 && CPU_S5PC110
+	default y
+	---help---
+	  This is a HDMI HPD driver for Samsung SMDK_S5PC110
+	  Check dev node (major 10, minor 243)

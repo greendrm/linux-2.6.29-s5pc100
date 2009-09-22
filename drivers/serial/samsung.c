@@ -54,9 +54,10 @@
 #include "samsung.h"
 
 #if defined(CONFIG_S5P_UART_DMA_EN)
-#include <mach/s3c-dma.h>
 #include <linux/dma-mapping.h>
 #include <linux/semaphore.h>
+#include <plat/regs-gpio.h>
+#include <mach/s3c-dma.h>
 
 static struct s3c2410_dma_client uart_dma_client_tx = {
 	.name = "uart-dma-tx",
@@ -161,7 +162,7 @@ void s3c24xx_flush_buffer(struct uart_port *port)
 {
 	struct s3c24xx_uart_port *ourport = to_ourport(port);
 
-	if (ourport->dma_busy == 1) {
+	if (ourport->dma_busy) {
 		s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_STOP);
 		s3c2410_dma_ctrl(ourport->dma_ch_tx, S3C2410_DMAOP_FLUSH);
 		ourport->dma_busy = 0;
@@ -181,7 +182,7 @@ static void s5pc1xx_uart_enqueue(struct s3c24xx_uart_port *uart)
 	struct circ_buf *xmit = &port->info->xmit;
 	unsigned int len, ucon;
 
-	if (ourport->dma_busy == 1)
+	if (ourport->dma_busy)
 		return;
 
 	if (uart_circ_empty(xmit) || uart_tx_stopped(port))
@@ -194,7 +195,7 @@ static void s5pc1xx_uart_enqueue(struct s3c24xx_uart_port *uart)
 
 	ucon = s3c2410_dma_enqueue(ourport->dma_ch_tx, (void *)ourport,
 				   (dma_addr_t) virt_to_dma(NULL,
-					(char *)&(xmit->buf[xmit->tail])) ,len);
+					(char *)&(xmit->buf[xmit->tail])), len);
 
 	ucon = rd_regl(port, S3C2410_UCON);
 	ucon &= ~(S3C2410_UCON_TXDMAMODE_MASK);
@@ -216,14 +217,12 @@ static void s5pc1xx_uart_tx_buffdone(struct s3c2410_dma_chan *channel,
 		ourport->dma_busy = 0;
 	} else {
 		spin_lock(&port->lock);
-		if (circ->head != circ->tail) {
+		if (circ->head != circ->tail)
 			circ->tail = (circ->tail + size) & (UART_XMIT_SIZE - 1);
-		}
 
 		port->icount.tx += size;
-		if (uart_circ_chars_pending(circ) < WAKEUP_CHARS) {
+		if (uart_circ_chars_pending(circ) < WAKEUP_CHARS)
 			uart_write_wakeup(port);
-		}
 
 		s5pc1xx_uart_enqueue(ourport);
 		spin_unlock(&port->lock);
@@ -296,7 +295,7 @@ static void s5p_dma_rx_chars(struct s3c24xx_uart_port *ourport)
 				flag = TTY_FRAME;
 		}
 
-		for (; ourport->rx_buf.tail != ourport->rx_buf.head;) {
+		for (;ourport->rx_buf.tail != ourport->rx_buf.head;) {
 			if (uart_handle_sysrq_char
 			    (port, ourport->rx_buf.buf[ourport->rx_buf.tail]))
 				goto ignore_char;
@@ -625,6 +624,15 @@ static void s3c24xx_serial_shutdown(struct uart_port *port)
 		s3c2410_dma_ctrl(ourport->dma_ch_rx, S3C2410_DMAOP_FLUSH);
 		s3c2410_dma_free(ourport->dma_ch_rx, &uart_dma_client_rx);
 	}
+#if defined(CONFIG_CPU_S5PC110)
+	if(((port->line == 2) && (port->cons->index != 2)) || 
+		((port->line == 3) && (port->cons->index != 3))) {
+		/* FIFO disable explicitly required for UART channels 2 
+		and 3 at the end of shutdown to work in the dma mode */
+        	wr_regl(port, S3C2410_UFCON,  S3C2410_UFCON_RESETBOTH);
+        	writel(readl(S5PC11X_GPA1CON) & ~(0xffff), S5PC11X_GPA1CON);
+	}
+#endif
 #endif
 }
 
@@ -634,6 +642,15 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 	int ret;
 #if defined(CONFIG_S5P_UART_DMA_EN)
 	unsigned int ucon, ufcon;
+#endif
+#if defined(CONFIG_CPU_S5PC110) && defined(CONFIG_S5P_UART_DMA_EN)
+	if(((port->line == 2) && (port->cons->index != 2)) || 
+		((port->line == 3) && (port->cons->index != 3))) {
+		/* FIFO enable and setting of gpios is required
+		for UART channels 2 and 3 to work in the dma mode */
+        	writel(readl(S5PC11X_GPA1CON) | (0x2222), S5PC11X_GPA1CON);
+        	wr_regl(port, S3C2410_UFCON, S3C2410_UFCON_FIFOMODE);
+	}
 #endif
 
 	dbg("s3c24xx_serial_startup: port=%p (%p)\n",
@@ -670,7 +687,7 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 #if defined(CONFIG_S5P_UART_DMA_EN)
 	if (s3c2410_dma_request(ourport->dma_ch_tx, 
 				&uart_dma_client_tx, NULL)) {
-		printk(KERN_ERR "unable to get DMA channel for UART tx.\n");
+		printk("Unable to attach UART TX DMA channel\n");
 		ourport->dma_ch_tx = 0;
 		goto err;
 	}
@@ -684,7 +701,7 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 
 	if (s3c2410_dma_request(ourport->dma_ch_rx,
 				&uart_dma_client_rx, NULL)) {
-		printk(KERN_ERR "unable to get DMA channel for UART rx.\n");
+		printk("Unable to attach UART RX DMA channel\n");
 		ourport->dma_ch_rx = 0;
 		goto err;
 	}
@@ -706,7 +723,8 @@ static int s3c24xx_serial_startup(struct uart_port *port)
 	wr_regl(port, S3C2410_UCON, ucon);
 
 	ufcon = rd_regl(port, S3C2410_UFCON);
-	/* Rx FIFO trigger set to 1 byte */
+
+/* set rx fifo trigger level to 1 byte as the dma burst length is 1 */
 #if defined(CONFIG_CPU_S5PC110)
 	ufcon &= ~(0x7 << 4);
 #else

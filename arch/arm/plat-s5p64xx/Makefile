@@ -41,6 +41,14 @@ obj-$(CONFIG_HAVE_PWM) 		 += pwm.o
 
 obj-$(CONFIG_SPI_S5P6442)   += dev-spi.o
 
+# Device setup - FIMC
+obj-$(CONFIG_S5P64XX_DEV_FIMC0)	  += dev-fimc0.o
+obj-$(CONFIG_S5P64XX_DEV_FIMC1)	  += dev-fimc1.o
+obj-$(CONFIG_S5P64XX_DEV_FIMC2)	  += dev-fimc2.o
+obj-$(CONFIG_S5P64XX_SETUP_FIMC0) += setup-fimc0.o
+obj-$(CONFIG_S5P64XX_SETUP_FIMC1) += setup-fimc1.o
+obj-$(CONFIG_S5P64XX_SETUP_FIMC2) += setup-fimc2.o
+
 # Device setup - FIMD
 obj-$(CONFIG_S5P64XX_DEV_FB)	  += dev-fb.o
 

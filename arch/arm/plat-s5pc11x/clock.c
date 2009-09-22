@@ -25,20 +25,25 @@
 #include <mach/map.h>
 
 #include <plat/regs-clock.h>
+#include <plat/regs-audss.c>
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/clock.h>
 
 static int powerdomain_set(struct powerdomain *pd, int enable)
 {
-	unsigned long ctrlbit = pd->pd_ctrlbit;
-	void __iomem *reg = (void __iomem *)(pd->pd_reg);
-	void __iomem *stable_reg = (void __iomem *)(pd->pd_stable_reg);
+	unsigned long ctrlbit;
+	void __iomem *reg;
+	void __iomem *stable_reg;
 	unsigned long reg_dat;
 
-	if (IS_ERR(pd) || pd == NULL)
+	if (pd == NULL)
 		return -EINVAL;
 
+	ctrlbit = pd->pd_ctrlbit;
+	reg = (void __iomem *)pd->pd_reg;
+	stable_reg = (void __iomem *)pd->pd_stable_reg;
+	
 	reg_dat = __raw_readl(reg);
 
 	if (enable) {
@@ -55,6 +60,7 @@ static int powerdomain_set(struct powerdomain *pd, int enable)
 }
 
 static struct powerdomain pd_lcd = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<3),
@@ -63,6 +69,7 @@ static struct powerdomain pd_lcd = {
 };
 
 static struct powerdomain pd_tv = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<4),
@@ -71,6 +78,7 @@ static struct powerdomain pd_tv = {
 };
 
 static struct powerdomain pd_mfc = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<1),
@@ -79,6 +87,7 @@ static struct powerdomain pd_mfc = {
 };
 
 static struct powerdomain pd_cam = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<5),
@@ -86,7 +95,9 @@ static struct powerdomain pd_cam = {
 	.pd_set		= powerdomain_set,
 };
 
-static struct powerdomain pd_audio = {
+/* No way to set .pd in s5pc110-clock.c */
+struct powerdomain pd_audio = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<7),
@@ -95,6 +106,7 @@ static struct powerdomain pd_audio = {
 };
 
 static struct powerdomain pd_irom = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<20),
@@ -103,12 +115,24 @@ static struct powerdomain pd_irom = {
 };
 
 static struct powerdomain pd_g3d = {
+	.nr_clks	= 0,
 	.pd_reg		= S5P_NORMAL_CFG,
 	.pd_stable_reg	= S5P_BLK_PWR_STAT,
 	.pd_ctrlbit	= (0x1<<2),
 	.ref_count	= 0,
 	.pd_set		= powerdomain_set,
 };
+
+static void s5pc11x_register_clks_on_pd(struct clk *clks)
+{
+
+	if (clks->pd != NULL) {
+		clks->pd->pd_clks[clks->pd->nr_clks] = clks;
+		clks->pd->nr_clks++;
+		
+	}
+	
+}
 
 struct clk clk_27m = {
 	.name		= "clk_27m",
@@ -190,6 +214,11 @@ int s5pc11x_clk_bus1_ctrl(struct clk *clk, int enable)
 	return s5pc11x_clk_gate(S5P_CLKGATE_BUS1, clk, enable);
 }
 
+int s5pc11x_audss_clkctrl(struct clk *clk, int enable)
+{
+	return s5pc11x_clk_gate(S5P_CLKGATE_AUDSS, clk, enable);
+}
+
 static struct clk init_clocks_disable[] = {
 
 };
@@ -246,7 +275,7 @@ static struct clk init_clocks[] = {
 		.ctrlbit        = S5P_CLKGATE_IP0_IPC,
 		.pd		= &pd_cam,
 	}, {
-		.name           = "csis",
+		.name           = "mipi-csis",
 		.id             = -1,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,
@@ -528,10 +557,10 @@ void s5pc11x_init_clocks_power_disabled(void)
  * FIXME : Do not turn off power domain in case of S5PC110 EVT0.
  *	This code should be fixed after revision.
  */
-	powerdomain_set(&pd_lcd, 1);
-	powerdomain_set(&pd_tv, 1);
+	powerdomain_set(&pd_lcd, 0);
+	powerdomain_set(&pd_tv, 0);
 	powerdomain_set(&pd_mfc, 1);
-	powerdomain_set(&pd_cam, 1);
+	powerdomain_set(&pd_cam, 0);
 	powerdomain_set(&pd_audio, 1);
 	powerdomain_set(&pd_g3d, 1);
 }
@@ -542,8 +571,6 @@ void __init s5pc11x_register_clocks(void)
 	int ret;
 	int ptr;
 
-	s5pc11x_init_clocks_power_disabled();
-
 	s3c24xx_register_clocks(clks, ARRAY_SIZE(clks));
 
 	clkp = init_clocks;
@@ -553,6 +580,7 @@ void __init s5pc11x_register_clocks(void)
 			printk(KERN_ERR "Failed to register clock %s (%d)\n",
 			       clkp->name, ret);
 		}
+		s5pc11x_register_clks_on_pd(clkp);
 	}
 
 	clkp = init_clocks_disable;
@@ -566,4 +594,7 @@ void __init s5pc11x_register_clocks(void)
 
 		(clkp->enable)(clkp, 0);
 	}
+
+	s5pc11x_init_clocks_power_disabled();
+
 }

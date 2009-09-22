@@ -10,7 +10,6 @@
  * published by the Free Software Foundation.
  *
 */
-
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/interrupt.h>
@@ -64,6 +63,13 @@
 #include <mach/gpio.h>
 #include <plat/regs-gpio.h>
 #include <plat/gpio-cfg.h>
+
+#include <linux/videodev2.h>
+#include <media/s5k3ba_platform.h>
+#include <media/s5k4ba_platform.h>
+#include <plat/regs-fimc.h>
+#include <plat/regs-clock.h>
+#include <plat/fimc.h>
 
 #ifdef CONFIG_USB_SUPPORT
 #include <plat/regs-otg.h>
@@ -461,6 +467,12 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 #if defined CONFIG_USB_GADGET_S3C_OTGD 
 	&s3c_device_usbgadget,
 #endif
+	&s3c_device_fimc0,
+	&s3c_device_fimc1,
+	&s3c_device_fimc2,
+	&s3c_device_mfc,
+	&s3c_device_jpeg,
+	&s3c_device_rotator,
 };
 
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -470,7 +482,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
-	{ I2C_BOARD_INFO("WM8580", 0x1a), },
+	{ I2C_BOARD_INFO("WM8580", 0x1b), },
 	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
 };
 
@@ -491,6 +503,202 @@ static struct s3c_adc_mach_info s3c_adc_platform = {
 	.delay	= 	10000,
 	.presc 	= 	49,
 	.resolution = 	12,
+};
+
+/*
+ * External camera reset
+ * Because the most of cameras take i2c bus signal, so that
+ * you have to reset at the boot time for other i2c slave devices.
+ * This function also called at fimc_init_camera()
+ * Do optimization for cameras on your platform.
+*/
+static int smdk6442_cam0_power(int onoff)
+{
+	/* Camera A */
+	gpio_request(S5P64XX_GPH0(1), "GPH0");
+	s3c_gpio_setpull(S5P64XX_GPH0(1), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5P64XX_GPH0(1), 0);
+	gpio_direction_output(S5P64XX_GPH0(1), 1);
+	gpio_free(S5P64XX_GPH0(1));
+
+	return 0;
+}
+
+static int smdk6442_cam1_power(int onoff)
+{
+	/* Camera B */
+	gpio_request(S5P64XX_GPH0(3), "GPH0");
+	s3c_gpio_setpull(S5P64XX_GPH0(3), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5P64XX_GPH0(3), 0);
+	gpio_direction_output(S5P64XX_GPH0(3), 1);
+	gpio_free(S5P64XX_GPH0(3));
+
+	return 0;
+}
+
+
+/*
+ * Guide for Camera Configuration for SMDKC110
+ * ITU channel must be set as A or B
+ * ITU CAM CH A: S5K3BA only
+ * ITU CAM CH B: one of S5K3BA and S5K4BA
+ * MIPI: one of S5K4EA and S5K6AA
+ *
+ * NOTE1: if the S5K4EA is enabled, all other cameras must be disabled
+ * NOTE2: currently, only 1 MIPI camera must be enabled
+ * NOTE3: it is possible to use both one ITU cam and one MIPI cam except for S5K4EA case
+ * 
+*/
+#define CAM_ITU_CH_A
+#undef S5K3BA_ENABLED
+#define S5K4BA_ENABLED
+#undef S5K4EA_ENABLED
+
+/* External camera module setting */
+/* 2 ITU Cameras */
+#ifdef S5K3BA_ENABLED
+static struct s5k3ba_platform_data s5k3ba_plat = {
+	.default_width = 640,
+	.default_height = 480,
+	.pixelformat = V4L2_PIX_FMT_VYUY,
+	.freq = 24000000,
+	.is_mipi = 0,
+};
+
+static struct i2c_board_info  __initdata s5k3ba_i2c_info = {
+	I2C_BOARD_INFO("S5K3BA", 0x2d),
+	.platform_data = &s5k3ba_plat,
+};
+
+static struct s3c_platform_camera __initdata s5k3ba = {
+#ifdef CAM_ITU_CH_A
+	.id		= CAMERA_PAR_A,
+#else
+	.id		= CAMERA_PAR_B,
+#endif
+	.type		= CAM_TYPE_ITU,
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CRYCBY,
+	.i2c_busnum	= 1,
+	.info		= &s5k3ba_i2c_info,
+	.pixelformat	= V4L2_PIX_FMT_VYUY,
+	.srclk_name	= "mout_epll",
+#ifdef CAM_ITU_CH_A
+	.clk_name	= "sclk_cam0",
+#else
+	.clk_name	= "sclk_cam1",
+#endif
+	.clk_rate	= 24000000,
+	.line_length	= 1920,
+	.width		= 640,
+	.height		= 480,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 640,
+		.height	= 480,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+#ifdef CAM_ITU_CH_A
+	.cam_power	= smdk6442_cam0_power,
+#else
+	.cam_power	= smdk6442_cam1_power,
+#endif
+};
+#endif
+
+#ifdef S5K4BA_ENABLED
+static struct s5k4ba_platform_data s5k4ba_plat = {
+	.default_width = 800,
+	.default_height = 600,
+	.pixelformat = V4L2_PIX_FMT_UYVY,
+	.freq = 44000000,
+	.is_mipi = 0,
+};
+
+static struct i2c_board_info  __initdata s5k4ba_i2c_info = {
+	I2C_BOARD_INFO("S5K4BA", 0x2d),
+	.platform_data = &s5k4ba_plat,
+};
+
+static struct s3c_platform_camera __initdata s5k4ba = {
+#ifdef CAM_ITU_CH_A
+	.id		= CAMERA_PAR_A,
+#else
+	.id		= CAMERA_PAR_B,
+#endif
+	.type		= CAM_TYPE_ITU,
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 1,
+	.info		= &s5k4ba_i2c_info,
+	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.srclk_name	= "mout_mpll",
+#ifdef CAM_ITU_CH_A
+	.clk_name	= "sclk_cam0",
+#else
+	.clk_name	= "sclk_cam1",
+#endif
+	.clk_rate	= 50000000,
+	.line_length	= 1920,
+	.width		= 800,
+	.height		= 600,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 800,
+		.height	= 600,
+	},
+
+	/* Polarity */
+	.inv_pclk	= 0,
+	.inv_vsync 	= 1,
+	.inv_href	= 0,
+	.inv_hsync	= 0,
+
+	.initialized 	= 0,
+#ifdef CAM_ITU_CH_A
+	.cam_power	= smdk6442_cam0_power,
+#else
+	.cam_power	= smdk6442_cam1_power,
+#endif
+};
+#endif
+
+/* Interface setting */
+static struct s3c_platform_fimc __initdata fimc_plat = {
+#if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
+	.default_cam	= CAMERA_CSI_C,
+#else
+
+#ifdef CAM_ITU_CH_A
+	.default_cam	= CAMERA_PAR_A,
+#else
+	.default_cam	= CAMERA_PAR_B,
+#endif
+
+#endif
+	.camera		= {
+#ifdef S5K3BA_ENABLED
+		&s5k3ba,
+#endif
+#ifdef S5K4BA_ENABLED
+		&s5k4ba,
+#endif
+#ifdef S5K4EA_ENABLED
+		&s5k4ea,
+#endif
+#ifdef S5K6AA_ENABLED
+		&s5k6aa,
+#endif
+	}
 };
 
 #if defined(CONFIG_HAVE_PWM)
@@ -576,7 +784,7 @@ static void __init smdk6442_machine_init(void)
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);
 	s3c_i2c2_set_platdata(NULL);
-        i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
+  i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 	i2c_register_board_info(2, i2c_devs2, ARRAY_SIZE(i2c_devs2));
 
@@ -590,11 +798,18 @@ static void __init smdk6442_machine_init(void)
 
 	s5p6442_pm_init();
 
-//	smdk_backlight_register();
+	smdk_backlight_register();
 
 #if defined(CONFIG_MMC_SDHCI_S3C)
         s3c_sdhci_set_platdata();
 #endif
+
+	s3c_fimc0_set_platdata(&fimc_plat);
+	s3c_fimc1_set_platdata(&fimc_plat);
+	s3c_fimc2_set_platdata(&fimc_plat);
+	smdk6442_cam0_power(1);
+	smdk6442_cam1_power(1);
+	
 }
 
 static void __init smdk6442_fixup(struct machine_desc *desc,

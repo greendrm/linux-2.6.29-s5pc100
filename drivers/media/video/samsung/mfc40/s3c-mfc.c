@@ -41,6 +41,8 @@
 #include <plat/regs-clock.h>
 #include <mach/map.h>
 
+#undef MFC_PM
+
 int isMFCRunning = 0;
 
 static struct resource	*s3c_mfc_mem;
@@ -64,6 +66,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 
 	mfc_debug("MFC - Power on sequence -\n");
 
+#if defined(MFC_PM)
 	writel(readl(S5P_NORMAL_CFG)|(1<<1),S5P_NORMAL_CFG);
 //	writel(readl(S5P_MTC_STABLE)|(0<<1),S5P_MTC_STABLE);
 	writel(readl(S5P_BLK_PWR_STAT)|(1<<1),S5P_BLK_PWR_STAT);
@@ -71,6 +74,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	mfc_debug("LP Mode or Normal Mode [1]:%x\n",readl(S5P_NORMAL_CFG));
 	mfc_debug("Stabilization counter Domain MFC[7:4]:%x\n",readl(S5P_MTC_STABLE));
 	mfc_debug("Power Status [1]:%x\n",readl(S5P_BLK_PWR_STAT));
+#endif
 	
 	MfcCtx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
 	if (MfcCtx == NULL) {
@@ -132,6 +136,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 
 out_release:
 
+#if defined(MFC_PM)
 	mfc_debug("MFC - Power off sequence -\n");
 
 	writel(readl(S5P_NORMAL_CFG)&~(1<<1),S5P_NORMAL_CFG);
@@ -141,6 +146,7 @@ out_release:
 	mfc_debug("LP Mode or Normal Mode [1]:%x\n",readl(S5P_NORMAL_CFG));
 	mfc_debug("Stabilization counter Domain MFC[7:4]:%x\n",readl(S5P_MTC_STABLE));
 	mfc_debug("Power Status [1]:%x\n",readl(S5P_BLK_PWR_STAT));
+#endif
 	
 	mutex_unlock(&s3c_mfc_mutex);
 	return ret;
@@ -558,6 +564,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 
 	ret = misc_register(&s3c_mfc_miscdev);
 
+#if defined(MFC_PM)
 	mfc_debug("MFC - Power off sequence -\n");
 	writel(readl(S5P_NORMAL_CFG)&~(1<<1),S5P_NORMAL_CFG);
 //	writel(readl(S5P_MTC_STABLE)|(0<<1),S5P_MTC_STABLE);
@@ -566,6 +573,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	mfc_debug("LP Mode or Normal Mode [1]:%x\n",readl(S5P_NORMAL_CFG));
 	mfc_debug("Stabilization counter Domain MFC[7:4]:%x\n",readl(S5P_MTC_STABLE));
 	mfc_debug("Power Status [1]:%x\n",readl(S5P_BLK_PWR_STAT));
+#endif
 
 	return 0;
 

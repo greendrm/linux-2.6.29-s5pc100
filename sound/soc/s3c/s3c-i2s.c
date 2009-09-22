@@ -35,14 +35,14 @@ static struct s3c2410_dma_client s3c_dma_client_in = {
 	.name = "I2S PCM Stereo in"
 };
 
-static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_out = {
+static struct s5p_pcm_dma_params s3c_i2s_pcm_stereo_out = {
 	.client		= &s3c_dma_client_out,
 	.channel	= S3C_DMACH_I2S_OUT,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISTXD,
 	.dma_size	= 4,
 };
 
-static struct s5pc1xx_pcm_dma_params s3c_i2s_pcm_stereo_in = {
+static struct s5p_pcm_dma_params s3c_i2s_pcm_stereo_in = {
 	.client		= &s3c_dma_client_in,
 	.channel	= S3C_DMACH_I2S_IN,
 	.dma_addr	= S3C_IIS_PABASE + S3C_IISRXD,
@@ -63,7 +63,7 @@ struct s3c_i2s_info {
 
 static struct s3c_i2s_info s3c_i2s;
 
-struct s5pc1xx_i2s_pdata s3c_i2s_pdat;
+struct s5p_i2s_pdata s3c_i2s_pdat;
 
 #define S3C_IISFIC_LP 			(s3c_i2s_pdat.lp_mode ? S3C_IISFICS : S3C_IISFIC)
 #define S3C_IISCON_TXDMACTIVE_LP 	(s3c_i2s_pdat.lp_mode ? S3C_IISCON_TXSDMACTIVE : S3C_IISCON_TXDMACTIVE)
@@ -429,9 +429,9 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 	From the table above, we find that 49152000 gives least(0) residue 
 	for most sample rates, followed by 67738000.
 */
-		clk = clk_get(NULL, EXTPRNT);
+		clk = clk_get(NULL, RATESRCCLK);
 		if (IS_ERR(clk)) {
-			printk("failed to get %s\n", EXTPRNT);
+			printk("failed to get %s\n", RATESRCCLK);
 			return -EBUSY;
 		}
 		clk_disable(clk);
@@ -454,7 +454,7 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		}
 		clk_enable(clk);
 		s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
-		//printk("Setting FOUTepll to %dHz", s3c_i2s.clk_rate);
+		s3cdbg("Setting FOUTepll to %dHz", s3c_i2s.clk_rate);
 		clk_put(clk);
 		break;
 #endif
@@ -621,7 +621,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 			     struct snd_soc_dai *dai)
 {
 	int ret = 0;
-	struct clk *cf;
+	struct clk *cf, *cm;
 
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
@@ -639,6 +639,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get clk(%s)\n", PCLKCLK);
 		goto lb4;
 	}
+	s3cdbg("Got Clock -> %s\n", PCLKCLK);
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
@@ -651,17 +652,38 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		printk("failed to get clk(%s)\n", EXTCLK);
 		goto lb3;
 	}
+	s3cdbg("Got Audio Bus Clock -> %s\n", EXTCLK);
 
-	cf = clk_get(NULL, EXTPRNT);
-	if (IS_ERR(cf)) {
+	cm = clk_get(NULL, EXTPRNT);
+	if (IS_ERR(cm)) {
 		printk("failed to get %s\n", EXTPRNT);
 		goto lb2;
 	}
-	if(clk_set_parent(s3c_i2s.audio_bus, cf)){
-		printk("failed to set FOUTepll as parent of %s\n", EXTCLK);
+	s3cdbg("Got Audio Bus Source Clock -> %s\n", EXTPRNT);
+
+	if(clk_set_parent(s3c_i2s.audio_bus, cm)){
+		printk("failed to set %s as parent of %s\n", EXTPRNT, EXTCLK);
 		goto lb1;
 	}
+	s3cdbg("Set %s as parent of %s\n", EXTPRNT, EXTCLK);
+
+#if defined(CONFIG_MACH_SMDKC110)
+	cf = clk_get(NULL, "fout_epll");
+	if (IS_ERR(cf)) {
+		printk("failed to get fout_epll\n");
+		goto lb1;
+	}
+	s3cdbg("Got Clock -> fout_epll\n");
+
+	if(clk_set_parent(cm, cf)){
+		printk("failed to set fout_epll as parent of %s\n", EXTPRNT);
+		clk_put(cf);
+		goto lb1;
+	}
+	s3cdbg("Set fout_epll as parent of %s\n", EXTPRNT);
 	clk_put(cf);
+#endif
+	clk_put(cm);
 
 	clk_enable(s3c_i2s.audio_bus);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
@@ -681,7 +703,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 
 #ifdef USE_CLKAUDIO
 lb1:
-	clk_put(cf);
+	clk_put(cm);
 lb2:
 	clk_put(s3c_i2s.audio_bus);
 #endif
@@ -864,7 +886,7 @@ static void s3c_i2sdma_ctrl(int state)
 	spin_unlock(&s3c_i2s_pdat.lock);
 }
 
-struct s5pc1xx_i2s_pdata s3c_i2s_pdat = {
+struct s5p_i2s_pdata s3c_i2s_pdat = {
 	.lp_mode = 0,
 	.set_mode = s3c_i2s_setmode,
 	.p_rate = &s3c_i2s.clk_rate,
@@ -907,17 +929,17 @@ struct s5pc1xx_i2s_pdata s3c_i2s_pdat = {
 
 EXPORT_SYMBOL_GPL(s3c_i2s_pdat);
 
-static int __init s5pc1xx_i2s_init(void)
+static int __init s5p_i2s_init(void)
 {
 	return snd_soc_register_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_init(s5pc1xx_i2s_init);
+module_init(s5p_i2s_init);
 
-static void __exit s5pc1xx_i2s_exit(void)
+static void __exit s5p_i2s_exit(void)
 {
 	snd_soc_unregister_dai(&s3c_i2s_pdat.i2s_dai);
 }
-module_exit(s5pc1xx_i2s_exit);
+module_exit(s5p_i2s_exit);
 
 /* Module information */
 MODULE_AUTHOR("Jaswinder Singh <jassi.brar@samsung.com>");

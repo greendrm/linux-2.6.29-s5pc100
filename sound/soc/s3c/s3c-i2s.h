@@ -1,5 +1,5 @@
 /*
- * s3c-i2s.h  --  ALSA Soc Audio Layer
+ * s5p-i2s.h  --  ALSA Soc Audio Layer
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef S3C_I2S_H_
-#define S3C_I2S_H_
+#ifndef S5P_I2S_H_
+#define S5P_I2S_H_
 
 #define USE_CLKAUDIO	1 /* use it for LPMP3 mode */
 
@@ -177,22 +177,38 @@
 #define S3C_CDCLKSRC_INT	(4<<10)
 #define S3C_CDCLKSRC_EXT	(5<<10)
 
-#define S3C_PA_IIS_V32		S5PC1XX_PA_IIS_V32
-#define S3C_PA_IIS_V50		S5PC1XX_PA_IIS_V50
 #define IRQ_S3C_IISV32		IRQ_I2S1
 #define IRQ_S3C_IISV50		IRQ_I2S0
+
+/* below definitions have moved to "arch/arm/mach-s5pc100/include/mach/map.h"
+-#define S3C_PA_IIS_V32         S5PC1XX_PA_IIS_V32
+-#define S3C_PA_IIS_V50         S5PC1XX_PA_IIS_V50
+*/
 
 #define S3C_DMACH_I2S_OUT	DMACH_I2S_V50_OUT
 #define S3C_DMACH_I2S_IN	DMACH_I2S_V50_IN
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
 #define PCLKCLK			"i2s_v50"
-#define EXTCLK			"i2sclkd2"
+
 #ifdef CONFIG_SND_WM8580_MASTER /* ?? */
-#define EXTPRNT "iis_cdclk0"
+#define EXTPRNT "i2s_cdclk0"
 #else
+#if defined(CONFIG_SND_SMDKC100_WM8580)
 #define EXTPRNT "fout_epll"
+#elif defined(CONFIG_SND_SMDKC110_WM8580)
+#define EXTPRNT "i2smain_clk"
 #endif
+#endif
+
+#if defined(CONFIG_SND_SMDKC100_WM8580)
+#define EXTCLK			"i2sclkd2"
+#define RATESRCCLK 		EXTPRNT
+#else
+#define EXTCLK			"i2sclk"
+#define RATESRCCLK 		"fout_epll"
+#endif
+
 #define PLBK_CHAN		6
 #define S3C_DESC		"S3C AP I2S-V5.0 Interface"
 
@@ -203,9 +219,7 @@
 #define S3C_I2SDMA_SUSPEND 4
 #define S3C_I2SDMA_RESUME  5
 
-u32 s3c_i2s_get_clockrate(void);
-
-struct s5pc1xx_i2s_pdata {
+struct s5p_i2s_pdata {
 	int lp_mode;
 	u32 *p_rate;
 	unsigned  dma_prd;
@@ -223,4 +237,4 @@ struct s5pc1xx_i2s_pdata {
 	spinlock_t lock;
 };
 
-#endif /*S3C_I2S_H_*/
+#endif /*S5P_I2S_H_*/
