@@ -63,6 +63,7 @@
 #define AVI_VIC_19		(19<<0) // 1280x720p@50Hz 16:9
 #define AVI_VIC_20		(20<<0) // 1920x1080i@50Hz 16:9
 #define AVI_VIC_31		(31<<0) // 1920x1080p@50Hz
+#define AVI_VIC_34		(34<<0) // 1920x1080p@30Hz
 
 
 #define VP_UPDATE_RETRY_MAXIMUM 	30
@@ -520,6 +521,7 @@ typedef struct _s5p_tv_status {
 #define V4L2_STD_720P_59	((v4l2_std_id)0x0f000000)
 #define V4L2_STD_1080I_59	((v4l2_std_id)0x10000000)
 #define V4L2_STD_1080P_59	((v4l2_std_id)0x11000000)
+#define V4L2_STD_1080P_30	((v4l2_std_id)0x12000000)
 
 #define FORMAT_FLAGS_DITHER       	0x01
 #define FORMAT_FLAGS_PACKED       	0x02
@@ -817,4 +819,4 @@ extern void s5p_hdmi_swhpd_disable(void);
 extern void s5p_hdmi_hpd_gen(void);
 
 
-extern void __init __s5p_hdcp_init(void);
+extern int __init __s5p_hdcp_init(void);

@@ -88,7 +88,10 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
 				V4L2_STD_720P_60 | V4L2_STD_720P_50 |
 				V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
-				V4L2_STD_1080I_60 | V4L2_STD_1080I_50,
+				V4L2_STD_1080I_60 | V4L2_STD_1080I_50 |
+				V4L2_STD_480P_59 | V4L2_STD_720P_59 |
+				V4L2_STD_1080I_59 | V4L2_STD_1080P_59 |
+				V4L2_STD_1080P_30,
 	}
 
 };
@@ -217,6 +220,10 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.index  = 20,
 		.id     = V4L2_STD_1080P_59,
 		.name 	= "1080I_50",
+	}, {
+		.index  = 21,
+		.id     = V4L2_STD_1080P_30,
+		.name 	= "1080I_30",
 	}
 };
 
@@ -843,6 +850,10 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 	case V4L2_STD_1080I_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_50;
 		break;
+
+	case V4L2_STD_1080P_30:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_30;
+		break;		
 		
 	case V4L2_STD_1080P_60:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_60;
@@ -1118,6 +1129,8 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 	case TVOUT_1080P_59:		
 
 	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_30:
 		
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
