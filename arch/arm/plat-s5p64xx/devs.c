@@ -302,6 +302,14 @@ static struct resource s3c_rotator_resource[] = {
         }
 };
 
+struct platform_device s3c_device_rotator = {
+        .name             = "s3c-rotator",
+        .id               = -1,
+        .num_resources    = ARRAY_SIZE(s3c_rotator_resource),
+        .resource         = s3c_rotator_resource
+};
+EXPORT_SYMBOL(s3c_device_rotator);
+
 /* Keypad interface */
 static struct resource s3c_keypad_resource[] = {
 	[0] = {

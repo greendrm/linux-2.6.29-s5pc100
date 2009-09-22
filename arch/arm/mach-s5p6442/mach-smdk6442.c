@@ -472,6 +472,7 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_fimc2,
 	&s3c_device_mfc,
 	&s3c_device_jpeg,
+	&s3c_device_rotator,
 };
 
 static struct i2c_board_info i2c_devs0[] __initdata = {

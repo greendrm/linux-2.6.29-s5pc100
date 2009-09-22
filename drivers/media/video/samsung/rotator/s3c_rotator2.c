@@ -62,7 +62,7 @@ static wait_queue_head_t waitq_rotator;
 
 static struct mutex *h_rot_mutex;
 
-static inline void s3c_rotator_set_source(ro_params *params)
+void s3c_rotator_set_source(ro_params *params)
 {
 	/* address */
 	__raw_writel(params->src_addr_rgb_y, s3c_rotator_base + S3C_ROTATOR_SRCBASEADDR0);
@@ -72,36 +72,36 @@ static inline void s3c_rotator_set_source(ro_params *params)
 	__raw_writel(S3C_ROT_SRC_HEIGHT(params->src_height) |
 			S3C_ROT_SRC_WIDTH(params->src_width), s3c_rotator_base + S3C_ROTATOR_SRCIMGSIZE);
 	/* src window offset */
-	__raw_writel(S3C_ROT_SRC_X_OFFSET(params->src_window_offset_x), s3c_rotator_base + S3C_ROTATOR_SRC_XY);
-	__raw_writel(S3C_ROT_SRC_Y_OFFSET(params->src_window_offset_y), s3c_rotator_base + S3C_ROTATOR_SRC_XY);
+	__raw_writel(S3C_ROT_SRC_X_OFFSET(params->src_window_offset_x) |
+			S3C_ROT_SRC_Y_OFFSET(params->src_window_offset_y), s3c_rotator_base + S3C_ROTATOR_SRC_XY);
 	/* src window size */
-	__raw_writel(S3C_ROT_SRC_HEIGHT(params->src_window_height), s3c_rotator_base + S3C_ROTATOR_SRCROTSIZE);
-	__raw_writel(S3C_ROT_SRC_WIDTH(params->src_window_width), s3c_rotator_base + S3C_ROTATOR_SRCROTSIZE);
+	__raw_writel(S3C_ROT_SRC_HEIGHT(params->src_window_height) |
+			S3C_ROT_SRC_WIDTH(params->src_window_width), s3c_rotator_base + S3C_ROTATOR_SRCROTSIZE);
 
 }
 
 
-static inline void s3c_rotator_set_dest(ro_params *params)
+void s3c_rotator_set_dest(ro_params *params)
 {
 	/* address */
 	__raw_writel(params->dst_addr_rgb_y, s3c_rotator_base + S3C_ROTATOR_DSTBASEADDR0);
 	__raw_writel(params->dst_addr_cb, s3c_rotator_base + S3C_ROTATOR_DSTBASEADDR1);
 	__raw_writel(params->dst_addr_cr, s3c_rotator_base + S3C_ROTATOR_DSTBASEADDR2);
 	/* dst window offset */
-	__raw_writel(S3C_ROT_SRC_X_OFFSET(params->dst_window_offset_x), s3c_rotator_base + S3C_ROTATOR_DST_XY);
-	__raw_writel(S3C_ROT_SRC_Y_OFFSET(params->dst_window_offset_y), s3c_rotator_base + S3C_ROTATOR_DST_XY);
+	__raw_writel(S3C_ROT_SRC_X_OFFSET(params->dst_window_offset_x) |
+			S3C_ROT_SRC_Y_OFFSET(params->dst_window_offset_y), s3c_rotator_base + S3C_ROTATOR_DST_XY);
 	/* dst window size */
-	__raw_writel(S3C_ROT_SRC_HEIGHT(params->dst_window_height), s3c_rotator_base + S3C_ROTATOR_DSTIMGSIZE);
-	__raw_writel(S3C_ROT_SRC_WIDTH(params->dst_window_width), s3c_rotator_base + S3C_ROTATOR_DSTIMGSIZE);
+	__raw_writel(S3C_ROT_SRC_HEIGHT(params->dst_window_height) |
+			S3C_ROT_SRC_WIDTH(params->dst_window_width), s3c_rotator_base + S3C_ROTATOR_DSTIMGSIZE);
 }
 
-static inline void s3c_rotator_start()
+void s3c_rotator_start(void)
 {
-	unsigned int cfg = 0;
+	unsigned int cfg;
 
-	cfg = __raw_readl(s3c_rotator_base + S3C_ROTATOR_CONFIG);
-
-	__raw_writel(S3C_ROT_CTRL_START_ROTATE, s3c_rotator_base + S3C_ROTATOR_CONFIG);
+	cfg = __raw_readl(s3c_rotator_base + S3C_ROTATOR_CTRL);
+	cfg |= S3C_ROT_CTRL_START_ROTATE;
+	__raw_writel(cfg, s3c_rotator_base + S3C_ROTATOR_CTRL);
 }
 
 
@@ -184,7 +184,7 @@ int s3c_rotator_check_restrictions(ro_params *params)
 	return check_align | check_srcsize | check_dstsize;
 
 }
-static inline unsigned int s3c_rotator_get_status(void)
+unsigned int s3c_rotator_get_status(void)
 {
 	unsigned int cfg = 0;
 
@@ -195,7 +195,7 @@ static inline unsigned int s3c_rotator_get_status(void)
 }
 
 
-static void s3c_rotator_enable_int(void)
+void s3c_rotator_enable_int(void)
 {
 	unsigned int cfg;
 
@@ -206,7 +206,7 @@ static void s3c_rotator_enable_int(void)
 }
 
 
-static void s3c_rotator_disable_int(void)
+void s3c_rotator_disable_int(void)
 {
 	unsigned int cfg;
 
@@ -247,31 +247,28 @@ void s3c_rotator_set_inputfmt(rot_inputfmt inputfmt)
 	__raw_writel(cfg, s3c_rotator_base + S3C_ROTATOR_CTRL);
 }
 
-void s3c_rotator_set_degree(rot_degree degree)
+void s3c_rotator_set_degree(unsigned int cmd)
 {
 	unsigned int cfg;
 
 	cfg = __raw_readl(s3c_rotator_base + S3C_ROTATOR_CTRL);
 	cfg &= ~S3C_ROT_CTRL_DEGREE_MASK;
 
-	switch (degree) {
-	case ROTATOR_DEGREE_0:
-		cfg |= (S3C_ROT_CTRL_DEGREE_BYPASS | S3C_ROT_CTRL_FLIP_BYPASS);
-		break;
-	case ROTATOR_DEGREE_90:
+	switch (cmd) {
+	case ROTATOR_90:
 		cfg |= (S3C_ROT_CTRL_DEGREE_90 | S3C_ROT_CTRL_FLIP_BYPASS);
 		break;
-	case ROTATOR_DEGREE_180:
+	case ROTATOR_180:
 		cfg |= (S3C_ROT_CTRL_DEGREE_180 | S3C_ROT_CTRL_FLIP_BYPASS);
 		break;
-	case ROTATOR_DEGREE_270:
+	case ROTATOR_270:
 		cfg |= (S3C_ROT_CTRL_DEGREE_270 | S3C_ROT_CTRL_FLIP_BYPASS);
 		break;
-	case ROTATOR_FLIP_VERTICAL:
-		cfg |= (S3C_ROT_CTRL_DEGREE_BYPASS | S3C_ROT_CTRL_FLIP_VERTICAL);
-		break;
-	case ROTATOR_FLIP_HORIZONTAL:
+	case HFLIP:
 		cfg |= (S3C_ROT_CTRL_DEGREE_BYPASS | S3C_ROT_CTRL_FLIP_HORIZONTAL);
+		break;
+	case VFLIP:
+		cfg |= (S3C_ROT_CTRL_DEGREE_BYPASS | S3C_ROT_CTRL_FLIP_VERTICAL);
 		break;
 	default:
 		cfg |= (S3C_ROT_CTRL_DEGREE_BYPASS | S3C_ROT_CTRL_FLIP_BYPASS);
@@ -345,7 +342,7 @@ static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned in
 	unsigned int check_rest = 0;
 
 	if (ctrl->status != ROT_IDLE) {
-		printk(KERN_ERR "Rotator is busy.\n");
+		printk(KERN_ERR "Rotator is busy : %x\n",ctrl->status);
 		return -EBUSY;
 	}
 
