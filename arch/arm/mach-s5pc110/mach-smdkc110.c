@@ -886,7 +886,9 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 /* I2C1 */
 static struct i2c_board_info i2c_devs1[] __initdata = {
-	/* TODO */
+	{	
+		I2C_BOARD_INFO("s5p_ddc", (0x74>>1)),
+	},
 };
 
 /* I2C2 */

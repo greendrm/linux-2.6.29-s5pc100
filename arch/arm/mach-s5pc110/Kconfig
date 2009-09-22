@@ -26,9 +26,9 @@ config MACH_SMDKC110
 	select S3C_DEV_I2C1
 	select S3C_DEV_I2C2
 	select S3C_DEV_HSMMC
-	select S3C_DEV_HSMMC1 if !SMDKC110_SD_CH0_8BIT
+	select S3C_DEV_HSMMC1 if !S5PC110_SD_CH0_8BIT
 	select S3C_DEV_HSMMC2
-	select S3C_DEV_HSMMC3 if !SMDKC110_SD_CH2_8BIT       
+	select S3C_DEV_HSMMC3 if !S5PC110_SD_CH2_8BIT       
 	select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE
@@ -54,16 +54,16 @@ config S5PC110_AC_TYPE
 endchoice
 
 	comment "MMC/SD slot setup"
-	depends on MACH_SMDKC110	
+	depends on PLAT_S5PC11X	
 
-config SMDKC110_SD_CH0_8BIT
+config S5PC110_SD_CH0_8BIT
 	bool "Use 8-bit bus with channel 0"
 	depends on PLAT_S5PC11X
 	default n
 	help
 		IF channel 0 uses 8-bit bus, channel 1 shoule be disabled.
        
-config SMDKC110_SD_CH2_8BIT
+config S5PC110_SD_CH2_8BIT
 	bool "Use 8-bit bus with channel 2"
 	depends on PLAT_S5PC11X
 	default n	

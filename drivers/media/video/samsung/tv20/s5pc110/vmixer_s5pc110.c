@@ -479,6 +479,8 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_1080P_59:		
 
 	case TVOUT_1080P_60:
+
+	case TVOUT_1080P_30:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
 		break;		
