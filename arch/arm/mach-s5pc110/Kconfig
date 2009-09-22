@@ -57,14 +57,14 @@ endchoice
 
 config SMDKC110_SD_CH0_8BIT
 	bool "Use 8-bit bus with channel 0"
-	depends on MACH_SMDKC110
+	depends on PLAT_S5PC11X
 	default n
 	help
 		IF channel 0 uses 8-bit bus, channel 1 shoule be disabled.
        
 config SMDKC110_SD_CH2_8BIT
 	bool "Use 8-bit bus with channel 2"
-	depends on MACH_SMDKC110
+	depends on PLAT_S5PC11X
 	default n	
 	help
 		IF channel 2 uses 8-bit bus, channel 3 shoule be disabled.

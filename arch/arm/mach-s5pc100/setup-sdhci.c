@@ -52,7 +52,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	        }
 		
 	        for (gpio = S5PC1XX_GPG1(0); gpio <= S5PC1XX_GPG1(1); gpio++) {
-	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(3));
+	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_NONE);
 	        }
 
@@ -69,7 +69,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		/* SD/MMC controller0 chip detect */
-	        for (gpio = S5PC1XX_GPG1(2); gpio <= S5PC1XX_GPG0(2); gpio++) {
+	        for (gpio = S5PC1XX_GPG1(2); gpio <= S5PC1XX_GPG1(2); gpio++) {
 	                s3c_gpio_cfgpin(gpio, S3C_GPIO_SFN(2));
 	                s3c_gpio_setpull(gpio, S3C_GPIO_PULL_UP);
 	        }
@@ -88,7 +88,8 @@ void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
 				    struct mmc_ios *ios,
 				    struct mmc_card *card)
 {
-	u32 ctrl2, ctrl3 = 0;
+	u32 ctrl2;
+	u32 ctrl3;
 
 	/* don't need to alter anything acording to card-type */
 
@@ -102,6 +103,8 @@ void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
 		  S3C_SDHCI_CTRL2_DFCNT_NONE |
 		  S3C_SDHCI_CTRL2_ENCLKOUTHOLD);
 
+	ctrl3 = 0;
+	
 	writel(ctrl2, r + S3C_SDHCI_CONTROL2);
 	writel(ctrl3, r + S3C_SDHCI_CONTROL3);
 }
@@ -113,7 +116,7 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 	switch(width)
 	{
 
-	/* Channel 0 supports 4-bit bus width */
+	/* Channel 1 supports 4-bit bus width */
 	case 0:	
 	case 1:
 	case 4:
@@ -142,7 +145,7 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 	switch(width)
 	{
 
-	/* Channel 0 supports 4-bit bus width */
+	/* Channel 2 supports 4-bit bus width */
 	case 0:	
 	case 1:
 	case 4:
@@ -162,4 +165,17 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
 }
+
+static struct s3c_sdhci_platdata hsmmc0_platdata = {
+	.max_width	= 8,
+	.host_caps	= (MMC_CAP_8_BIT_DATA | MMC_CAP_ON_BOARD |
+			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
+};
+
+void s3c_sdhci_set_platdata(void)
+{
+#if defined(CONFIG_SMDKC110_SD_CH0_8BIT)
+	s3c_sdhci0_set_platdata(&hsmmc0_platdata);
+#endif
+};
 
