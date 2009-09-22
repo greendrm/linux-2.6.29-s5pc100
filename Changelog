@@ -2201,3 +2201,12 @@ v2.6.29.4-dev-1-4-38: Hyuk Lee
 
 	Modified Files :
 		M	arch/arm/mach-s5p6442/button-smdk6442.c
+
+v2.6.29.4-dev-1-4-39: HyoungMin Seo
+	- Modified to support S5P6442 local path function between FIMD and
+	FIMC
+
+	Modified Files :
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb.h
+		M       drivers/video/samsung/s3cfb_fimd6x.c

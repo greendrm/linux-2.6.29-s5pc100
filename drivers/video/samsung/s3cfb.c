@@ -111,6 +111,32 @@ static int s3cfb_enable_window(int id)
 	}
 }
 
+static int s3cfb_enable_localpath(int id)
+{
+	struct s3cfb_window *win = fbdev->fb[id]->par;
+
+	if (s3cfb_channel_localpath_on(fbdev, id)) {
+		win->enabled = 0;
+		return -EFAULT;
+	} else {
+		win->enabled = 1;
+		return 0;
+	}
+}
+
+static int s3cfb_disable_localpath(int id)
+{
+	struct s3cfb_window *win = fbdev->fb[id]->par;
+
+	if (s3cfb_channel_localpath_off(fbdev, id)) {
+		win->enabled = 0;
+		return -EFAULT;
+	} else {
+		win->enabled = 1;
+		return 0;
+	}
+}
+
 static int s3cfb_disable_window(int id)
 {
 	struct s3cfb_window *win = fbdev->fb[id]->par;
@@ -612,6 +638,7 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 
 	s3cfb_set_window_control(fbdev, id);
 	s3cfb_enable_window(id);
+	s3cfb_enable_localpath(id);
 
 	return 0;
 }
@@ -635,6 +662,7 @@ int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param, int sleep)
 	s3cfb_display_off(fbdev);
 	s3cfb_check_line_count(fbdev);
 	s3cfb_disable_window(id);
+	s3cfb_disable_localpath(id);
 
 	if (do_priv) {
 		if (do_priv(param)) {
