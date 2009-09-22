@@ -2194,4 +2194,10 @@ v2.6.29.4-dev-1-4-37: Kyoungil Kim
 		M       drivers/usb/gadget/s3c_udc_otg.c
 		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
 		M       drivers/usb/gadget/f_ecm.c
-		M       drivers/usb/gadget/f_rndis.c
+		M      ed:   arch/arm/mach-s5p6442/button-smdk6442.c drivers/usb/gadget/f_rndis.c
+
+v2.6.29.4-dev-1-4-38: Hyuk Lee
+	- In order to testing Interrupt for SMDK6442 with Buttons.
+
+	Modified Files :
+		M	arch/arm/mach-s5p6442/button-smdk6442.c
