@@ -15,6 +15,7 @@
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
 
 #include <plat/clock.h>
 #include <asm/io.h>
@@ -1171,6 +1172,10 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 		break;
 
 	/* 1080p */
+	case TVOUT_1080P_30:
+		hdmi_v_fmt = v1920x1080p_30Hz;
+		break;
+
 	case TVOUT_1080P_60:
 		hdmi_v_fmt = v1920x1080p_60Hz;
 		break;
@@ -1789,6 +1794,84 @@ int __init __s5p_hdmi_release(struct platform_device *pdev)
 	}
 
 	return 0;
+}
+
+/*
+ * HDCP ISR.
+ * If HDCP IRQ occurs, set hdcp_event and wake up the waitqueue.
+ */
+
+#define HDMI_IRQ_TOTAL_NUM	6
+
+hdmi_isr hdmi_isr_ftn[HDMI_IRQ_TOTAL_NUM];
+
+int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num)
+{
+	HDMIPRINTK("Try to register ISR for IRQ number (%d)\n", irq_num );
+
+	if ( isr == NULL ) {
+		HDMIPRINTK("Invaild ISR\n" );
+		return -EINVAL;
+	}
+
+	/* check IRQ number */
+	if ( irq_num > HDMI_IRQ_TOTAL_NUM ) {
+		HDMIPRINTK("irq_num exceeds allowed IRQ number(%d)\n", 
+			HDMI_IRQ_TOTAL_NUM );
+		return -EINVAL;
+	}
+
+	/* check if is the number already registered? */
+	if ( hdmi_isr_ftn[irq_num] ) {
+		HDMIPRINTK("the %d th ISR is already registered\n", 
+			irq_num);
+	}
+
+	hdmi_isr_ftn[irq_num] = isr;
+
+	HDMIPRINTK("Success to register ISR for IRQ number (%d)\n", 
+			irq_num);
+	
+	return 0;
+}
+EXPORT_SYMBOL(s5p_hdmi_register_isr);
+
+irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
+{
+	u8 irq_state, irq_num;
+
+	irq_state = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+
+	HDMIPRINTK("S5P_HDMI_CTRL_INTC_FLAG = 0x%02x\n", irq_state);
+
+	/* Check interrupt happened */
+	/* Priority of Interrupt  HDCP> I2C > Audio > CEC ( Not implemented) */
+
+	if (irq_state) {
+		/* HDCP IRQ*/
+		irq_num = 0;
+		/* check if ISR is null or not */
+		while(irq_num < HDMI_IRQ_TOTAL_NUM) {
+			if (irq_state & (1<<irq_num)) {
+				if (hdmi_isr_ftn[irq_num] != NULL) {
+					(hdmi_isr_ftn[irq_num])(irq_num);
+				} else {
+					HDMIPRINTK("No registered ISR for IRQ[%d]\n", irq_num);
+				}
+			}
+			++irq_num;
+		}
+
+	} else {
+		HDMIPRINTK("Undefined IRQ happened[%x]\n", irq_state);
+	}
+
+	// Because of HW Problem, after processing INT we should INT enable again.
+	// HdmiOutp8( S5P_HDMI_INTC_CON, 1 << HDMI_IRQ_HDCP | 1 << HDMI_IRQ_GLOBAL );
+
+	// INTC_ClearVectAddr();
+
+	return IRQ_HANDLED;
 }
 
 void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr)

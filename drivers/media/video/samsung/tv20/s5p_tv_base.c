@@ -511,7 +511,7 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 
 #ifdef CONFIG_CPU_S5PC110	
 	__s5p_hdmi_probe(pdev, 3, 4);
-//	__s5p_hdcp_init( );
+	__s5p_hdcp_init( );
 #endif
 
 #ifdef CONFIG_CPU_S5PC100	
@@ -723,7 +723,7 @@ static void __exit s5p_tv_exit(void)
 	platform_driver_unregister(&s5p_tv_driver);
 }
 
-module_init(s5p_tv_init);
+late_initcall(s5p_tv_init);
 module_exit(s5p_tv_exit);
 
 MODULE_AUTHOR("SangPil Moon");

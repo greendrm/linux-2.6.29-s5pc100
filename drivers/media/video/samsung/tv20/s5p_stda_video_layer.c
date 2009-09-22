@@ -802,6 +802,8 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 
 	case TVOUT_1080P_50:
 
+	case TVOUT_1080P_30:		
+
 	case TVOUT_1080P_60:
 
 	case TVOUT_720P_59:		
