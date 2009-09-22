@@ -185,25 +185,29 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 	}
 }
 
+#if defined(CONFIG_S5PC110_SD_CH0_8BIT)
 static struct s3c_sdhci_platdata hsmmc0_platdata = {
 	.max_width	= 8,
 	.host_caps	= (MMC_CAP_8_BIT_DATA |
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
 };
+#endif
 
+#if defined(CONFIG_S5PC110_SD_CH2_8BIT)
 static struct s3c_sdhci_platdata hsmmc2_platdata = {
 	.max_width	= 8,
 	.host_caps	= (MMC_CAP_8_BIT_DATA | 
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
 };
+#endif
 
 void s3c_sdhci_set_platdata(void)
 {
-#if defined(CONFIG_SMDKC110_SD_CH0_8BIT)
+#if defined(CONFIG_S5PC110_SD_CH0_8BIT)
 	s3c_sdhci0_set_platdata(&hsmmc0_platdata);
 #endif
 
-#if defined(CONFIG_SMDKC110_SD_CH2_8BIT)
+#if defined(CONFIG_S5PC110_SD_CH2_8BIT)
 	s3c_sdhci2_set_platdata(&hsmmc2_platdata);	
 #endif
 };

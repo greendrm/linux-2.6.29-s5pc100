@@ -48,14 +48,14 @@ config MACH_UNIVERSAL
 choice
 	prompt "MMC/SD slot setup"
 	depends on PLAT_S5PC1XX
-	default SMDKC110_SD_CH0_4BIT
+	default S5PC100_SD_CH0_4BIT
 
-config SMDKC110_SD_CH0_4BIT
+config S5PC100_SD_CH0_4BIT
 	bool "Use 4-bit bus with channel 0"
 	help
 		Select 4-bit bus for channel 0
 
-config SMDKC110_SD_CH0_8BIT
+config S5PC100_SD_CH0_8BIT
 	bool "Use 8-bit bus with channel 0"
 	help
 		Select 8-bit bus for channel 0
