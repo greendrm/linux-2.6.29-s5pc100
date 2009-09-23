@@ -778,11 +778,6 @@ static struct regulator_init_data max8698_ldo4_data = {
 	},
 };
 
-static struct regulator_consumer_supply smdkc110_hsmmc1_supply = {
-	.supply			= "hsmmc",	/* FIXME what's exact name? */
-	.dev			= &s3c_device_hsmmc1.dev,
-};
-
 static struct regulator_init_data max8698_ldo5_data = {
 	.constraints	= {
 		.name		= "VMMC_2.8V/VEXT_2.8V",
@@ -795,8 +790,6 @@ static struct regulator_init_data max8698_ldo5_data = {
 			.enabled	= 1,
 		},
 	},
-	.num_consumer_supplies	= 1,
-	.consumer_supplies	= &smdkc110_hsmmc1_supply,
 };
 
 static struct regulator_init_data max8698_ldo6_data = {
