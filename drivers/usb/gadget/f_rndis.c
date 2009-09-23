@@ -501,6 +501,11 @@ static int rndis_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 		rndis->port.cdc_filter = 0;
 
 		DBG(cdev, "RNDIS RX/TX early activation ... \n");
+		/* To pass the CH.9 Test on USBCV 1.3 */
+		rndis->port.in = ep_choose(cdev->gadget,
+				rndis->hs.in, rndis->fs.in);
+		rndis->port.out = ep_choose(cdev->gadget,
+				rndis->hs.out, rndis->fs.out);
 		net = gether_connect(&rndis->port);
 		if (IS_ERR(net))
 			return PTR_ERR(net);

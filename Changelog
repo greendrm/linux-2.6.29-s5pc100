@@ -2143,11 +2143,80 @@ v2.6.29.4-dev-1-4-32: SungJun Bae
 		A	arch/arm/plat-s5p64xx/include/plat/regs-audss.h
 		A	sound/soc/s3c/smdk6442_wm8580.c
 
-v2.6.29.4-dev-1-4-33: Sang-Beom Kim
-	- SDMK6442 Button driver porting
+v2.6.29.4-dev-1-4-33: Jae-Cheol Lee
+	- Support DVFS with PMIC(MAX8698) on SMDKC110
+	- Removed button driver for smdkc110 for supporting PMIC GPIO
+	control. If you want to use external interrupt for wakeup testing,
+	you should modify Makefile as shown below.
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/Makefile
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/s5pc11x-cpufreq.c
+		M	drivers/regulator/max8698.c
+
+v2.6.29.4-dev-1-4-34: SungJun Bae
+	- Temporary Release for s5pc100(2009.09.15)
+
+v2.6.29.4-dev-1-4-35: Jonghun Han
+	- Support S5PC110 FIMD PM on SMDKC110
+
+	Modified Files:
+		M       arch/arm/mach-s5pc110/Makefile
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb.h
+		M       drivers/video/samsung/s3cfb_tl2796.c
+
+v2.6.29.4-dev-1-4-36: Jaeryul Oh
+	- Modified MFC fw(9/17) & driver on SMDKC110
+
+	Modified Files :
+		M       arch/arm/plat-s5pc11x/include/plat/regs-mfc.h
+		M       drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_common.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_fw.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_fw.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_intr.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+v2.6.29.4-dev-1-4-37: Kyoungil Kim
+	- Support GadgetFS for SMDKC100 and SMDKC110
+	- Modified to pass the Ethernet Gadget CH9 Test(High Speed and Full
+			Speed) on USBCV1.3
+	- Modified to pass the Hibernation Test for USB Gadget
+
+	Modified Files :
+		M       arch/arm/configs/smdkc100mtd_defconfig
+		M       arch/arm/configs/smdkc100nfs_defconfig
+		M       arch/arm/plat-s3c/include/plat/regs-otg.h
+		M       drivers/usb/gadget/inode.c
+		M       drivers/usb/gadget/s3c_udc_otg.c
+		M       drivers/usb/gadget/s3c_udc_otg_xfer_dma.c
+		M       drivers/usb/gadget/f_ecm.c
+		M      ed:   arch/arm/mach-s5p6442/button-smdk6442.c drivers/usb/gadget/f_rndis.c
+
+v2.6.29.4-dev-1-4-38: Hyuk Lee
+	- In order to testing Interrupt for SMDK6442 with Buttons.
+
+	Modified Files :
+		M	arch/arm/mach-s5p6442/button-smdk6442.c
+
+v2.6.29.4-dev-1-4-39: HyoungMin Seo
+	- Modified to support S5P6442 local path function between FIMD and
+	FIMC
+
+	Modified Files :
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb.h
+		M       drivers/video/samsung/s3cfb_fimd6x.c
+		M       drivers/video/samsung/s3cfb_fimd5x.c
+		M       drivers/video/samsung/s3cfb_fimd4x.c
+
+v2.6.29.4-dev-1-4-40: Sang-Beom Kim
+	- Modify SDMK6442 Button driver
 	- SMDK6442 can be woken by EINT9, EINT10 Button.
 
 	Modified Files:
 		M	arch/arm/mach-s5p6442/button-smdk6442.c
 		M	arch/arm/plat-s5p64xx/pm.c
-

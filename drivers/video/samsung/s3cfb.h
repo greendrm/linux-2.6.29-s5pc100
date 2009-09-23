@@ -160,6 +160,7 @@ struct s3cfb_lcd {
 	struct 	s3cfb_lcd_polarity polarity;
 
 	void 	(*init_ldi)(void);
+	void 	(*deinit_ldi)(void);	
 };
 
 /*
@@ -283,6 +284,8 @@ extern int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_clear_interrupt(struct s3cfb_global *ctrl);
+extern int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id);
+extern int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id);
 extern int s3cfb_window_on(struct s3cfb_global *ctrl, int id);
 extern int s3cfb_window_off(struct s3cfb_global *ctrl, int id);
 extern int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id);

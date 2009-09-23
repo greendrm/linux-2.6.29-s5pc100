@@ -937,6 +937,90 @@ static struct s3c_udc memory = {
 		  .ep_type = ep_interrupt,
 		  .fifo = (unsigned int) S3C_UDC_OTG_EP9_FIFO,
 		  },
+	.ep[10] = {
+		  .ep = {
+			 .name = "ep10-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_OUT | 10,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_out,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP10_FIFO,
+		  },
+	.ep[11] = {
+		  .ep = {
+			 .name = "ep11-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 11, 
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_in,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP11_FIFO,
+		  },
+	.ep[12] = {
+		  .ep = {
+			 .name = "ep12-int",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 12,
+		  .bmAttributes = USB_ENDPOINT_XFER_INT,
+
+		  .ep_type = ep_interrupt,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP12_FIFO,
+		  },
+	.ep[13] = {
+		  .ep = {
+			 .name = "ep13-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_OUT | 13,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_out,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP13_FIFO,
+		  },
+	.ep[14] = {
+		  .ep = {
+			 .name = "ep14-bulk",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 14,
+		  .bmAttributes = USB_ENDPOINT_XFER_BULK,
+
+		  .ep_type = ep_bulk_in,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP14_FIFO,
+		  },
+	.ep[15] = {
+		  .ep = {
+			 .name = "ep15-int",
+			 .ops = &s3c_ep_ops,
+			 .maxpacket = EP_FIFO_SIZE,
+			 },
+		  .dev = &memory,
+
+		  .bEndpointAddress = USB_DIR_IN | 15,
+		  .bmAttributes = USB_ENDPOINT_XFER_INT,
+
+		  .ep_type = ep_interrupt,
+		  .fifo = (unsigned int) S3C_UDC_OTG_EP15_FIFO,
+		  },
 };
 
 /*

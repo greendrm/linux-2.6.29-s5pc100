@@ -19,11 +19,12 @@ source "drivers/media/video/samsung/fimc/Kconfig"
 if CPU_S5PC100 || CPU_S5PC110 
 source "drivers/media/video/samsung/tv20/Kconfig"
 #source "drivers/media/video/samsung/jpeg_v2/Kconfig"
-source "drivers/media/video/samsung/rotator/Kconfig"
+#source "drivers/media/video/samsung/rotator/Kconfig"
 endif
 
 if CPU_S5PC100 || CPU_S5PC110 || CPU_S5P6442
 source "drivers/media/video/samsung/jpeg_v2/Kconfig"
+source "drivers/media/video/samsung/rotator/Kconfig"
 endif
 
 if CPU_S5PC100 

@@ -59,7 +59,7 @@ static void s3c_mfc_cmd_reset(void)
 	WRITEL(0x3e2, S3C_FIMV_SW_RESET);	//  All reset except for MC
 	mdelay(10);
 
-	/* Check MC status */
+	/* Check MC status */ 
 	do {
 		mc_status = READL(S3C_FIMV_MC_STATUS);		
 	} while(mc_status & 0x3);
@@ -80,6 +80,9 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 	} while(cur_cmd != H2R_CMD_EMPTY);
 
 	WRITEL(arg, S3C_FIMV_HOST2RISC_ARG1);
+	/* pixel cache enable(0)/disable(3), peter for MFC fw 8/24 */
+	//WRITEL(3, S3C_FIMV_HOST2RISC_ARG2);	
+	
 	/* Enable CRC data
 	WRITEL(1, S3C_FIMV_HOST2RISC_ARG2);
 	WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
@@ -153,6 +156,7 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	s3c_mfc_frame_buf_arg_t dpb_buf_addr;
 	unsigned int aligned_width, aligned_ch_height, aligned_mv_height;
 	s3c_mfc_dec_init_arg_t *init_arg;
+	unsigned int slice_en_display_en;
 
 	init_arg = (s3c_mfc_dec_init_arg_t *)args;
 
@@ -213,8 +217,9 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 		}	
 
 	}
-
-	WRITEL(init_arg->out_dpb_cnt, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
+	/* Set DPB number */
+	slice_en_display_en = READL(S3C_FIMV_SI_CH1_DPB_CONF_CTRL) & 0xfff0000;
+	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
 
 	// peter added for 8/7 MFC fw
 	WRITEL((INIT_BUFFER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
@@ -355,8 +360,8 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_ENC_COZERO_FLAG_ADR);
 		aligned_risc_phy_buf += 64*BUF_L_UNIT;		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_ENC_UP_INTRA_MD_ADR);
-		aligned_risc_phy_buf += 64*BUF_L_UNIT;		
-		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);
+		aligned_risc_phy_buf += 64*BUF_L_UNIT;				
+		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);		
 		aligned_risc_phy_buf += 64*BUF_L_UNIT;		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_ENC_NB_DCAC_ADR);
 		aligned_risc_phy_buf += 64*BUF_L_UNIT;	
@@ -404,7 +409,6 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 		WRITEL(enc_init_mpeg4_arg->in_interlace_mode, S3C_FIMV_ENC_PIC_STRUCT);
 	}
 
-	WRITEL(0, S3C_FIMV_ENC_PXL_CACHE_CTRL);
 	WRITEL(1, S3C_FIMV_ENC_BF_MODE_CTRL);	// stream buf frame mode
 	
 	WRITEL(1, S3C_FIMV_ENC_SF_EPB_ON_CTRL);	// Auto EPB insertion on, only for h264	
@@ -467,20 +471,13 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 				(enc_init_h264_arg->in_RC_mb_activity_disable<<0),
 				S3C_FIMV_ENC_RC_MB_CTRL);
 		}	
-		WRITEL((enc_init_mpeg4_arg->in_profile_level)|(1<<2)|
-			(enc_init_h264_arg->in_transform8x8_mode<<4), 
-			S3C_FIMV_ENC_PROFILE);
+		WRITEL((enc_init_mpeg4_arg->in_profile_level), S3C_FIMV_ENC_PROFILE);
 		WRITEL((enc_init_h264_arg->in_transform8x8_mode), S3C_FIMV_ENC_H264_TRANS_FLAG);		
 		WRITEL((enc_init_h264_arg->in_symbolmode & 0x1), S3C_FIMV_ENC_ENTRP_MODE);
 		WRITEL((enc_init_h264_arg->in_deblock_filt & 0x1), S3C_FIMV_ENC_LF_CTRL);
 		WRITEL((enc_init_h264_arg->in_deblock_alpha_C0 & 0x1f)*2, S3C_FIMV_ENC_ALPHA_OFF);
 		WRITEL((enc_init_h264_arg->in_deblock_beta & 0x1f)*2, S3C_FIMV_ENC_BETA_OFF);			
-		if (enc_init_h264_arg->in_ref_num_p > enc_init_h264_arg->in_reference_num) {
-			//mfc_info("Reference frame no of P should be equal or less than \
-			//	Reference frame no");	
-			//mfc_info("Reference frame no of P was set same as Reference frame no");		
-			enc_init_h264_arg->in_ref_num_p = enc_init_h264_arg->in_reference_num;
-		}	
+		 	
 		WRITEL((enc_init_h264_arg->in_ref_num_p<<5)|(enc_init_h264_arg->in_reference_num), 
 			S3C_FIMV_ENC_H264_NUM_OF_REF);		
 			
@@ -887,6 +884,11 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 	 * 	- set NUM_EXTRA_DPB
 	 */	
 	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf, init_arg->in_strm_size); 
+
+	/* Set the slice interface(31th bit), display delay(30th bit + delay count) */	
+	if (mfc_ctx->displayDelay > 0)
+		WRITEL((1<<30)|(mfc_ctx->displayDelay<<16), S3C_FIMV_SI_CH1_DPB_CONF_CTRL);	
+	
 	WRITEL((SEQ_HEADER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 
 	if (s3c_mfc_wait_for_done(R2H_CMD_SEQ_DONE_RET) == 0) {
@@ -923,33 +925,8 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 	 */	
 	mfc_ctx->DPBCnt = READL(S3C_FIMV_SI_BUF_NUMBER);
 	mfc_ctx->totalDPBCnt = mfc_ctx->DPBCnt + mfc_ctx->extraDPB;
+	mfc_ctx->displayDelay = 0;
 	init_arg->out_dpb_cnt = mfc_ctx->totalDPBCnt;
-
-/*
-	switch (mfc_ctx->MfcCodecType) {
-	case H264_DEC: 
-		init_arg->out_dpb_cnt = (READL(S3C_FIMV_SI_BUF_NUMBER)*3)>>1; 
-		mfc_ctx->DPBCnt = READL(S3C_FIMV_SI_BUF_NUMBER);
-		break;
-
-	case MPEG4_DEC:
-	case MPEG2_DEC: 
-	case DIVX_DEC: 
-	case XVID_DEC:
-		init_arg->out_dpb_cnt = ((NUM_MPEG4_DPB * 3) >> 1) + NUM_POST_DPB + mfc_ctx->extraDPB;
-		mfc_ctx->DPBCnt = NUM_MPEG4_DPB;
-		break;
-
-	case VC1_DEC:
-		init_arg->out_dpb_cnt = ((NUM_VC1_DPB * 3) >> 1)+ MfcCtx->extraDPB;
-		mfc_ctx->DPBCnt = NUM_VC1_DPB + mfc_ctx->extraDPB;
-		break;
-
-	default:
-		init_arg->out_dpb_cnt = ((NUM_MPEG4_DPB * 3) >> 1)+ NUM_POST_DPB + mfc_ctx->extraDPB;
-		mfc_ctx->DPBCnt = NUM_MPEG4_DPB;
-	}
-*/	
 
 	mfc_debug("buf_width : %d buf_height : %d out_dpb_cnt : %d mfc_ctx->DPBCnt : %d\n", \
 				init_arg->out_buf_width, init_arg->out_buf_height, init_arg->out_dpb_cnt, mfc_ctx->DPBCnt);
@@ -1044,7 +1021,9 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 
 	dec_arg = (s3c_mfc_dec_exe_arg_t *)args;
 	ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
-
+	
+	/* It will be supported in the 9/30 MFC fw */
+#if 0	
 	if((mfc_ctx->IsPackedPB) && (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) \
 		&& (dec_arg->in_strm_size - consumed_strm_size > 4)) {
 		mfc_debug("Packed PB\n");
@@ -1053,6 +1032,7 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 
 		ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
 	}
+#endif	
 	mfc_debug("--\n");
 
 	return ret; 
@@ -1123,26 +1103,20 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 		}
 		break;
 
-	// Check whether C110 has this function	
-	/*	
 	case MFC_DEC_SETCONF_DISPLAY_DELAY:
 		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
 			mfc_err("MFC_DEC_SETCONF_DISPLAY_DELAY : state is invalid\n");
 			return MFCINST_ERR_STATE_INVALID;
 		}
-		if (mfc_ctx->MfcCodecType == H264_DEC) {
-			if ((set_cnf_arg->in_config_value[0] >= 0) || (set_cnf_arg->in_config_value[0] < 16))
-				mfc_ctx->displayDelay = set_cnf_arg->in_config_value[0];
-			else {
-				mfc_warn("DISPLAY_DELAY should be between 0 and 16\n");
-				mfc_ctx->displayDelay = 0;
-			}
-		} else {
-			mfc_warn("MFC_DEC_SETCONF_DISPLAY_DELAY is only valid for H.264\n");
+		if ((set_cnf_arg->in_config_value[0] >= 0) || (set_cnf_arg->in_config_value[0] < 16))
+			mfc_ctx->displayDelay = set_cnf_arg->in_config_value[0];
+		else {
+			mfc_warn("DISPLAY_DELAY should be between 0 and 16\n");
 			mfc_ctx->displayDelay = 0;
 		}
+		
 		break;
-	*/	
+		
 	case MFC_DEC_SETCONF_IS_LAST_FRAME:
 		if (mfc_ctx->MfcState != MFCINST_STATE_DEC_EXE) {
 			mfc_err("MFC_DEC_SETCONF_IS_LAST_FRAME : state is invalid\n");

@@ -36,6 +36,7 @@
 #include <linux/serial_core.h>
 #include <linux/io.h>
 #include <linux/platform_device.h>
+#include <linux/regulator/machine.h>
 
 #include <asm/cacheflush.h>
 #include <mach/hardware.h>
@@ -694,7 +695,18 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 }
 
 
+static int s5pc11x_pm_begin(suspend_state_t state)
+{
+	int ret = 0;
+#if CONFIG_REGULATOR
+	/* Configure PMIC to enter sleep mode */
+	ret = regulator_suspend_prepare(state);
+#endif
+	return ret;
+}
+
 static struct platform_suspend_ops s5pc11x_pm_ops = {
+	.begin		= s5pc11x_pm_begin,
 	.enter		= s5pc11x_pm_enter,
 	.valid		= suspend_valid_only_mem,
 };

@@ -88,7 +88,10 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
 				V4L2_STD_720P_60 | V4L2_STD_720P_50 |
 				V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
-				V4L2_STD_1080I_60 | V4L2_STD_1080I_50,
+				V4L2_STD_1080I_60 | V4L2_STD_1080I_50 |
+				V4L2_STD_480P_59 | V4L2_STD_720P_59 |
+				V4L2_STD_1080I_59 | V4L2_STD_1080P_59 |
+				V4L2_STD_1080P_30,
 	}
 
 };
@@ -201,6 +204,26 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.index  = 16,
 		.id     = V4L2_STD_1080I_50,
 		.name 	= "1080I_50",
+	}, {
+		.index  = 17,
+		.id     = V4L2_STD_480P_59,
+		.name 	= "480P_59",
+	}, {
+		.index  = 18,
+		.id     = V4L2_STD_720P_59,
+		.name 	= "720P_59",
+	}, {
+		.index  = 19,
+		.id     = V4L2_STD_1080I_59,
+		.name 	= "1080I_59",
+	}, {
+		.index  = 20,
+		.id     = V4L2_STD_1080P_59,
+		.name 	= "1080I_50",
+	}, {
+		.index  = 21,
+		.id     = V4L2_STD_1080P_30,
+		.name 	= "1080I_30",
 	}
 };
 
@@ -788,6 +811,11 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 		s5ptv_status.tvout_param.disp_mode = TVOUT_480P_60_4_3;
 		break;
 
+#ifdef CONFIG_CPU_S5PC110	
+	case V4L2_STD_480P_59:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_480P_59;
+		break;
+#endif 
 	case V4L2_STD_576P_50_16_9:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_576P_50_16_9;
 		break;
@@ -800,6 +828,12 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_60;
 		break;
 
+#ifdef CONFIG_CPU_S5PC110	
+	case V4L2_STD_720P_59:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_59;
+		break;
+#endif		
+
 	case V4L2_STD_720P_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_720P_50;
 		break;
@@ -808,14 +842,26 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 	case V4L2_STD_1080I_60:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_60;
 		break;
+
+	case V4L2_STD_1080I_59:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_59;
+		break;		
 		
 	case V4L2_STD_1080I_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080I_50;
 		break;
+
+	case V4L2_STD_1080P_30:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_30;
+		break;		
 		
 	case V4L2_STD_1080P_60:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_60;
 		break;
+
+	case V4L2_STD_1080P_59:
+		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_59;
+		break;		
 		
 	case V4L2_STD_1080P_50:
 		s5ptv_status.tvout_param.disp_mode = TVOUT_1080P_50;
@@ -1025,6 +1071,10 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
+
+#ifdef CONFIG_CPU_S5PC110	
+	case TVOUT_480P_59:
+#endif 
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
 		cropcap->bounds.width = 720;
@@ -1051,7 +1101,9 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 		break;
 
 	case TVOUT_720P_60:
-
+#ifdef CONFIG_CPU_S5PC110	
+	case TVOUT_720P_59:
+#endif 
 	case TVOUT_720P_50:
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
@@ -1068,11 +1120,18 @@ static int s5p_tv_v4l2_cropcap(struct file *file, void *fh, struct v4l2_cropcap 
 
 	case TVOUT_1080I_60:
 
+	case TVOUT_1080I_59:		
+
 	case TVOUT_1080I_50:
 		
 	case TVOUT_1080P_60:
 
+	case TVOUT_1080P_59:		
+
 	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_30:
+		
 		cropcap->bounds.top = 0;
 		cropcap->bounds.left = 0;
 		cropcap->bounds.width = 1920;
@@ -1362,7 +1421,9 @@ long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		
 		unsigned int *status = (unsigned int *)&arg;
 
-		*status = s5ptv_status.hpd_status;
+		/* spmoon test */
+//		*status = s5ptv_status.hpd_status;
+		*status = 1;
 		
 		V4L2PRINTK("HPD status is %s\n",
 		       s5ptv_status.hpd_status ? "plugged" : "unplugged");
@@ -1373,7 +1434,9 @@ long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		
 		unsigned int *prot = (unsigned int *)&arg;
 
-		*prot = hdcp_protocol_status;
+		/* spmoon test */
+//		*prot = hdcp_protocol_status;
+		*prot = 1;
 		
 		V4L2PRINTK("hdcp prot status is %d\n",
 		       hdcp_protocol_status);

@@ -111,6 +111,32 @@ static int s3cfb_enable_window(int id)
 	}
 }
 
+static int s3cfb_enable_localpath(int id)
+{
+	struct s3cfb_window *win = fbdev->fb[id]->par;
+
+	if (s3cfb_channel_localpath_on(fbdev, id)) {
+		win->enabled = 0;
+		return -EFAULT;
+	} else {
+		win->enabled = 1;
+		return 0;
+	}
+}
+
+static int s3cfb_disable_localpath(int id)
+{
+	struct s3cfb_window *win = fbdev->fb[id]->par;
+
+	if (s3cfb_channel_localpath_off(fbdev, id)) {
+		win->enabled = 0;
+		return -EFAULT;
+	} else {
+		win->enabled = 1;
+		return 0;
+	}
+}
+
 static int s3cfb_disable_window(int id)
 {
 	struct s3cfb_window *win = fbdev->fb[id]->par;
@@ -612,6 +638,7 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 
 	s3cfb_set_window_control(fbdev, id);
 	s3cfb_enable_window(id);
+	s3cfb_enable_localpath(id);
 
 	return 0;
 }
@@ -635,6 +662,7 @@ int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param, int sleep)
 	s3cfb_display_off(fbdev);
 	s3cfb_check_line_count(fbdev);
 	s3cfb_disable_window(id);
+	s3cfb_disable_localpath(id);
 
 	if (do_priv) {
 		if (do_priv(param)) {
@@ -1092,9 +1120,6 @@ static int s3cfb_probe(struct platform_device *pdev)
 	if (pdata->reset_lcd)
 		pdata->reset_lcd(pdev);
 
-	if (fbdev->lcd->init_ldi)
-		fbdev->lcd->init_ldi();
-
 	ret = device_create_file(&(pdev->dev), &dev_attr_win_power);
 	if (ret < 0)
 		dev_err(fbdev->dev, "failed to add sysfs entries\n");
@@ -1154,6 +1179,9 @@ int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 	struct s3cfb_window *win;
 	int i;
 
+	if (fbdev->lcd->deinit_ldi)
+		fbdev->lcd->deinit_ldi();
+
 	for (i = 0; i < pdata->nr_wins; i++) {
 		win = fbdev->fb[i]->par;
 		if (win->path != DATA_PATH_DMA && win->suspend_fifo) {
@@ -1178,18 +1206,6 @@ int s3cfb_resume(struct platform_device *pdev)
 
 	dev_dbg(fbdev->dev, "wake up from suspend\n");
 
-	if (pdata->cfg_gpio)
-		pdata->cfg_gpio(pdev);
-
-	if (pdata->backlight_on)
-		pdata->backlight_on(pdev);
-
-	if (pdata->reset_lcd)
-		pdata->reset_lcd(pdev);
-
-	if (fbdev->lcd->init_ldi)
-		fbdev->lcd->init_ldi();
-
 	clk_enable(fbdev->clock);
 	s3cfb_init_global();
 	s3cfb_set_clock(fbdev);
@@ -1211,6 +1227,18 @@ int s3cfb_resume(struct platform_device *pdev)
 			}
 		}
 	}
+
+	if (pdata->cfg_gpio)
+		pdata->cfg_gpio(pdev);
+
+	if (pdata->backlight_on)
+		pdata->backlight_on(pdev);
+
+	if (pdata->reset_lcd)
+		pdata->reset_lcd(pdev);
+
+	if (fbdev->lcd->init_ldi)
+		fbdev->lcd->init_ldi();
 
 	return 0;
 }

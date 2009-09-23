@@ -41,17 +41,26 @@ typedef enum {
 	TVOUT_PAL_NC,
 	TVOUT_PAL_60,
 	TVOUT_NTSC_443,
+	
 	TVOUT_480P_60_16_9 = HDMI_START_NUM,
 	TVOUT_480P_60_4_3,
+	TVOUT_480P_59,
+
 	TVOUT_576P_50_16_9,
 	TVOUT_576P_50_4_3,
+
 	TVOUT_720P_60,
 	TVOUT_720P_50,
+	TVOUT_720P_59,
 //C110	
 	TVOUT_1080P_60,
 	TVOUT_1080P_50,
+	TVOUT_1080P_59,
+	TVOUT_1080P_30,
+	
 	TVOUT_1080I_60,
-	TVOUT_1080I_50,	
+	TVOUT_1080I_50,
+	TVOUT_1080I_59,
 }s5p_tv_disp_mode;
 
 typedef enum {
@@ -476,22 +485,22 @@ typedef enum
 
 typedef enum  
 {
-    ePHY_FREQ_25_200,
-    ePHY_FREQ_25_175,
-    ePHY_FREQ_27,
-    ePHY_FREQ_27_027,
-    ePHY_FREQ_54,
-    ePHY_FREQ_54_054,
-    ePHY_FREQ_74_250,
-    ePHY_FREQ_74_176,
-    ePHY_FREQ_148_500,
-    ePHY_FREQ_148_352,
-    ePHY_FREQ_108_108,
-    ePHY_FREQ_72,
-    ePHY_FREQ_25,
-    ePHY_FREQ_65,
-    ePHY_FREQ_108,
-    ePHY_FREQ_162
+	ePHY_FREQ_25_200,
+	ePHY_FREQ_25_175,
+	ePHY_FREQ_27,
+	ePHY_FREQ_27_027,
+	ePHY_FREQ_54,
+	ePHY_FREQ_54_054,
+	ePHY_FREQ_74_250,
+	ePHY_FREQ_74_176,
+	ePHY_FREQ_148_500,
+	ePHY_FREQ_148_352,
+	ePHY_FREQ_108_108,
+	ePHY_FREQ_72,
+	ePHY_FREQ_25,
+	ePHY_FREQ_65,
+	ePHY_FREQ_108,
+	ePHY_FREQ_162
 }phy_freq;
 
 /* video format for HDMI HW (timings and AVI) and EDID */
@@ -533,7 +542,12 @@ typedef enum
 	v720x576p_200Hz,
 	v720x576i_200Hz,
 	v720x480p_240Hz,
-	v720x480i_240Hz,   
+	v720x480i_240Hz,
+	v720x480p_59Hz,
+	v1280x720p_59Hz,
+	v1920x1080i_59Hz,
+	v1920x1080p_59Hz,
+	
 }s5p_hdmi_v_fmt;                               
 
 

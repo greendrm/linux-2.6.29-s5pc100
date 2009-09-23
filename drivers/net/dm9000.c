@@ -169,10 +169,20 @@ dm9000_reset(board_info_t * db)
         dev_dbg(db->dev, "resetting device\n");
 #ifndef CONFIG_CPU_S5PC110
         /* RESET device */
-        writeb(DM9000_NCR, db->io_addr);
+
+#if defined(CONFIG_DM9000_16BIT)
+        writew(DM9000_NCR, db->io_addr);
+        udelay(200);
+        writew(NCR_RST, db->io_data);
+        udelay(200);
+#else
+	writeb(DM9000_NCR, db->io_addr);
         udelay(200);
         writeb(NCR_RST, db->io_data);
         udelay(200);
+
+#endif
+
 #else
         iow(db,DM9000_GPCR,0x0f);
         iow(db,DM9000_GPR,0);

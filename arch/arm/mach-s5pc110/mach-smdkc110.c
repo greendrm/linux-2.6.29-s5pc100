@@ -686,6 +686,11 @@ static struct regulator_init_data max8698_dcdc1_data = {
 		.max_uV		= 1500000,
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
+		.state_mem	= {
+			.uV	= 0,
+			.mode	= REGULATOR_MODE_STANDBY,
+			.enabled = 0,
+		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
 	.consumer_supplies	= dcdc1_consumers,
@@ -702,7 +707,13 @@ static struct regulator_init_data max8698_dcdc2_data = {
 		.name		= "VCC_INTERNAL",
 		.min_uV		= 1200000,
 		.max_uV		= 1200000,
+		.always_on	= 1,
 		.apply_uV	= 1,
+		.state_mem	= {
+			.uV	= 0,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 0,
+		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(dcdc2_consumers),
 	.consumer_supplies	= dcdc2_consumers,
@@ -725,30 +736,45 @@ static struct regulator_init_data max8698_dcdc3_data = {
 
 static struct regulator_init_data max8698_ldo2_data = {
 	.constraints	= {
-		.name		= "VALIVE_1.2V",
-		.min_uV		= 1200000,
-		.max_uV		= 1200000,
+		.name		= "VALIVE_1.1V",
+		.min_uV		= 1100000,
+		.max_uV		= 1100000,
 		.apply_uV	= 1,
 		.always_on	= 1,
+		.state_mem	= {
+			.uV	= 1100000,
+			.mode	= REGULATOR_MODE_NORMAL,
+			.enabled = 1,
+		},
 	},
 };
 
 static struct regulator_init_data max8698_ldo3_data = {
 	.constraints	= {
-		.name		= "VUSB_1.2V/MIPI_1.2V",
-		.min_uV		= 1200000,
-		.max_uV		= 1200000,
+		.name		= "VUOTG_D_1.1V/VUHOST_D_1.1V",
+		.min_uV		= 1100000,
+		.max_uV		= 1100000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 1100000,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
 static struct regulator_init_data max8698_ldo4_data = {
 	.constraints	= {
-		.name		= "VOPTIC_2.8V",
-		.min_uV		= 2800000,
-		.max_uV		= 2800000,
+		.name		= "V_MIPI_1.8V",
+		.min_uV		= 1800000,
+		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.boot_on	= 1,
+		.state_mem ={
+			.uV		= 1800000,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
@@ -759,10 +785,15 @@ static struct regulator_consumer_supply smdkc110_hsmmc1_supply = {
 
 static struct regulator_init_data max8698_ldo5_data = {
 	.constraints	= {
-		.name		= "VTF_2.8V",
+		.name		= "VMMC_2.8V/VEXT_2.8V",
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2800000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 	.num_consumer_supplies	= 1,
 	.consumer_supplies	= &smdkc110_hsmmc1_supply,
@@ -774,6 +805,11 @@ static struct regulator_init_data max8698_ldo6_data = {
 		.min_uV		= 2600000,
 		.max_uV		= 2600000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2600000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 
@@ -783,24 +819,39 @@ static struct regulator_init_data max8698_ldo7_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 2800000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 
 static struct regulator_init_data max8698_ldo8_data = {
 	.constraints	= {
-		.name		= "{VADC/VCAM/VUSB}_3.3V",
+		.name		= "VUOTG_A_3.3V/VUHOST_A_3.3V",
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 0,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled	= 0,
+		},
 	},
 };
 
 static struct regulator_init_data max8698_ldo9_data = {
 	.constraints	= {
-		.name		= "VCAM_2.8V",
-		.min_uV		= 2800000,
-		.max_uV		= 2800000,
+		.name		= "{VADC/VSYS/VKEY}_2.8V",
+		.min_uV		= 3000000,
+		.max_uV		= 3000000,
 		.apply_uV	= 1,
+		.state_mem ={
+			.uV		= 3000000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled	= 1,
+		},
 	},
 };
 
@@ -835,7 +886,9 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 /* I2C1 */
 static struct i2c_board_info i2c_devs1[] __initdata = {
-	/* TODO */
+	{	
+		I2C_BOARD_INFO("s5p_ddc", (0x74>>1)),
+	},
 };
 
 /* I2C2 */
@@ -1005,10 +1058,10 @@ static int smdkc110_mipi_cam_power(int onoff)
  * 
 */
 #undef CAM_ITU_CH_A
-#define S5K3BA_ENABLED
+#undef S5K3BA_ENABLED
 #undef S5K4BA_ENABLED
-#undef S5K4EA_ENABLED
-#define S5K6AA_ENABLED
+#define S5K4EA_ENABLED
+#undef S5K6AA_ENABLED
 
 /* External camera module setting */
 /* 2 ITU Cameras */
@@ -1299,37 +1352,27 @@ static void __init smdkc110_map_io(void)
 
 static void __init smdkc110_dm9000_set(void)
 {
-#if 1
+
 	unsigned int tmp;
 
-	tmp = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
-	//tmp =((0<<28)|(4<<24)|(13<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
+	//tmp = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
+	tmp =((0<<28)|(0<<24)|(5<<16)|(0<<12)|(0<<8)|(0<<4)|(0<<0));
 	__raw_writel(tmp, (S5PC11X_SROM_BW+0x18));
+
 	tmp = __raw_readl(S5PC11X_SROM_BW);
 	tmp &= ~(0xf<<20);
-	tmp |= (0x2<<20);
-	__raw_writel(tmp, S5PC11X_SROM_BW);
 
+#if CONFIG_DM9000_16BIT
+	tmp |= (0x1<<20);
+#else
+	tmp |= (0x2<<20);
+#endif
+	__raw_writel(tmp, S5PC11X_SROM_BW);
 
 	tmp = __raw_readl(S5PC11X_MP01CON);
 	tmp &= ~(0xf<<20);
 	tmp |=(2<<20);
 	__raw_writel(tmp,(S5PC11X_MP01CON));
-#else
-	tmp = 0xfffffff0;
-	__raw_writel(tmp, (S5PC11X_SROM_BW+0x14));
-	tmp = __raw_readl(S5PC11X_SROM_BW);
-	tmp &= ~(0xf<<16);
-	tmp |= (0x2<<16);
-	__raw_writel(tmp, S5PC11X_SROM_BW);
-
-
-	tmp = __raw_readl(S5PC11X_MP01CON);
-	tmp     &= ~(0xf<<16);
-	tmp |=(2<<16);
-	__raw_writel(tmp,(S5PC11X_MP01CON));
-
-#endif
 
 }
 

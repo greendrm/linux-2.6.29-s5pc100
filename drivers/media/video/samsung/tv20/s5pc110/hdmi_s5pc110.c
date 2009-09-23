@@ -15,6 +15,7 @@
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
 
 #include <plat/clock.h>
 #include <asm/io.h>
@@ -477,7 +478,7 @@ s32 hdmi_set_tg(s5p_hdmi_v_fmt mode)
  */
 static s32 hdmi_set_clr_depth(s5p_hdmi_color_depth cd)
 {
-	// if color depth is supported by RX, set GCP packet
+	/* if color depth is supported by RX, set GCP packet */
 	switch (cd) {
 		
 	case HDMI_CD_48:
@@ -1008,15 +1009,125 @@ void __s5p_hdmi_init_hpd_onoff(bool on_off)
 	HDMIPRINTK("0x%08x\n\r", readl(hdmi_base + S5P_HPD));
 }
 
+static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
+					u32 sample_rate, 
+					u32 bits_per_sample, 
+					u32 frame_size_code)
+{
+	u32 data_num, bit_ch, sample_frq;
+	
+	if (bits_per_sample == 20) {
+		data_num = 2;
+		bit_ch   = 1;
+	} else if (bits_per_sample == 24) {
+		data_num = 3;
+		bit_ch   = 1;
+	} else { // bits_per_sample == 16 or default
+		data_num = 1;
+		bit_ch   = 0;
+	}
+
+	sample_frq = (sample_rate==44100) ? 0 : 
+  		     (sample_rate==48000) ? 2 :
+	             (sample_rate==32000) ? 3 :
+  		     (sample_rate==96000) ? 0xa : 0x0;
+	
+	// readl(hdmi_base + S5P_HDMI_YMAX)
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CLK_CON);
+	writel(0x01, hdmi_base + S5P_HDMI_I2S_CLK_CON);
+
+	writel(readl(hdmi_base + S5P_HDMI_I2S_DSD_CON) | 0x01, 
+		hdmi_base + S5P_HDMI_I2S_DSD_CON);
+
+	// Configuration I2S input ports. Configure I2S_PIN_SEL_0~4
+	writel((readl(hdmi_base + S5P_HDMI_I2S_PIN_SEL_0) & ~(7<<4 | 7<<0)) | (5<<4|6<<0),
+		hdmi_base + S5P_HDMI_I2S_PIN_SEL_0);	
+	writel((readl(hdmi_base + S5P_HDMI_I2S_PIN_SEL_1) & ~(7<<4 | 7<<0)) | (1<<4|4<<0),
+		hdmi_base + S5P_HDMI_I2S_PIN_SEL_1);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_PIN_SEL_2) & ~(7<<4 | 7<<0)) | (1<<4|2<<0),
+		hdmi_base + S5P_HDMI_I2S_PIN_SEL_2);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_PIN_SEL_3) & ~(7<<0)) | (0<<0),
+		hdmi_base + S5P_HDMI_I2S_PIN_SEL_3);
+
+	// I2S_CON_1 & 2
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CON_1) & ~(1<<1 | 1<<0)) | (1<<1|0<<0),
+		hdmi_base + S5P_HDMI_I2S_CON_1);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CON_2) & ~(1<<6 | 3<<4 | 3<<2 | 3<<0)) 
+			| (0<<6 | bit_ch<<4 | data_num<<2 | 0<<0),
+		hdmi_base + S5P_HDMI_I2S_CON_2);
+		
+	// Configure register related to CUV information
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_0) & ~(3<<6 | 7<<3 | 1<<2 | 1<<1 | 1<<0)) 
+			| (0<<6 | 0<<3 | 0<<2 | 0<<1 | 1<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_0);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_1) & ~(0xff<<0)) | (0<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_1);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_2) & ~(0xff<<0)) | (0<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_2);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_3) & ~(3<<4 | 0xf<<0)) 
+			| (1<<4 | sample_frq<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_3);
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_4) & ~(0xf<<4 | 7<<1 | 1<<0)) 
+			| (0xf<<4 | 5<<1 | 1<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_4);
+
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_0);
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_1);
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_2);
+	writel(0x02, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_3);
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_4);
+
+	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_CON) & ~(1<<0)) | (1<<0),
+		hdmi_base + S5P_HDMI_I2S_CH_ST_CON);
+		
+	writel((readl(hdmi_base + S5P_HDMI_I2S_MUX_CON) & ~(1<<4 | 3<<2 | 1<<1 | 1<<0)) 
+			| (1<<4 | 1<<2 | 1<<1 | 1<<0),
+		hdmi_base + S5P_HDMI_I2S_MUX_CON);
+
+	writel((readl(hdmi_base + S5P_HDMI_I2S_MUX_CH) & ~(0xff<<0)) | (0x3f<<0),
+		hdmi_base + S5P_HDMI_I2S_MUX_CH);
+
+	writel((readl(hdmi_base + S5P_HDMI_I2S_MUX_CUV) & ~(0x3<<0)) | (0x3<<0),
+		hdmi_base + S5P_HDMI_I2S_MUX_CUV);
+
+
+
+
+
+
+	writel(0x00, hdmi_base + S5P_ASP_SP_FLAT);
+	writel(0x08, hdmi_base + S5P_ASP_CHCFG0);
+	writel(0x1a, hdmi_base + S5P_ASP_CHCFG1);
+	writel(0x2c, hdmi_base + S5P_ASP_CHCFG2);
+	writel(0x3e, hdmi_base + S5P_ASP_CHCFG3);
+
+	writel((readl(hdmi_base + S5P_ASP_CON) & ~(1<<7 | 3<<5 | 1<<4 | 0xf<<0)) 
+			| (0<<7 | 0<<5 | 1<<4 | 0x7<<0),
+		hdmi_base + S5P_ASP_CON);
+
+	writel((readl(hdmi_base + S5P_ACR_CON) & ~(3<<3 | 7<<0)) | (0<<3 | 4<<0),
+		hdmi_base + S5P_ACR_CON);
+
+	writel((readl(hdmi_base + S5P_HDMI_CON_0) & ~(1<<7 | 1<<6 | 1<<2 |1<<0)) 
+			| (1<<7 | 1<<6 | 1<<2 | 1<<0),
+		hdmi_base + S5P_HDMI_CON_0);
+}
+
 s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec, 
 				u32 sample_rate, u32 bits, u32 frame_size_code)
 {
+#if 1 /* for I2S */
+	__s5p_hdmi_audio_i2s_config(audio_codec, sample_rate, bits, frame_size_code);
+
+#else /* for SPDIF */
 	__s5p_hdmi_audio_set_config(audio_codec);
 	__s5p_hdmi_audio_set_repetition_time(audio_codec, bits, frame_size_code);
 	__s5p_hdmi_audio_irq_enable(IRQ_BUFFER_OVERFLOW_ENABLE);
 	__s5p_hdmi_audio_clock_enable();
+	
 	__s5p_hdmi_audio_set_asp();
 	__s5p_hdmi_audio_set_acr(sample_rate);
+#endif
 	__s5p_hdmi_audio_set_aui(audio_codec, sample_rate, bits);
 
 	return HDMI_NO_ERROR;
@@ -1025,83 +1136,71 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 						s5p_tv_o_mode out_mode)
 {
-//	s5p_tv_hdmi_disp_mode hdmi_disp_num;
 	s5p_hdmi_v_fmt hdmi_v_fmt;
 
-	HDMIPRINTK("%d,%d\n\r", disp_mode, out_mode);
+	HDMIPRINTK("disp mode %d, output mode%d\n\r", disp_mode, out_mode);
 
 	switch (disp_mode) {
-
-	case TVOUT_480P_60_16_9:
-
-	case TVOUT_480P_60_4_3:
-
-	case TVOUT_576P_50_16_9:
-
-	case TVOUT_576P_50_4_3:
-
-	case TVOUT_720P_60:
-
-	case TVOUT_720P_50:
-
-	case TVOUT_1080P_60:
-
-	case TVOUT_1080P_50:		
-
-		writel(INT_PRO_MODE_PROGRESSIVE, hdmi_base + S5P_INT_PRO_MODE);
-		break;
-		
-	case TVOUT_1080I_60:
-
-	case TVOUT_1080I_50:	
-
-		writel(INT_PRO_MODE_INTERLACE, hdmi_base + S5P_INT_PRO_MODE);
-		break;		
-
-	default:
-		HDMIPRINTK("invalid disp_mode parameter(%d)\n\r", disp_mode);
-		return S5P_TV_HDMI_ERR_INVALID_PARAM;
-		break;
-	}
-
-	switch (disp_mode) {
-
+	/* 480p */
 	case TVOUT_480P_60_16_9:
 
 	case TVOUT_480P_60_4_3:
 		hdmi_v_fmt = v720x480p_60Hz;
 		break;
+	case TVOUT_480P_59:
+		hdmi_v_fmt = v720x480p_59Hz;
+		break;		
 
+	/* 576p */
 	case TVOUT_576P_50_16_9:
 
 	case TVOUT_576P_50_4_3:
 		hdmi_v_fmt = v720x576p_50Hz;
 		break;
 
+	/* 720p */		
 	case TVOUT_720P_60:
 		hdmi_v_fmt = v1280x720p_60Hz;
+		break;
+		
+	case TVOUT_720P_59:
+		hdmi_v_fmt = v1280x720p_59Hz;
 		break;
 
 	case TVOUT_720P_50:
 		hdmi_v_fmt = v1280x720p_50Hz;
 		break;
 
+	/* 1080p */
+	case TVOUT_1080P_30:
+		hdmi_v_fmt = v1920x1080p_30Hz;
+		break;
+
 	case TVOUT_1080P_60:
 		hdmi_v_fmt = v1920x1080p_60Hz;
+		break;
+
+	case TVOUT_1080P_59:
+		hdmi_v_fmt = v1920x1080p_59Hz;
 		break;
 
 	case TVOUT_1080P_50:
 		hdmi_v_fmt = v1920x1080p_50Hz;
 		break;
 
+	/* 1080i */
 	case TVOUT_1080I_60:
 		hdmi_v_fmt = v1920x1080i_60Hz;
+		break;
+
+	case TVOUT_1080I_59:
+		hdmi_v_fmt = v1920x1080i_59Hz;
 		break;
 
 	case TVOUT_1080I_50:
 		hdmi_v_fmt = v1920x1080i_50Hz;
 		break;
-		
+				
 	default:
 		HDMIPRINTK(" invalid disp_mode parameter(%d)\n\r", disp_mode);
 		return S5P_TV_HDMI_ERR_INVALID_PARAM;
@@ -1122,7 +1221,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	}
 
 // TODO: C110 - color mode check
-	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24,HDMI_PIXEL_RATIO_16_9);
+	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, HDMI_PIXEL_RATIO_16_9);
 	
 	return HDMI_NO_ERROR;
 }
@@ -1547,8 +1646,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | temp_reg,
 	       hdmi_base + S5P_HDMI_CON_0);
-// TODO: C110_HDCP
-/*
+
 	if (hdcp_en) {
 		__s5p_init_hdcp(true, ddc_port);
 		
@@ -1556,7 +1654,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 			HDMIPRINTK("HDCP start failed\n");
 		}
 	}
-*/
+	
 	HDMIPRINTK("HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
 	//	   readl(hdmi_base + S5P_HDCP_CTRL),
 		   readl(hdmi_base + S5P_HPD),
@@ -1696,6 +1794,84 @@ int __init __s5p_hdmi_release(struct platform_device *pdev)
 	}
 
 	return 0;
+}
+
+/*
+ * HDCP ISR.
+ * If HDCP IRQ occurs, set hdcp_event and wake up the waitqueue.
+ */
+
+#define HDMI_IRQ_TOTAL_NUM	6
+
+hdmi_isr hdmi_isr_ftn[HDMI_IRQ_TOTAL_NUM];
+
+int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num)
+{
+	HDMIPRINTK("Try to register ISR for IRQ number (%d)\n", irq_num );
+
+	if ( isr == NULL ) {
+		HDMIPRINTK("Invaild ISR\n" );
+		return -EINVAL;
+	}
+
+	/* check IRQ number */
+	if ( irq_num > HDMI_IRQ_TOTAL_NUM ) {
+		HDMIPRINTK("irq_num exceeds allowed IRQ number(%d)\n", 
+			HDMI_IRQ_TOTAL_NUM );
+		return -EINVAL;
+	}
+
+	/* check if is the number already registered? */
+	if ( hdmi_isr_ftn[irq_num] ) {
+		HDMIPRINTK("the %d th ISR is already registered\n", 
+			irq_num);
+	}
+
+	hdmi_isr_ftn[irq_num] = isr;
+
+	HDMIPRINTK("Success to register ISR for IRQ number (%d)\n", 
+			irq_num);
+	
+	return 0;
+}
+EXPORT_SYMBOL(s5p_hdmi_register_isr);
+
+irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
+{
+	u8 irq_state, irq_num;
+
+	irq_state = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
+
+	HDMIPRINTK("S5P_HDMI_CTRL_INTC_FLAG = 0x%02x\n", irq_state);
+
+	/* Check interrupt happened */
+	/* Priority of Interrupt  HDCP> I2C > Audio > CEC ( Not implemented) */
+
+	if (irq_state) {
+		/* HDCP IRQ*/
+		irq_num = 0;
+		/* check if ISR is null or not */
+		while(irq_num < HDMI_IRQ_TOTAL_NUM) {
+			if (irq_state & (1<<irq_num)) {
+				if (hdmi_isr_ftn[irq_num] != NULL) {
+					(hdmi_isr_ftn[irq_num])(irq_num);
+				} else {
+					HDMIPRINTK("No registered ISR for IRQ[%d]\n", irq_num);
+				}
+			}
+			++irq_num;
+		}
+
+	} else {
+		HDMIPRINTK("Undefined IRQ happened[%x]\n", irq_state);
+	}
+
+	// Because of HW Problem, after processing INT we should INT enable again.
+	// HdmiOutp8( S5P_HDMI_INTC_CON, 1 << HDMI_IRQ_HDCP | 1 << HDMI_IRQ_GLOBAL );
+
+	// INTC_ClearVectAddr();
+
+	return IRQ_HANDLED;
 }
 
 void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr)

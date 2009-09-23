@@ -41,7 +41,7 @@ static struct irqaction s3c_button_irq = {
 static unsigned int s3c_button_gpio_init(void)
 {
 	u32 err;
-
+#if 0
 	err = gpio_request(S5PC11X_GPH0(4),"GPH0");
 	if (err){
 		printk("gpio request error : %d\n",err);
@@ -49,7 +49,7 @@ static unsigned int s3c_button_gpio_init(void)
 		s3c_gpio_cfgpin(S5PC11X_GPH0(4),S5PC11X_GPH0_4_EXT_INT30_4);
 		s3c_gpio_setpull(S5PC11X_GPH0(4), S3C_GPIO_PULL_NONE);
 	}
-
+#endif
 	err = gpio_request(S5PC11X_GPH3(7),"GPH3");
 	if (err){
 		printk("gpio request error : %d\n",err);
@@ -70,11 +70,12 @@ static void __init s3c_button_init(void)
 		printk(KERN_ERR "%s failed\n", __FUNCTION__);
 		return;
 	}	
-	
+#if 0	
 	set_irq_type(IRQ_EINT4, IRQF_TRIGGER_FALLING);
 	setup_irq(IRQ_EINT4, &s3c_button_irq);
-
+#endif
 	set_irq_type(IRQ_EINT(31), IRQF_TRIGGER_FALLING);
+	set_irq_wake(IRQ_EINT(31), 1);
 	setup_irq(IRQ_EINT(31), &s3c_button_irq);	
 }
 

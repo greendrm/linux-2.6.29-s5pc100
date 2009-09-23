@@ -32,14 +32,18 @@
 
 static int powerdomain_set(struct powerdomain *pd, int enable)
 {
-	unsigned long ctrlbit = pd->pd_ctrlbit;
-	void __iomem *reg = (void __iomem *)(pd->pd_reg);
-	void __iomem *stable_reg = (void __iomem *)(pd->pd_stable_reg);
+	unsigned long ctrlbit;
+	void __iomem *reg;
+	void __iomem *stable_reg;
 	unsigned long reg_dat;
 
-	if (IS_ERR(pd) || pd == NULL)
+	if (pd == NULL)
 		return -EINVAL;
 
+	ctrlbit = pd->pd_ctrlbit;
+	reg = (void __iomem *)pd->pd_reg;
+	stable_reg = (void __iomem *)pd->pd_stable_reg;
+	
 	reg_dat = __raw_readl(reg);
 
 	if (enable) {
@@ -271,7 +275,7 @@ static struct clk init_clocks[] = {
 		.ctrlbit        = S5P_CLKGATE_IP0_IPC,
 		.pd		= &pd_cam,
 	}, {
-		.name           = "csis",
+		.name           = "mipi-csis",
 		.id             = -1,
 		.parent         = &clk_h166,
 		.enable         = s5pc11x_clk_ip0_ctrl,

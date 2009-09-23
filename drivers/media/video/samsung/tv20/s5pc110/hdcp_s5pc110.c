@@ -13,41 +13,34 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
-#include <linux/i2c.h>
 #include <linux/device.h>
 #include <linux/wait.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 #include <linux/delay.h>
+#include <linux/i2c.h>
 #include <linux/irq.h>
 
 
 #include <asm/io.h>
 #include <mach/gpio.h>
 
+#include "../ddc.h"
 #include "tv_out_s5pc110.h"
 #include "regs/regs-hdmi.h"
 
 /* for Operation check */
-#ifdef COFIG_TVOUT_RAW_DBG
+//#ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDCP_DEBUG 1
-//#define S5P_HDCP_I2C_DEBUG 1
-//#define S5P_HDCP_AUTH_DEBUG 1
-#endif
+#define S5P_HDCP_I2C_DEBUG 1
+#define S5P_HDCP_AUTH_DEBUG 1
+//#endif
 
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
 	printk("\t\t[HDCP] %s: " fmt, __FUNCTION__ , ## args)
 #else
 #define HDCPPRINTK(fmt, args...)
-#endif
-
-/* for i2c bus check */
-#ifdef S5P_HDCP_I2C_DEBUG
-#define I2CPRINTK(fmt, args...) \
-	printk("\t\t\t\t[I2C] %s: " fmt, __FUNCTION__ , ## args)
-#else
-#define I2CPRINTK(fmt, args...)
 #endif
 
 /* for authentication key check */
@@ -60,6 +53,10 @@
 
 //#define USE_PJ_UPDATE
 //#define HAES_DEBUG
+
+extern int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num);
+extern void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr);
+extern void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr);
 
 extern void __iomem		*hdmi_base;
 
@@ -167,7 +164,6 @@ struct s5p_hdcp_info {
 	struct work_struct  	work;
 };
 
-/*
 static struct s5p_hdcp_info hdcp_info = {
 	.is_repeater 	= false,
 	.time_out	= 0,
@@ -177,7 +173,6 @@ static struct s5p_hdcp_info hdcp_info = {
 	.auth_status	= NOT_AUTHENTICATED,
 	
 };
-*/
 
 #define HDCP_RI_OFFSET          0x08
 #define INFINITE		0xffffffff
@@ -394,90 +389,15 @@ case 68:	writel(0x1,hdmi_base+S5P_HAES_DATA_SIZE_H);
 }
 */
 
-#if 0 /* MUSTBECHECKED : C110 hdcp sfr was changed */
+
 
 /*
- * Read the HDCP data from Rx by using IIC
- */
-static int hdcp_i2c_read(struct i2c_client *client, u8 subaddr, u8 *data, u16 len)
-{
-	u8 addr = subaddr;
-	int ret = 0;
-
-	struct i2c_msg msg[] = {
-		[0] = { 
-			.addr = client->addr, 
-			.flags = 0,
-			.len = 1, 
-			.buf = &addr
-		}, 
-		[1] = { 
-			.addr = client->addr, 
-			.flags = I2C_M_RD,
-			.len = len,
-			.buf = data 
-		}
-	};
-
-	if (!hdcp_info.client) {
-		HDCPPRINTK("DDC port is not available!!"
-		       "Check hdmi receiver's DDC Port \n");
-		return -EIO;
-	}
-
-	I2CPRINTK("sub addr = 0x%08x, data len = %d\n", subaddr, len);
-
-	if (i2c_transfer(client->adapter, msg, 2) != 2)
-		ret = -EIO;
-
-	I2CPRINTK("ret :%d\n", ret);
-
-#ifdef S5P_HDCP_I2C_DEBUG
-	{
-		int loop = 0;
-		HDCPPRINTK("read_data :: \n");
-		printk("\t\t\t");
-
-		for (loop = 0;loop < len;loop++)
-			printk("0x%02x  ", data[loop]);
-
-		printk("\n");
-	}
-#endif
-	return ret;
-}
-
-/*
- * Write the HDCP data to receiver by using IIC 
- * 	- use i2c_master_send()
- */
-static int hdcp_i2c_write(struct i2c_client *client, u8 *data, u16 len)
-{
-	int ret = 0;
-
-	if (!hdcp_info.client) {
-		HDCPPRINTK("DDC port is not available!!"
-		       "Check hdmi receiver's DDC Port \n");
-		return -EIO;
-	}
-
-	I2CPRINTK("sub addr = 0x%08x, data len = %d\n", 
-		data[0], len);
-
-	if (i2c_master_send(client, (const char *) data, len) != len)
-		ret = -EIO;
-
-	I2CPRINTK("ret :%d\n", ret);
-
-	return ret;
-}
-
 static bool is_hdmi_mode(void)
 {
 	u8 bstatus[BSTATUS_SIZE];
 	bool ret = false;
 
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_BStatus, bstatus, BSTATUS_SIZE);
+	ret = ddc_read( HDCP_BStatus, bstatus, BSTATUS_SIZE);
 	if (ret == false){
 		HDCPPRINTK("Can't read BStatus data from i2c bus\n");
 		return false;
@@ -490,6 +410,7 @@ static bool is_hdmi_mode(void)
 	else
 		return false;
 }
+*/
 
 /*
  * 1st Authentication step func.
@@ -503,7 +424,7 @@ static bool write_ainfo(void)
 	ainfo[0] = HDCP_Ainfo;
 	ainfo[1] = 0;
 
-	ret = hdcp_i2c_write(hdcp_info.client, ainfo, 2);
+	ret = ddc_write( ainfo, 2);
 	if(ret < 0)
 		HDCPPRINTK("Can't write ainfo data through i2c bus\n");
 
@@ -530,7 +451,7 @@ static bool write_an(void)
 	an[7] = readb(hdmi_base + S5P_HDCP_An_1_2);
 	an[8] = readb(hdmi_base + S5P_HDCP_An_1_3);
 
-	ret = hdcp_i2c_write(hdcp_info.client, an, AN_SIZE + 1);
+	ret = ddc_write( an, AN_SIZE + 1);
 	if(ret < 0)
 		HDCPPRINTK("Can't write an data through i2c bus\n");
 	
@@ -563,7 +484,7 @@ static bool write_aksv(void)
 	aksv[4] = readb(hdmi_base + S5P_HDCP_AKSV_0_3);
 	aksv[5] = readb(hdmi_base + S5P_HDCP_AKSV_1);
 
-	ret = hdcp_i2c_write(hdcp_info.client,  aksv, AKSV_SIZE + 1);
+	ret = ddc_write(  aksv, AKSV_SIZE + 1);
 	if(ret < 0)
 		HDCPPRINTK("Can't write aksv data through i2c bus\n");
 
@@ -584,7 +505,7 @@ static bool read_bcaps(void)
 	int ret = 0;
 	u8 bcaps[BCAPS_SIZE] = {0};
 
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_Bcaps, bcaps, BCAPS_SIZE);
+	ret = ddc_read( HDCP_Bcaps, bcaps, BCAPS_SIZE);
 
 	if(ret < 0){
 		HDCPPRINTK("Can't read bcaps data from i2c bus\n");
@@ -618,7 +539,7 @@ static bool read_again_bksv(void)
 	u32 result = 0;
 	int ret = 0;
 	
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_Bksv, bk_sv, BKSV_SIZE);
+	ret = ddc_read( HDCP_Bksv, bk_sv, BKSV_SIZE);
 
 	if(ret < 0){
 		HDCPPRINTK("Can't read bk_sv data from i2c bus\n");
@@ -678,7 +599,7 @@ static bool read_bksv(void)
 	u32 count = 0;
 	int ret = 0;
 
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_Bksv, bk_sv, BKSV_SIZE);
+	ret = ddc_read( HDCP_Bksv, bk_sv, BKSV_SIZE);
 
 	if(ret < 0){
 		HDCPPRINTK("Can't read bk_sv data from i2c bus\n");
@@ -741,6 +662,8 @@ static bool read_bksv(void)
 /*
  * Compare the 'P' value of Tx with that of Rx
  */
+
+#if 0
 static bool compare_p_val(void)
 {
 	/* ref. to HDCP Revision v1.2 p.89 */
@@ -750,7 +673,7 @@ static bool compare_p_val(void)
 	u32 count = 0;
 
 	tx_p_val1 = readl(hdmi_base + S5P_HDCP_Pj);
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, &rx_p_val1, 0x1);
+	ret = ddc_read( HDCP_Pj, &rx_p_val1, 0x1);
 	if(ret < 0){
 		HDCPPRINTK("Can't read p_1 data from i2c bus\n");
 		return false;
@@ -759,7 +682,7 @@ static bool compare_p_val(void)
 	while (tx_p_val1 != rx_p_val1) {
 		tx_p_val2 = readl(hdmi_base + S5P_HDCP_Pj);
 		
-		ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, &rx_p_val2, 0x1);
+		ret = ddc_read( HDCP_Pj, &rx_p_val2, 0x1);
 		if(ret < 0){
 			HDCPPRINTK("Can't read p_2 data from i2c bus\n");
 			return false;
@@ -779,7 +702,7 @@ static bool compare_p_val(void)
 			/* Wait for any of the values to change */
 			do {
 				tx_p_val2 = readl(hdmi_base + S5P_HDCP_Pj);
-				ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, 
+				ret = ddc_read( HDCP_Pj, 
 							&rx_p_val2, 0x1);
 				if(ret < 0){
 					HDCPPRINTK("Can't read p_2 data" 
@@ -798,6 +721,7 @@ static bool compare_p_val(void)
 	return ((count < 3) ? true : false);
 
 }
+#endif
 
 /*
  * Compare the R value of Tx with that of Rx
@@ -815,7 +739,7 @@ static bool compare_r_val(void)
 		ri[1] = readl(hdmi_base + S5P_HDCP_Ri_1);
 
 		/* Read R value from Rx */
-		ret = hdcp_i2c_read(hdcp_info.client, HDCP_Ri, rj, 2);
+		ret = ddc_read( HDCP_Ri, rj, 2);
 		if(ret < 0){
 			HDCPPRINTK("Can't read r data from i2c bus\n");
 			return false;
@@ -869,19 +793,20 @@ static void reset_authentication(void)
 	writel(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
 }
 
+#if 0
 static bool make_aes_key(void)
 {
 	u32  aes_reg_val;
 
 
-	aes_reg_val = readl(hdmi_base + S5P_HAES_CON);
+/* C110 */ //	aes_reg_val = readl(hdmi_base + S5P_HAES_CON);
 	aes_reg_val = SCRAMBLER_KEY_START_EN;
 
 	/* Start generation of AES key */
-	writel(aes_reg_val, hdmi_base + S5P_HAES_CON);
+/* C110 */ //	writel(aes_reg_val, hdmi_base + S5P_HAES_CON);
 
 	do {
-		aes_reg_val = readl(hdmi_base + S5P_HAES_CON);
+/* C110 */ //		aes_reg_val = readl(hdmi_base + S5P_HAES_CON);
 	} while (!(aes_reg_val & SCRAMBLER_KEY_DONE));
 
 	return true;
@@ -907,7 +832,9 @@ static bool make_aes_key(void)
 #endif
 
 }
+#endif
 
+#if 0
 static void set_av_mute_on_off(u32 on_off)
 {
 	u32  gcp_byte;
@@ -929,69 +856,109 @@ static void set_av_mute_on_off(u32 on_off)
 	writel(TRANSMIT_EVERY_VSYNC, hdmi_base + S5P_GCP_CON);
 
 }
+#endif
 
 /*
- * HAES function
+ * Set the timing parameter for load e-fuse key.
  */
-static void start_decrypting(const u8 *hdcp_key, u32 hdcp_key_size)
+
+/* TODO: must use clk_get for pclk rate */
+#define PCLK_D_RATE_FOR_HDCP	166000000
+
+static void hdcp_efuse_timing(void)
 {
-	u32 i = 0;
-	u32 aes_start = 0;
-	u32 aes_reg_val = 0;
+	u32 time, val;
+//	struct clk *pclk;
 
-	make_aes_key();
+/* TODO: must use clk_get for pclk rate */
+	time = 1000000000/PCLK_D_RATE_FOR_HDCP;
 
-	writel(hdcp_key_size, hdmi_base + S5P_HAES_DATA_SIZE_L);
+	val = EFUSE_ADDR_WIDTH/time;
+	if(EFUSE_ADDR_WIDTH % time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_ADDR_WIDTH);
 
-	for (i = 0; i < hdcp_key_size; i++) {
-		writel(hdcp_key[i], hdmi_base + S5P_HAES_DATA);
-	}
+	val = EFUSE_SIGDEV_ASSERT/time;
+	if(EFUSE_SIGDEV_ASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SIGDEV_ASSERT);
 
-	aes_reg_val = readl(hdmi_base + S5P_HAES_CON);
-	aes_reg_val |= HAES_START_EN;
-	
-	writel(aes_reg_val, hdmi_base + S5P_HAES_CON);
+	val = EFUSE_SIGDEV_DEASSERT/time;
+	if(EFUSE_SIGDEV_DEASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SIGDEV_DEASSERT);
 
-	do {
-		aes_start = readl(hdmi_base + S5P_HAES_CON);
-	} while (aes_start & HAES_START_EN);
+	val = EFUSE_PRCHG_ASSERT/time;
+	if(EFUSE_PRCHG_ASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_PRCHG_ASSERT);
 
-#ifdef HAES_DEBUG
+	val = EFUSE_PRCHG_DEASSERT/time;
+	if(EFUSE_PRCHG_DEASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_PRCHG_DEASSERT);
+
+	val = EFUSE_FSET_ASSERT/time;
+	if(EFUSE_FSET_ASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_FSET_ASSERT);
+
+	val = EFUSE_FSET_DEASSERT/time;
+	if(EFUSE_FSET_DEASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_FSET_DEASSERT);
+
+	val = EFUSE_SENSING/time;
+	if(EFUSE_SENSING%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SENSING);
+
+	val = EFUSE_SCK_ASSERT/time;
+	if(EFUSE_SCK_ASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SCK_ASSERT);
+
+	val = EFUSE_SCK_DEASSERT/time;
+	if(EFUSE_SCK_DEASSERT%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SCK_DEASSERT);
+
+	val = EFUSE_SDOUT_OFFSET/time;
+	if(EFUSE_SDOUT_OFFSET%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_SDOUT_OFFSET);
+
+	val = EFUSE_READ_OFFSET/time;
+	if(EFUSE_READ_OFFSET%time)
+		val += 1;		
+	writeb(val, hdmi_base + S5P_EFUSE_READ_OFFSET);
+
+}
+
+/*
+ * load hdcp key from e-fuse mem.
+ */
+static int hdcp_loadkey(void)
+{
+	u8 status;
+
+	hdcp_efuse_timing();
+
+	/* read HDCP key from E-Fuse */
+	writeb(EFUSE_CTRL_ACTIVATE, hdmi_base + S5P_EFUSE_CTRL);
+
+	do
 	{
-		u8 decrypted_data[288];
+		status = readb(hdmi_base + S5P_EFUSE_STATUS);
+	} while(!(status & EFUSE_ECC_DONE));
 
-		HDCPPRINTK("[HDCP key] \n");
+	if(readb(hdmi_base + S5P_EFUSE_STATUS) & EFUSE_ECC_FAIL) {
+		HDCPPRINTK("Can't load key from fuse ctrl.\n");
+		return -EINVAL;
+	}	
 
-		printk("\t\t\t\t");
-		for (i = 0; i < hdcp_key_size; i++) {
-
-			printk("0x%02x, ", hdcp_key[i]);
-
-			if((!(i%6)) && i)
-				printk("\n\t\t\t\t");
-		}
-
-		/* Set AES debug mode */
-		writel(0x1 << 0, hdmi_base + S5P_HAES_CON + 0x80);
-
-		printk("\n");
-		
-		HDCPPRINTK("[Decrypted Data]\n");
-
-		printk("\t\t\t\t");
-		for (i = 0; i < hdcp_key_size; i++) {
-			decrypted_data[i] = 
-				readl(hdmi_base + S5P_HAES_CON + 0xb0);
-
-			printk("0x%2x, ", decrypted_data[i]);
-			
-			if((!(i%6)) && i)
-				printk("\n\t\t\t\t");
-		}
-
-		printk("\n");
-	}
-#endif
+	return 0;
+	
 }
 
 /*
@@ -1029,14 +996,10 @@ static int check_repeater(void)
 	u8 rx_v[SHA_1_HASH_SIZE];
 	u8 ksv_list[HDCP_MAX_DEVS*HDCP_KSV_SIZE];
 	
-	u32 hdcp_ctrl;
+	u32 hdcp_ctrl = 0;
 	u32 dev_cnt;
 	u32 stat;	
 
-	u64 init_time;
-	u64 end_time;
-	u64 present_time;
-	
 	bool ksv_fifo_ready = false;
 
 	memset(rx_v, 0x0, SHA_1_HASH_SIZE);
@@ -1051,7 +1014,7 @@ static int check_repeater(void)
 //	end_time = jiffies + 5*HZ;
 
 	while(j <= 500) {
-		ret = hdcp_i2c_read(hdcp_info.client, HDCP_Bcaps, 
+		ret = ddc_read( HDCP_Bcaps, 
 				bcaps, BCAPS_SIZE);
 
 		if(ret < 0){
@@ -1079,9 +1042,9 @@ static int check_repeater(void)
 	}
 	
 	if (ksv_fifo_ready) {
-		hdcp_ctrl = readl(hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //		hdcp_ctrl = readl(hdmi_base + S5P_HDCP_CTRL);
 		hdcp_ctrl &= CLEAR_REPEATER_TIMEOUT;
-		writel(hdcp_ctrl, hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //		writel(hdcp_ctrl, hdmi_base + S5P_HDCP_CTRL);
 	} else
 		return false;
 
@@ -1089,7 +1052,7 @@ static int check_repeater(void)
 	 * Check MAX_CASCADE_EXCEEDED 
 	 * or MAX_DEVS_EXCEEDED indicator
 	 */
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_BStatus, 
+	ret = ddc_read( HDCP_BStatus, 
 		status, BSTATUS_SIZE);
 	
 	if(ret < 0){
@@ -1120,10 +1083,10 @@ static int check_repeater(void)
 
 	if(dev_cnt) {
 
-		u32 val;
+		u32 val = 0;
 
 		/* read ksv */
-		ret = hdcp_i2c_read(hdcp_info.client, HDCP_KSVFIFO, ksv_list, 
+		ret = ddc_read( HDCP_KSVFIFO, ksv_list, 
 				dev_cnt * HDCP_KSV_SIZE);
 		if (ret <0) {
 			HDCPPRINTK("Can't read ksv fifo!!\n");
@@ -1184,7 +1147,7 @@ static int check_repeater(void)
 
 
 	/* Read SHA-1 from receiver */
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_SHA1, 
+	ret = ddc_read( HDCP_SHA1, 
 		rx_v, SHA_1_HASH_SIZE);
 	
 	if (ret < 0) {
@@ -1311,9 +1274,11 @@ static bool try_read_receiver(void)
  */
 bool __s5p_stop_hdcp(void)
 {
-	u32  sfr_val;
+	u32  sfr_val = 0;
 
 	HDCPPRINTK("HDCP ftn. Stop!!\n");
+
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HDCP);
 
 	hdcp_protocol_status = 0;
 
@@ -1325,17 +1290,17 @@ bool __s5p_stop_hdcp(void)
 	//hdcp_info.client	= NULL;
 
 	/* 3. disable hdcp control reg. */
-	sfr_val = readl(hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //	sfr_val = readl(hdmi_base + S5P_HDCP_CTRL);
 	sfr_val &= ( ENABLE_1_DOT_1_FEATURE_DIS 
 			& CLEAR_REPEATER_TIMEOUT 
 			& EN_PJ_DIS
 			& CP_DESIRED_DIS);
-	writel(sfr_val, hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //	writel(sfr_val, hdmi_base + S5P_HDCP_CTRL);
 
 	/* 2. disable aes_data_size & haes_con reg. */
-	sfr_val = readl(hdmi_base + S5P_HAES_CON);
+/* C110 */ //	sfr_val = readl(hdmi_base + S5P_HAES_CON);
 	sfr_val &= SCRAMBLER_KEY_START_DIS;
-	writel(sfr_val, hdmi_base + S5P_HAES_CON);
+/* C110 */ //	writel(sfr_val, hdmi_base + S5P_HAES_CON);
 
 	/* 1-3. disable hdmi hpd reg. */
 	writel(CABLE_UNPLUGGED, hdmi_base + S5P_HPD);
@@ -1370,10 +1335,12 @@ bool __s5p_stop_hdcp(void)
 	HDCPPRINTK( "\tSTATUS \t0x%08x\n",readl(hdmi_base + S5P_STATUS));
 	HDCPPRINTK( "\tSTATUS_EN \t0x%08x\n",readl(hdmi_base + S5P_STATUS_EN));
 	HDCPPRINTK( "\tHPD \t0x%08x\n",readl(hdmi_base + S5P_HPD));
-	HDCPPRINTK( "\tHDCP_CTRL \t0x%08x\n",readl(hdmi_base + S5P_HDCP_CTRL));
+/* C110 */ //	HDCPPRINTK( "\tHDCP_CTRL \t0x%08x\n",readl(hdmi_base + S5P_HDCP_CTRL));
 	HDCPPRINTK( "\tMODE_SEL \t0x%08x\n",readl(hdmi_base + S5P_MODE_SEL));
 	HDCPPRINTK( "\tENC_EN \t0x%08x\n",readl(hdmi_base + S5P_ENC_EN));	
 	HDCPPRINTK( "\tHDMI_CON_0 \t0x%08x\n",readl(hdmi_base + S5P_HDMI_CON_0));	
+
+//	i2c_del_driver(hdcp_info.client->driver);
 
 	return true;
 }
@@ -1404,7 +1371,7 @@ void __s5p_hdcp_reset(void)
 bool __s5p_start_hdcp(void)
 {		
 	u32  sfr_val;
-	
+
 	hdcp_info.event 	= HDCP_EVENT_STOP;
 	hdcp_info.time_out 	= INFINITE;
 	hdcp_info.auth_status 	= NOT_AUTHENTICATED;	
@@ -1442,18 +1409,19 @@ bool __s5p_start_hdcp(void)
 	 * 1-3. set hdmi offset & cycle_aa reg. 
 	 * HDCP memory read cycle count(0x4 is recommanded) 
 	 */
-	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_0);
+/* C110 */ //	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_0);
 
-	writel(0xA0, hdmi_base + S5P_HDCP_OFFSET_TX_1);
+/* C110 */ //	writel(0xA0, hdmi_base + S5P_HDCP_OFFSET_TX_1);
 
-	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_2);
+/* C110 */ //	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_2);
 
-	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_3);
+/* C110 */ //	writel(0x00, hdmi_base + S5P_HDCP_OFFSET_TX_3);
 
-	writel(0x04, hdmi_base + S5P_HDCP_CYCLE_AA);
+/* C110 */ //	writel(0x04, hdmi_base + S5P_HDCP_CYCLE_AA);
 	
 	/* 2. set aes_data_size & haes_con reg. */
-	start_decrypting(hdcp_key, 288);
+	if (hdcp_loadkey() < 0 )
+		return false;
 	
 	/* 
 	 * 3. set hdcp control reg.
@@ -1463,14 +1431,16 @@ bool __s5p_start_hdcp(void)
 	 */
 	sfr_val = 0;
 	sfr_val |= CP_DESIRED_EN;
-	writel(sfr_val, hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //	writel(sfr_val, hdmi_base + S5P_HDCP_CTRL);
 	
 	hdcp_info.hdcp_enable = true;
+
+	s5p_hdmi_enable_interrupts(HDMI_IRQ_HDCP);
 	
 	HDCPPRINTK( "\tSTATUS \t0x%08x\n",readl(hdmi_base + S5P_STATUS));
 	HDCPPRINTK( "\tSTATUS_EN \t0x%08x\n",readl(hdmi_base + S5P_STATUS_EN));
 	HDCPPRINTK( "\tHPD \t0x%08x\n",readl(hdmi_base + S5P_HPD));
-	HDCPPRINTK( "\tHDCP_CTRL \t0x%08x\n",readl(hdmi_base + S5P_HDCP_CTRL));
+/* C110 */ //	HDCPPRINTK( "\tHDCP_CTRL \t0x%08x\n",readl(hdmi_base + S5P_HDCP_CTRL));
 	HDCPPRINTK( "\tMODE_SEL \t0x%08x\n",readl(hdmi_base + S5P_MODE_SEL));
 	HDCPPRINTK( "\tENC_EN \t0x%08x\n",readl(hdmi_base + S5P_ENC_EN));
 	HDCPPRINTK( "\tHDMI_CON_0 \t0x%08x\n",readl(hdmi_base + S5P_HDMI_CON_0));
@@ -1600,8 +1570,8 @@ static void second_auth_start_bh(void)
 			hdcp_info.time_out = INFINITE;
 
 			/* time-out (This bit is only available in a REPEATER) */
-			writel(readl(hdmi_base + S5P_HDCP_CTRL) | 0x1 << 2,
-				hdmi_base + S5P_HDCP_CTRL);
+/* C110 */ //			writel(readl(hdmi_base + S5P_HDCP_CTRL) | 0x1 << 2,
+/* C110 */ //				hdmi_base + S5P_HDCP_CTRL);
 
 			__s5p_hdcp_reset();
 
@@ -1831,8 +1801,10 @@ void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
 {
 
 	HDCPPRINTK("HDCP ftn. Init!!\n");
+
+//	i2c_add_driver(hdcp_info.client->driver);
 	
-	hdcp_info.client = ddc_port;
+//	hdcp_info.client = ddc_port;
 	
 	/* for bh */
 	INIT_WORK(&hdcp_info.work, (work_func_t)hdcp_work);
@@ -1844,94 +1816,20 @@ void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
 
 }
 
-#endif
-/*
- * HDCP ISR.
- * If HDCP IRQ occurs, set hdcp_event and wake up the waitqueue.
- */
 
-#define HDMI_IRQ_TOTAL_NUM	6
-
-hdmi_isr hdmi_isr_ftn[HDMI_IRQ_TOTAL_NUM];
-
-int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num)
+irqreturn_t __s5p_hdcp_irq_handler(int irq)
 {
-	HDCPPRINTK("Try to register ISR for IRQ number (%d)\n", irq_num );
-
-	if ( isr == NULL ) {
-		HDCPPRINTK("Invaild ISR\n" );
-		return -EINVAL;
-	}
-
-	/* check IRQ number */
-	if ( irq_num > HDMI_IRQ_TOTAL_NUM ) {
-		HDCPPRINTK("irq_num exceeds allowed IRQ number(%d)\n", 
-			HDMI_IRQ_TOTAL_NUM );
-		return -EINVAL;
-	}
-
-	/* check if is the number already registered? */
-	if ( hdmi_isr_ftn[irq_num] ) {
-		HDCPPRINTK("the %d th ISR is already registered\n", 
-			irq_num);
-	}
-
-	hdmi_isr_ftn[irq_num] = isr;
-
-	HDCPPRINTK("Success to register ISR for IRQ number (%d)\n", 
-			irq_num);
-	
-	return 0;
-}
-EXPORT_SYMBOL(s5p_hdmi_register_isr);
-
-irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
-{
-	u8 irq_state, irq_num;
-
-	irq_state = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
-
-	HDCPPRINTK("S5P_HDMI_CTRL_INTC_FLAG = 0x%02x\n", irq_state);
-
-	/* Check interrupt happened */
-	/* Proiority of Interrupt  HDCP> I2C > Audio > CEC ( Not implemented) */
-
-	if (irq_state) {
-		/* HDCP IRQ*/
-		irq_num = 0;
-		/* check if ISR is null or not */
-		while(irq_num < HDMI_IRQ_TOTAL_NUM) {
-			if (irq_state & (1<<irq_num)) {
-				if (hdmi_isr_ftn[irq_num] != NULL) {
-					(hdmi_isr_ftn[irq_num])(irq_num);
-				} else {
-					HDCPPRINTK("No registered ISR for IRQ[%d]\n", irq_num);
-				}
-			}
-			++irq_num;
-		}
-
-	} else {
-		HDCPPRINTK("Undefined IRQ happened[%x]\n", irq_state);
-	}
-
-	// Because of HW Problem, after processing INT we should INT enable again.
-	// HdmiOutp8( S5P_HDMI_INTC_CON, 1 << HDMI_IRQ_HDCP | 1 << HDMI_IRQ_GLOBAL );
-
-	// INTC_ClearVectAddr();
-
-	return IRQ_HANDLED;
-
-#if 0
 	u32 event = 0;
+	u8 flag;
 
 	event = 0;
 	/* check HDCP Status */
 	flag = readb(hdmi_base + S5P_STATUS);
+	
 	HDCPPRINTK("irq_status : 0x%08x\n", readb(hdmi_base + S5P_STATUS));
 
 	HDCPPRINTK("hdcp state : %s authenticated!!\n",
-		flag & AUTHENTICATED ? "":"not not");
+		flag & AUTHENTICATED ? "":"not auth.");
 
 	spin_lock_irq(&hdcp_info.lock);
 	
@@ -1979,7 +1877,7 @@ irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 	schedule_work(&hdcp_info.work);
 
 	spin_unlock_irq(&hdcp_info.lock);
-#endif
+
 	return IRQ_HANDLED;
 }
 
@@ -2014,4 +1912,12 @@ bool __s5p_set_hpd_detection(bool detection, bool hdcp_enabled,
 
 	return true;
 }
+
+int __s5p_hdcp_init(void)
+{
+	s5p_hdmi_register_isr(__s5p_hdcp_irq_handler, (u8)HDMI_IRQ_HDCP);
+	
+	return 0;
+}
+
 

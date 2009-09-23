@@ -64,7 +64,9 @@ u8 check_output_mode(s5p_tv_disp_mode display,
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE :
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE :
 	case TVOUT_OUTPUT_HDMI :
-		if(display == TVOUT_1080I_60 ||	display == TVOUT_1080I_50)
+		if(display == TVOUT_1080I_60 ||	
+		   display == TVOUT_1080I_59 ||			
+		   display == TVOUT_1080I_50)
 			ret = INTERLACED;
 		else
 			ret = PROGRESSIVE;
@@ -779,11 +781,46 @@ bool _s5p_vlayer_init_param(unsigned long buf_in)
 
 	bool i_mode, o_mode; /* 0 for interlaced, 1 for progressive */
 
+	switch(st->tvout_param.disp_mode) {
 
-	if (st->tvout_param.disp_mode > TVOUT_576P_50_4_3)
+	case TVOUT_480P_60_16_9:
+
+	case TVOUT_480P_60_4_3:
+
+	case TVOUT_576P_50_16_9:
+
+	case TVOUT_576P_50_4_3:
+
+#ifdef CONFIG_CPU_S5PC110
+	case TVOUT_480P_59:
 		st->vl_csc_type = VPROC_CSC_SD_HD;
-	else if (st->tvout_param.disp_mode < TVOUT_720P_60)
+		break;
+
+	case TVOUT_1080I_50:
+
+	case TVOUT_1080I_60:
+
+	case TVOUT_1080P_50:
+
+	case TVOUT_1080P_30:		
+
+	case TVOUT_1080P_60:
+
+	case TVOUT_720P_59:		
+
+	case TVOUT_1080I_59:
+
+	case TVOUT_1080P_59:
+#endif
+	case TVOUT_720P_50:
+
+	case TVOUT_720P_60:
 		st->vl_csc_type = VPROC_CSC_HD_SD;
+		break;
+		
+	default:
+		break;
+	}
 
 	st->vl_csc_control.csc_en = false;
 

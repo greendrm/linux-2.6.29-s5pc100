@@ -270,7 +270,10 @@ bool _s5p_tv_if_init_vm_reg(void)
 		case TVOUT_480P_60_16_9:
 
 		case TVOUT_480P_60_4_3:
-
+#ifdef CONFIG_CPU_S5PC110
+// SPMOON_TEST
+		case TVOUT_480P_59:			
+#endif
 		case TVOUT_576P_50_16_9:
 
 		case TVOUT_576P_50_4_3:
@@ -283,11 +286,19 @@ bool _s5p_tv_if_init_vm_reg(void)
 
 #ifdef CONFIG_CPU_S5PC110
 // SPMOON_TEST
+		case TVOUT_720P_59:			
+
 		case TVOUT_1080I_60:
+
+		case TVOUT_1080I_59:
 
 		case TVOUT_1080I_50:
 			
 		case TVOUT_1080P_60:
+
+		case TVOUT_1080P_30:
+
+		case TVOUT_1080P_59:			
 
 		case TVOUT_1080P_50:
 #endif				
@@ -681,6 +692,9 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 
 	switch (tvout_if->disp_mode) {
 
+#ifdef CONFIG_CPU_S5PC110
+	case TVOUT_480P_59:
+#endif
 	case TVOUT_480P_60_16_9:
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_3;
@@ -707,6 +721,9 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		break;
 
 	case TVOUT_720P_60:
+#ifdef CONFIG_CPU_S5PC110
+	case TVOUT_720P_59:
+#endif			
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_4;
 		break;
@@ -717,6 +734,7 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		st->avi_byte[3] = AVI_VIC_20;
 		break;
 
+	case TVOUT_1080I_59:
 	case TVOUT_1080I_60:
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_5;
@@ -727,6 +745,11 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		st->avi_byte[3] = AVI_VIC_31;
 		break;
 
+	case TVOUT_1080P_30:
+		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[3] = AVI_VIC_34;		
+
+	case TVOUT_1080P_59:
 	case TVOUT_1080P_60:
 		st->avi_byte[1] |= AVI_PAR_16_9;
 		st->avi_byte[3] = AVI_VIC_16;
@@ -766,13 +789,14 @@ bool _s5p_tv_if_init_hd_reg(void)
 	TVOUTIFPRINTK("audio type : %d, hdcp : %s)\n\r", 
 		st->hdmi_audio_type, st->hdcp_en ? "enabled":"disabled");
 
+/* C110_HDCP: 
 	if (st->hdcp_en) {
 		if ( !(st->hpd_status)) {
 			TVOUTIFPRINTK("HPD is not detected\n\r");
 			return false;
 		}
 	}
-
+*/
 	if (!_s5p_tv_if_init_hd_video_reg()) {
 		return false;
 	}
@@ -796,6 +820,8 @@ bool _s5p_tv_if_init_hd_reg(void)
 		return false;
 		break;
 	}
+
+/* C110_HDCP: */ st->hpd_status = 1;
 
 	if (!__s5p_hdmi_start(st->hdmi_audio_type,
 			      (st->hdcp_en && st->hpd_status),
@@ -900,6 +926,7 @@ bool _s5p_tv_if_start(void)
 #ifdef CONFIG_CPU_S5PC110
 
 		__s5p_tv_clk_init_hdmi_ratio(0);
+#if 0
 
 		switch (disp_mode) {
 
@@ -928,7 +955,6 @@ bool _s5p_tv_if_start(void)
 		case TVOUT_1080P_60:
 //			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 2);
 			break;			
-#endif			
 
 		default:
 			_s5p_tv_if_stop();
@@ -938,7 +964,8 @@ bool _s5p_tv_if_start(void)
 			return false;
 			break;
 		}
-
+#endif
+#endif			
 		__s5p_tv_clk_hpll_onoff(true);
 
 		//__s5p_tv_poweroff();
@@ -1110,6 +1137,16 @@ bool _s5p_tv_if_set_disp(void)
 	case TVOUT_1080P_50:
 
 	case TVOUT_1080P_60:
+
+	case TVOUT_1080P_30:		
+
+	case TVOUT_480P_59:		
+
+	case TVOUT_720P_59:		
+
+	case TVOUT_1080I_59:
+
+	case TVOUT_1080P_59:		
 #endif		
 		if (!_s5p_tv_if_init_avi_frame(&st->tvout_param)) {
 			st->tvout_param_available = false;

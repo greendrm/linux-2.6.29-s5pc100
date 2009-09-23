@@ -472,6 +472,7 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 	&s3c_device_fimc2,
 	&s3c_device_mfc,
 	&s3c_device_jpeg,
+	&s3c_device_rotator,
 };
 
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -578,7 +579,7 @@ static struct s3c_platform_camera __initdata s5k3ba = {
 	.type		= CAM_TYPE_ITU,
 	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CRYCBY,
-	.i2c_busnum	= 0,
+	.i2c_busnum	= 1,
 	.info		= &s5k3ba_i2c_info,
 	.pixelformat	= V4L2_PIX_FMT_VYUY,
 	.srclk_name	= "mout_epll",
@@ -636,7 +637,7 @@ static struct s3c_platform_camera __initdata s5k4ba = {
 	.type		= CAM_TYPE_ITU,
 	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
-	.i2c_busnum	= 0,
+	.i2c_busnum	= 1,
 	.info		= &s5k4ba_i2c_info,
 	.pixelformat	= V4L2_PIX_FMT_UYVY,
 	.srclk_name	= "mout_mpll",
@@ -645,7 +646,7 @@ static struct s3c_platform_camera __initdata s5k4ba = {
 #else
 	.clk_name	= "sclk_cam1",
 #endif
-	.clk_rate	= 44000000,
+	.clk_rate	= 50000000,
 	.line_length	= 1920,
 	.width		= 800,
 	.height		= 600,

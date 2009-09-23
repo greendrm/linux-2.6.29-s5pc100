@@ -92,6 +92,10 @@
 extern struct sys_timer s5pc1xx_timer;
 extern void s5pc1xx_reserve_bootmem(void);
 
+#if defined(CONFIG_MMC_SDHCI_S3C)
+extern void s3c_sdhci_set_platdata(void);
+#endif
+
 #if defined(CONFIG_SPI_CNTRLR_0) || defined(CONFIG_SPI_CNTRLR_1)
 static void s3c_cs_suspend(int pin, pm_message_t pm)
 {
@@ -756,6 +760,10 @@ static void __init smdkc100_machine_init(void)
 	s5pc1xx_pm_init();
 #endif
         smdk_backlight_register();
+
+#if defined(CONFIG_MMC_SDHCI_S3C)
+	s3c_sdhci_set_platdata();
+#endif
 
 }
 

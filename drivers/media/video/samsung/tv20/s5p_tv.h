@@ -33,8 +33,6 @@
 
 #define V4L2_STD_ALL_HD		((v4l2_std_id)0xffffffff)
 
-#define S5P_HDCP_I2C_ADDR		0x74
-#define I2C_DRIVERID_S5P_HDCP		510
 
 #define TVOUT_MINOR_VIDEO		14	// TVOUT VIDEO OUT
 #define TVOUT_MINOR_GRP0		21	// TVOUT OVERLAY0
@@ -65,6 +63,7 @@
 #define AVI_VIC_19		(19<<0) // 1280x720p@50Hz 16:9
 #define AVI_VIC_20		(20<<0) // 1920x1080i@50Hz 16:9
 #define AVI_VIC_31		(31<<0) // 1920x1080p@50Hz
+#define AVI_VIC_34		(34<<0) // 1920x1080p@30Hz
 
 
 #define VP_UPDATE_RETRY_MAXIMUM 	30
@@ -518,6 +517,11 @@ typedef struct _s5p_tv_status {
 #define V4L2_STD_1080P_50	((v4l2_std_id)0x0b000000)
 #define V4L2_STD_1080I_60	((v4l2_std_id)0x0c000000)
 #define V4L2_STD_1080I_50	((v4l2_std_id)0x0d000000)
+#define V4L2_STD_480P_59	((v4l2_std_id)0x0e000000)
+#define V4L2_STD_720P_59	((v4l2_std_id)0x0f000000)
+#define V4L2_STD_1080I_59	((v4l2_std_id)0x10000000)
+#define V4L2_STD_1080P_59	((v4l2_std_id)0x11000000)
+#define V4L2_STD_1080P_30	((v4l2_std_id)0x12000000)
 
 #define FORMAT_FLAGS_DITHER       	0x01
 #define FORMAT_FLAGS_PACKED       	0x02
@@ -814,3 +818,5 @@ extern u8 s5p_hdmi_get_hpd_status(void);
 extern void s5p_hdmi_swhpd_disable(void);
 extern void s5p_hdmi_hpd_gen(void);
 
+
+extern int __init __s5p_hdcp_init(void);

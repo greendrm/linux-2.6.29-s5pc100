@@ -118,6 +118,9 @@ enum ep0_state {
 /* enough for the whole queue: most events invalidate others */
 #define	N_EVENT			5
 
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+#define DMA_ALIGN               8
+#endif
 struct dev_data {
 	spinlock_t			lock;
 	atomic_t			count;
@@ -150,7 +153,11 @@ struct dev_data {
 	struct dentry			*dentry;
 
 	/* except this scratch i/o buffer for ep0 */
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+	u8				rbuf [256] __attribute__((aligned(8)));
+#else
 	u8				rbuf [256];
+#endif
 };
 
 static inline void get_dev (struct dev_data *data)
@@ -1853,6 +1860,9 @@ dev_config (struct file *fd, const char __user *buf, size_t len, loff_t *ptr)
 	unsigned		total;
 	u32			tag;
 	char			*kbuf;
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+	unsigned		align_check, shift_len, i;
+#endif
 
 	if (len < (USB_DT_CONFIG_SIZE + USB_DT_DEVICE_SIZE + 4))
 		return -EINVAL;
@@ -1865,7 +1875,11 @@ dev_config (struct file *fd, const char __user *buf, size_t len, loff_t *ptr)
 	buf += 4;
 	length -= 4;
 
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+	kbuf = kmalloc (length + (DMA_ALIGN - 1) * 2, GFP_ATOMIC | GFP_DMA);
+#else
 	kbuf = kmalloc (length, GFP_KERNEL);
+#endif
 	if (!kbuf)
 		return -ENOMEM;
 	if (copy_from_user (kbuf, buf, length)) {
@@ -1884,7 +1898,19 @@ dev_config (struct file *fd, const char __user *buf, size_t len, loff_t *ptr)
 	total = le16_to_cpu(dev->config->wTotalLength);
 	if (!is_valid_config (dev->config) || total >= length)
 		goto fail;
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+	align_check = total & (DMA_ALIGN - 1);
+	if(align_check) {
+		shift_len = DMA_ALIGN -  align_check;
+		for(i = length - 1; i >= total ;i--)
+			kbuf[i+shift_len] = kbuf[i];
+
+		kbuf = kbuf + total + shift_len;
+	} else
+		kbuf += total;
+#else
 	kbuf += total;
+#endif
 	length -= total;
 
 	/* optional high speed config */
@@ -1893,7 +1919,19 @@ dev_config (struct file *fd, const char __user *buf, size_t len, loff_t *ptr)
 		total = le16_to_cpu(dev->hs_config->wTotalLength);
 		if (!is_valid_config (dev->hs_config) || total >= length)
 			goto fail;
+#ifdef CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE
+		align_check = total & (DMA_ALIGN - 1);
+		if(align_check) {
+			shift_len = DMA_ALIGN -  align_check;
+			for(i = length - 1; i >= total ;i--)
+				kbuf[i+shift_len] = kbuf[i];
+
+			kbuf = kbuf + total + shift_len;
+		} else
+			kbuf += total;
+#else
 		kbuf += total;
+#endif
 		length -= total;
 	}
 
