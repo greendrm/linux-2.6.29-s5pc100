@@ -2210,3 +2210,5 @@ v2.6.29.4-dev-1-4-39: HyoungMin Seo
 		M       drivers/video/samsung/s3cfb.c
 		M       drivers/video/samsung/s3cfb.h
 		M       drivers/video/samsung/s3cfb_fimd6x.c
+		M       drivers/video/samsung/s3cfb_fimd5x.c
+		M       drivers/video/samsung/s3cfb_fimd4x.c
