@@ -2142,3 +2142,12 @@ v2.6.29.4-dev-1-4-32: SungJun Bae
 	Added Files:
 		A	arch/arm/plat-s5p64xx/include/plat/regs-audss.h
 		A	sound/soc/s3c/smdk6442_wm8580.c
+
+v2.6.29.4-dev-1-4-33: Sang-Beom Kim
+	- SDMK6442 Button driver porting
+	- SMDK6442 can be woken by EINT9, EINT10 Button.
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/button-smdk6442.c
+		M	arch/arm/plat-s5p64xx/pm.c
+
