@@ -73,36 +73,44 @@ void s3c_fimc0_cfg_gpio(struct platform_device *pdev)
 
 int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 {
-	struct clk *parent = NULL;
+	struct clk *parent = NULL, *sclk = NULL;
 	int err;
 
-	clk = clk_get(&pdev->dev, "sclk_fimc");
-	if (IS_ERR(clk)) {
-		dev_err(&pdev->dev, "failed to get interface clock\n");
+	sclk = clk_get(&pdev->dev, "sclk_fimc");
+	if (IS_ERR(sclk)) {
+		dev_err(&pdev->dev, "failed to get fimc core clock\n");
 		goto err_clk1;
 	}
 
-	if (clk->set_parent) {
+	if (sclk->set_parent) {
 		parent = clk_get(&pdev->dev, "dout_mpll");
 		if (IS_ERR(parent)) {
 			dev_err(&pdev->dev, "failed to get parent of interface clock\n");
 			goto err_clk2;
 		}
 
-		clk->parent = parent;
+		sclk->parent = parent;
 
-		err = clk->set_parent(clk, parent);
+		err = sclk->set_parent(sclk, parent);
 		if (err) {
 			dev_err(&pdev->dev, "failed to set parent of interface clock\n");
 			goto err_clk3;
 		}
 
-		if (clk->set_rate) {
-			clk->set_rate(clk, 133000000);
+		if (sclk->set_rate) {
+			sclk->set_rate(sclk, 133000000);
 			dev_info(&pdev->dev, "set interface clock rate to 133000000\n");
 		}
 
 		clk_put(parent);
+	}
+
+	clk_enable(sclk);
+
+	clk = clk_get(&pdev->dev, "fimc");
+	if (IS_ERR(clk)) {
+		dev_err(&pdev->dev, "failed to get fimc bus clock\n");
+		goto err_clk3;
 	}
 
 	clk_enable(clk);
@@ -113,7 +121,7 @@ err_clk3:
 	clk_put(parent);
 
 err_clk2:
-	clk_put(clk);
+	clk_put(sclk);
 
 err_clk1:
 	return -EINVAL;

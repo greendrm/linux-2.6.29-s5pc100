@@ -325,6 +325,16 @@ int s3cfb_window_off(struct s3cfb_global *ctrl, int id)
 	return 0;
 }
 
+int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
+{
+	return 0;
+}
+
+int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
+{
+	return 0;
+}
+
 int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);

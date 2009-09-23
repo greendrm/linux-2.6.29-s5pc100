@@ -2166,7 +2166,7 @@ v2.6.29.4-dev-1-4-35: Jonghun Han
 		M       drivers/video/samsung/s3cfb.c
 		M       drivers/video/samsung/s3cfb.h
 		M       drivers/video/samsung/s3cfb_tl2796.c
-		
+
 v2.6.29.4-dev-1-4-36: Jaeryul Oh
 	- Modified MFC fw(9/17) & driver on SMDKC110
 
@@ -2201,3 +2201,22 @@ v2.6.29.4-dev-1-4-38: Hyuk Lee
 
 	Modified Files :
 		M	arch/arm/mach-s5p6442/button-smdk6442.c
+
+v2.6.29.4-dev-1-4-39: HyoungMin Seo
+	- Modified to support S5P6442 local path function between FIMD and
+	FIMC
+
+	Modified Files :
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb.h
+		M       drivers/video/samsung/s3cfb_fimd6x.c
+		M       drivers/video/samsung/s3cfb_fimd5x.c
+		M       drivers/video/samsung/s3cfb_fimd4x.c
+
+v2.6.29.4-dev-1-4-40: Sang-Beom Kim
+	- Modify SDMK6442 Button driver
+	- SMDK6442 can be woken by EINT9, EINT10 Button.
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/button-smdk6442.c
+		M	arch/arm/plat-s5p64xx/pm.c

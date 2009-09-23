@@ -877,7 +877,7 @@ void s5pc1xx_init_clocks_power_disabled(void)
 	powerdomain_set(&pd_tv, 0);
 	powerdomain_set(&pd_mfc, 1);
 	powerdomain_set(&pd_g3d, 0);
-	powerdomain_set(&pd_audio, 0);
+	powerdomain_set(&pd_audio, 1);
 	
 }
 

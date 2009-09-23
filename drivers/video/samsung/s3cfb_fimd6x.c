@@ -299,6 +299,38 @@ int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 	return 0;	
 }
 
+int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
+{
+	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
+	unsigned int cfg;
+
+	if (pdata->hw_ver == 0x62) {
+		cfg = readl(ctrl->regs + S3C_WINSHMAP);
+		cfg |= (0x1 << (id+5));
+		writel(cfg, ctrl->regs + S3C_WINSHMAP);
+	}
+
+	dev_dbg(ctrl->dev, "[fb%d] local path enabled\n", id);
+
+	return 0;
+}
+
+int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
+{
+	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
+	unsigned int cfg;
+
+	if (pdata->hw_ver == 0x62) {
+		cfg = readl(ctrl->regs + S3C_WINSHMAP);
+		cfg &= ~(0x1 << (id+5));
+		writel(cfg, ctrl->regs + S3C_WINSHMAP);
+	}
+
+	dev_dbg(ctrl->dev, "[fb%d] local path disabled\n", id);
+
+	return 0;
+}
+
 int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
