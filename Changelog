@@ -2220,3 +2220,10 @@ v2.6.29.4-dev-1-4-40: Sang-Beom Kim
 	Modified Files:
 		M	arch/arm/mach-s5p6442/button-smdk6442.c
 		M	arch/arm/plat-s5p64xx/pm.c
+
+v2.6.29.4-dev-1-4-41: HyoungMin Seo
+	- Modified to turn LCD on after wake-up from sleep mode.
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/mach-smdk6442.c
+		M	drivers/video/samsung/s3cfb_ams320.c

@@ -197,10 +197,6 @@ void ams320_ldi_init(void)
 {
 	ams320_panel_send_sequence(SEQ_SETTING);
 	ams320_panel_send_sequence(SEQ_STANDBY_OFF);
-}
-
-void ams320_ldi_enable(void)
-{
 	ams320_panel_send_sequence(SEQ_DISPLAY_ON);
 }
 
@@ -211,7 +207,8 @@ static void ams320_ldi_disable(void)
 
 void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 {
-	ams320.init_ldi = NULL;
+	ams320.init_ldi = ams320_ldi_init;
+	ams320.deinit_ldi = ams320_ldi_disable;
 	ctrl->lcd = &ams320;
 }
 
@@ -225,7 +222,6 @@ static int __init ams320_probe(struct spi_device *spi)
 	g_spi = spi;
 
 	ams320_ldi_init();
-	ams320_ldi_enable();
 
 	if (ret < 0)
 		return 0;

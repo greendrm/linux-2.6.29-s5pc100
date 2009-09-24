@@ -353,6 +353,9 @@ static void ams320_cfg_gpio(struct platform_device *pdev)
 	s3c_gpio_setpull(S5P64XX_GPF3(5), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5P64XX_GPD1(0), S3C_GPIO_PULL_NONE);
 	s3c_gpio_setpull(S5P64XX_GPD1(1), S3C_GPIO_PULL_NONE);
+
+	s3c_gpio_setpin(S5P64XX_GPD1(0), 0);
+	s3c_gpio_setpin(S5P64XX_GPD1(1), 0);
 }
 
 static int ams320_reset_lcd(struct platform_device *pdev)
