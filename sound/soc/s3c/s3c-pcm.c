@@ -110,7 +110,7 @@ static void s3c24xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 				enum s3c2410_dma_buffresult result)
 {
 	struct snd_pcm_substream *substream = dev_id;
-	struct s5pc1xx_runtime_data *prtd;
+	struct s3c24xx_runtime_data *prtd;
 
 	s3cdbg("Entered %s\n", __FUNCTION__);
 
@@ -126,7 +126,7 @@ static void s3c24xx_audio_buffdone(struct s3c2410_dma_chan *channel,
 	spin_lock(&prtd->lock);
 	if (prtd->state & ST_RUNNING) {
 		prtd->dma_loaded--;
-		s5pc1xx_pcm_enqueue(substream);
+		s3c24xx_pcm_enqueue(substream);
 	}
 	spin_unlock(&prtd->lock);
 }
