@@ -153,10 +153,9 @@ static int s3c_jpeg_open(struct inode *inode, struct file *file)
 #ifdef CONFIG_CPU_S5PC100
 	clk_enable(jpeg_hclk);
 	clk_enable(jpeg_sclk);
-#else //CONFIG_CPU_S5PC110
+#endif
         /* clock enable */
 	clk_enable(s3c_jpeg_clk);
-#endif
 
 	jpg_dbg("JPG_open \r\n");
 
