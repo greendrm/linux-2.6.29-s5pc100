@@ -175,12 +175,12 @@ int s3c_rotator_check_restrictions(ro_params *params)
 			+ (params->src_window_width % align) + (params->src_window_height % align) \
 			+ (params->src_window_offset_x % align) + (params->src_window_offset_y % align);
 
-	if (params->src_width > maxsize || params->src_width < minsize)
+	if (params->src_width > maxwidth || params->src_width < minwidth)
 		check_srcsize = 1;
 
-	if (params->dst_window_width > maxsize || params->dst_window_width < minsize)
+	if (params->dst_window_width > maxwidth || params->dst_window_width < minwidth)
 		check_dstsize = 2;
-
+	
 	return check_align | check_srcsize | check_dstsize;
 
 }
@@ -289,6 +289,7 @@ irqreturn_t s3c_rotator_irq(int irq, void *dev_id)
 	__raw_writel(cfg, s3c_rotator_base + S3C_ROTATOR_STATUS);
 
 	ctrl->status = ROT_IDLE;
+	
 	wake_up_interruptible(&waitq_rotator);
 
 	return IRQ_HANDLED;
@@ -341,8 +342,8 @@ static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned in
 
 	unsigned int check_rest = 0;
 
-	if (ctrl->status != ROT_IDLE) {
-		printk(KERN_ERR "Rotator is busy : %x\n",ctrl->status);
+	if (s3c_rotator_get_status() != S3C_ROT_STATREG_STATUS_IDLE) {
+		printk(KERN_ERR "Rotator is busy : %x\n", s3c_rotator_get_status());
 		return -EBUSY;
 	}
 
@@ -396,6 +397,7 @@ static int s3c_rotator_ioctl(struct inode *inode, struct file *file, unsigned in
 
 	if (!(file->f_flags & O_NONBLOCK)) {
 		if (interruptible_sleep_on_timeout(&waitq_rotator, ROTATOR_TIMEOUT) == 0) {
+			ctrl->status = ROT_IDLE;
 			printk(KERN_ERR "\n%s: Waiting for interrupt is timeout\n", __FUNCTION__);
 		}
 	}
