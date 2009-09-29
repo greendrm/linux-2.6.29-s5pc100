@@ -2227,3 +2227,9 @@ v2.6.29.4-dev-1-4-41: HyoungMin Seo
 	Modified Files:
 		M	arch/arm/mach-s5p6442/mach-smdk6442.c
 		M	drivers/video/samsung/s3cfb_ams320.c
+
+v2.6.29.4-dev-1-4-42: Sooyoung kang
+	- Modified to s5p6442 mfc fw upgrade
+
+	Modified Files:
+		M       drivers\media\video\samsung\mfc10\prism_s_v13d.c
