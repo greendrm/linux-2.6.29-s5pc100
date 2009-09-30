@@ -2237,3 +2237,6 @@ v2.6.29.4-dev-1-4-42: Sooyoung kang
 v2.6.29.4-dev-1-4-43: Sewoon Park
 	- Temporary Release for s5pc110(2009.09.30)
 
+v2.6.29.4-s5pc100-beta1.0: Sewoon Park
+	- Official Release for s5pc100(2009.09.30)
+
