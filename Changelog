@@ -2233,3 +2233,7 @@ v2.6.29.4-dev-1-4-42: Sooyoung kang
 
 	Modified Files:
 		M       drivers\media\video\samsung\mfc10\prism_s_v13d.c
+
+v2.6.29.4-dev-1-4-43: Sewoon Park
+	- Temporary Release for s5pc110(2009.09.30)
+
