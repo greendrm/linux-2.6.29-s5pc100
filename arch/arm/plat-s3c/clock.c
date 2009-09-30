@@ -138,24 +138,22 @@ int clk_enable(struct clk *clk)
 				struct clk *tmp_clks;
 				/* Enable all clocks on this power block */
 				i = iter;
-				do {
-					i--;
+				while(i--) {
 					tmp_clks = clk->pd->pd_clks[i];
-					(tmp_clks->enable)(tmp_clks, 1);
-				} while(i);
+					if (tmp_clks->enable)
+						(tmp_clks->enable)(tmp_clks, 1);
+				}
 #endif			
 				(clk->pd->pd_set)(clk->pd, 1);
 #if defined(CONFIG_CPU_S5PC110)
 				/* Disable all clocks on this power block */
 				i = iter;
-				do {
-					i--;
+				while(i--) {
 					tmp_clks = clk->pd->pd_clks[i];
-					(tmp_clks->enable)(tmp_clks, 0);
-				} while(i);
-	
+					if (tmp_clks->enable)
+						(tmp_clks->enable)(tmp_clks, 0);
+				}
 #endif
-
 			}
 			(clk->pd->ref_count++);
 		}
