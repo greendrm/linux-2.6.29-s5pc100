@@ -839,7 +839,6 @@ bool _s5p_tv_if_start(void)
 	s5p_tv_status *st = &s5ptv_status;
 	s5p_tv_clk_err cerr = HDMI_NO_ERROR;
 
-	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
 	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
 
 	/*
@@ -847,6 +846,9 @@ bool _s5p_tv_if_start(void)
 	* another request function simultaneously
 	*/
 #ifdef CONFIG_CPU_S5PC100
+
+	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
+
 	if (!__s5p_tv_power_get_power_status()) { 
 		__s5p_tv_poweron();
 	}

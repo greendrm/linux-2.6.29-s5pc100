@@ -208,9 +208,9 @@ static void set_ddc_port(void)
 }
 #endif 
 
+#ifdef CONFIG_CPU_S5PC100
 static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 {
-#ifdef CONFIG_CPU_S5PC100
 
 	spin_lock_irq(&slock_hpd);
 	
@@ -232,9 +232,10 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 	spin_unlock_irq(&slock_hpd);
 
 	BASEPRINTK("hpd_status = %d\n", s5ptv_status.hpd_status);
-#endif			
+			
 	return IRQ_HANDLED;
 }
+#endif
 
 /*
  * ftn for irq 
@@ -574,7 +575,10 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 0, out, __s5p_mixer_irq, "mixer");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 1, out_hdmi_irq, __s5p_hdmi_irq , "hdmi");
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 2, out_tvenc_irq, s5p_tvenc_irq, "tvenc");
-//	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
+	
+#ifdef CONFIG_CPU_S5PC100	
+	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
+#endif
 
 	set_irq_type(IRQ_EINT5, IRQ_TYPE_LEVEL_LOW);
 
@@ -613,8 +617,10 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 
 	return 0;
 
+#ifdef CONFIG_CPU_S5PC100
 out_hpd_irq:
 	free_irq(IRQ_TVENC, pdev);
+#endif
 
 out_tvenc_irq:
 	free_irq(IRQ_HDMI, pdev);

@@ -126,26 +126,7 @@ enum hdmi_intr_src {
 	UNKNOWN_INT
 };
 
-const u8 hdcp_key[288] = {
-	0xf8, 0x81, 0x24, 0xe6, 0xca, 0x07, 0xa3, 0x7b, 0x46, 0x6f, 0x88, 0x69, 0xf2, 0x4d, 0x1e, 0x22,
-	0x7c, 0x91, 0x2a, 0x3b, 0xc3, 0x3d, 0xb4, 0xbd, 0x28, 0x91, 0x6e, 0x8b, 0x75, 0x27, 0x14, 0x46,
-	0x20, 0x17, 0xf4, 0x09, 0x9d, 0x52, 0x72, 0xf3, 0x0a, 0x11, 0x0e, 0x11, 0x65, 0x86, 0x28, 0xe1,
-	0x13, 0xc4, 0x1f, 0xf2, 0xd9, 0x9c, 0xfd, 0x82, 0x95, 0xee, 0x18, 0xe0, 0xef, 0xcb, 0x5f, 0x49,
-	0x98, 0x19, 0xc6, 0xc2, 0x4c, 0x2d, 0x00, 0xa0, 0x0a, 0x44, 0x7b, 0x14, 0x73, 0x06, 0x0d, 0x6a,
-	0xf5, 0x22, 0x19, 0x96, 0x00, 0xcb, 0x57, 0x67, 0x0e, 0x6a, 0x33, 0xb0, 0x35, 0x4f, 0x86, 0xe5,
-	0x29, 0xbb, 0x9d, 0xc4, 0x38, 0xde, 0x8e, 0x5e, 0x20, 0xed, 0xc8, 0x46, 0x58, 0x98, 0x45, 0x7c,
-	0xf8, 0xff, 0x21, 0x45, 0x20, 0x50, 0x41, 0x8b, 0xdb, 0xf1, 0x76, 0x8b, 0xff, 0x22, 0xe0, 0x15,
-	0x02, 0x40, 0x65, 0xe0, 0x67, 0xb6, 0xd2, 0xc4, 0xcd, 0xde, 0x25, 0x05, 0x5f, 0x60, 0x85, 0x1b,
-	0x97, 0x00, 0xed, 0x78, 0x52, 0x98, 0xde, 0x46, 0x0c, 0x84, 0x5f, 0x3b, 0xd9, 0x61, 0x02, 0xec,
-	0xd2, 0x58, 0x3b, 0xff, 0x83, 0x42, 0x80, 0xc5, 0x46, 0x38, 0xc6, 0xbf, 0x10, 0x7e, 0xee, 0xf3,
-	0xf1, 0x24, 0xfd, 0x86, 0xe8, 0x69, 0x45, 0x1c, 0xc9, 0x13, 0x2f, 0x8a, 0x3c, 0xfd, 0x68, 0xc6,
-	0x20, 0x5c, 0x45, 0xed, 0x96, 0xe3, 0x9a, 0xa7, 0xef, 0x1d, 0xda, 0x56, 0x5e, 0xbe, 0x30, 0xa2,
-	0x14, 0xdb, 0x55, 0xb8, 0x97, 0x53, 0xd4, 0xf1, 0x78, 0x6b, 0x7d, 0x27, 0x16, 0x0e, 0xc5, 0x7d,
-	0xc7, 0xc2, 0x53, 0x4b, 0xed, 0x12, 0xea, 0x58, 0x38, 0xd0, 0xf5, 0x3e, 0x3d, 0xe3, 0xe5, 0xf1,
-	0x4c, 0xeb, 0xb0, 0x7e, 0x4b, 0x16, 0x6f, 0xf5, 0xce, 0x24, 0xd6, 0x8b, 0x86, 0x1a, 0x47, 0x52,
-	0xf5, 0x6f, 0x0a, 0x7d, 0xf5, 0x15, 0xdf, 0x6e, 0xba, 0x03, 0xcc, 0x4f, 0x1a, 0x35, 0x4b, 0x00,
-	0x78, 0xc1, 0xfd, 0x7b, 0xa6, 0x05, 0x19, 0xc9, 0xae, 0xd3, 0xac, 0xbd, 0x3a, 0x9c, 0x57, 0x9d
-};
+const u8 hdcp_key[288];
 
 struct s5p_hdcp_info {
 	bool	is_repeater;
@@ -225,16 +206,16 @@ static int hdcp_i2c_read(struct i2c_client *client, u8 subaddr, u8 *data, u16 le
 	u8 addr = subaddr;
 	int ret = 0;
 
+	struct i2c_msg msg[] = {
+		{ client->addr, 0, 1, &addr}, 
+		{ client->addr, I2C_M_RD,len,data }
+	};
+
 	if (!hdcp_info.client) {
 		HDCPPRINTK("DDC port is not available!!"
 		       "Check hdmi receiver's DDC Port \n");
 		return -EIO;
 	}
-
-	struct i2c_msg msg[] = {
-		{ client->addr, 0, 1, &addr}, 
-		{ client->addr, I2C_M_RD,len,data }
-	};
 
 	I2CPRINTK("sub addr = 0x%08x, data len = %d\n", subaddr, len);
 
@@ -281,25 +262,6 @@ static int hdcp_i2c_write(struct i2c_client *client, u8 *data, u16 len)
 	I2CPRINTK("ret :%d\n", ret);
 
 	return ret;
-}
-
-static bool is_hdmi_mode(void)
-{
-	u8 bstatus[BSTATUS_SIZE];
-	bool ret = false;
-
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_BStatus, bstatus, BSTATUS_SIZE);
-	if (ret == false){
-		HDCPPRINTK("Can't read BStatus data from i2c bus\n");
-		return false;
-	}
-
-	HDCPPRINTK("BStatus[1]: 0x%x\n", bstatus[1]);
-
-	if (bstatus[1] & (0x1<<4))
-		return true;
-	else
-		return false;
 }
 
 /*
@@ -550,67 +512,6 @@ static bool read_bksv(void)
 }
 
 /*
- * Compare the 'P' value of Tx with that of Rx
- */
-static bool compare_p_val(void)
-{
-	/* ref. to HDCP Revision v1.2 p.89 */
-	int ret = 0;
-	u8 tx_p_val1, rx_p_val1;
-	u8 tx_p_val2, rx_p_val2;
-	u32 count = 0;
-
-	tx_p_val1 = readl(hdmi_base + S5P_HDCP_Pj);
-	ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, &rx_p_val1, 0x1);
-	if(ret < 0){
-		HDCPPRINTK("Can't read p_1 data from i2c bus\n");
-		return false;
-	}
-
-	while (tx_p_val1 != rx_p_val1) {
-		tx_p_val2 = readl(hdmi_base + S5P_HDCP_Pj);
-		
-		ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, &rx_p_val2, 0x1);
-		if(ret < 0){
-			HDCPPRINTK("Can't read p_2 data from i2c bus\n");
-			return false;
-		}
-
-		/* Check for stable Pj values */
-		if ((tx_p_val1 == tx_p_val2) && (rx_p_val1 == rx_p_val2)) {
-			// Count mismatches
-			count++;   
-
-			if (count >= 3)
-				break;
-
-			tx_p_val1 = tx_p_val2;
-			rx_p_val1 = rx_p_val2;
-
-			/* Wait for any of the values to change */
-			do {
-				tx_p_val2 = readl(hdmi_base + S5P_HDCP_Pj);
-				ret = hdcp_i2c_read(hdcp_info.client, HDCP_Pj, 
-							&rx_p_val2, 0x1);
-				if(ret < 0){
-					HDCPPRINTK("Can't read p_2 data" 
-						"from i2c bus\n");
-					return false;
-				}
-			} while ((tx_p_val2 == tx_p_val1) && 
-				(rx_p_val2 == rx_p_val1));
-		}
-
-		tx_p_val1 = tx_p_val2;
-		rx_p_val1 = rx_p_val2;
-
-	}
-
-	return ((count < 3) ? true : false);
-
-}
-
-/*
  * Compare the R value of Tx with that of Rx
  */
 static bool compare_r_val(void)
@@ -659,27 +560,6 @@ static bool compare_r_val(void)
 	return ret ? true:false;
 }
 
-/*
- * Reset Authentication
- */
-static void reset_authentication(void)
-{
-	u32 hdmi_con0;
-
-	hdmi_con0 = readl(hdmi_base + S5P_HDMI_CON_0);
-	
-	/* Disable encryption */
-	writel(HDCP_ENC_DIS, hdmi_base + S5P_ENC_EN);
-	/* Ri is not matched */
-	writel(Ri_MATCH_RESULT__NO, hdmi_base + S5P_HDCP_CHECK_RESULT);
-	/* Disable HDMI */
-	writel(HDMI_DIS & hdmi_con0, hdmi_base + S5P_HDMI_CON_0);
-	/* Enable HDMI */
-	writel(HDMI_EN | hdmi_con0, hdmi_base + S5P_HDMI_CON_0);
-	/* Init check result */
-	writel(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
-}
-
 static bool make_aes_key(void)
 {
 	u32  aes_reg_val;
@@ -696,28 +576,6 @@ static bool make_aes_key(void)
 	} while (!(aes_reg_val & SCRAMBLER_KEY_DONE));
 
 	return true;
-}
-
-static void set_av_mute_on_off(u32 on_off)
-{
-	u32  gcp_byte;
-
-	HDCPPRINTK("state : %s \n\r", on_off ? 
-			"av mute on":"av mute off");
-
-	if (on_off == 1)
-		gcp_byte = 0x01;
-	else
-		gcp_byte = 0x10;
-
-	writel(gcp_byte, hdmi_base + S5P_GCP_BYTE1);
-
-	/* 
-	 * packet will be transmitted 
-	 * within 384 cycles after active sync.
-	 */
-	writel(TRANSMIT_EVERY_VSYNC, hdmi_base + S5P_GCP_CON);
-
 }
 
 /*
@@ -786,23 +644,8 @@ static int check_repeater(void)
 	u32 dev_cnt;
 	u32 stat;	
 
-	u64 init_time;
-	u64 end_time;
-	u64 present_time;
-	
 	bool ksv_fifo_ready = false;
-
-	memset(rx_v, 0x0, SHA_1_HASH_SIZE);
-	memset(ksv_list, 0x0, HDCP_MAX_DEVS*HDCP_KSV_SIZE);
 	
-//	writel(0x0, hdmi_base+S5P_HDCP_AUTH_STATUS);
-//	writel(0x0, hdmi_base+S5P_HDCP_RX_KSV_LIST_CTRL);
-	
-	/* Check KSV_FIFO Ready during 5 sec. */
-//	init_time = jiffies;
-	
-//	end_time = jiffies + 5*HZ;
-
 	while(j <= 500) {
 		ret = hdcp_i2c_read(hdcp_info.client, HDCP_Bcaps, 
 				bcaps, BCAPS_SIZE);
