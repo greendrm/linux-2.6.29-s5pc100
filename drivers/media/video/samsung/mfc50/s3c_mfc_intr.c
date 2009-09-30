@@ -30,6 +30,7 @@ extern unsigned int  		s3c_mfc_int_type;
 
 extern void __iomem		*s3c_mfc_sfr_virt_base;
 
+#if 0
 static int s3c_mfc_wait_polling(unsigned int polling_reg_addr)
 {
 	int i;
@@ -50,6 +51,7 @@ static int s3c_mfc_wait_polling(unsigned int polling_reg_addr)
 	return 1;
 
 }
+#endif
 
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 {

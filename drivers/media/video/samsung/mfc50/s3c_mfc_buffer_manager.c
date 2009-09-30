@@ -292,7 +292,7 @@ int s3c_mfc_init_buffer_manager(void)
 
 	/* init alloc list, if(s3c_mfc_alloc_mem_head == s3c_mfc_alloc_mem_tail) then, the list is NULL */
 	alloc_node = (s3c_mfc_alloc_mem_t *)kmalloc(sizeof(s3c_mfc_alloc_mem_t), GFP_KERNEL);
-	memset(alloc_node, 0x00, sizeof(s3c_mfc_alloc_mem_t));
+	memset(alloc_node, 0x00, sizeof(s3c_mfc_alloc_mem_t)); 
 	alloc_node->next = alloc_node;
 	alloc_node->prev = alloc_node;
 	s3c_mfc_alloc_mem_head[port_no] = alloc_node;
@@ -341,52 +341,8 @@ MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_al
 
 	ret = MFCINST_RET_OK;
 
-out_releaseallocmem:
 	return ret;
 }
-
-#if 0
-/* Releae memory for ab-normal close */
-MFC_ERROR_CODE s3c_mfc_force_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx)
-{		
-	int ret;
-
-	s3c_mfc_free_mem_t *free_node;
-	s3c_mfc_alloc_mem_t *node, *tmp_node;
-	int port_no = 0;
-	
-	for (port_no=0; port_no < MFC_MAX_PORT_NUM; port_no++) {			
-		for(node = s3c_mfc_alloc_mem_head[port_no]; node != s3c_mfc_alloc_mem_tail[port_no]; 
-			node = node->next) {
-			if (node->inst_no == mfc_ctx->mem_inst_no) {
-				tmp_node = node;
-				node = node->prev;
-			}	
-		}				
-	}	
-
-	if (tmp_node == s3c_mfc_alloc_mem_tail[port_no]) {
-		mfc_err("invalid virtual address(0x%x)\r\n", args->mem_free.u_addr);
-		ret = MFCINST_MEMORY_INVAILD_ADDR;
-		goto out_releaseallocmem;
-	}
-
-	free_node = (s3c_mfc_free_mem_t	*)kmalloc(sizeof(s3c_mfc_free_mem_t), GFP_KERNEL);
-
-	free_node->start_addr = tmp_node->p_addr;	
-
-	free_node->size = tmp_node->size;
-	s3c_mfc_insert_node_to_free_list(free_node, mfc_ctx->mem_inst_no, port_no);
-
-	/* Delete from AllocMem list */
-	s3c_mfc_del_node_from_alloc_list(tmp_node, mfc_ctx->mem_inst_no, port_no);	
-
-	ret = MFCINST_RET_OK;
-
-out_releaseallocmem:
-	return ret;
-}	
-#endif
 	
 MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args)
 {

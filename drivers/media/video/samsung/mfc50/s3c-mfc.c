@@ -104,7 +104,9 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	}
 
 	/* Decoder only */
-	mfc_ctx->extraDPB = MFC_MAX_EXTRA_DPB;		
+	mfc_ctx->extraDPB = MFC_MAX_EXTRA_DPB;	
+	mfc_ctx->displayDelay = 9999;
+	mfc_ctx->sliceEnable = 0;
 	mfc_ctx->FrameType = MFC_RET_FRAME_NOT_SET;	
 
 	file->private_data = (s3c_mfc_inst_ctx *)mfc_ctx;
@@ -121,7 +123,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	s3c_mfc_inst_ctx *mfc_ctx;
 	s3c_mfc_alloc_mem_t *node, *tmp_node;
 	int port_no = 0;
-	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
+	//struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 	int ret;
 
 	mfc_debug("MFC Release..\n");
@@ -153,7 +155,8 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	kfree(mfc_ctx);
 
 	ret = 0;
-	#if 0	// peter check, In evt1, it should be tested
+	/* peter check, In evt1, it should be tested */
+	#if 0	
 	if (s3c_mfc_openhandle_count == 0) {		
 		clk_disable(ctrl->clock);
 	}	
@@ -173,8 +176,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	s3c_mfc_alloc_mem_t *node;
 	int port_no = 0;
 	int matched_u_addr = 0;	
-	unsigned char	*start;
-	int size;
+	//unsigned char	*start;
+	//int size;
 
 	mutex_lock(&s3c_mfc_mutex);
 
@@ -455,7 +458,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	unsigned long vir_size	= vma->vm_end - vma->vm_start;
 	unsigned long phy_size, offset;
-	unsigned long mem0_size, mem1_size;
+	//unsigned long mem0_size, mem1_size;
 	unsigned long pageFrameNo = 0;
 
 	mfc_debug("vma->vm_start = 0x%08x, vma->vm_end = 0x%08x\n", vma->vm_start, vma->vm_end);

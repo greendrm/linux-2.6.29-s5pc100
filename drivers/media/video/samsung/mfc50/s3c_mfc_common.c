@@ -155,7 +155,7 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 	/* 
 	 * Allocate ref C0,C2,YC1,YC3 & MV buf 
 	 */
-	init_arg->out_buf_size.mv_ref_yc = MV_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2
+	init_arg->out_buf_size.mv_ref_yc = ENC_UP_INTRA_PRED_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2
 							+ Align(buf_width*buf_height/2, 64*BUF_L_UNIT)*4;	
 	
 	memset(&local_param, 0, sizeof(local_param));

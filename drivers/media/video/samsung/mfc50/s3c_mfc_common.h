@@ -109,14 +109,13 @@ typedef enum
 
 typedef struct tag_mfc_inst_ctx
 {
-	unsigned int MfcSfr[S3C_FIMV_REG_COUNT];
-
 	int InstNo;
 	unsigned int DPBCnt;
 	unsigned int totalDPBCnt;
 	unsigned int extraDPB;
 	unsigned int displayDelay;
 	unsigned int postEnable;
+	unsigned int sliceEnable;
 	unsigned int endOfFrame;
 	unsigned int forceSetFrameType;
 	unsigned int img_width;
@@ -140,7 +139,7 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);
 MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 //int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
-void s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type);
+MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
 void  s3c_mfc_init_mem_inst_no(void);
 int s3c_mfc_get_mem_inst_no(void);
