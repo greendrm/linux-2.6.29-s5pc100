@@ -846,12 +846,14 @@ bool _s5p_tv_if_start(void)
 	* have not to call 
 	* another request function simultaneously
 	*/
-	/*
+#ifdef CONFIG_CPU_S5PC100
 	if (!__s5p_tv_power_get_power_status()) { 
 		__s5p_tv_poweron();
 	}
-*/
+#endif
+#ifdef CONFIG_CPU_S5PC110
 	__s5p_tv_poweron();
+#endif
 	__s5p_tv_clk_set_vmixer_hclk_onoff(true);
 	__s5p_tv_clk_set_vmixer_sclk_onoff(true);
 
@@ -921,40 +923,6 @@ bool _s5p_tv_if_start(void)
 		case TVOUT_720P_60:
 			__s5p_tv_clk_init_hpll(0xffff, 132, 6, 2);
 			break;
-#endif 
-
-#ifdef CONFIG_CPU_S5PC110
-
-		__s5p_tv_clk_init_hdmi_ratio(0);
-#if 0
-
-		switch (disp_mode) {
-
-		case TVOUT_480P_60_16_9:
-
-		case TVOUT_480P_60_4_3:
-
-		case TVOUT_576P_50_16_9:
-
-		case TVOUT_576P_50_4_3:
-//			__s5p_tv_clk_init_hpll(0, 0xffff, 108, 6, 3);
-			break;
-		
-		case TVOUT_720P_50:
-
-		case TVOUT_720P_60:
-
-		case TVOUT_1080I_50:
-
-		case TVOUT_1080I_60:
-//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 3);
-			break;
-
-		case TVOUT_1080P_50:
-
-		case TVOUT_1080P_60:
-//			__s5p_tv_clk_init_hpll(1, 0xffff, 198, 8, 2);
-			break;			
 
 		default:
 			_s5p_tv_if_stop();
@@ -964,13 +932,19 @@ bool _s5p_tv_if_start(void)
 			return false;
 			break;
 		}
-#endif
-#endif			
+#endif 
+
+#ifdef CONFIG_CPU_S5PC110
+
+		__s5p_tv_clk_init_hdmi_ratio(0);
+#endif		
+		
 		__s5p_tv_clk_hpll_onoff(true);
 
-		//__s5p_tv_poweroff();
-		//__s5p_tv_poweron();
-
+#ifdef CONFIG_CPU_S5PC100
+		__s5p_tv_poweroff();
+		__s5p_tv_poweron();
+#endif
 		break;
 
 	default:
@@ -1030,10 +1004,10 @@ bool _s5p_tv_if_start(void)
 bool _s5p_tv_if_stop(void)
 {
 	s5p_tv_status *st = &s5ptv_status;
-
+	
 	bool t_corr_en 	= st->hdmi_tg_cmd.timing_correction_en;
 	bool sync_en 	= st->hdmi_tg_cmd.bt656_sync_en;
-	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
+	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;	
 
 	TVOUTIFPRINTK("tvout sub sys. stopped!!\n");
 
@@ -1067,10 +1041,13 @@ bool _s5p_tv_if_stop(void)
 
 	__s5p_vm_stop();
 
-//	if (__s5p_tv_power_get_power_status()) {
-//		__s5p_tv_clk_stop();
-//		__s5p_tv_poweroff();
-//	}
+
+#ifdef CONFIG_CPU_S5PC100
+	if (__s5p_tv_power_get_power_status()) {
+		__s5p_tv_clk_stop();
+		__s5p_tv_poweroff();
+	}
+#endif
 
 	st->tvout_output_enable = false;
 	st->tvout_param_available = false;

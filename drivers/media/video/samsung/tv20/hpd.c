@@ -182,19 +182,23 @@ irqreturn_t s5p_hpd_irq_handler(int irq)
 		HPDIFPRINTK("HPD_HI\n");
 		/* clear pending bit */
 		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
+		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
 		atomic_set(&hpd_struct.state, HPD_HI);
 		// workaround: enable HDMI_IRQ_HPD_UNPLUG interrupt
-		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+		s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);		
 		last_hpd_state = HPD_HI;
 		wake_up_interruptible(&hpd_struct.waitq);
 	} else if (flag & (1 << HDMI_IRQ_HPD_UNPLUG)) {
 		HPDIFPRINTK("HPD_LO\n");
 		/* clear pending bit */
+		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
 		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
 		atomic_set(&hpd_struct.state, HPD_LO);
 		// workaround: disable HDMI_IRQ_HPD_UNPLUG interrupt
 		last_hpd_state = HPD_LO;
 		s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
 		wake_up_interruptible(&hpd_struct.waitq);
 	}
 

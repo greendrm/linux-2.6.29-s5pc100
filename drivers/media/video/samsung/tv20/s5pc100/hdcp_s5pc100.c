@@ -29,17 +29,15 @@
 #include "regs/regs-hdmi.h"
 
 /* for Operation check */
-//#ifdef COFIG_TVOUT_RAW_DBG
+#ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDCP_DEBUG 1
 //#define S5P_HDCP_I2C_DEBUG 1
 //#define S5P_HDCP_AUTH_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
 	printk("\t\t[HDCP] %s: " fmt, __FUNCTION__ , ## args)
-//	printk("\t\t\t[S5P_HAES_CON] 0x%08x \n",readl(hdmi_base + S5P_HDCP_Ri_0));\
-//	printk("\t\t\t[S5P_HAES_CON] 0x%08x \n",readl(hdmi_base + S5P_HDCP_Ri_1))
 #else
 #define HDCPPRINTK(fmt, args...)
 #endif
@@ -59,9 +57,6 @@
 #else
 #define AUTHPRINTK(fmt, args...)
 #endif
-
-//#define USE_PJ_UPDATE
-//#define HAES_DEBUG
 
 extern void __iomem		*hdmi_base;
 
@@ -221,180 +216,6 @@ static struct s5p_hdcp_info hdcp_info = {
 
 /* must be checked */
 extern u8 hdcp_protocol_status; // 0 - hdcp stopped, 1 - hdcp started, 2 - hdcp reset
-/*
-void __s5p_hdcp_reset(void);
-bool __s5p_stop_hdcp(void);
-bool __s5p_start_hdcp(void);
-/*
-void debug_register(void)
-{
-	printk("S5P_HDMI_CON_0  : 0x%08x\n",readl(hdmi_base+S5P_HDMI_CON_0 ));
-	printk("S5P_HDMI_CON_1 : 0x%08x\n",readl(hdmi_base+S5P_HDMI_CON_1));
-	printk("S5P_HDMI_CON_2 : 0x%08x\n",readl(hdmi_base+S5P_HDMI_CON_2));
-	printk("S5P_STATUS : 0x%08x\n",readl(hdmi_base+S5P_STATUS));
-	printk("S5P_STATUS_EN : 0x%08x\n",readl(hdmi_base+S5P_STATUS_EN));
-	printk("S5P_HPD : 0x%08x\n",readl(hdmi_base+S5P_HPD));
-	printk("S5P_MODE_SEL : 0x%08x\n",readl(hdmi_base+S5P_MODE_SEL));
-	printk("S5P_ENC_EN : 0x%08x\n",readl(hdmi_base+S5P_ENC_EN));
-	printk("S5P_HDCP_RX_SHA1_0_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_0_0));
-	printk("S5P_HDCP_RX_SHA1_0_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_0_1));
-	printk("S5P_HDCP_RX_SHA1_0_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_0_2));
-	printk("S5P_HDCP_RX_SHA1_0_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_0_3));
-	printk("S5P_HDCP_RX_SHA1_1_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_1_0));
-	printk("S5P_HDCP_RX_SHA1_1_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_1_1));
-	printk("S5P_HDCP_RX_SHA1_1_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_1_2));
-	printk("S5P_HDCP_RX_SHA1_1_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_1_3));
-	printk("S5P_HDCP_RX_SHA1_2_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_2_0));
-	printk("S5P_HDCP_RX_SHA1_2_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_2_1));
-	printk("S5P_HDCP_RX_SHA1_2_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_2_2));
-	printk("S5P_HDCP_RX_SHA1_2_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_2_3));
-	printk("S5P_HDCP_RX_SHA1_3_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_3_0));
-	printk("S5P_HDCP_RX_SHA1_3_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_3_1));
-	printk("S5P_HDCP_RX_SHA1_3_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_3_2));
-	printk("S5P_HDCP_RX_SHA1_3_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_3_3));
-	printk("S5P_HDCP_RX_SHA1_4_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_4_0));
-	printk("S5P_HDCP_RX_SHA1_4_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_4_1));
-	printk("S5P_HDCP_RX_SHA1_4_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_4_2));
-	printk("S5P_HDCP_RX_SHA1_4_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_SHA1_4_3));
-	printk("S5P_HDCP_RX_KSV_0_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_0_0));
-	printk("S5P_HDCP_RX_KSV_0_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_0_1));
-	printk("S5P_HDCP_RX_KSV_0_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_0_2));
-	printk("S5P_HDCP_RX_KSV_0_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_0_3));
-	printk("S5P_HDCP_RX_KSV_0_4 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_0_4));
-	printk("S5P_HDCP_RX_KSV_LIST_CTRL : 0x%08x\n",readl(hdmi_base+S5P_HDCP_RX_KSV_LIST_CTRL));
-	printk("S5P_HDCP_AUTH_STATUS : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AUTH_STATUS));
-	printk("S5P_HDCP_CTRL : 0x%08x\n",readl(hdmi_base+S5P_HDCP_CTRL));
-	printk("S5P_HDCP_CHECK_RESULT : 0x%08x\n",readl(hdmi_base+S5P_HDCP_CHECK_RESULT));
-	printk("S5P_HDCP_BKSV_0_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BKSV_0_0));
-	printk("S5P_HDCP_BKSV_0_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BKSV_0_1));
-	printk("S5P_HDCP_BKSV_0_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BKSV_0_2));
-	printk("S5P_HDCP_BKSV_0_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BKSV_0_3));
-	printk("S5P_HDCP_BKSV_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BKSV_1));
-	printk("S5P_HDCP_AKSV_0_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AKSV_0_0));
-	printk("S5P_HDCP_AKSV_0_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AKSV_0_1));
-	printk("S5P_HDCP_AKSV_0_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AKSV_0_2));
-	printk("S5P_HDCP_AKSV_0_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AKSV_0_3));
-	printk("S5P_HDCP_AKSV_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_AKSV_1));
-	printk("S5P_HDCP_An_0_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_0_0));
-	printk("S5P_HDCP_An_0_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_0_1));
-	printk("S5P_HDCP_An_0_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_0_2));
-	printk("S5P_HDCP_An_0_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_0_3));
-	printk("S5P_HDCP_An_1_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_1_0));
-	printk("S5P_HDCP_An_1_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_1_1));
-	printk("S5P_HDCP_An_1_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_1_2));
-	printk("S5P_HDCP_An_1_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_An_1_3));
-	printk("S5P_HDCP_BCAPS : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BCAPS));
-	printk("S5P_HDCP_BSTATUS_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BSTATUS_0));
-	printk("S5P_HDCP_BSTATUS_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_BSTATUS_1));
-	printk("S5P_HDCP_Ri_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_Ri_0));
-	printk("S5P_HDCP_Ri_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_Ri_1));
-	printk("S5P_HDCP_Pj : 0x%08x\n",readl(hdmi_base+S5P_HDCP_Pj));
-	printk("S5P_HDCP_OFFSET_TX_0 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_OFFSET_TX_0));
-	printk("S5P_HDCP_OFFSET_TX_1 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_OFFSET_TX_1));
-	printk("S5P_HDCP_OFFSET_TX_2 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_OFFSET_TX_2));
-	printk("S5P_HDCP_OFFSET_TX_3 : 0x%08x\n",readl(hdmi_base+S5P_HDCP_OFFSET_TX_3));
-	printk("S5P_HDCP_CYCLE_AA : 0x%08x\n",readl(hdmi_base+S5P_HDCP_CYCLE_AA));
-	printk("S5P_HAES_CON : 0x%08x\n",readl(hdmi_base+S5P_HAES_CON));
-	printk("S5P_HAES_DATA_SIZE_L : 0x%08x\n",readl(hdmi_base+S5P_HAES_DATA_SIZE_L));
-	printk("S5P_HAES_DATA_SIZE_H : 0x%08x\n",readl(hdmi_base+S5P_HAES_DATA_SIZE_H));
-	//printk("S5P_HAES_DATA : 0x%08x\n",readl(hdmi_base+S5P_HAES_DATA));
-}
-
-
-static count = 0;
-
-void reset_register(void)
-{
-	writel(readl(hdmi_base + S5P_HDMI_CON_0) & HDMI_DIS, 
-		hdmi_base + S5P_HDMI_CON_0);	
-	
-	switch(count) {
-
-case 0:		writel(0x7,hdmi_base+S5P_HDMI_CON_0);
-case 1:		writel(0x0,hdmi_base+S5P_HDMI_CON_1);
-case 2:		writel(0x0,hdmi_base+S5P_HDMI_CON_2);
-case 3:		writel(0x0,hdmi_base+S5P_STATUS);
-case 4:		writel(0x0,hdmi_base+S5P_STATUS_EN);
-case 5:		writel(0x0,hdmi_base+S5P_HPD);
-case 6:		writel(0x2,hdmi_base+S5P_MODE_SEL);
-case 7:		writel(0x0,hdmi_base+S5P_ENC_EN);
-case 8:		writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_0_0);
-case 9:		writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_0_1);
-case 10:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_0_2);
-case 11:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_0_3);
-case 12:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_1_0);
-case 13:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_1_1);
-case 14:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_1_2);
-case 15:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_1_3);
-case 16:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_2_0);
-case 17:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_2_1);
-case 18:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_2_2);
-case 19:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_2_3);
-case 20:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_3_0);
-case 21:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_3_1);
-case 22:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_3_2);
-case 23:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_3_3);
-case 24:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_4_0);
-case 25:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_4_1);
-case 26:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_4_2);
-case 27:	writel(0x0,hdmi_base+S5P_HDCP_RX_SHA1_4_3);
-case 28:	writel(0x0,hdmi_base+S5P_HDCP_RX_KSV_0_0);
-case 29:	writel(0x0,hdmi_base+S5P_HDCP_RX_KSV_0_1);
-case 30:	writel(0x0,hdmi_base+S5P_HDCP_RX_KSV_0_2);
-case 31:	writel(0x0,hdmi_base+S5P_HDCP_RX_KSV_0_3);
-case 32:	writel(0x0,hdmi_base+S5P_HDCP_RX_KSV_0_4);
-case 33:	writel(0x1,hdmi_base+S5P_HDCP_RX_KSV_LIST_CTRL);
-case 34:	writel(0x0,hdmi_base+S5P_HDCP_AUTH_STATUS);
-case 35:	writel(0x0,hdmi_base+S5P_HDCP_CTRL);
-case 36:	writel(0x0,hdmi_base+S5P_HDCP_CHECK_RESULT);
-case 37:	writel(0x0,hdmi_base+S5P_HDCP_BKSV_0_0);
-case 38:	writel(0x0,hdmi_base+S5P_HDCP_BKSV_0_1);
-case 39:	writel(0x0,hdmi_base+S5P_HDCP_BKSV_0_2);
-case 40:	writel(0x0,hdmi_base+S5P_HDCP_BKSV_0_3);
-case 41:	writel(0x0,hdmi_base+S5P_HDCP_BKSV_1);
-case 42:	writel(0x0,hdmi_base+S5P_HDCP_AKSV_0_0);
-case 43:	writel(0x0,hdmi_base+S5P_HDCP_AKSV_0_1);
-case 44:	writel(0x0,hdmi_base+S5P_HDCP_AKSV_0_2);
-case 45:	writel(0x0,hdmi_base+S5P_HDCP_AKSV_0_3);
-case 46:	writel(0x0,hdmi_base+S5P_HDCP_AKSV_1);
-case 47:	writel(0x0,hdmi_base+S5P_HDCP_An_0_0);
-case 48:	writel(0x0,hdmi_base+S5P_HDCP_An_0_1);
-case 49:	writel(0x0,hdmi_base+S5P_HDCP_An_0_2);
-case 50:	writel(0x0,hdmi_base+S5P_HDCP_An_0_3);
-case 51:	writel(0x0,hdmi_base+S5P_HDCP_An_1_0);
-case 52:	writel(0x0,hdmi_base+S5P_HDCP_An_1_1);
-case 53:	writel(0x0,hdmi_base+S5P_HDCP_An_1_2);
-case 54:	writel(0x0,hdmi_base+S5P_HDCP_An_1_3);
-case 55:	writel(0x0,hdmi_base+S5P_HDCP_BCAPS);
-case 56:	writel(0x0,hdmi_base+S5P_HDCP_BSTATUS_0);
-case 57:	writel(0x0,hdmi_base+S5P_HDCP_BSTATUS_1);
-//case 58:	writel(0x0,hdmi_base+S5P_HDCP_Ri_0);
-//case 59:	writel(0x0,hdmi_base+S5P_HDCP_Ri_1);
-case 60:	writel(0x0,hdmi_base+S5P_HDCP_Pj);
-case 61:	writel(0x0,hdmi_base+S5P_HDCP_OFFSET_TX_0);
-case 62:	writel(0x0,hdmi_base+S5P_HDCP_OFFSET_TX_1);
-case 63:	writel(0x0,hdmi_base+S5P_HDCP_OFFSET_TX_2);
-case 64:	writel(0x0,hdmi_base+S5P_HDCP_OFFSET_TX_3);
-case 65:	writel(0xff,hdmi_base+S5P_HDCP_CYCLE_AA);
-case 66:	writel(0x0,hdmi_base+S5P_HAES_CON);
-case 67:	writel(0x20,hdmi_base+S5P_HAES_DATA_SIZE_L);
-case 68:	writel(0x1,hdmi_base+S5P_HAES_DATA_SIZE_H);
-//case 69:	writel(0x0,hdmi_base+S5P_HAES_DATA);
-	}
-
-
-	writel(readl(hdmi_base + S5P_HDMI_CON_0) | HDMI_EN, 
-		hdmi_base + S5P_HDMI_CON_0);	
-	
-	printk("=========count : %d\n",count);
-	if ( count > 55)
-		count++;
-	else
-		count += 10;
-
-}
-*/
-
 
 /*
  * Read the HDCP data from Rx by using IIC
@@ -875,27 +696,6 @@ static bool make_aes_key(void)
 	} while (!(aes_reg_val & SCRAMBLER_KEY_DONE));
 
 	return true;
-
-	/* for debugging AES key */
-#ifdef HAES_DEBUG
-	{
-		u32  aes_key_val[32];
-		u16 i;
-
-		/* Enable to debug AES key after scrambling */
-		aes_reg_val |= (0x1 << 5);
-
-		writel(aes_reg_val, hdmi_base + S5P_HAES_CON);
-
-		for (i = 0; i < 32; i++) {
-			aes_key_val[i] = readl(hdmi_base + 
-						(S5P_HAES_CON + 0x200 + 4 * i));
-			HDCPPRINTK("HDCPAesKey Val[%d]: 0x%2x\n", 
-				i, aes_key_val[i]);
-		}
-	}
-#endif
-
 }
 
 static void set_av_mute_on_off(u32 on_off)
@@ -945,43 +745,6 @@ static void start_decrypting(const u8 *hdcp_key, u32 hdcp_key_size)
 	do {
 		aes_start = readl(hdmi_base + S5P_HAES_CON);
 	} while (aes_start & HAES_START_EN);
-
-#ifdef HAES_DEBUG
-	{
-		u8 decrypted_data[288];
-
-		HDCPPRINTK("[HDCP key] \n");
-
-		printk("\t\t\t\t");
-		for (i = 0; i < hdcp_key_size; i++) {
-
-			printk("0x%02x, ", hdcp_key[i]);
-
-			if((!(i%6)) && i)
-				printk("\n\t\t\t\t");
-		}
-
-		/* Set AES debug mode */
-		writel(0x1 << 0, hdmi_base + S5P_HAES_CON + 0x80);
-
-		printk("\n");
-		
-		HDCPPRINTK("[Decrypted Data]\n");
-
-		printk("\t\t\t\t");
-		for (i = 0; i < hdcp_key_size; i++) {
-			decrypted_data[i] = 
-				readl(hdmi_base + S5P_HAES_CON + 0xb0);
-
-			printk("0x%2x, ", decrypted_data[i]);
-			
-			if((!(i%6)) && i)
-				printk("\n\t\t\t\t");
-		}
-
-		printk("\n");
-	}
-#endif
 }
 
 /*
@@ -1806,16 +1569,6 @@ static void hdcp_work(void *arg)
 	}	
 
 }
-
-/*
-bool __s5p_is_decrypting_done(void)
-{
-	SEQPRINTK("()++\n");
-	
-	return (((readl(hdmi_base + S5P_HAES_CON) & (0x1 << 0)) == 0x0) 
-		? true : false);
-}
-*/
 
 void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port)
 {

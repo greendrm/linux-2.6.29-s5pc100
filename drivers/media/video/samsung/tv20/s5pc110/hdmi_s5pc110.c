@@ -50,6 +50,7 @@ extern bool __s5p_start_hdcp(void);
 extern void __s5p_stop_hdcp(void);
 extern void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port);
 
+spinlock_t 	lock_hdmi;
 
 /*
  * i2c_hdmi_phy related
@@ -1648,7 +1649,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 	       hdmi_base + S5P_HDMI_CON_0);
 
 	if (hdcp_en) {
-		__s5p_init_hdcp(true, ddc_port);
+//		__s5p_init_hdcp(true, ddc_port);
 		
 		if (!__s5p_start_hdcp()) {
 			HDMIPRINTK("HDCP start failed\n");
@@ -1674,7 +1675,7 @@ void __s5p_hdmi_stop(void)
 	HDMIPRINTK("\n\r");
 
 // TODO: C110_HDCP
-//	__s5p_stop_hdcp();
+	__s5p_stop_hdcp();
 
 /* TODO: Check Manual
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) &
@@ -1701,6 +1702,8 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	int 	ret;
 	u32	reg;
 	struct	clk 	*hdmi_clk;
+
+	spin_lock_init(&lock_hdmi);
 
 	hdmi_clk = clk_get(&pdev->dev, "hdmi");
 
@@ -1840,6 +1843,8 @@ irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 {
 	u8 irq_state, irq_num;
 
+	spin_lock_irq(&lock_hdmi);
+		
 	irq_state = readb(hdmi_base+S5P_HDMI_CTRL_INTC_FLAG);
 
 	HDMIPRINTK("S5P_HDMI_CTRL_INTC_FLAG = 0x%02x\n", irq_state);
@@ -1865,6 +1870,8 @@ irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 	} else {
 		HDMIPRINTK("Undefined IRQ happened[%x]\n", irq_state);
 	}
+
+	spin_unlock_irq(&lock_hdmi);
 
 	// Because of HW Problem, after processing INT we should INT enable again.
 	// HdmiOutp8( S5P_HDMI_INTC_CON, 1 << HDMI_IRQ_HDCP | 1 << HDMI_IRQ_GLOBAL );

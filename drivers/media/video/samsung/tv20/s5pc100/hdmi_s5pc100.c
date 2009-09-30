@@ -1124,24 +1124,32 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_mpg_infoframe(s5p_hdmi_transmit trans_type
 	return HDMI_NO_ERROR;
 }
 
-void __s5p_hdmi_video_init_tg_cmd(bool timing_correction_en,
+void __s5p_hdmi_video_init_tg_cmd(bool time_c_e,
 				bool bt656_sync_en,
-				s5p_tv_disp_mode disp_mode,
 				bool tg_en)
 {
 	u32 temp_reg = 0;
 
-	HDMIPRINTK("%d,%d,%d,%d\n\r", timing_correction_en, 
-				bt656_sync_en, disp_mode, tg_en);
+	temp_reg = readl(hdmi_base + S5P_TG_CMD);
 
-	temp_reg = (timing_correction_en) ? GETSYNC_TYPE_EN : GETSYNC_TYPE_DIS;
-	temp_reg |= (bt656_sync_en) ? GETSYNC_EN : GETSYNC_DIS;
-	temp_reg |= (tg_en) ? TG_EN : TG_DIS;
+	if(time_c_e)
+		temp_reg |= GETSYNC_TYPE_EN;
+	else
+		temp_reg &= GETSYNC_TYPE_DIS;
 
+	if(bt656_sync_en)
+		temp_reg |= GETSYNC_EN;
+	else
+		temp_reg &= GETSYNC_DIS;
+
+	if(tg_en)
+		temp_reg |= TG_EN;
+	else
+		temp_reg &= TG_DIS;		
+	
 	writel(temp_reg, hdmi_base + S5P_TG_CMD);
 
-	HDMIPRINTK("TG_CMD = 0x%08x \n\r",
-		   readl(hdmi_base + S5P_TG_CMD));
+	HDMIPRINTK("TG_CMD = 0x%08x \n\r", readl(hdmi_base + S5P_TG_CMD));
 }
 
 

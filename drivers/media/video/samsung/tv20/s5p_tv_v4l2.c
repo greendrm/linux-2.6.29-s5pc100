@@ -86,12 +86,14 @@ static struct v4l2_output s5p_tv_outputs[] = {
 		.audioset	= 2,
 		.modulator	= 0,
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
-				V4L2_STD_720P_60 | V4L2_STD_720P_50 |
-				V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
+				V4L2_STD_720P_60 | V4L2_STD_720P_50
+#ifdef CONFIG_CPU_S5PC110				
+				| V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
 				V4L2_STD_1080I_60 | V4L2_STD_1080I_50 |
 				V4L2_STD_480P_59 | V4L2_STD_720P_59 |
 				V4L2_STD_1080I_59 | V4L2_STD_1080P_59 |
 				V4L2_STD_1080P_30,
+#endif				
 	}
 
 };
@@ -188,7 +190,9 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.index  = 12,
 		.id     = V4L2_STD_720P_50,
 		.name 	= "720P_50",
-	}, {
+	}, 
+#ifdef CONFIG_CPU_S5PC110	
+	{
 		.index  = 13,
 		.id     = V4L2_STD_1080P_60,
 		.name 	= "1080P_60",
@@ -225,6 +229,7 @@ const struct v4l2_standard s5p_tv_standards[] = {
 		.id     = V4L2_STD_1080P_30,
 		.name 	= "1080I_30",
 	}
+#endif		
 };
 
 // TODO: set default format for v, vo0/1
@@ -868,6 +873,8 @@ static int s5p_tv_v4l2_s_std(struct file *file, void *fh, v4l2_std_id *norm)
 		break;
 #endif	
 	default:
+		V4L2PRINTK("(ERR) not supported standard id : index = 0x%08Lx\n", std_id);
+		return -EINVAL;
 		break;
 	}
 

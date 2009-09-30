@@ -64,11 +64,14 @@ u8 check_output_mode(s5p_tv_disp_mode display,
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE :
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE :
 	case TVOUT_OUTPUT_HDMI :
+#ifdef CONFIG_CPU_S5PC110		
 		if(display == TVOUT_1080I_60 ||	
 		   display == TVOUT_1080I_59 ||			
 		   display == TVOUT_1080I_50)
+
 			ret = INTERLACED;
 		else
+#endif		   			
 			ret = PROGRESSIVE;
 		break;		
 	default :
