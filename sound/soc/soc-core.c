@@ -2214,10 +2214,6 @@ int snd_soc_register_dai(struct snd_soc_dai *dai)
 	if (!dai->name)
 		return -EINVAL;
 
-	/* The device should become mandatory over time */
-	if (!dai->dev)
-		printk(KERN_WARNING "No device for DAI %s\n", dai->name);
-
 	INIT_LIST_HEAD(&dai->list);
 
 	mutex_lock(&client_mutex);
@@ -2334,10 +2330,6 @@ int snd_soc_register_codec(struct snd_soc_codec *codec)
 {
 	if (!codec->name)
 		return -EINVAL;
-
-	/* The device should become mandatory over time */
-	if (!codec->dev)
-		printk(KERN_WARNING "No device for codec %s\n", codec->name);
 
 	INIT_LIST_HEAD(&codec->list);
 
