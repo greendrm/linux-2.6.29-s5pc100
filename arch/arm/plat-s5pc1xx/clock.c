@@ -675,7 +675,7 @@ static struct clk init_clocks[] = {
 	/* Audio (D1_5) devices */
 	{
 		.name		= "i2s_v50",
-		.id		= 0,
+		.id		= -1,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D15_IIS0, /* I2S0 is v5.0 */
