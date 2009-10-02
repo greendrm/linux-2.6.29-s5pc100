@@ -2240,3 +2240,17 @@ v2.6.29.4-dev-1-4-43: Sewoon Park
 v2.6.29.4-s5pc100-beta1.0: Sewoon Park
 	- Official Release for s5pc100(2009.09.30)
 
+
+v2.6.29.4-dev-1-4-44: Sang-Beom Kim
+	- Add SMDK6442 HR-timer and DynamicTick driver
+	- Change wakeup source
+	- Modify cpuidle function
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/Makefile
+		M	arch/arm/plat-s5p64xx/pm.c
+		M	arch/arm/plat-s5p64xx/Kconfig
+		M	arch/arm/mach-s5p6442/cpu.c
+		M	arch/arm/configs/smdk6442ramdisk_defconfig
+	Added Files:
+		A	arch/arm/plat-s5p64xx/hr-time.c
