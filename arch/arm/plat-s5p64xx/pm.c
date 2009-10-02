@@ -799,7 +799,10 @@ static int s5p6442_pm_enter(suspend_state_t state)
 	__raw_writel(tmp,S5P_PWR_CFG);
 
 	/* Set wakeup mask regsiter */
-	__raw_writel(0xFFFF , S5P_WAKEUP_MASK);
+	tmp = 0xFFFF;
+	tmp &= ~(1 << 1);
+	tmp &= ~(1 << 2);
+	__raw_writel(tmp , S5P_WAKEUP_MASK);
 
 	tmp = 0xFFFFFFFF;
 	tmp &= ~(1 << 10);

@@ -19,7 +19,20 @@ obj-y				+= irq-eint.o
 obj-y				+= clock.o
 obj-y				+= gpiolib.o
 obj-y				+= bootmem.o
+# obj-y				+= s5p64xx-time.o
+
+ifdef CONFIG_NO_HZ
+obj-y				+= hr-time.o
+
+else
+
+ifndef CONFIG_HIGH_RES_TIMERS
 obj-y				+= s5p64xx-time.o
+else
+obj-y				+= hr-time.o
+endif
+
+endif
 
 # CPU support
 

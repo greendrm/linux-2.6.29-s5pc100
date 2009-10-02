@@ -56,18 +56,17 @@ static struct map_desc s5p6442_iodesc[] __initdata = {
 
 static void s5p6442_idle(void)
 {
-#if 0	// FPGA6442
 	unsigned long tmp;
 
-	/* Ensure our idle mode is to go to idle */
-	/* Set WFI instruction to SLEEP mode */
-	
-
 	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= ~(0x3<<5);
-	tmp |= (0x1<<5);
+	tmp &= S5P_CFG_WFI_CLEAN;
+	tmp |= S5P_CFG_WFI_IDLE;
 	__raw_writel(tmp, S5P_PWR_CFG);
-#endif	
+
+	tmp = __raw_readl(S5P_OTHERS);
+	tmp |= S5P_OTHER_SYSC_INTOFF;
+	__raw_writel(tmp, S5P_OTHERS);
+
 	cpu_do_idle();
 
 }

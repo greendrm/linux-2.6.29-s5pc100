@@ -111,5 +111,12 @@ config S5P64XX_PWM
 	help
 	  Support for exporting the PWM timer blocks via the pwm device system.
 
+config CONFIG_HIGH_RES_TIMERS
+	bool "HRtimer and Dynamic Tick support"
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	default n
+	help
+	  Support for HRtimer and Dynamic Tick system.
 
 endif
