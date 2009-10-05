@@ -279,7 +279,6 @@ struct fimc_global {
 	int				initialized;
 };
 
-
 /*
  * E X T E R N S
  *

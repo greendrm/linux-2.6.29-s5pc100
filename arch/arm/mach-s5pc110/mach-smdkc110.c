@@ -56,7 +56,6 @@
 #include <plat/fimc.h>
 #include <plat/csis.h>
 #include <plat/fb.h>
-#include <plat/fimc-ipc.h>
 #include <plat/spi.h>
 
 #include <plat/nand.h>
@@ -1428,9 +1427,6 @@ static void __init smdkc110_machine_init(void)
 	smdkc110_cam1_power(1);
 	smdkc110_mipi_cam_power(1);
 
-	/* ipc */
-	s3c_ipc_set_platdata(NULL);
-	
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)

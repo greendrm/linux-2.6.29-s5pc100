@@ -54,4 +54,3 @@ obj-$(CONFIG_S5PC11X_SETUP_CSIS)  += setup-csis.o
 
 # Device setup - IPC
 obj-$(CONFIG_S5PC11X_DEV_IPC)	  += dev-ipc.o
-obj-$(CONFIG_S5PC11X_SETUP_IPC)  += setup-ipc.o

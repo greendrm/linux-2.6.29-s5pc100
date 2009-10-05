@@ -2,6 +2,8 @@
  *
  * Register definition file for IPC Driver
  *
+ * Jonghun Han, Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
  * Youngmok Song, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
@@ -15,10 +17,7 @@
 
 #define S3C_IPCREG(x)	(x)
 
-#define ON	1
-#define OFF	0
-
-#define IPC_2D_ENABLE	0x10000
+#define IPC_2D_ENABLE		0x10000
 #define IPC_HOR_SCALING_ENABLE	0x8000
 
 /*************************************************************************
@@ -93,13 +92,47 @@
 #define S3C_IPC_PP_BRIGHT_OFFSET		S3C_IPCREG(0x238)
 #define S3C_IPC_VERSION_INFO			S3C_IPCREG(0x3FC)
 
+/* Bit Definitions
+ ************************************************************************/
+/* ENABLE/DISABLE CONTROL */
+#define S3C_IPC_ON				(1 << 0)
+#define S3C_IPC_OFF				(0 << 0)
+
+/* SOFTWARE RESET */
+#define S3C_IPC_SRESET_ENABLE			(1 << 0)
+#define S3C_IPC_SRESET_MASK			(1 << 0)
+
+/* SHADOW UPDATE ENABLE CONTROL */
+#define S3C_IPC_SHADOW_UPDATE_ENABLE		(1 << 0)
+#define S3C_IPC_SHADOW_UPDATE_DISABLE		(0 << 0)
+
+/* OPERATION MODE CONTROL */
+#define S3C_IPC_2D_ENABLE			(1 << 0)
+#define S3C_IPC_2D_DISABLE			(0 << 0)
+#define S3C_IPC_2D_MASK				(1 << 1)
+
+/* VERTICAL SCALER PIXEL RATE CONTROL */
+#define S3C_IPC_PEL_RATE_SET			(0 << 0)
+
+/* HORIZONTAL ZOOM RATIO */
+#define S3C_IPC_H_RATIO_MASK			(0x7fff << 0)
+#define S3C_IPC_V_RATIO_MASK			(0x7fff << 0)
+
+/* POST PROCESSING IMAGE BYPASS MODE CONTROL */
+#define S3C_IPC_PP_BYPASS_ENABLE		(0 << 0)
+#define S3C_IPC_PP_BYPASS_DISABLE		(1 << 0)
+#define S3C_IPC_PP_BYPASS_MASK			(1 << 0)
+ 
+/* BRIGHTNESS AND CONTRAST CONTROL */
+#define S3C_IPC_PP_LINE_CONTRAST_MASK		(0xff << 0)
+#define S3C_IPC_PP_LINE_BRIGTHNESS_MASK		(0xffff << 8)
 
 /************************************************************************* 
 * Macro part 
 ************************************************************************/
 #define S3C_IPC_FIELD_ID_SELECTION(x)		((x) << 6)
-#define S3C_IPC_FIELD_ID_AUTO_TOGGLING(x)		((x) << 2)
-#define S3C_IPC_2D_CTRL(x)		((x) << 1)
+#define S3C_IPC_FIELD_ID_AUTO_TOGGLING(x)	((x) << 2)
+#define S3C_IPC_2D_CTRL(x)			((x) << 1)
 #define S3C_IPC_SRC_WIDTH_SET(x)		((x) & 0x7ff << 0)
 #define S3C_IPC_SRC_HEIGHT_SET(x)		((x) & 0x3ff << 0)
 #define S3C_IPC_DST_WIDTH_SET(x)		((x) & 0x7ff << 0)
@@ -108,41 +141,8 @@
 #define S3C_IPC_PP_TH_HNOISE_SET(x)		((x) & 0xff << 8)
 #define S3C_IPC_PP_SHARPNESS_SET(x)		((x) & 0x3 << 8)
 #define S3C_IPC_PP_BRIGHT_OFFSET_SET(x)		((x) & 0x1ff << 8)
+#define S3C_IPC_PP_LINE_CONTRAST(x)		(((x) & S3C_IPC_PP_LINE_CONTRAST_MASK) << 0)
+#define S3C_IPC_PP_LINE_BRIGHT(x)		(((x) & S3C_IPC_PP_LINE_BRIGTHNESS_MASK) << 8)
 
-/* Bit Definitions
- ************************************************************************/
-/* ENABLE/DISABLE CONTROL */
-#define S3C_IPC_ON		(1 << 0)
-#define S3C_IPC_OFF		(0 << 0)
-
-/* SOFTWARE RESET */
-#define S3C_IPC_SRESET_ENABLE		(1 << 0)
-#define S3C_IPC_SRESET_MASK		(1 << 0)
-
-/* SHADOW UPDATE ENABLE CONTROL */
-#define S3C_IPC_SHADOW_UPDATE_ENABLE		(1 << 0)
-#define S3C_IPC_SHADOW_UPDATE_DISABLE		(0 << 0)
-
-/* OPERATION MODE CONTROL */
-#define S3C_IPC_2D_ENABLE		(1 << 0)
-#define S3C_IPC_2D_DISABLE		(0 << 0)
-#define S3C_IPC_2D_MASK		(1 << 1)
-
-/* VERTICAL SCALER PIXEL RATE CONTROL */
-#define S3C_IPC_PEL_RATE_SET		(0 << 0)
-
-/* HORIZONTAL ZOOM RATIO */
-#define S3C_IPC_H_RATIO_MASK		(0x7fff << 0)
-#define S3C_IPC_V_RATIO_MASK		(0x7fff << 0)
-
-/* POST PROCESSING IMAGE BYPASS MODE CONTROL */
-#define S3C_IPC_PP_BYPASS_ENABLE		(0 << 0)
-#define S3C_IPC_PP_BYPASS_DISABLE		(1 << 0)
-#define S3C_IPC_PP_BYPASS_MASK		(1 << 0)
- 
-/* BRIGHTNESS AND CONTRAST CONTROL */
-#define S3C_IPC_PP_LINE_CONTRAST_MASK		(0xff)
-#define S3C_IPC_PP_LINE_BRIGTHNESS_MASK		(0xffff)
 #endif /* _REGS_IPC_H */
-
 
