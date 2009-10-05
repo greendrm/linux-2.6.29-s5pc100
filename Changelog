@@ -2254,3 +2254,26 @@ v2.6.29.4-dev-1-4-44: Sang-Beom Kim
 		M	arch/arm/configs/smdk6442ramdisk_defconfig
 	Added Files:
 		A	arch/arm/plat-s5p64xx/hr-time.c
+
+v2.6.29.4-dev-1-4-45: Jonghun Han
+	- Modified IPC driver for SMDKC110
+	- Modified configuration for IPC
+	- removed unnecessary files and functions
+	
+	Modified Files:
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/dev-ipc.c
+		M       arch/arm/plat-s5pc11x/include/plat/regs-ipc.h
+		M       drivers/media/video/samsung/fimc/Kconfig
+		M       drivers/media/video/samsung/fimc/Makefile
+		M       drivers/media/video/samsung/fimc/fimc-ipc.h
+		M       drivers/media/video/samsung/fimc/fimc.h
+		M       drivers/media/video/samsung/fimc/fimc_output.c
+		M       drivers/media/video/samsung/fimc/ipc.c
+		M       drivers/media/video/samsung/fimc/ipc_table.h
+		
+	Deleted files:
+		D       arch/arm/plat-s5pc11x/include/plat/fimc-ipc.h
+		D       arch/arm/plat-s5pc11x/setup-ipc.c
