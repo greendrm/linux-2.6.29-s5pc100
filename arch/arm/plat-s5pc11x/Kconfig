@@ -152,6 +152,13 @@ config S5PC11X_DEV_FB
 	help
 	  Compile in platform device definitions for FIMD controller
 
+config S5PC11X_SETUP_FB
+	bool
+	depends on FB_S3C
+	default y
+	help
+	  Common setup code for FIMD controller.
+
 config S5P_HAVE_PWM
         bool "PWM device support"
         select HAVE_PWM

@@ -100,6 +100,13 @@ config S5P64XX_DEV_FB
 	help
 	  Compile in platform device definitions for FIMD controller
 
+config S5P64XX_SETUP_FB
+	bool
+	depends on FB_S3C
+	default y
+	help
+	  Common setup code for FIMD controller.
+
 config S5P64XX_ADC
         bool "S5P64XX ADC D/D support"
         help

@@ -87,7 +87,7 @@ void ipc_stop(void)
 	ipc_enable(OFF);
 	ipc_reset();
 
-#if 0
+#if 1
 	/* Jonghun Han
 	*  After clk_disalbe, we cannot set register although clk is enable.
 	*  Must be tested by System Application part.  

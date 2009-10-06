@@ -317,81 +317,6 @@ static struct s3c2410_uartcfg smdk6442_uartcfgs[] __initdata = {
 };
 
 #ifdef CONFIG_FB_S3C_AMS320
-static void ams320_cfg_gpio(struct platform_device *pdev)
-{
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		s3c_gpio_cfgpin(S5P64XX_GPF0(i), S3C_GPIO_SFN(2));
-		s3c_gpio_setpull(S5P64XX_GPF0(i), S3C_GPIO_PULL_NONE);
-	}
-
-	for (i = 0; i < 8; i++) {
-		s3c_gpio_cfgpin(S5P64XX_GPF1(i), S3C_GPIO_SFN(2));
-		s3c_gpio_setpull(S5P64XX_GPF1(i), S3C_GPIO_PULL_NONE);
-	}
-
-	for (i = 0; i < 8; i++) {
-		s3c_gpio_cfgpin(S5P64XX_GPF2(i), S3C_GPIO_SFN(2));
-		s3c_gpio_setpull(S5P64XX_GPF2(i), S3C_GPIO_PULL_NONE);
-	}
-
-	for (i = 0; i < 4; i++) {
-		s3c_gpio_cfgpin(S5P64XX_GPF3(i), S3C_GPIO_SFN(2));
-		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
-	}
-
-	writel(0x10, S5P_MDNIE_SEL);
-	udelay(200);
-
-	s3c_gpio_cfgpin(S5P64XX_GPH3(5), S3C_GPIO_SFN(1));	/* LCD RESET */
-	s3c_gpio_cfgpin(S5P64XX_GPF3(5), S3C_GPIO_SFN(1));	/* SPI CS */
-	s3c_gpio_cfgpin(S5P64XX_GPD1(0), S3C_GPIO_SFN(1));	/* SPI Clock */
-	s3c_gpio_cfgpin(S5P64XX_GPD1(1), S3C_GPIO_SFN(1));	/* SPI Data */
-
-	s3c_gpio_setpull(S5P64XX_GPH3(5), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPF3(5), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPD1(0), S3C_GPIO_PULL_NONE);
-	s3c_gpio_setpull(S5P64XX_GPD1(1), S3C_GPIO_PULL_NONE);
-
-	s3c_gpio_setpin(S5P64XX_GPD1(0), 0);
-	s3c_gpio_setpin(S5P64XX_GPD1(1), 0);
-}
-
-static int ams320_reset_lcd(struct platform_device *pdev)
-{
-	int err;
-
-	err = gpio_request(S5P64XX_GPH3(5), "GPH3");
-	if (err) {
-		printk(KERN_ERR "failed to request GPH3 for "
-			"lcd reset control\n");
-		return err;
-	}
-
-	gpio_direction_output(S5P64XX_GPH3(5), 1);
-	mdelay(3);
-
-	gpio_set_value(S5P64XX_GPH3(5), 0);
-	mdelay(20);
-
-	gpio_set_value(S5P64XX_GPH3(5), 1);
-
-	gpio_free(S5P64XX_GPH3(5));
-
-	return 0;
-}
-
-static struct s3c_platform_fb ams320_data __initdata = {
-	.hw_ver	= 0x62,
-	.clk_name = "lcd",
-	.nr_wins = 5,
-	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
-	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
-
-	.cfg_gpio = ams320_cfg_gpio,
-	.reset_lcd = ams320_reset_lcd,
-};
 
 #define LCD_BUS_NUM 	3
 #define DISPLAY_CS	S5P64XX_GPF3(5)
@@ -781,8 +706,8 @@ static void __init smdk6442_machine_init(void)
 
 #ifdef CONFIG_FB_S3C_AMS320
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
-	s3cfb_set_platdata(&ams320_data);
 #endif
+	s3cfb_set_platdata(NULL);
 
 	s3c_i2c0_set_platdata(NULL);
 	s3c_i2c1_set_platdata(NULL);

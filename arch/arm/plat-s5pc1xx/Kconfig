@@ -110,6 +110,13 @@ config S5PC1XX_DEV_FB
 	help
 	  Compile in platform device definitions for FIMD controller
 
+config S5PC1XX_SETUP_FB
+	bool
+	depends on FB_S3C
+	default y
+	help
+	  Common setup code for FIMD controller.
+
 # MIPI-CSIS part
 config S5PC1XX_DEV_CSIS
 	bool

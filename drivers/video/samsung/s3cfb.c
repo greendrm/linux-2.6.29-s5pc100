@@ -2,6 +2,8 @@
  *
  * Core file for Samsung Display Controller (FIMD) driver
  *
+ * Jonghun Han, Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
  * Jinsung Yang, Copyright (c) 2009 Samsung Electronics
  * 	http://www.samsungsemi.com/
  *
@@ -39,6 +41,10 @@
 
 #ifdef CONFIG_FB_S3C_AMS320
 #include "logo_rgb24_hvga_portrait.h"
+#endif
+
+#ifdef CONFIG_FB_S3C_HT101HD1
+#include "logo_rgb24_xwvga_landscape.h"
 #endif
 
 #include "s3cfb.h"
@@ -1043,15 +1049,8 @@ static int s3cfb_probe(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
-	/* clock */
-	fbdev->clock = clk_get(&pdev->dev, pdata->clk_name);
-	if (IS_ERR(fbdev->clock)) {
-		dev_err(fbdev->dev, "failed to get fimd clock source\n");
-		ret = -EINVAL;
-		goto err_clk;
-	}
-
-	clk_enable(fbdev->clock);
+	if (pdata->clk_on)
+		pdata->clk_on(pdev, &fbdev->clock);
 
 	/* io memory */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -1135,10 +1134,7 @@ err_irq:
 	iounmap(fbdev->regs);
 
 err_io:
-	clk_disable(fbdev->clock);
-
-err_clk:
-	clk_put(fbdev->clock);
+	pdata->clk_off(pdev, &fbdev->clock);
 
 err_global:
 	return ret;
@@ -1152,8 +1148,7 @@ static int s3cfb_remove(struct platform_device *pdev)
 
 	free_irq(fbdev->irq, fbdev);
 	iounmap(fbdev->regs);
-	clk_disable(fbdev->clock);
-	clk_put(fbdev->clock);
+	pdata->clk_off(pdev, &fbdev->clock);
 
 	for (i = 0; i < pdata->nr_wins; i++) {
 		fb = fbdev->fb[i];
@@ -1192,7 +1187,7 @@ int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 	}
 
 	s3cfb_display_off(fbdev);
-	clk_disable(fbdev->clock);
+	pdata->clk_off(pdev, &fbdev->clock);
 
 	return 0;
 }
@@ -1206,7 +1201,7 @@ int s3cfb_resume(struct platform_device *pdev)
 
 	dev_dbg(fbdev->dev, "wake up from suspend\n");
 
-	clk_enable(fbdev->clock);
+	pdata->clk_on(pdev, &fbdev->clock);
 	s3cfb_init_global();
 	s3cfb_set_clock(fbdev);
 	s3cfb_display_on(fbdev);
@@ -1273,6 +1268,7 @@ static void s3cfb_unregister(void)
 module_init(s3cfb_register);
 module_exit(s3cfb_unregister);
 
+MODULE_AUTHOR("Jonghun, Han <jonghun.han@samsung.com>");
 MODULE_AUTHOR("Jinsung, Yang <jsgood.yang@samsung.com>");
 MODULE_DESCRIPTION("Samsung Display Controller (FIMD) driver");
 MODULE_LICENSE("GPL");

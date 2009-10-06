@@ -66,7 +66,8 @@ static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
 		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
 
 #if defined (CONFIG_VIDEO_IPC)
-	ipc_stop();
+	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+		ipc_stop();
 #endif
 
 	return 0;

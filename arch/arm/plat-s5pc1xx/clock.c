@@ -425,7 +425,7 @@ static struct clk init_clocks[] = {
 
 	/* Multimedia1 (D1_1) devices */
 	{
-		.name		= "lcd",
+		.name		= "fimd",
 		.id		= -1,
 		.parent		= &clk_h,
 		.enable		= s5pc1xx_clk_d11_ctrl,

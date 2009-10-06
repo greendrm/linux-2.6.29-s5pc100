@@ -47,6 +47,7 @@ obj-$(CONFIG_S5PC11X_SETUP_FIMC2) += setup-fimc2.o
 
 # Device setup - FIMD
 obj-$(CONFIG_S5PC11X_DEV_FB)	  += dev-fb.o
+obj-$(CONFIG_S5PC11X_SETUP_FB)	  += setup-fb.o
 
 # Device setup - MIPI-CSI2
 obj-$(CONFIG_S5PC11X_DEV_CSIS)	  += dev-csis.o

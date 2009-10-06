@@ -650,16 +650,16 @@ static struct clk_sources clkset_mmc2 = {
 	.nr_sources	= ARRAY_SIZE(clkset_mmc2_list),
 };
 
-static struct clk *clkset_lcd_list[] = {
+static struct clk *clkset_fimd_list[] = {
 	&clk_mout_epll.clk,
 	&clk_dout_mpll,
 	&clk_mout_hpll.clk,
 	&clk_54m,
 };
 
-static struct clk_sources clkset_lcd = {
-	.sources	= clkset_lcd_list,
-	.nr_sources	= ARRAY_SIZE(clkset_lcd_list),
+static struct clk_sources clkset_fimd = {
+	.sources	= clkset_fimd_list,
+	.nr_sources	= ARRAY_SIZE(clkset_fimd_list),
 };
 
 static struct clk *clkset_fimc_list[] = {
@@ -890,7 +890,7 @@ static struct clksrc_clk clk_pwi = {
 
 static struct clksrc_clk clk_lcd = {
 	.clk	= {
-		.name		= "sclk_lcd",
+		.name		= "sclk_fimd",
 		.id		= -1,
 		.ctrlbit        = S5P_CLKGATE_SCLK1_LCD,
 		.enable		= s5pc1xx_sclk1_ctrl,
@@ -901,7 +901,7 @@ static struct clksrc_clk clk_lcd = {
 	},
 	.shift		= S5P_CLKSRC2_LCD_SHIFT,
 	.mask		= S5P_CLKSRC2_LCD_MASK,
-	.sources	= &clkset_lcd,
+	.sources	= &clkset_fimd,
 	.divider_shift	= S5P_CLKDIV3_LCD_SHIFT,
 	.reg_divider	= S5P_CLK_DIV3,
 	.reg_source	= S5P_CLK_SRC2,

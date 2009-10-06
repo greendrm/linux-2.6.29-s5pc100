@@ -1,6 +1,8 @@
 /* linux/arch/arm/plat-s5pc11x/dev-fb.c
  *
  * Copyright 2009 Samsung Electronics
+ *	Jonghun Han <jonghun.han@samsung.com>
+ *	http://samsungsemi.com/
  *	Jinsung Yang <jsgood.yang@samsung.com>
  *	http://samsungsemi.com/
  *
@@ -55,7 +57,6 @@ struct platform_device s3c_device_fb = {
 
 static struct s3c_platform_fb default_fb_data __initdata = {
 	.hw_ver	= 0x60,
-	.clk_name = "lcd",
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
 	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,
@@ -77,6 +78,13 @@ void __init s3cfb_set_platdata(struct s3c_platform_fb *pd)
 			npd->nr_buffers[i] = 1;
 
 		npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP + 1;
+
+		s3cfb_get_clk_name(npd->clk_name);
+		npd->cfg_gpio = s3cfb_cfg_gpio;
+		npd->backlight_on = s3cfb_backlight_on;
+		npd->reset_lcd = s3cfb_reset_lcd;
+		npd->clk_on = s3cfb_clk_on;
+		npd->clk_off = s3cfb_clk_off;
 
 		s3c_device_fb.dev.platform_data = npd;
 	}

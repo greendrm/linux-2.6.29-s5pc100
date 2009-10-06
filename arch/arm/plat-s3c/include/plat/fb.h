@@ -23,10 +23,11 @@
 #define FB_SWAP_BIT	(1 << 0)
 
 struct platform_device;
+struct clk;
 
 struct s3c_platform_fb {
 	int		hw_ver;
-	const char	clk_name[16];
+	char		clk_name[16];
 	int		nr_wins;
 	int		nr_buffers[5];
 	int		default_win;
@@ -35,6 +36,8 @@ struct s3c_platform_fb {
 	void		(*cfg_gpio)(struct platform_device *dev);
 	int		(*backlight_on)(struct platform_device *dev);
 	int		(*reset_lcd)(struct platform_device *dev);
+	int		(*clk_on)(struct platform_device *pdev, struct clk **s3cfb_clk);
+	int		(*clk_off)(struct platform_device *pdev, struct clk **clk);
 };
 
 extern void s3cfb_set_platdata(struct s3c_platform_fb *fimd);
@@ -43,6 +46,9 @@ extern void s3cfb_set_platdata(struct s3c_platform_fb *fimd);
 extern void s3cfb_cfg_gpio(struct platform_device *pdev);
 extern int s3cfb_backlight_on(struct platform_device *pdev);
 extern int s3cfb_reset_lcd(struct platform_device *pdev);
+extern int s3cfb_clk_on(struct platform_device *pdev, struct clk **s3cfb_clk);
+extern int s3cfb_clk_off(struct platform_device *pdev, struct clk **clk);
+extern void s3cfb_get_clk_name(char *clk_name);
 
 #else
 

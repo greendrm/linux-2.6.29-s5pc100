@@ -27,7 +27,6 @@ extern struct platform_device *s3c24xx_uart_src[];
 
 extern struct platform_device s3c_device_timer[];
 
-extern struct platform_device s3c_device_fb;
 extern struct platform_device s3c_device_usb;
 extern struct platform_device s3c_device_usb_ohci;
 extern struct platform_device s3c_device_usb_ehci;
@@ -73,19 +72,16 @@ extern struct platform_device s3c_device_smc911x;
 extern struct platform_device s3c_device_dm9000;
 #endif
 
-extern struct platform_device s3c_device_fimc0;
-extern struct platform_device s3c_device_fimc1;
-
 extern struct platform_device s3c_device_mfc;
 extern struct platform_device s3c_device_ac97;
+
+extern struct platform_device s3c_device_fb;
 
 extern struct platform_device s3c_device_fimc0;
 extern struct platform_device s3c_device_fimc1;
 extern struct platform_device s3c_device_fimc2;
 
 extern struct platform_device s3c_device_csis;
-extern struct platform_device s3c_device_fb;
-
 extern struct platform_device s3c_device_ipc;
 
 extern struct platform_device s3c_device_rp;
