@@ -2331,3 +2331,8 @@ v2.6.29.4-dev-1-4-47: Jonghun Han
 		M       drivers/video/samsung/s3cfb_fimd5x.c
 		M       drivers/video/samsung/s3cfb_fimd6x.c
 
+v2.6.29.4-dev-1-4-48: Jingoo Han
+	- Implement the Power Management of USB HOST OHCI driver for S5PC100
+
+	Modified Files:
+		M       drivers/usb/host/ohci-s3c2410.c
