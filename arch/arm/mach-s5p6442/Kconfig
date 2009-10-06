@@ -43,3 +43,10 @@ config SMDK6442_SD_CH0_8BIT
         default n
         help
           If channel 0 uses 8-bit bus, channel 1 shoule be disabled.
+
+config SMDK6442_BUTTON
+        bool "SMDK6442 Button Test"
+        depends on MACH_SMDK6442
+        default n
+        help
+          This function is only used for wake up source(EINT) setting.

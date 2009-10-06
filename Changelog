@@ -2277,3 +2277,15 @@ v2.6.29.4-dev-1-4-45: Jonghun Han
 	Deleted files:
 		D       arch/arm/plat-s5pc11x/include/plat/fimc-ipc.h
 		D       arch/arm/plat-s5pc11x/setup-ipc.c
+
+v2.6.29.4-dev-1-4-46: HyoungMin Seo
+	- Add Button device driver to test suspend resume function on SMDK6442
+	B'd
+
+	Modified Files:
+		M	arch/arm/mach-s5p6442/Kconfig
+		M	arch/arm/mach-s5p6442/Makefile
+		M	drivers/input/misc/Kconfig
+		M	drivers/input/misc/Makefile
+	Added Files:
+		A	drivers/input/misc/smdk_power_btns.c

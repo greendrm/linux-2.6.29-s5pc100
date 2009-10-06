@@ -26,4 +26,4 @@ obj-$(CONFIG_PM)    += pm.o
 obj-$(CONFIG_MACH_SMDK6442)	+= mach-smdk6442.o
 
 # Button EINT support
-obj-$(CONFIG_MACH_SMDK6442)	+= button-smdk6442.o
+obj-$(CONFIG_SMDK6442_BUTTON)	+= button-smdk6442.o
