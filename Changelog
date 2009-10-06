@@ -2289,3 +2289,45 @@ v2.6.29.4-dev-1-4-46: HyoungMin Seo
 		M	drivers/input/misc/Makefile
 	Added Files:
 		A	drivers/input/misc/smdk_power_btns.c
+
+v2.6.29.4-dev-1-4-47: Jonghun Han
+	- HT101HD1 LCD support for SMDKC110
+	- FIMD platform data management is changed on SMDK6442, SMDKC100, SMDKC110
+	- FIMD driver clock bug fixed
+	- FIMC bug fixed which is related in IPC clock
+
+	Added Files:
+		A       arch/arm/plat-s5p64xx/setup-fb.c
+		A       arch/arm/plat-s5pc11x/setup-fb.c
+		A       arch/arm/plat-s5pc1xx/setup-fb.c
+		A       drivers/video/samsung/logo_rgb24_xwvga_landscape.h
+		A       drivers/video/samsung/s3cfb_ht101hd1.c
+
+	Modified Files:	
+		M       arch/arm/mach-s5p6442/mach-smdk6442.c
+		M       arch/arm/mach-s5pc100/mach-smdkc100.c
+		M       arch/arm/mach-s5pc110/mach-smdkc110.c
+		M       arch/arm/plat-s3c/include/plat/devs.h
+		M       arch/arm/plat-s3c/include/plat/fb.h
+		M       arch/arm/plat-s5p64xx/Kconfig
+		M       arch/arm/plat-s5p64xx/Makefile
+		M       arch/arm/plat-s5p64xx/clock.c
+		M       arch/arm/plat-s5p64xx/dev-fb.c
+		M       arch/arm/plat-s5pc11x/Kconfig
+		M       arch/arm/plat-s5pc11x/Makefile
+		M       arch/arm/plat-s5pc11x/clock.c
+		M       arch/arm/plat-s5pc11x/dev-fb.c
+		M       arch/arm/plat-s5pc11x/s5pc110-clock.c
+		M       arch/arm/plat-s5pc1xx/Kconfig
+		M       arch/arm/plat-s5pc1xx/Makefile
+		M       arch/arm/plat-s5pc1xx/clock.c
+		M       arch/arm/plat-s5pc1xx/dev-fb.c
+		M       arch/arm/plat-s5pc1xx/s5pc100-clock.c
+		M       drivers/media/video/samsung/fimc/fimc_output.c
+		M       drivers/media/video/samsung/fimc/ipc.c
+		M       drivers/video/samsung/Kconfig
+		M       drivers/video/samsung/Makefile
+		M       drivers/video/samsung/s3cfb.c
+		M       drivers/video/samsung/s3cfb_fimd5x.c
+		M       drivers/video/samsung/s3cfb_fimd6x.c
+
