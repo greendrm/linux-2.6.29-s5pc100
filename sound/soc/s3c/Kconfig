@@ -61,4 +61,16 @@ endchoice
 config  SND_WM8580_MASTER
 	bool "WM8580 Codec is I2S Master"
 	depends on SND_SMDKC110_WM8580 || SND_SMDKC100_WM8580 || SND_SMDK6442_WM8580
-	default n
+	default y
+	help
+	  Say Y if you want to run SoC as I2S-Slave and CODEC as I2S-Master.
+
+config  S5P_USE_CLKAUDIO
+	bool "Use CLKAUDIO"
+	depends on !SND_WM8580_MASTER && (SND_SMDKC110_WM8580 || SND_SMDKC100_WM8580 || SND_SMDK6442_WM8580)
+	default y
+	help
+	  Say Y if you want to generate I2S signals(LRCLK and BCLK) from CLKAUDIO.
+	  Do not select it for SoC I2S-Slave mode.
+	  If this is not selected in SoC I2S-Master mode, then PCLK will be used to
+	  generate(LRCLK and BCLK) signals.

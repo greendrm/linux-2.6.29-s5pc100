@@ -90,7 +90,7 @@ static int smdkc100_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-#ifdef USE_CLKAUDIO
+#ifdef CONFIG_S5P_USE_CLKAUDIO
 	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_CLKAUDIO, params_rate(params), SND_SOC_CLOCK_OUT);
 #else
 	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_PCLK, 0, SND_SOC_CLOCK_OUT);

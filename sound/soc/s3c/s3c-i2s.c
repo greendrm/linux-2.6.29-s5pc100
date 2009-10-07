@@ -380,7 +380,7 @@ static int s3c_i2s_set_sysclk(struct snd_soc_dai *cpu_dai,
 		s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 		break;
 
-#ifdef USE_CLKAUDIO
+#ifdef CONFIG_S5P_USE_CLKAUDIO
 	case S3C_CLKSRC_CLKAUDIO: /* IIS-IP is Master and derives its clocks from I2SCLKD2 */
 		if(s3c_i2s.slave)
 			return -EINVAL;
@@ -643,7 +643,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
-#ifdef USE_CLKAUDIO
+#ifdef CONFIG_S5P_USE_CLKAUDIO
 	/* To avoid switching between sources(LP vs NM mode),
 	 * we use EXTPRNT as parent clock of i2sclkd2.
 	 */
@@ -689,7 +689,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.audio_bus);
 #else
 	if(s3c_i2s_pdat.lp_mode){
-		printk("Enable USE_CLKAUDIO for LP_Audio mode!\n");
+		printk("Enable CONFIG_S5P_USE_CLKAUDIO for LP_Audio mode!\n");
 		goto lb3;
 	}
 #endif
@@ -701,7 +701,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 
 	return 0;
 
-#ifdef USE_CLKAUDIO
+#ifdef CONFIG_S5P_USE_CLKAUDIO
 lb1:
 	clk_put(cm);
 lb2:
@@ -722,7 +722,7 @@ static void s3c_i2s_remove(struct platform_device *pdev,
 {
 	writel(0, s3c_i2s.regs + S3C_IISCON);
 
-#ifdef USE_CLKAUDIO
+#ifdef CONFIG_S5P_USE_CLKAUDIO
 	clk_disable(s3c_i2s.audio_bus);
 	clk_put(s3c_i2s.audio_bus);
 #endif
