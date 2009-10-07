@@ -2342,3 +2342,6 @@ v2.6.29.4-dev-1-4-49: HyoungMin Seo
 
 	Modified Files:
 		M       drivers/video/samsung/s3cfb.c
+
+v2.6.29.4-dev-1-4-50: Hyunwoong Kim
+	- Added New Tag for s5pc110(2009.10.07)
