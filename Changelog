@@ -2336,3 +2336,9 @@ v2.6.29.4-dev-1-4-48: Jingoo Han
 
 	Modified Files:
 		M       drivers/usb/host/ohci-s3c2410.c
+
+v2.6.29.4-dev-1-4-49: HyoungMin Seo
+	- Alpha blending and Chroma Key bug fix for sleep/wakeup test
+
+	Modified Files:
+		M       drivers/video/samsung/s3cfb.c

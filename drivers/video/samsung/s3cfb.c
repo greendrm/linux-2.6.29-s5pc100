@@ -352,8 +352,10 @@ static int s3cfb_set_par(struct fb_info *fb)
 	s3cfb_set_buffer_address(fbdev, win->id);
 	s3cfb_set_buffer_size(fbdev, win->id);
 
-	if (win->id > 0)
+	if (win->id > 0) {
 		s3cfb_set_alpha_blending(fbdev, win->id);
+		s3cfb_set_chroma_key(fbdev, win->id);
+	}
 
 	return 0;
 }
@@ -1216,7 +1218,6 @@ int s3cfb_resume(struct platform_device *pdev)
 					 "failed to run the resume for fifo\n");
 		} else {
 			if (win->enabled) {
-				s3cfb_check_var(&fb->var, fb);
 				s3cfb_set_par(fb);
 				s3cfb_enable_window(win->id);
 			}
