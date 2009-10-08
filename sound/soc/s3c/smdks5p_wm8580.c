@@ -30,22 +30,12 @@
 /* SMDK has 12MHZ Osc attached to WM8580 */
 #define SMDK_WM8580_OSC_FREQ (12000000)
 
-#define PLAY_51       0
-#define PLAY_STEREO   1
-#define PLAY_OFF      2
-
-#define REC_MIC    0
-#define REC_LINE   1
-#define REC_OFF    2
-
 extern struct s5p_pcm_pdata s3c_pcm_pdat;
 extern struct s5p_i2s_pdata s3c_i2s_pdat;
 
 #define SRC_CLK	(*s3c_i2s_pdat.p_rate)
 
 static int lowpower = 0;
-static int smdks5p_play_opt;
-static int smdks5p_rec_opt;
 
 /* XXX BLC(bits-per-channel) --> BFS(bit clock shud be >= FS*(Bit-per-channel)*2) XXX */
 /* XXX BFS --> RFS(must be a multiple of BFS)                                 XXX */
@@ -68,131 +58,50 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	 * are possible for this AP-Codec combination.
 	 */
 	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_U8:
 	case SNDRV_PCM_FORMAT_S8:
 		bfs = 16;
-		rfs = 256;		/* Can take any RFS value for AP */
- 		break;
- 	case SNDRV_PCM_FORMAT_S16_LE:
+		break;
+	case SNDRV_PCM_FORMAT_U16_LE:
+	case SNDRV_PCM_FORMAT_S16_LE:
 		bfs = 32;
-		rfs = 256;		/* Can take any RFS value for AP */
- 		break;
-	case SNDRV_PCM_FORMAT_S20_3LE:
- 	case SNDRV_PCM_FORMAT_S24_LE:
-		bfs = 48;
-		rfs = 512;		/* B'coz 48-BFS needs atleast 512-RFS acc to *S5P6440* UserManual */
- 		break;
-	case SNDRV_PCM_FORMAT_S32_LE:	/* Impossible, as the AP doesn't support 64fs or more BFS */
-	default:
-		return -EINVAL;
- 	}
- 
-	switch (params_rate(params)) {
-	case 8000:
-		/* Can't have 2.048MHz from 12MHz by PLLA of WM8580 */
-		pll_out = 8192000 / 4;
-#ifdef CONFIG_SND_WM8580_MASTER
-		rfs = 512;
-#endif
-		break;
-	case 16000:
-		pll_out = 8192000 / 2;
-		break;
-	case 32000:
-		pll_out = 8192000;
-		break;
-	case 64000:
-		/* Can't have 16.384MHz from 12MHz by PLLA of WM8580 */
-		pll_out = 24576000;
-#ifdef CONFIG_SND_WM8580_MASTER
-		rfs = 384;
-#endif
-		break;
-	case 11025:
-		/* Can't have 2.822MHz from 12MHz by PLLA of WM8580 */
-		pll_out = 11289600 / 4;
-#ifdef CONFIG_SND_WM8580_MASTER
-		rfs = 512;
-#endif
-		break;
-	case 22050:
-		pll_out = 11289600 / 2;
-		break;
-	case 44100: 
-		pll_out = 11289600;
-		break;
-	case 88200:
-		pll_out = 11289600 * 2;
-		break;
-	case 48000:
-		pll_out = 12288000;
-		break;
-	case 96000:
-		pll_out = 12288000 * 2;
 		break;
 	default:
 		return -EINVAL;
 	}
-	ret = rfs / 256;
-	pll_out *= ret;
 
-	/* Set the Codec DAI configuration */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
-#else
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-#endif
-	if (ret < 0)
-		return ret;
+	/* The Fvco for WM8580 PLLs must fall within [90,100]MHz.
+	 * This criterion can't be met if we request PLL output
+	 * as {8000x256, 64000x256, 11025x256}Hz.
+	 * As a wayout, we rather change rfs to a minimum value that
+	 * results in (params_rate(params) * rfs), and itself, acceptable
+	 * to both - the CODEC and the CPU.
+	 */
+	switch (params_rate(params)) {
+	case 16000:
+	case 22050:
+	case 32000:
+	case 44100:
+	case 48000:
+	case 88200:
+	case 96000:
+		rfs = 256;
+		break;
+	case 64000:
+		rfs = 384;
+		break;
+	case 8000:
+	case 11025:
+		rfs = 512;
+		break;
+	default:
+		return -EINVAL;
+	}
+	pll_out = params_rate(params) * rfs;
 
-	/* Set the AP DAI configuration */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
-#else
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-#endif
-	if (ret < 0)
-		return ret;
-
-	/* Select the AP Sysclk */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_EXT, params_rate(params), SND_SOC_CLOCK_IN);
-#else
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_INT, params_rate(params), SND_SOC_CLOCK_OUT);
-#endif
-	if (ret < 0)
-		return ret;
-
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_SLVPCLK, 0, SND_SOC_CLOCK_IN);
-#else
 #ifdef CONFIG_S5P_USE_CLKAUDIO
 	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_CLKAUDIO, params_rate(params), SND_SOC_CLOCK_OUT);
-#else
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_PCLK, 0, SND_SOC_CLOCK_OUT);
 #endif
-#endif
-	if (ret < 0)
-		return ret;
-
-	/* Set the Codec BCLK(no option to set the MCLK) */
-	/* See page 2 and 53 of Wm8580 Manual */
-#ifdef CONFIG_SND_WM8580_MASTER 
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_PLLA); /* Use PLLACLK in AP-Slave Mode */
-#else
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_MCLK); /* Use MCLK provided by CPU i/f */
-#endif
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_CLKOUTSRC, WM8580_CLKSRC_NONE); /* Pg-58 */
 	if (ret < 0)
 		return ret;
 
@@ -215,6 +124,7 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 
 #ifdef CONFIG_SND_WM8580_MASTER
 	/* Set the WM8580 RFS */
+	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX], WM8580_MCLKRATIO, rfs); /* TODO */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLKRATIO, rfs);
 #else
 	/* Set the AP RFS */
@@ -225,6 +135,7 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 
 #ifdef CONFIG_SND_WM8580_MASTER
 	/* Set the WM8580 BFS */
+	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX], WM8580_BCLKRATIO, bfs); /* TODO */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_BCLKRATIO, bfs);
 #else
 	/* Set the AP BFS */
@@ -236,96 +147,110 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
+#define DAI_I2S_PBK	0
+#define DAI_I2S_REC	1
+#define DAI_PCM_PBKREC	2
+static struct snd_soc_dai_link smdks5p_dai[];
+
+static int init_link(int dai)
+{
+	struct snd_soc_dai_link *dl = &smdks5p_dai[dai];
+	struct snd_soc_dai *cpu_dai = dl->cpu_dai;
+	struct snd_soc_dai *codec_dai = dl->codec_dai;
+	int ret;
+
+	if (dai == DAI_I2S_PBK)
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
+	else
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int init_dais(struct snd_soc_dai *cpu_dai, struct snd_soc_dai *codec_dai)
+{
+	int ret;
+
+	/* Set the Codec DAI configuration */
+#ifdef CONFIG_SND_WM8580_MASTER
+	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
+#else
+	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
+#endif
+	if (ret < 0)
+		return ret;
+
+	/* Set the AP DAI configuration */
+#ifdef CONFIG_SND_WM8580_MASTER
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
+#else
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
+#endif
+	if (ret < 0)
+		return ret;
+
+	/* Select the AP Sysclk */
+#ifdef CONFIG_SND_WM8580_MASTER
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_EXT, 0, SND_SOC_CLOCK_IN);
+#else
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_INT, 0, SND_SOC_CLOCK_OUT);
+#endif
+	if (ret < 0)
+		return ret;
+
+#ifdef CONFIG_SND_WM8580_MASTER
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_SLVPCLK, 0, SND_SOC_CLOCK_IN);
+#else
+#ifdef CONFIG_S5P_USE_CLKAUDIO
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_CLKAUDIO, 44100, SND_SOC_CLOCK_OUT);
+#else
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_PCLK, 0, SND_SOC_CLOCK_OUT);
+#endif
+#endif
+	if (ret < 0)
+		return ret;
+
+	/* Set the Codec BCLK(no option to set the MCLK) */
+	/* See page 2 and 53 of Wm8580 Manual */
+#ifdef CONFIG_SND_WM8580_MASTER 
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_PLLA); /* Use PLLACLK in AP-Slave Mode */
+#else
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_MCLK); /* Use MCLK provided by CPU i/f */
+#endif
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_CLKOUTSRC, WM8580_CLKSRC_NONE); /* Pg-58 */
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
 /*
  * WM8580 DAI operations.
  */
-static struct snd_soc_ops smdks5p_ops = {
+static struct snd_soc_ops smdks5p_ops_paif = {
 	.hw_params = smdks5p_hw_params,
 };
 
-static void smdks5p_ext_control(struct snd_soc_codec *codec)
-{
-	/* set up jack connection */
-	if(smdks5p_play_opt == PLAY_51){
-		snd_soc_dapm_enable_pin(codec, "Front-L/R");
-		snd_soc_dapm_enable_pin(codec, "Center/Sub");
-		snd_soc_dapm_enable_pin(codec, "Rear-L/R");
-	}else if(smdks5p_play_opt == PLAY_STEREO){
-		snd_soc_dapm_enable_pin(codec, "Front-L/R");
-		snd_soc_dapm_disable_pin(codec, "Center/Sub");
-		snd_soc_dapm_disable_pin(codec, "Rear-L/R");
-	}else{
-		snd_soc_dapm_disable_pin(codec, "Front-L/R");
-		snd_soc_dapm_disable_pin(codec, "Center/Sub");
-		snd_soc_dapm_disable_pin(codec, "Rear-L/R");
-	}
-
-	if(smdks5p_rec_opt == REC_MIC){
-		snd_soc_dapm_enable_pin(codec, "MicIn");
-		snd_soc_dapm_disable_pin(codec, "LineIn");
-	}else if(smdks5p_rec_opt == REC_LINE){
-		snd_soc_dapm_disable_pin(codec, "MicIn");
-		snd_soc_dapm_enable_pin(codec, "LineIn");
-	}else{
-		snd_soc_dapm_disable_pin(codec, "MicIn");
-		snd_soc_dapm_disable_pin(codec, "LineIn");
-	}
-
-	/* signal a DAPM event */
-	snd_soc_dapm_sync(codec);
-}
-
-static int smdks5p_get_pt(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = smdks5p_play_opt;
-	return 0;
-}
-
-static int smdks5p_set_pt(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
-
-	if(smdks5p_play_opt == ucontrol->value.integer.value[0])
-		return 0;
-
-	smdks5p_play_opt = ucontrol->value.integer.value[0];
-	smdks5p_ext_control(codec);
-	return 1;
-}
-
-static int smdks5p_get_cs(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	ucontrol->value.integer.value[0] = smdks5p_rec_opt;
-	return 0;
-}
-
-static int smdks5p_set_cs(struct snd_kcontrol *kcontrol,
-	struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_codec *codec =  snd_kcontrol_chip(kcontrol);
-
-	if(smdks5p_rec_opt == ucontrol->value.integer.value[0])
-		return 0;
-
-	smdks5p_rec_opt = ucontrol->value.integer.value[0];
-	smdks5p_ext_control(codec);
-	return 1;
-}
-
-/* smdks5p card dapm widgets */
-static const struct snd_soc_dapm_widget wm8580_dapm_widgets[] = {
+/* SMDK Playback widgets */
+static const struct snd_soc_dapm_widget wm8580_dapm_widgets_pbk[] = {
 	SND_SOC_DAPM_HP("Front-L/R", NULL),
 	SND_SOC_DAPM_HP("Center/Sub", NULL),
 	SND_SOC_DAPM_HP("Rear-L/R", NULL),
+};
+
+/* SMDK Capture widgets */
+static const struct snd_soc_dapm_widget wm8580_dapm_widgets_cpt[] = {
 	SND_SOC_DAPM_MIC("MicIn", NULL),
 	SND_SOC_DAPM_LINE("LineIn", NULL),
 };
 
 /* smdk card audio map (connections to the codec pins) */
-static const struct snd_soc_dapm_route audio_map[] = {
+static const struct snd_soc_dapm_route audio_map_rx[] = {
 	/* Front Left/Right are fed VOUT1L/R */
 	{"Front-L/R", NULL, "VOUT1L"},
 	{"Front-L/R", NULL, "VOUT1R"},
@@ -337,7 +262,9 @@ static const struct snd_soc_dapm_route audio_map[] = {
 	/* Rear Left/Right are fed VOUT3L/R */
 	{"Rear-L/R", NULL, "VOUT3L"},
 	{"Rear-L/R", NULL, "VOUT3R"},
+};
 
+static const struct snd_soc_dapm_route audio_map_tx[] = {
 	/* MicIn feeds AINL */
 	{"AINL", NULL, "MicIn"},
 
@@ -346,70 +273,72 @@ static const struct snd_soc_dapm_route audio_map[] = {
 	{"AINR", NULL, "LineIn"},
 };
 
-static const char *play_function[] = {
-	[PLAY_51]     = "5.1 Chan",
-	[PLAY_STEREO] = "Stereo",
-	[PLAY_OFF]    = "Off",
-};
-
-static const char *rec_function[] = {
-	[REC_MIC] = "Mic",
-	[REC_LINE] = "Line",
-	[REC_OFF] = "Off",
-};
-
-static const struct soc_enum smdks5p_enum[] = {
-	SOC_ENUM_SINGLE_EXT(3, play_function),
-	SOC_ENUM_SINGLE_EXT(3, rec_function),
-};
-
-static const struct snd_kcontrol_new wm8580_smdks5p_controls[] = {
-	SOC_ENUM_EXT("Playback Target", smdks5p_enum[0], smdks5p_get_pt,
-		smdks5p_set_pt),
-	SOC_ENUM_EXT("Capture Source", smdks5p_enum[1], smdks5p_get_cs,
-		smdks5p_set_cs),
-};
-
-static int smdks5p_wm8580_init(struct snd_soc_codec *codec)
+static int smdks5p_wm8580_init_paiftx(struct snd_soc_codec *codec)
 {
-	int i, err;
+	/* Add smdk specific Capture widgets */
+	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets_cpt,
+				  ARRAY_SIZE(wm8580_dapm_widgets_cpt));
+ 
+	/* Set up PAIFTX audio path */
+	snd_soc_dapm_add_routes(codec, audio_map_tx, ARRAY_SIZE(audio_map_tx));
 
-	/* Add smdks5p specific controls */
-	for (i = 0; i < ARRAY_SIZE(wm8580_smdks5p_controls); i++) {
-		err = snd_ctl_add(codec->card,
-			snd_soc_cnew(&wm8580_smdks5p_controls[i], codec, NULL));
-		if (err < 0)
-			return err;
+	/* LineIn enabled by default */
+	snd_soc_dapm_enable_pin(codec, "MicIn");
+	snd_soc_dapm_enable_pin(codec, "LineIn");
+
+	/* signal a DAPM event */
+	snd_soc_dapm_sync(codec);
+
+	if (init_link(DAI_I2S_REC)) {
+		printk("Unable to init dai_link-%d\n", DAI_I2S_REC);
+		return -EINVAL;
 	}
+	
+	return 0;
+}
 
-	/* Add smdks5p specific widgets */
-	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets,
-				  ARRAY_SIZE(wm8580_dapm_widgets));
+static int smdks5p_wm8580_init_paifrx(struct snd_soc_codec *codec)
+{
+	/* Add smdk specific Playback widgets */
+	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets_pbk,
+				  ARRAY_SIZE(wm8580_dapm_widgets_pbk));
+ 
+	/* Set up PAIFRX audio path */
+	snd_soc_dapm_add_routes(codec, audio_map_rx, ARRAY_SIZE(audio_map_rx));
 
-	/* Set up smdks5p specific audio path audio_map */
-	snd_soc_dapm_add_routes(codec, audio_map, ARRAY_SIZE(audio_map));
+	/* Stereo enabled by default */
+	snd_soc_dapm_enable_pin(codec, "Front-L/R");
+	snd_soc_dapm_enable_pin(codec, "Center/Sub");
+	snd_soc_dapm_enable_pin(codec, "Rear-L/R");
 
-	/* No jack detect - mark all jacks as enabled */
-	for (i = 0; i < ARRAY_SIZE(wm8580_dapm_widgets); i++)
-		snd_soc_dapm_enable_pin(codec, wm8580_dapm_widgets[i].name);
+	/* signal a DAPM event */
+	snd_soc_dapm_sync(codec);
 
-	/* Setup Default Route */
-	smdks5p_play_opt = PLAY_STEREO;
-	smdks5p_rec_opt = REC_LINE;
-	smdks5p_ext_control(codec);
-
+	if (init_link(DAI_I2S_PBK)) {
+		printk("Unable to init dai_link-%d\n", DAI_I2S_PBK);
+		return -EINVAL;
+	}
+	
 	return 0;
 }
 
 static struct snd_soc_dai_link smdks5p_dai[] = {
-{
-	.name = "WM8580",
-	.stream_name = "WM8580 HiFi Playback",
-	.cpu_dai = &s3c_i2s_pdat.i2s_dai,
-	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
-	.init = smdks5p_wm8580_init,
-	.ops = &smdks5p_ops,
-},
+	[DAI_I2S_PBK] = { /* I2S Primary Playback i/f */
+		.name = "WM8580 PAIF RX",
+		.stream_name = "Playback",
+		.cpu_dai = &s3c_i2s_pdat.i2s_dai,
+		.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
+		.init = smdks5p_wm8580_init_paifrx,
+		.ops = &smdks5p_ops_paif,
+	},
+	[DAI_I2S_REC] = { /* I2S Primary Capture i/f */
+		.name = "WM8580 PAIF TX",
+		.stream_name = "Capture",
+		.cpu_dai = &s3c_i2s_pdat.i2s_dai,
+		.codec_dai = &wm8580_dai[WM8580_DAI_PAIFTX],
+		.init = smdks5p_wm8580_init_paiftx,
+		.ops = &smdks5p_ops_paif,
+	}
 };
 
 static struct snd_soc_card smdks5p = {
@@ -434,15 +363,15 @@ static struct platform_device *smdks5p_snd_device;
 
 static int __init smdks5p_audio_init(void)
 {
-	int ret;
+	int i, ret;
 
 	if(lowpower){ /* LPMP3 Mode doesn't support recording */
-		wm8580_dai[0].capture.channels_min = 0;
-		wm8580_dai[0].capture.channels_max = 0;
+		wm8580_dai[WM8580_DAI_PAIFTX].capture.channels_min = 0;
+		wm8580_dai[WM8580_DAI_PAIFTX].capture.channels_max = 0;
 		smdks5p.lp_mode = 1;
 	}else{
-		wm8580_dai[0].capture.channels_min = 2;
-		wm8580_dai[0].capture.channels_max = 2;
+		wm8580_dai[WM8580_DAI_PAIFTX].capture.channels_min = 2;
+		wm8580_dai[WM8580_DAI_PAIFTX].capture.channels_max = 2;
 		smdks5p.lp_mode = 0;
 	}
 
@@ -455,16 +384,30 @@ static int __init smdks5p_audio_init(void)
 
 	platform_set_drvdata(smdks5p_snd_device, &smdks5p_snd_devdata);
 	smdks5p_snd_devdata.dev = &smdks5p_snd_device->dev;
-	ret = platform_device_add(smdks5p_snd_device);
 
-	if (ret)
-		platform_device_put(smdks5p_snd_device);
-	
+	ret = platform_device_add(smdks5p_snd_device);
+	if (ret) {
+		printk("Unable to add platform device!\n");
+		goto lb1;
+	}
+
+	/* Do inits common to PAIF-Tx & PAIF-Rx */
+	ret = init_dais(&s3c_i2s_pdat.i2s_dai, &wm8580_dai[0]);
+	if (ret) {
+		printk("Unable to init DAIs!\n");
+		goto lb1;
+	}
+
 #ifdef CONFIG_SND_WM8580_MASTER
 	s3cdbg("WM8580 is I2S Master\n");
 #else
 	s3cdbg("S5P is I2S Master\n");
 #endif
+
+	return 0;
+
+lb1:
+	platform_device_put(smdks5p_snd_device);
 
 	return ret;
 }
