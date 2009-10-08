@@ -621,6 +621,10 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	int ret = 0;
 	struct clk *cf, *cm;
 
+	/* Already called for one DAI */
+	if(s3c_i2s.regs != NULL)
+		return 0;
+
 	s3c_i2s.regs = ioremap(S3C_IIS_PABASE, 0x100);
 	if (s3c_i2s.regs == NULL)
 		return -ENXIO;
@@ -709,6 +713,10 @@ lb4:
 static void s3c_i2s_remove(struct platform_device *pdev,
 		       struct snd_soc_dai *dai)
 {
+	/* Already called for one DAI */
+	if(s3c_i2s.regs == NULL)
+		return;
+
 	writel(0, s3c_i2s.regs + S3C_IISCON);
 
 	clk_disable(s3c_i2s.audio_bus);
@@ -717,6 +725,7 @@ static void s3c_i2s_remove(struct platform_device *pdev,
 	clk_put(s3c_i2s.iis_clk);
 	free_irq(S3C_IISIRQ, pdev);
 	iounmap(s3c_i2s.regs);
+	s3c_i2s.regs = NULL;
 }
 
 #ifdef CONFIG_PM
