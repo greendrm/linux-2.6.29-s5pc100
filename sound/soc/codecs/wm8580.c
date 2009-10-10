@@ -164,6 +164,17 @@ struct wm8580_priv {
 
 #define WM8580_AIF_LRP         0x10
 #define WM8580_AIF_BCP         0x20
+#define WM8580_SAIF_EN         0x40
+
+#define WM8580_DAC1_SRC_MASK	0x180
+#define WM8580_DAC1_SRC_SPDIF	0x000
+#define WM8580_DAC1_SRC_SAIFRX	0x100
+#define WM8580_DAC1_SRC_PAIFRX	0x180
+
+#define WM8580_SAIFTX_SRC_MASK	 0x180
+#define WM8580_SAIFTX_SRC_SPDIF	 0x000
+#define WM8580_SAIFTX_SRC_ADC	 0x080
+#define WM8580_SAIFTX_SRC_PAIFRX 0x180
 
 /* Powerdown Register 1 (register 32h) */
 #define WM8580_PWRDN1_PWDN     0x001
@@ -910,48 +921,55 @@ static int wm8580_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
+static int wm8580_saif_startup(struct snd_pcm_substream *substream, struct snd_soc_dai *codec_dai)
+{
+	struct snd_soc_codec *codec = codec_dai->codec;
+	unsigned int reg;
+
+	/* Set the SAIFTX source as ADC output */
+	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg &= ~WM8580_SAIFTX_SRC_MASK;
+	reg |= WM8580_SAIFTX_SRC_ADC;
+	snd_soc_write(codec, WM8580_SAIF2, reg);
+
+	/* Set DAC1's source as SAIF-RX */
+	reg = snd_soc_read(codec, WM8580_PAIF3);
+	reg &= ~WM8580_DAC1_SRC_MASK;
+	reg |= WM8580_DAC1_SRC_SAIFRX;
+	snd_soc_write(codec, WM8580_PAIF3, reg);
+
+	/* Enable the SAIF */
+	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg |= WM8580_SAIF_EN;
+	snd_soc_write(codec, WM8580_SAIF2, reg);
+
+	return 0;
+}
+
+static void wm8580_saif_shutdown(struct snd_pcm_substream *substream, struct snd_soc_dai *codec_dai)
+{
+	struct snd_soc_codec *codec = codec_dai->codec;
+	unsigned int reg;
+
+	/* Set DAC1's source as PAIF-RX */
+	reg = snd_soc_read(codec, WM8580_PAIF3);
+	reg &= ~WM8580_DAC1_SRC_MASK;
+	reg |= WM8580_DAC1_SRC_PAIFRX;
+	snd_soc_write(codec, WM8580_PAIF3, reg);
+
+	/* Disable the SAIF */
+	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg &= ~WM8580_SAIF_EN;
+	snd_soc_write(codec, WM8580_SAIF2, reg);
+}
+
 #define WM8580_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |\
 			SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE)
-
-#define NEW_DAI_STRUCT
-
-#ifdef NEW_DAI_STRUCT
-
-struct snd_soc_dai wm8580_dai[] = {
-	{
-		.name = "WM8580 Codec",
-		.id = 0,
-		.playback = {
-			.stream_name = "Playback",
-			.channels_min = 1,
-			.channels_max = 6,
-			.rates = SNDRV_PCM_RATE_8000_192000,
-			.formats = WM8580_FORMATS,
-		},
-
-
-		.capture = {
-			.stream_name = "Capture",
-			.channels_min = 2,
-			.channels_max = 2,
-			.rates = SNDRV_PCM_RATE_8000_192000,
-			.formats = WM8580_FORMATS,
-		},
-		.ops = {
-			 .hw_params = wm8580_paif_hw_params,
-			 .set_fmt = wm8580_set_paif_dai_fmt,
-			 .set_clkdiv = wm8580_set_dai_clkdiv,
-			 .set_pll = wm8580_set_dai_pll,
-		 },
-	},
-};
-
-#else
 
 struct snd_soc_dai wm8580_dai[] = {
 	{
 		.name = "WM8580 PAIFRX",
-		.id = 0,
+		.id = WM8580_DAI_PAIFRX,
 		.playback = {
 			.stream_name = "Playback",
 			.channels_min = 1,
@@ -969,7 +987,7 @@ struct snd_soc_dai wm8580_dai[] = {
 	},
 	{
 		.name = "WM8580 PAIFTX",
-		.id = 1,
+		.id = WM8580_DAI_PAIFTX,
 		.capture = {
 			.stream_name = "Capture",
 			.channels_min = 2,
@@ -985,7 +1003,6 @@ struct snd_soc_dai wm8580_dai[] = {
 		 },
 	},
 };
-#endif
 
 EXPORT_SYMBOL_GPL(wm8580_dai);
 
@@ -1039,6 +1056,7 @@ static int wm8580_init(struct snd_soc_device *socdev)
 		printk(KERN_ERR "wm8580: failed to register card\n");
 		goto card_err;
 	}
+
 	return ret;
 
 card_err:

@@ -11,8 +11,6 @@
 #ifndef S5P_I2S_H_
 #define S5P_I2S_H_
 
-#define USE_CLKAUDIO	1 /* use it for LPMP3 mode */
-
 /* Clock dividers */
 #define S3C_DIV_MCLK	0
 #define S3C_DIV_BCLK	1

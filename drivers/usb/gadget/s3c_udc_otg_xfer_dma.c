@@ -925,10 +925,6 @@ static int s3c_udc_set_halt(struct usb_ep *_ep, int value)
 		ep->stopped = 0;
 		s3c_udc_ep_clear_stall(ep);
 	} else {
-		if (ep_num == 0) {
-			dev->ep0state = WAIT_FOR_SETUP;
-		}
-		
 		ep->stopped = 1;
 		s3c_udc_ep_set_stall(ep);
 	}

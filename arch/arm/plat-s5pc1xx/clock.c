@@ -612,13 +612,13 @@ static struct clk init_clocks[] = {
 		.ctrlbit	= S5P_CLKGATE_D14_UART3,
 	}, {
 		.name		= "i2c",
-		.id		= -1,
+		.id		= 0,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d14_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D14_IIC,
 	}, {
-		.name		= "hdmi-i2c",
-		.id		= -1,
+		.name		= "i2c",
+		.id		= 1,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d14_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D14_HDMI_IIC,

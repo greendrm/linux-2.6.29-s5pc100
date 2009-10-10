@@ -35,6 +35,9 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 		return -EBUSY;
 	}
 
+	if (ctrl->out->fbuf.base) /* OUTPUT path : memory */
+		return 0;
+
 	/* Check Overlay Size : Overlay size must be smaller than LCD size. */
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (is_rotate & FIMC_ROT) {	/* Landscape mode */

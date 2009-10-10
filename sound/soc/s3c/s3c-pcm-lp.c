@@ -69,20 +69,20 @@ static void s5p_pcm_enqueue(struct snd_pcm_substream *substream)
 	dma_addr_t pos = prtd->dma_pos;
 	int ret;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	//s3cdbg("Entered %s\n", __FUNCTION__);
 
 	while (prtd->dma_loaded < prtd->dma_limit) {
 		unsigned long len = prtd->dma_period;
 
-		s3cdbg("dma_loaded: %d\n",prtd->dma_loaded);
+		//s3cdbg("dma_loaded: %d\n",prtd->dma_loaded);
 
 		if ((pos + len) > prtd->dma_end) {
 			len  = prtd->dma_end - pos;
-			s3cdbg(KERN_DEBUG "%s: corrected dma len %ld\n",
-			       __FUNCTION__, len);
+			//s3cdbg(KERN_DEBUG "%s: corrected dma len %ld\n",
+			//       __FUNCTION__, len);
 		}
 
-		s3cdbg("enqing at %x, %d bytes\n", pos, len);
+		//s3cdbg("enqing at %x, %d bytes\n", pos, len);
 		ret = s3c2410_dma_enqueue(prtd->params->channel, substream, pos, len);
 
 		if (ret == 0) {
@@ -387,7 +387,7 @@ static snd_pcm_uframes_t
 
 	spin_unlock(&prtd->lock);
 
-	s3cdbg("Pointer %x %x\n", src, dst);
+	//s3cdbg("Pointer %x %x\n", src, dst);
 
 	/* we seem to be getting the odd error from the pcm library due
 	 * to out-of-bounds pointers. this is maybe due to the dma engine
@@ -525,7 +525,7 @@ static int s5p_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
 		buf->addr = s3c_pcm_pdat.nm_buffs.dma_addr[stream];
 	}
 
-	printk("%s mode: preallocate buffer(%s):  VA-%p  PA-%X  %ubytes\n", 
+	s3cdbg("%s mode: preallocate buffer(%s):  VA-%p  PA-%X  %ubytes\n", 
 			s3c_pcm_pdat.lp_mode ? "LowPower" : "Normal", 
 			stream ? "Capture": "Playback", 
 			vaddr, paddr, size);

@@ -72,6 +72,7 @@ enum dma_ch {
 	DMACH_3D_M2M5,
 	DMACH_3D_M2M6,
 	DMACH_3D_M2M7,
+	DMACH_SPDIF_OUT,		
 	DMACH_MAX,		/* the end entry */
 };
 

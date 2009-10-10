@@ -343,6 +343,11 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels	= MAP0(S3C_DMA_M2M),
 		.hw_addr.from	= 0,
 	},
+	[DMACH_SPDIF_OUT] = {
+		.name           = "spdif-out",
+		.channels       = MAP1(S3C_PDMA0_SPDIF),
+		.hw_addr.to     = S3C_PDMA0_SPDIF,
+	},
 };
 
 static void s5pc110_dma_select(struct s3c2410_dma_chan *chan,
