@@ -64,6 +64,7 @@ u8 check_output_mode(s5p_tv_disp_mode display,
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE :
 	case TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE :
 	case TVOUT_OUTPUT_HDMI :
+	case TVOUT_OUTPUT_DVI :
 #ifdef CONFIG_CPU_S5PC110		
 		if(display == TVOUT_1080I_60 ||	
 		   display == TVOUT_1080I_59 ||			

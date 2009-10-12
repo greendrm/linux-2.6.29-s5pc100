@@ -69,7 +69,8 @@ typedef enum {
 	TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED,
 	TVOUT_OUTPUT_COMPONENT_YPBPR_PROGRESSIVE,
 	TVOUT_OUTPUT_COMPONENT_RGB_PROGRESSIVE,
-	TVOUT_OUTPUT_HDMI
+	TVOUT_OUTPUT_HDMI,
+	TVOUT_OUTPUT_DVI
 }s5p_tv_o_mode;
 
 typedef enum {
@@ -361,6 +362,20 @@ typedef enum {
 	VMIXER_CSC_RGB_TO_YUV709_LR,
 	VMIXER_CSC_RGB_TO_YUV709_FR
 }s5p_tv_vmx_csc_type;
+
+typedef enum
+{
+	RGB601_0_255,
+	RGB601_16_235,
+	RGB709_0_255,
+	RGB709_16_235
+}s5p_tv_vmx_rgb;
+
+typedef enum
+{
+	MX_YUV444,
+	MX_RGB888
+}s5p_tv_vmx_out_type;
 
 // TV encoder
 typedef enum {

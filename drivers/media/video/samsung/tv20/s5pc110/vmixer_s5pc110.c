@@ -501,8 +501,18 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		temp_reg &= S5P_MXR_DST_SEL_ANALOG;
 		break;
 
+	case TVOUT_OUTPUT_DVI:
+// DVI:
+		temp_reg |= S5P_MXR_DST_SEL_HDMI;
+		temp_reg &= ~(0x7<<8);
+		temp_reg |= RGB709_16_235<<9 | MX_RGB888<<8;
+					
+		break;
+	
 	case TVOUT_OUTPUT_HDMI:
 		temp_reg |= S5P_MXR_DST_SEL_HDMI;
+		temp_reg &= ~(0x7<<8);
+		temp_reg |= RGB601_16_235<<9 | MX_YUV444<<8;
 		break;
 
 	default:
@@ -514,7 +524,6 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 //FPGA: FOR C110 HDMI TEST
 //	temp_reg |= (0x1<<7);
 //FPGA: FOR C110 HDMI TEST
-
 	writel(temp_reg, mixer_base + S5P_MXR_CFG);
 
 	VMPRINTK("--(0x%x)\n\r", readl(mixer_base + S5P_MXR_CFG));

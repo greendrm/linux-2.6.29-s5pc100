@@ -227,7 +227,7 @@ bool _s5p_tv_if_init_vm_reg(void)
 				     st->bg_color[i].color_cr);
 
 		if (merr != VMIXER_NO_ERROR)
-		return false;
+			return false;
 	}
 
 	if (merr != VMIXER_NO_ERROR) {
@@ -249,6 +249,7 @@ bool _s5p_tv_if_init_vm_reg(void)
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
+	case TVOUT_OUTPUT_DVI:
 
 		switch (disp_mode) {
 
@@ -624,6 +625,10 @@ bool _s5p_tv_if_init_hd_video_reg(void)
 	case TVOUT_OUTPUT_HDMI:
 		cscType = HDMI_BYPASS;
 		break;
+		
+	case TVOUT_OUTPUT_DVI:
+		cscType = HDMI_CSC_YUV601_TO_RGB_LR;
+		break;
 
 	default:
 		TVOUTIFPRINTK("invalid out_mode parameter(%d)\n\r",
@@ -764,6 +769,12 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 
 	switch (tvout_if->out_mode) {
 
+	case TVOUT_OUTPUT_DVI:
+		st->hdmi_av_info_frame.trans_type = HDMI_DO_NOT_TANS;		
+		st->avi_byte[0] = AVI_RGB_IF;
+		st->avi_byte[1] = AVI_ITU601;
+		break;
+		
 	case TVOUT_OUTPUT_HDMI:
 		st->avi_byte[0] = AVI_YCBCR444_IF;
 		break;
@@ -805,10 +816,10 @@ bool _s5p_tv_if_init_hd_reg(void)
 
 	case HDMI_AUDIO_PCM:
 		/* 
-		* PCM, Samplingrate 48000, 16bit, 
+		* PCM, Samplingrate 44100, 16bit, 
 		* ignore framesize cuz stream is PCM.
 		*/
-		__s5p_hdmi_audio_init(PCM, 48000, 16, 0); 
+		__s5p_hdmi_audio_init(PCM, 44100, 16, 0); 
 		break;
 
 	case HDMI_AUDIO_NO:
@@ -884,6 +895,7 @@ bool _s5p_tv_if_start(void)
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
+	case TVOUT_OUTPUT_DVI:
 		__s5p_tv_clk_init_video_mixer(TVOUT_CLK_VMIXER_SRCCLK_MOUT_HPLL);
 		__s5p_tv_clk_set_sdout_hclk_onoff(false);
 		__s5p_tv_clk_set_sdout_sclk_onoff(false);
@@ -958,6 +970,19 @@ bool _s5p_tv_if_start(void)
 		break;
 	}
 
+/*
+	if (out_mode == TVOUT_OUTPUT_DVI) {
+		st->bg_color[0].color_y = 0;
+		st->bg_color[0].color_cb = 0;
+		st->bg_color[0].color_cr = 0;
+		st->bg_color[1].color_y = 0;
+		st->bg_color[1].color_cb = 0;
+		st->bg_color[1].color_cr = 0;
+		st->bg_color[2].color_y = 0;
+		st->bg_color[2].color_cb = 0;
+		st->bg_color[2].color_cr = 0;
+	}
+*/
 	if (!_s5p_tv_if_init_vm_reg()) {
 		return false;
 	}
@@ -980,8 +1005,10 @@ bool _s5p_tv_if_start(void)
 
 		break;
 
+	case TVOUT_OUTPUT_DVI:
+		st->hdmi_audio_type = HDMI_AUDIO_NO;
+		
 	case TVOUT_OUTPUT_HDMI:
-
 		if (!_s5p_tv_if_init_hd_reg()) {
 			return false;
 		}
@@ -1029,6 +1056,7 @@ bool _s5p_tv_if_stop(void)
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
+	case TVOUT_OUTPUT_DVI:
 		if(st->tvout_output_enable) {
 			__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,false);
 			__s5p_hdmi_stop();
@@ -1169,6 +1197,7 @@ bool _s5p_tv_if_set_disp(void)
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
+	case TVOUT_OUTPUT_DVI:
 		st->hdmi_video_blue_screen.cb_b = 0;//128;
 		st->hdmi_video_blue_screen.y_g  = 0;
 		st->hdmi_video_blue_screen.cr_r = 0;//128;

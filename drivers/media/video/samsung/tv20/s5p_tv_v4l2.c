@@ -82,7 +82,7 @@ static struct v4l2_output s5p_tv_outputs[] = {
 	}, {
 		.index		= 5,
 		.name		= "Digital HDMI",
-		.type		= V4L2_OUTPUT_TYPE_DIGITAL,
+		.type		= V4L2_OUTPUT_TYPE_HDMI,
 		.audioset	= 2,
 		.modulator	= 0,
 		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
@@ -94,6 +94,21 @@ static struct v4l2_output s5p_tv_outputs[] = {
 				V4L2_STD_1080I_59 | V4L2_STD_1080P_59 |
 				V4L2_STD_1080P_30,
 #endif				
+	}, {
+		.index		= 6,
+		.name		= "Digital DVI",
+		.type		= V4L2_OUTPUT_TYPE_DVI,
+		.audioset	= 2,
+		.modulator	= 0,
+		.std		= V4L2_STD_480P_60_16_9 | V4L2_STD_480P_60_16_9 |
+				V4L2_STD_720P_60 | V4L2_STD_720P_50
+#ifdef CONFIG_CPU_S5PC110				
+				| V4L2_STD_1080P_60 | V4L2_STD_1080P_50 |
+				V4L2_STD_1080I_60 | V4L2_STD_1080I_50 |
+				V4L2_STD_480P_59 | V4L2_STD_720P_59 |
+				V4L2_STD_1080I_59 | V4L2_STD_1080P_59 |
+				V4L2_STD_1080P_30,
+#endif		
 	}
 
 };
@@ -947,9 +962,14 @@ static int s5p_tv_v4l2_s_output(struct file *file, void *fh, unsigned int i)
 		s5ptv_status.tvout_param.out_mode = TVOUT_OUTPUT_COMPOSITE;
 		break;
 
-	case V4L2_OUTPUT_TYPE_DIGITAL :
+	case V4L2_OUTPUT_TYPE_HDMI :
 		s5ptv_status.tvout_param.out_mode = TVOUT_OUTPUT_HDMI;
 		break;
+
+	case V4L2_OUTPUT_TYPE_DVI :
+		s5ptv_status.tvout_param.out_mode = TVOUT_OUTPUT_DVI;
+		break;
+		
 
 	default:
 		break;

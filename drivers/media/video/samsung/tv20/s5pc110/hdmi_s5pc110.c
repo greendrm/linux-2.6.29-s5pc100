@@ -692,12 +692,6 @@ void __s5p_hdmi_audio_set_config(s5p_tv_audio_codec_type audio_codec)
 		(audio_codec&MP3) ? "MP3":
 		(audio_codec&WMA) ? "WMA":"Unknown");
 
-	/* open SPDIF path on HDMI_I2S */
-	writel(0x01, hdmi_base + S5P_HDMI_I2S_CLK_CON);
-	writel(readl(hdmi_base + S5P_HDMI_I2S_MUX_CON) | 0x11, hdmi_base + S5P_HDMI_I2S_MUX_CON);
-	writel(0xFF, hdmi_base + S5P_HDMI_I2S_MUX_CH );
-	writel(0x03, hdmi_base + S5P_HDMI_I2S_MUX_CUV );
-	
 	writel(CONFIG_FILTER_2_SAMPLE | data_type
 	       | CONFIG_PCPD_MANUAL_SET | CONFIG_WORD_LENGTH_MANUAL_SET
 	       | CONFIG_U_V_C_P_REPORT | CONFIG_BURST_SIZE_2
@@ -1123,7 +1117,10 @@ static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec, 
 				u32 sample_rate, u32 bits, u32 frame_size_code)
 {
-#ifdef CONFIG_SND_S5P_SPDIF
+#if 1 /* for I2S */
+	__s5p_hdmi_audio_i2s_config(audio_codec, sample_rate, bits, frame_size_code);
+
+#else /* for SPDIF */
 	__s5p_hdmi_audio_set_config(audio_codec);
 	__s5p_hdmi_audio_set_repetition_time(audio_codec, bits, frame_size_code);
 	__s5p_hdmi_audio_irq_enable(IRQ_BUFFER_OVERFLOW_ENABLE);
@@ -1131,8 +1128,6 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 	
 	__s5p_hdmi_audio_set_asp();
 	__s5p_hdmi_audio_set_acr(sample_rate);
-#else 
-	__s5p_hdmi_audio_i2s_config(audio_codec, sample_rate, bits, frame_size_code);
 #endif
 	__s5p_hdmi_audio_set_aui(audio_codec, sample_rate, bits);
 
@@ -1219,6 +1214,13 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 		writel(VID_PREAMBLE_EN | GUARD_BAND_EN, hdmi_base + S5P_HDMI_CON_2);
 		writel(HDMI_MODE_EN | DVI_MODE_DIS, hdmi_base + S5P_MODE_SEL);
 		break;
+
+// DVI:
+	case TVOUT_OUTPUT_DVI:
+		writel(PX_LMT_CTRL_RGB, hdmi_base + S5P_HDMI_CON_1);
+		writel(VID_PREAMBLE_DIS | GUARD_BAND_DIS, hdmi_base + S5P_HDMI_CON_2);
+		writel(HDMI_MODE_DIS | DVI_MODE_EN, hdmi_base + S5P_MODE_SEL);
+		break;		
 
 	default:
 		HDMIPRINTK("invalid out_mode parameter(%d)\n\r", out_mode);
