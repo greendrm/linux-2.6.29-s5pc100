@@ -80,8 +80,10 @@
 #define S3C_DMA0_I2S0_RX	13
 #define S3C_DMA0_SPI0_TX	14
 #define S3C_DMA0_SPI0_RX	15
-#define S3C_DMA0_SPI1_TX	20
-#define S3C_DMA0_SPI1_RX	21
+#define S3C_DMA1_PCM0_RX	20
+#define S3C_DMA1_PCM0_TX	21
+#define S3C_DMA1_PCM1_RX	22
+#define S3C_DMA1_PCM1_TX	23
 #define S3C_DMA0_GPS		24
 #define S3C_DMA0_PWM		29
 #define S3C_DMA0_EXTERNAL	31
@@ -94,9 +96,27 @@
 
 #define S3C_DMA_M2M		0
 
-
 static struct s3c_dma_map __initdata s5p6442_dma_mappings[] = {
-
+	[DMACH_PCM0_IN] = {
+		.name		= "pcm0-in",
+		.channels	= MAP1(S3C_DMA1_PCM0_RX),
+		.hw_addr.from	= S3C_DMA1_PCM0_RX,
+	},
+	[DMACH_PCM0_OUT] = {
+		.name		= "pcm0-out",
+		.channels	= MAP1(S3C_DMA1_PCM0_TX),
+		.hw_addr.to	= S3C_DMA1_PCM0_TX,
+	},
+	[DMACH_PCM1_IN] = {
+		.name		= "pcm1-in",
+		.channels	= MAP1(S3C_DMA1_PCM1_RX),
+		.hw_addr.from	= S3C_DMA1_PCM1_RX,
+	},
+	[DMACH_PCM1_OUT] = {
+		.name		= "pcm1-out",
+		.channels	= MAP1(S3C_DMA1_PCM1_TX),
+		.hw_addr.to	= S3C_DMA1_PCM1_TX,
+	},
 	[DMACH_SPI0_IN] = {
 		.name		= "spi0-in",
 		.channels	= MAP1(S3C_DMA1_SPI0_RX),
@@ -119,7 +139,6 @@ static struct s3c_dma_map __initdata s5p6442_dma_mappings[] = {
 		.hw_addr.to     = S3C_DMA1_I2S0_TX,      
 		.sdma_sel       = 1 << S3C_DMA1_I2S0_TX,
 	}, 
-
 };
 
 static void s5p6442_dma_select(struct s3c2410_dma_chan *chan,
