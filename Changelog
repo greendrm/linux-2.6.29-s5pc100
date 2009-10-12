@@ -2345,3 +2345,9 @@ v2.6.29.4-dev-1-4-49: HyoungMin Seo
 
 v2.6.29.4-dev-1-4-50: Hyunwoong Kim
 	- Added New Tag for s5pc110(2009.10.07)
+
+v2.6.29.4-dev-1-4-51: Hyunwoong Kim
+	- Modified the NFS default configuration for S5PC110
+
+	Modified Files:
+		M	arch/arm/configs/smdkc110nfs_defconfig
