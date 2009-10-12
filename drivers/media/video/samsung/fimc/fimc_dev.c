@@ -191,12 +191,23 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
+	int pp;
 
 	fimc_hwset_clear_irq(ctrl);
 	fimc_hwget_overflow_state(ctrl);
-	wake_up_interruptible(&ctrl->wq);
-
-	cap->irq = 1;
+	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4);
+	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB) {
+		/* odd value of pp means one frame is made with top/bottom */
+		if (pp & 0x1) {	
+			cap->irq = 1;
+			wake_up_interruptible(&ctrl->wq);
+		}
+	}
+	else {
+		cap->irq = 1;
+		wake_up_interruptible(&ctrl->wq);
+	}	
+	
 }
 
 static irqreturn_t fimc_irq(int irq, void *dev_id)
