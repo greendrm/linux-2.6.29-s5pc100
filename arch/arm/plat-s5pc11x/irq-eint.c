@@ -113,23 +113,23 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 		break;
 
 	case IRQ_TYPE_EDGE_RISING:
-		newvalue = S3C2410_EXTINT_RISEEDGE;
+		newvalue = S5P_EXTINT_RISEEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_FALLING:
-		newvalue = S3C2410_EXTINT_FALLEDGE;
+		newvalue = S5P_EXTINT_FALLEDGE;
 		break;
 
 	case IRQ_TYPE_EDGE_BOTH:
-		newvalue = S3C2410_EXTINT_BOTHEDGE;
+		newvalue = S5P_EXTINT_BOTHEDGE;
 		break;
 
 	case IRQ_TYPE_LEVEL_LOW:
-		newvalue = S3C2410_EXTINT_LOWLEV;
+		newvalue = S5P_EXTINT_LOWLEV;
 		break;
 
 	case IRQ_TYPE_LEVEL_HIGH:
-		newvalue = S3C2410_EXTINT_HILEV;
+		newvalue = S5P_EXTINT_HILEV;
 		break;
 
 	default:
