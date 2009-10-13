@@ -2351,3 +2351,8 @@ v2.6.29.4-dev-1-4-51: Hyunwoong Kim
 
 	Modified Files:
 		M	arch/arm/configs/smdkc110nfs_defconfig
+
+v2.6.29.4-dev-1-4-52: Jinsung Yang
+	- Temporary Release (2009.10.13)
+
+
