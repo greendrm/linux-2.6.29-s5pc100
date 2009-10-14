@@ -369,13 +369,13 @@ struct platform_device s3c_device_spi_bitbang = {
 #endif
 
 /* PMIC */
-static struct regulator_consumer_supply dcdc1_consumers[] = {
+static struct regulator_consumer_supply buck1_consumers[] = {
 	{
 		.supply		= "vddarm",
 	},
 };
 
-static struct regulator_init_data max8698_dcdc1_data = {
+static struct regulator_init_data max8698_buck1_data = {
 	.constraints	= {
 		.name		= "VCC_ARM",
 		.min_uV		=  750000,
@@ -388,17 +388,17 @@ static struct regulator_init_data max8698_dcdc1_data = {
 			.enabled = 0,
 		},
 	},
-	.num_consumer_supplies	= ARRAY_SIZE(dcdc1_consumers),
-	.consumer_supplies	= dcdc1_consumers,
+	.num_consumer_supplies	= ARRAY_SIZE(buck1_consumers),
+	.consumer_supplies	= buck1_consumers,
 };
 
-static struct regulator_consumer_supply dcdc2_consumers[] = {
+static struct regulator_consumer_supply buck2_consumers[] = {
 	{
 		.supply		= "vddint",
 	},
 };
 
-static struct regulator_init_data max8698_dcdc2_data = {
+static struct regulator_init_data max8698_buck2_data = {
 	.constraints	= {
 		.name		= "VCC_INTERNAL",
 		.min_uV		= 1200000,
@@ -411,11 +411,11 @@ static struct regulator_init_data max8698_dcdc2_data = {
 			.enabled = 0,
 		},
 	},
-	.num_consumer_supplies	= ARRAY_SIZE(dcdc2_consumers),
-	.consumer_supplies	= dcdc2_consumers,
+	.num_consumer_supplies	= ARRAY_SIZE(buck2_consumers),
+	.consumer_supplies	= buck2_consumers,
 };
 
-static struct regulator_init_data max8698_dcdc3_data = {
+static struct regulator_init_data max8698_buck3_data = {
 	.constraints	= {
 		.name		= "VCC_MEM",
 		.min_uV		= 1800000,
@@ -553,19 +553,26 @@ static struct max8698_subdev_data smdkc110_regulators[] = {
 	{ MAX8698_LDO7, &max8698_ldo7_data },
 	{ MAX8698_LDO8, &max8698_ldo8_data },
 	{ MAX8698_LDO9, &max8698_ldo9_data },
-	{ MAX8698_DCDC1, &max8698_dcdc1_data },
-	{ MAX8698_DCDC2, &max8698_dcdc2_data },
-	{ MAX8698_DCDC3, &max8698_dcdc3_data },
+	{ MAX8698_BUCK1, &max8698_buck1_data },
+	{ MAX8698_BUCK2, &max8698_buck2_data },
+	{ MAX8698_BUCK3, &max8698_buck3_data },
 };
 
 static struct max8698_platform_data max8698_platform_data = {
 	.num_regulators	= ARRAY_SIZE(smdkc110_regulators),
 	.regulators	= smdkc110_regulators,
-/*
-	.set1		= S5PC11X_GPJ0(6),
-	.set2		= S5PC11X_GPJ0(7),
-	.set3		= S5PC11X_GPJ1(0),
-*/
+
+	.set1		= S5PC11X_GPH1(6),
+	.set2		= S5PC11X_GPH1(7),
+	.set3		= S5PC11X_GPH0(4),
+	
+	.dvsarm1	= 0x9,
+	.dvsarm2	= 0x7,
+	.dvsarm3	= 0x5,
+	.dvsarm4	= 0x3,
+
+	.dvsint1	= 0x9,
+	.dvsint2	= 0x7,
 };
 
 /* I2C0 */

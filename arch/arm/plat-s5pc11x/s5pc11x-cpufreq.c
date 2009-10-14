@@ -34,20 +34,9 @@
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
 
-extern int max8698_set_dvsarm1(unsigned char val);
-extern int max8698_set_dvsarm2(unsigned char val);
-extern int max8698_set_dvsarm3(unsigned char val);
-extern int max8698_set_dvsarm4(unsigned char val);
-extern int max8698_set_dvsint1(unsigned char val);
-extern int max8698_set_dvsint2(unsigned char val);
-
 static struct clk * mpu_clk;
 static struct regulator *arm_regulator;
 static struct regulator *internal_regulator;
-static unsigned long set1_gpio;
-static unsigned long set2_gpio;
-static unsigned long set3_gpio;
-static unsigned long privious_arm_volt;
 
 #define MAX8698_RAMP_RATE	10	// 10mV/us (default)
 /* frequency */
@@ -60,99 +49,33 @@ static struct cpufreq_frequency_table s5pc110_freq_table[] = {
 	{0, CPUFREQ_TABLE_END},
 };
 
-#define DVSARM1	(1<<0)	//set1_gpio:LOW, set2_gpio:LOW
-#define DVSARM2 (1<<1)	//set1_gpio:HIGH, set2_gpio:LOW
-#define DVSARM3 (1<<2)	//set1_gpio:LOW, set2_gpio:HIGH
-#define DVSARM4 (1<<3)	//set1_gpio:HIGH, set2_gpio:HIGH
-#define DVSINT1	(1<<4)	//set3_gpio:LOW
-#define DVSINT2	(1<<5)	//set3_gpio:HIGH
-
-
-static const int s5pc110_volt_table[][3] = {
-	{L0, DVSARM1, DVSINT1},
-	{L1, DVSARM2, DVSINT1},
-	{L2, DVSARM3, DVSINT1},
-	{L3, DVSARM4, DVSINT1},
-	/*{Lv, VDD_ARM(uV), VDD_INT(uV)}*/
-};
-
-static const unsigned long max8698_dvs_table[16] = {
-	750, 800, 850, 900, 950, 1000, 1050, 1100,
-	1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500,
-};
-
 struct s5pc11x_dvs_conf {
 	const unsigned long	lvl;		// DVFS level : L0,L1,L2,L3...
-	const unsigned long	dvs_arm;	// MAX8698 DVSARMx register
-	const unsigned long	dvs_int;
-	unsigned long		arm_volt;	// mV
-	unsigned long		int_volt;	// mV
+	unsigned long		arm_volt;	// uV
+	unsigned long		int_volt;	// uV
 };
 
 static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
 	{
 		.lvl		= L0,
-		.dvs_arm	= DVSARM1,
-		.dvs_int	= DVSINT1,
-		.arm_volt	= 0,
-		.int_volt	= 0,
+		.arm_volt	= 1200000,
+		.int_volt	= 1200000,
 	}, {
 		.lvl		= L1,
-		.dvs_arm	= DVSARM2,
-		.dvs_int	= DVSINT1,
-		.arm_volt	= 0,
-		.int_volt	= 0,
+		.arm_volt	= 1100000,
+		.int_volt	= 1200000,
 
 	}, {
 		.lvl		= L2,
-		.dvs_arm	= DVSARM3,
-		.dvs_int	= DVSINT1,
-		.arm_volt	= 0,
-		.int_volt	= 0,
+		.arm_volt	= 1000000,
+		.int_volt	= 1000000,
 		
 	}, { 
 		.lvl		= L3,
-		.dvs_arm	= DVSARM4,
-		.dvs_int	= DVSINT1,
-		.arm_volt	= 0,
-		.int_volt	= 0,
+		.arm_volt	= 900000,
+		.int_volt	= 1000000,
 	},	
 };
-
-
-static void s5pc110_set_volt(unsigned long val)
-{
-	
-	switch(val) {
-	case DVSARM1:
-		gpio_set_value(set1_gpio, 0);
-		gpio_set_value(set2_gpio, 0);
-		break;
-	case DVSARM2:
-		gpio_set_value(set1_gpio, 1);
-		gpio_set_value(set2_gpio, 0);
-		break;
-	case DVSARM3:
-		gpio_set_value(set1_gpio, 0);
-		gpio_set_value(set2_gpio, 1);
-		break;
-	case DVSARM4:
-		gpio_set_value(set1_gpio, 1);
-		gpio_set_value(set2_gpio, 1);
-		break;
-	case DVSINT1:
-		gpio_set_value(set3_gpio, 0);
-		break;
-	case DVSINT2:
-		gpio_set_value(set3_gpio, 1);
-		break;
-	default:
-		printk(KERN_ERR "[%s]Voltage configuraiotn error! \n",__FUNCTION__);
-		break;
-	}
-}
-
-/* TODO: Add support for SDRAM timing changes */
 
 int s5pc110_verify_speed(struct cpufreq_policy *policy)
 {
@@ -182,7 +105,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	struct cpufreq_freqs freqs;
 	int ret = 0;
 	unsigned long arm_clk;
-	unsigned int index,reg,arm_volt,int_volt, dvs_arm_index, dvs_int_index;
+	unsigned int index ,reg , arm_volt, int_volt;
 
 	freqs.old = s5pc110_getspeed(0);
 
@@ -199,21 +122,15 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	if (freqs.new == freqs.old)
 		return -EINVAL;
 	
-	dvs_arm_index = s5pc110_dvs_conf[index].dvs_arm;
-	dvs_int_index = s5pc110_dvs_conf[index].dvs_int;
+	arm_volt = s5pc110_dvs_conf[index].arm_volt;
+	int_volt = s5pc110_dvs_conf[index].int_volt;
 	
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
 	if (freqs.new > freqs.old) {
 		// Voltage up code
-#if 0
 		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 		regulator_set_voltage(internal_regulator, int_volt, int_volt);
-#else
-		s5pc110_set_volt(dvs_arm_index);
-		s5pc110_set_volt(dvs_int_index);
-		udelay((s5pc110_dvs_conf[index].arm_volt - privious_arm_volt)/MAX8698_RAMP_RATE);
-#endif
 	}
 		
 	reg = __raw_readl(S5P_CLK_DIV0);
@@ -224,13 +141,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	if (freqs.new < freqs.old) {
 		// Voltage down
-#if 0	
 		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 		regulator_set_voltage(internal_regulator, int_volt, int_volt);
-#else
-		s5pc110_set_volt(dvs_arm_index);
-		s5pc110_set_volt(dvs_int_index);
-#endif
 	}
 	
 	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
@@ -270,42 +182,6 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 		return PTR_ERR(internal_regulator);
 	}
 
-	err = gpio_request(S5PC11X_GPH0(4),"GPH0");
-	if (err){
-		printk("gpio request error : %d\n",err);
-	}else{
-		gpio_direction_output(S5PC11X_GPH0(4), 0);
-		set3_gpio = S5PC11X_GPH0(4);
-	}
-
-	err = gpio_request(S5PC11X_GPH1(6),"GPH1");
-	if (err){
-		printk("gpio request error : %d\n",err);
-	}else{
-		gpio_direction_output(S5PC11X_GPH1(6), 0);
-		set1_gpio = S5PC11X_GPH1(6);
-	}
-
-	err = gpio_request(S5PC11X_GPH1(7),"GPH1");
-	if (err){
-		printk("gpio request error : %d\n",err);
-	}else{
-		gpio_direction_output(S5PC11X_GPH1(7), 0);
-		set2_gpio = S5PC11X_GPH1(7);
-	}
-
-	max8698_set_dvsarm1(0x9);	// 1.2v
-	s5pc110_dvs_conf[0].arm_volt = max8698_dvs_table[0x9];
-	max8698_set_dvsarm2(0x7);	// 1.1v
-	s5pc110_dvs_conf[1].arm_volt = max8698_dvs_table[0x7];
-	max8698_set_dvsarm3(0x5);	// 1.0v
-	s5pc110_dvs_conf[2].arm_volt = max8698_dvs_table[0x5];
-	max8698_set_dvsarm4(0x3);	// 0.9v
-	s5pc110_dvs_conf[3].arm_volt = max8698_dvs_table[0x3];
-	max8698_set_dvsint1(0x9);	// 1.2v
-	max8698_set_dvsint2(0x7);	// 1.1v
-
-	privious_arm_volt = s5pc110_dvs_conf[0].arm_volt;
 #endif
 
 	if (policy->cpu != 0)
