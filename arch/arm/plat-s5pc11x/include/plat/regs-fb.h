@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-fb.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/regs-fb.h
  *
  * Register definition file for Samsung Display Controller (FIMD) driver
  *
@@ -152,7 +152,10 @@
 #define S3C_VIDCON0_VIDOUT_ITU			(1 << 26)
 #define S3C_VIDCON0_VIDOUT_I80LDI0		(2 << 26)
 #define S3C_VIDCON0_VIDOUT_I80LDI1		(3 << 26)
-#define S3C_VIDCON0_VIDOUT_MASK			(3 << 26)
+#define S3C_VIDCON0_VIDOUT_WB_RGB		(4 << 26)
+#define S3C_VIDCON0_VIDOUT_WB_I80LDI0		(6 << 26)
+#define S3C_VIDCON0_VIDOUT_WB_I80LDI1		(7 << 26)
+#define S3C_VIDCON0_VIDOUT_MASK			(7 << 26)
 #define S3C_VIDCON0_PNRMODE_RGB_P		(0 << 17)
 #define S3C_VIDCON0_PNRMODE_BGR_P		(1 << 17)
 #define S3C_VIDCON0_PNRMODE_RGB_S		(2 << 17)
@@ -191,6 +194,15 @@
 #define S3C_VIDCON2_EN601_DISABLE		(0 << 23)
 #define S3C_VIDCON2_EN601_ENABLE		(1 << 23)
 #define S3C_VIDCON2_EN601_MASK			(1 << 23)
+#define S3C_VIDCON2_WB_DISABLE			(0 << 15)
+#define S3C_VIDCON2_WB_ENABLE			(1 << 15)
+#define S3C_VIDCON2_WB_MASK			(1 << 15)
+#define S3C_VIDCON2_TVFORMATSEL_HW		(0 << 14)
+#define S3C_VIDCON2_TVFORMATSEL_SW		(1 << 14)
+#define S3C_VIDCON2_TVFORMATSEL_MASK		(1 << 14)
+#define S3C_VIDCON2_TVFORMATSEL_YUV422		(1 << 12)
+#define S3C_VIDCON2_TVFORMATSEL_YUV444		(2 << 12)
+#define S3C_VIDCON2_TVFORMATSEL_YUV_MASK	(3 << 12)
 #define S3C_VIDCON2_ORGYUV_YCBCR		(0 << 8)
 #define S3C_VIDCON2_ORGYUV_CBCRY		(1 << 8)
 #define S3C_VIDCON2_ORGYUV_MASK			(1 << 8)

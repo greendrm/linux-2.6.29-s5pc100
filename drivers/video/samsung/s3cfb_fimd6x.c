@@ -60,6 +60,34 @@ int s3cfb_set_output(struct s3cfb_global *ctrl)
 
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
+	cfg = readl(ctrl->regs + S3C_VIDCON2);
+	cfg &= ~(S3C_VIDCON2_WB_MASK | S3C_VIDCON2_TVFORMATSEL_MASK | \
+					S3C_VIDCON2_TVFORMATSEL_YUV_MASK);
+
+	if (ctrl->output == OUTPUT_RGB)
+		cfg |= S3C_VIDCON2_WB_DISABLE;
+	else if (ctrl->output == OUTPUT_ITU)
+		cfg |= S3C_VIDCON2_WB_DISABLE;
+	else if (ctrl->output == OUTPUT_I80LDI0)
+		cfg |= S3C_VIDCON2_WB_DISABLE;
+	else if (ctrl->output == OUTPUT_I80LDI1)
+		cfg |= S3C_VIDCON2_WB_DISABLE;
+	else if (ctrl->output == OUTPUT_WB_RGB)
+		cfg |= (S3C_VIDCON2_WB_ENABLE | S3C_VIDCON2_TVFORMATSEL_SW | \
+					S3C_VIDCON2_TVFORMATSEL_YUV444);
+	else if (ctrl->output == OUTPUT_WB_I80LDI0)
+		cfg |= (S3C_VIDCON2_WB_ENABLE | S3C_VIDCON2_TVFORMATSEL_SW | \
+					S3C_VIDCON2_TVFORMATSEL_YUV444);
+	else if (ctrl->output == OUTPUT_WB_I80LDI1)
+		cfg |= (S3C_VIDCON2_WB_ENABLE | S3C_VIDCON2_TVFORMATSEL_SW | \
+					S3C_VIDCON2_TVFORMATSEL_YUV444);
+	else {
+		dev_err(ctrl->dev, "invalid output type: %d\n", ctrl->output);
+		return -EINVAL;
+	}
+
+	writel(cfg, ctrl->regs + S3C_VIDCON2);
+
 	return 0;
 }
 

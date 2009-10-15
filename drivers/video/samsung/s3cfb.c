@@ -816,6 +816,16 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 		/*
 		 * for FBIO_WAITFORVSYNC
 		 */
+	case S3CFB_SET_WRITEBACK:
+		if ((u32)argp == 1)
+			fbdev->output = OUTPUT_WB_RGB;
+		else
+			fbdev->output = OUTPUT_RGB;
+
+		s3cfb_set_output(fbdev);
+
+		break;
+
 	default:
 		ret = s3cfb_ioctl(fb, cmd, arg);
 		break;

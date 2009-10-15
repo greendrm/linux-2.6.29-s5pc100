@@ -55,10 +55,9 @@ enum s3cfb_output_t {
 	OUTPUT_ITU,
 	OUTPUT_I80LDI0,
 	OUTPUT_I80LDI1,
-	OUTPUT_TV,
-	OUTPUT_TV_RGB,
-	OUTPUT_TV_I80LDI0,
-	OUTPUT_TV_I80LDI1,
+	OUTPUT_WB_RGB,
+	OUTPUT_WB_I80LDI0,
+	OUTPUT_WB_I80LDI1,
 };
 
 enum s3cfb_rgb_mode_t {
@@ -257,11 +256,12 @@ struct s3cfb_user_chroma {
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_WIN_SET_PLANE_ALPHA	_IOW ('F', 204, struct s3cfb_user_plane_alpha)
 #define S3CFB_WIN_SET_CHROMA		_IOW ('F', 205, struct s3cfb_user_chroma)
-#define S3CFB_SET_VSYNC_INT		_IOW ('F', 206, unsigned int)
+#define S3CFB_SET_VSYNC_INT		_IOW ('F', 206, u32)
 #define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
+#define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
 
 /*
  * E X T E R N S
