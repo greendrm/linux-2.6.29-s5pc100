@@ -501,6 +501,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 		temp_reg &= S5P_MXR_DST_SEL_ANALOG;
 		break;
 
+	case TVOUT_OUTPUT_HDMI_RGB:
 	case TVOUT_OUTPUT_DVI:
 // DVI:
 		temp_reg |= S5P_MXR_DST_SEL_HDMI;
