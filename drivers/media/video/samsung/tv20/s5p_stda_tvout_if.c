@@ -826,10 +826,10 @@ bool _s5p_tv_if_init_hd_reg(void)
 
 	case HDMI_AUDIO_PCM:
 		/* 
-		* PCM, Samplingrate 44100, 16bit, 
+		* PCM, Samplingrate 48000, 16bit, 
 		* ignore framesize cuz stream is PCM.
 		*/
-		__s5p_hdmi_audio_init(PCM, 44100, 16, 0); 
+		__s5p_hdmi_audio_init(PCM, 48000, 16, 0); 
 		break;
 
 	case HDMI_AUDIO_NO:
