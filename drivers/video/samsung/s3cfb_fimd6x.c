@@ -53,6 +53,12 @@ int s3cfb_set_output(struct s3cfb_global *ctrl)
 		cfg |= S3C_VIDCON0_VIDOUT_I80LDI0;
 	else if (ctrl->output == OUTPUT_I80LDI1)
 		cfg |= S3C_VIDCON0_VIDOUT_I80LDI1;
+	else if (ctrl->output == OUTPUT_WB_RGB)
+		cfg |= S3C_VIDCON0_VIDOUT_WB_RGB;
+	else if (ctrl->output == OUTPUT_WB_I80LDI0)
+		cfg |= S3C_VIDCON0_VIDOUT_WB_I80LDI0;
+	else if (ctrl->output == OUTPUT_WB_I80LDI1)
+		cfg |= S3C_VIDCON0_VIDOUT_WB_I80LDI1;
 	else {
 		dev_err(ctrl->dev, "invalid output type: %d\n", ctrl->output);
 		return -EINVAL;
