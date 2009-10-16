@@ -611,6 +611,18 @@ void reset_authentication(void)
 /* TODO: must use clk_get for pclk rate */
 #define PCLK_D_RATE_FOR_HDCP	166000000
 
+u32 efuse_ceil(u32 val, u32 time)
+{
+	u32 res;
+
+	res = val / time;
+
+	if ( val % time)
+		res += 1;
+
+	return res;
+}
+
 static void hdcp_efuse_timing(void)
 {
 	u32 time, val;
@@ -618,64 +630,40 @@ static void hdcp_efuse_timing(void)
 	/* TODO: must use clk_get for pclk rate */
 	time = 1000000000/PCLK_D_RATE_FOR_HDCP;
 
-	val = EFUSE_ADDR_WIDTH/time;
-	if(EFUSE_ADDR_WIDTH % time)
-		val += 1;		
+	val = efuse_ceil(EFUSE_ADDR_WIDTH,time);	
 	writeb(val, hdmi_base + S5P_EFUSE_ADDR_WIDTH);
 
-	val = EFUSE_SIGDEV_ASSERT/time;
-	if(EFUSE_SIGDEV_ASSERT%time)
-		val += 1;		
+	val = efuse_ceil(EFUSE_SIGDEV_ASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SIGDEV_ASSERT);
 
-	val = EFUSE_SIGDEV_DEASSERT/time;
-	if(EFUSE_SIGDEV_DEASSERT%time)
-		val += 1;		
+	val = efuse_ceil(EFUSE_SIGDEV_DEASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SIGDEV_DEASSERT);
 
-	val = EFUSE_PRCHG_ASSERT/time;
-	if(EFUSE_PRCHG_ASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_PRCHG_ASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_PRCHG_ASSERT);
 
-	val = EFUSE_PRCHG_DEASSERT/time;
-	if(EFUSE_PRCHG_DEASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_PRCHG_DEASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_PRCHG_DEASSERT);
 
-	val = EFUSE_FSET_ASSERT/time;
-	if(EFUSE_FSET_ASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_FSET_ASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_FSET_ASSERT);
 
-	val = EFUSE_FSET_DEASSERT/time;
-	if(EFUSE_FSET_DEASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_FSET_DEASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_FSET_DEASSERT);
 
-	val = EFUSE_SENSING/time;
-	if(EFUSE_SENSING%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_SENSING,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SENSING);
 
-	val = EFUSE_SCK_ASSERT/time;
-	if(EFUSE_SCK_ASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_SCK_ASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SCK_ASSERT);
 
-	val = EFUSE_SCK_DEASSERT/time;
-	if(EFUSE_SCK_DEASSERT%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_SCK_DEASSERT,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SCK_DEASSERT);
 
-	val = EFUSE_SDOUT_OFFSET/time;
-	if(EFUSE_SDOUT_OFFSET%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_SDOUT_OFFSET,time);
 	writeb(val, hdmi_base + S5P_EFUSE_SDOUT_OFFSET);
 
-	val = EFUSE_READ_OFFSET/time;
-	if(EFUSE_READ_OFFSET%time)
-		val += 1;		
+	val = efuse_ceil( EFUSE_READ_OFFSET,time);
 	writeb(val, hdmi_base + S5P_EFUSE_READ_OFFSET);
 
 }
