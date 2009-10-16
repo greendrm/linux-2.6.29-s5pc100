@@ -1268,6 +1268,8 @@ static int s5p_tv_v4l2_s_crop(struct file *file, void *fh, struct v4l2_crop *a)
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY :
 		s5ptv_overlay[layer->index].dst_rect.left = crop->c.left;
 		s5ptv_overlay[layer->index].dst_rect.top = crop->c.top;
+		s5ptv_overlay[layer->index].dst_rect.width = crop->c.width;
+		s5ptv_overlay[layer->index].dst_rect.height = crop->c.height;		
 		break;
 
 	default :

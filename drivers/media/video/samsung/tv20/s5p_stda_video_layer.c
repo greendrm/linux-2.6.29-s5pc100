@@ -261,9 +261,17 @@ bool _s5p_vlayer_start(void)
 	if (verr != VPROC_NO_ERROR)
 		return false;
 
+#ifdef CONFIG_CPU_S5PC100
 	merr = __s5p_vm_init_layer(VM_VIDEO_LAYER,true,w_blend,alpha,priority,
 					VM_DIRECT_RGB565,false,false,false,
 					0,0,0,0,0,0,0,0,0);
+#endif
+
+#ifdef CONFIG_CPU_S5PC110
+	merr = __s5p_vm_init_layer(VM_VIDEO_LAYER,true,w_blend,alpha,priority,
+					VM_DIRECT_RGB565,false,false,false,
+					0,0,0,0,0,0,0,0,0,0,0);
+#endif
 
 	if (merr != VPROC_NO_ERROR)
 		return false;

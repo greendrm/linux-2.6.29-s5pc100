@@ -532,6 +532,45 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	return VMIXER_NO_ERROR;
 }
 
+u32 grp_scaling_factor(u32 src, u32 dst, u32 h_v)
+{
+	u32 factor; /* for scaling factor */
+
+	/* check scale or not */
+	if ( src == dst ) 
+		factor = 0; 
+
+	if ( dst % src ) {
+		factor = 0;
+		
+		VMPRINTK(" can't %s scaling src(%d) into dst(%d)\n"
+			,h_v ? "horizontal":"vertical"
+			,src_w, dst_w);
+		VMPRINTK(" scaling vector must be 2/4/8x\n");
+	}
+
+	factor = dst / src;
+
+	switch (factor) {
+	case 2:
+		factor = 1;
+		break;
+	case 4:
+		factor = 2;
+		break;
+	case 8:
+		factor = 3;
+		break;
+	default:
+		VMPRINTK(" scaling vector must be 2/4/8x\n");
+		factor = 0;
+		break;
+	}
+
+	return factor;	
+}
+
+
 s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 				bool show,               //video,grp
 				bool win_blending,        //video,grp
@@ -549,9 +588,12 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 				u32 src_offs_x,    //grp
 				u32 src_offs_y,    //grp
 				u32 dst_offs_x,   //grp
-				u32 dst_offs_y)   //grp
+				u32 dst_offs_y,	   //grp
+				u32 dst_width,   //grp
+				u32 dst_height)   //grp
 {
 	u32 temp_reg = 0;
+	u32 h_factor = 0, v_factor = 0;
 
 	VMPRINTK("%d,%d,%d,%d,%d,%d,%d,%d,%d,0x%x,0x%x,%d,%d,%d,%d,%d,%d,%d)\n\r",
 		 layer, show, win_blending, alpha, priority, color, blank_change, 
@@ -591,6 +633,16 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		__s5p_vm_set_grp_base_address(layer, base_addr);
 		__s5p_vm_set_grp_layer_position(layer, dst_offs_x, dst_offs_y);
 
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC0_WH);
+		h_factor = grp_scaling_factor(width, dst_width, 1);
+		v_factor = grp_scaling_factor(height, dst_height, 0);
+		
+		temp_reg = (temp_reg & ~((0x3<<28)|(0x3<<12)) 
+				| h_factor << 28 | v_factor << 12);		
+
+		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC0_WH);		
+		
+
 		break;
 
 	case VM_GPR1_LAYER:
@@ -616,6 +668,14 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 
 		__s5p_vm_set_grp_base_address(layer, base_addr);
 		__s5p_vm_set_grp_layer_position(layer, dst_offs_x, dst_offs_y);
+
+		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC1_WH);
+		h_factor = grp_scaling_factor(width, dst_width, 1);
+		v_factor = grp_scaling_factor(height, dst_height, 0);
+		temp_reg = (temp_reg & ~((0x3<<28)|(0x3<<12)) 
+				| h_factor << 28 | v_factor << 12);		
+		
+		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC1_WH);			
 		break;
 
 	default:
