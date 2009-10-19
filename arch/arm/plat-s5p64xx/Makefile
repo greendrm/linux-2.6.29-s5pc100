@@ -20,6 +20,7 @@ obj-y				+= clock.o
 obj-y				+= gpiolib.o
 obj-y				+= bootmem.o
 # obj-y				+= s5p64xx-time.o
+obj-y				+= changediv.o
 
 ifdef CONFIG_NO_HZ
 obj-y				+= hr-time.o
