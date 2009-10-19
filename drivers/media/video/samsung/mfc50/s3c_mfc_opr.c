@@ -28,6 +28,7 @@
 extern void __iomem *s3c_mfc_sfr_virt_base;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
+extern int s3c_mfc_openhandle_count;
 
 static unsigned int shared_mem_phy_addr;
 static volatile unsigned char *shared_mem_vir_addr;
@@ -69,6 +70,7 @@ static void s3c_mfc_cmd_reset(void)
 static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 {
 	s3c_mfc_facade_cmd cur_cmd;
+	unsigned int fw_phybuf, context_base_addr;
 
 	/* wait until host to risc command register becomes 'H2R_CMD_EMPTY' */
 	do {	
@@ -77,8 +79,18 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 
 	WRITEL(arg, S3C_FIMV_HOST2RISC_ARG1);
 	/* pixel cache enable(0)/disable(3), peter for MFC fw 8/24 */
-	//WRITEL(3, S3C_FIMV_HOST2RISC_ARG2);	
-	
+	//WRITEL(3, S3C_FIMV_HOST2RISC_ARG2);
+
+	if (cmd == H2R_CMD_OPEN_INSTANCE) {			
+		fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
+		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_openhandle_count-1);
+			
+		WRITEL((context_base_addr-fw_phybuf)>>11, S3C_FIMV_HOST2RISC_ARG3);
+		WRITEL(MFC_FW_BUF_SIZE, S3C_FIMV_HOST2RISC_ARG4);
+		
+		mfc_debug("s3c_mfc_openhandle_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
+			s3c_mfc_openhandle_count, fw_phybuf, context_base_addr);		
+	}
 	/* Enable CRC data
 	WRITEL(1, S3C_FIMV_HOST2RISC_ARG2);
 	WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
@@ -141,6 +153,7 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	unsigned int aligned_width, aligned_ch_height, aligned_mv_height;
 	s3c_mfc_dec_init_arg_t *init_arg;
 	unsigned int slice_en_display_en;
+	unsigned int luma_size, chroma_size, mv_size;
 
 	init_arg = (s3c_mfc_dec_init_arg_t *)args;
 
@@ -205,6 +218,16 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	slice_en_display_en = READL(S3C_FIMV_SI_CH1_DPB_CONF_CTRL) & 0xffff0000;
 	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
 
+	// peter added for 9/30 MFC fw
+	luma_size = Align(aligned_width*height, 64*BUF_L_UNIT);
+	writel(luma_size, shared_mem_vir_addr+0x64);		// set the luma PDB size
+	chroma_size = Align(aligned_width*aligned_ch_height, 64*BUF_L_UNIT);
+	writel(chroma_size, shared_mem_vir_addr+0x68);		// set the chroma PDB size
+	if (mfc_ctx->MfcCodecType == H264_DEC) {
+		mv_size = Align(aligned_width*aligned_mv_height, 64*BUF_L_UNIT);
+		writel(mv_size, shared_mem_vir_addr+0x6c);	// set the mv PDB size
+	}
+	
 	// peter added for 8/7 MFC fw
 	WRITEL((INIT_BUFFER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 	if (s3c_mfc_wait_for_done(R2H_CMD_INIT_BUFFERS_RET) == 0) {
@@ -265,8 +288,14 @@ MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 		mv_ref_yc += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT); // Align size should be checked	
 	}
 	// peter added for pixel cache
-	WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);	
+	WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);
 
+	// peter added for 9/30 MFC fw, set the QP for P/B
+	if (mfc_ctx->MfcCodecType == H264_ENC) {
+		writel((init_arg->in_vop_quant_p)|(init_arg->in_vop_quant_b<<6), 
+					shared_mem_vir_addr+0x70);			
+	}
+	
 	mfc_debug("ENC_REFY01_END_ADR : 0x%08x\n", ref_y);
 	mfc_debug("ENC_REFYC_MV_END_ADR : 0x%08x\n", mv_ref_yc);
 
@@ -555,7 +584,9 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	/*
 	 * 4. Initialize firmware
 	 */
-	fw_buf_size = MFC_FW_TOTAL_BUF_SIZE;
+	
+	// peter mod for MFC fw 9/30
+	fw_buf_size = MFC_FW_SYSTEM_SIZE;	
 	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_SYS_INIT_RET) == 0){
@@ -796,9 +827,12 @@ static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_
 
 	enc_arg->out_frame_type = READL(S3C_FIMV_ENC_SI_SLICE_TYPE);
 	enc_arg->out_encoded_size = READL(S3C_FIMV_ENC_SI_STRM_SIZE);	
+	// peter added for 9/30 MFC fw
+	enc_arg->out_Y_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_Y_ADDR)<<11);
+	enc_arg->out_CbCr_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_C_ADDR)<<11);
 	
-	mfc_debug("-- frame type(%d) encoded frame size(%d)\r\n", \
-		enc_arg->out_frame_type, enc_arg->out_encoded_size);
+	mfc_debug("-- frame type(%d) encoded frame size(%d) encoded Y_addr(0x%08x)/C_addr(0x%08x)\r\n", \
+		enc_arg->out_frame_type, enc_arg->out_encoded_size, enc_arg->out_Y_addr, enc_arg->out_CbCr_addr);
 	
 	return MFCINST_RET_OK;
 
