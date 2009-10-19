@@ -2365,3 +2365,8 @@ v2.6.29.4-dev-1-4-53: Sang-Beom Kim
 	Added Files:
 		A	arch/arm/plat-s5p64xx/changediv.S
 
+v2.6.29.4-dev-1-4-54: Sang-Beom Kim
+	- Change arch/arm/plat-s5p64xx/Makefile for No DVFS function
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/Makefile
