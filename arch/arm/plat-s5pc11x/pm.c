@@ -694,19 +694,17 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	return 0;
 }
 
-
+#ifdef CONFIG_REGULATOR
 static int s5pc11x_pm_begin(suspend_state_t state)
 {
-	int ret = 0;
-#if CONFIG_REGULATOR
-	/* Configure PMIC to enter sleep mode */
-	ret = regulator_suspend_prepare(state);
-#endif
-	return ret;
+	return regulator_suspend_prepare(state);
 }
+#endif
 
 static struct platform_suspend_ops s5pc11x_pm_ops = {
+#ifdef CONFIG_REGULATOR
 	.begin		= s5pc11x_pm_begin,
+#endif
 	.enter		= s5pc11x_pm_enter,
 	.valid		= suspend_valid_only_mem,
 };
@@ -727,7 +725,7 @@ int __init s5pc11x_pm_init(void)
 	tmp = __raw_readl(S5P_CLK_OUT);
 	tmp |= (0xf << 12);
 	__raw_writel(tmp , S5P_CLK_OUT);
-	
+
 	/* set the irq configuration for wake */
 	suspend_set_ops(&s5pc11x_pm_ops);
 	return 0;
