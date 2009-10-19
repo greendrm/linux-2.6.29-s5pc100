@@ -14,7 +14,11 @@ obj-				:=
 
 obj-y				+= dev-uart.o devs.o
 obj-y				+= cpu.o
+ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 obj-y				+= s5pc11x-time.o
+else
+obj-y				+= hr-time.o
+endif
 obj-y				+= irq.o
 obj-y				+= irq-eint.o
 obj-y				+= clock.o

@@ -171,4 +171,13 @@ config  S5P_DEEP_IDLE_TEST
         help
            test mode for Deep Idle
 
+config S5PC11X_HIGH_RES_TIMERS
+	bool "HRtimer and Dynamic Tick support"
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	select HIGH_RES_TIMERS
+	default n
+	help
+	  Support for HRtimer and Dynamic Tick system.
+ 
 endif
