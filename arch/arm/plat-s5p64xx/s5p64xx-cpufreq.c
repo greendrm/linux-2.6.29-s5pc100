@@ -27,10 +27,9 @@
 #include <mach/map.h>
 #include <plat/regs-clock.h>
 #include <plat/regs-gpio.h>
-#include <plat/gpio-bank-f.h>
 
 #define USE_FREQ_TABLE
-#define USE_DVS
+//#define USE_DVS
 #define VERY_HI_RATE	532*1000*1000
 #define APLL_GEN_CLK	532*1000	//khz
 #define KHZ_T		1000

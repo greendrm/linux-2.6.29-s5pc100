@@ -30,8 +30,8 @@
 
 /* definition for cpu freq */
 
-#define ARM_PLL_CON 	S3C_APLL_CON
-#define ARM_CLK_DIV	S3C_CLK_DIV0
+#define ARM_PLL_CON 	S5P_APLL_CON
+#define ARM_CLK_DIV	S5P_CLK_DIV0
 
 #define ARM_DIV_RATIO_BIT		0
 #define ARM_DIV_MASK			(0xf<<ARM_DIV_RATIO_BIT)
@@ -43,6 +43,12 @@
 #define GET_ARM_CLOCK(baseclk)		s3c6400_get_pll(__raw_readl(S3C_APLL_CON),baseclk)
 
 #define INIT_XTAL			12 * MHZ
+
+/* extern functions. */
+extern void Enable_BP(void);
+extern void Disable_BP(void);
+
+extern int ChangeClkDiv0(unsigned int value);
 
 static const u32 s3c_cpu_clock_table[][3] = {
 	{532*MHZ, (0<<ARM_DIV_RATIO_BIT), (3<<HCLK_DIV_RATIO_BIT)},
@@ -74,13 +80,63 @@ unsigned long s3c_fclk_get_rate(void)
 
 unsigned long s3c_fclk_round_rate(struct clk *clk, unsigned long rate)
 {
-	return 0;
+	u32 iter;
+
+	for(iter = 1 ; iter < ARRAY_SIZE(s3c_cpu_clock_table) ; iter++){
+		if(rate > s3c_cpu_clock_table[iter][0])
+			return s3c_cpu_clock_table[iter-1][0];
+	}
+
+	return s3c_cpu_clock_table[ARRAY_SIZE(s3c_cpu_clock_table) - 1][0];
 }
 
 int s3c_fclk_set_rate(struct clk *clk, unsigned long rate)
 {
+	u32 round_tmp;
+	u32 iter;
+	u32 clk_div0_tmp,tmp,flag;
+	u32 cur_clk = s3c_fclk_get_rate();
+
+	round_tmp = s3c_fclk_round_rate(clk,rate);
+
+	if(round_tmp == cur_clk)
+		return 0;
+
+
+	for (iter = 0 ; iter < ARRAY_SIZE(s3c_cpu_clock_table) ; iter++){
+		if(round_tmp == s3c_cpu_clock_table[iter][0])
+			break;
+	}
+
+	if(iter >= ARRAY_SIZE(s3c_cpu_clock_table))
+		iter = ARRAY_SIZE(s3c_cpu_clock_table) - 1;
+
+	tmp = 0x1000;
+
+	clk_div0_tmp = __raw_readl(ARM_CLK_DIV) & ~(ARM_DIV_MASK);
+	clk_div0_tmp |= s3c_cpu_clock_table[iter][1];
+	clk_div0_tmp &= ~(HCLK_DIV_MASK);
+	clk_div0_tmp |= s3c_cpu_clock_table[iter][2];
+
+	Enable_BP();
+	ChangeClkDiv0(clk_div0_tmp);
+	Disable_BP();
+
+	printk("ARM_CLK:%d, iter:%d\n",round_tmp,iter);
+
+	clk->rate = s3c_cpu_clock_table[iter][0];
+
 	return 0;
 }
+struct clk clk_cpu = {
+	.name		= "clk_cpu",
+	.id			= -1,
+	.rate		= 0,
+	.parent		= &clk_f,
+	.ctrlbit	= 0,
+	.set_rate	= s3c_fclk_set_rate,
+	.round_rate	= s3c_fclk_round_rate,
+};
 
 static int inline s5p64xx_gate(void __iomem *reg,
 				struct clk *clk,
@@ -436,6 +492,7 @@ static struct clk init_clocks[] = {
 static struct clk *clks[] __initdata = {
 	&clk_ext,
 	&clk_epll,
+	&clk_cpu,
 };
 
 void __init s5p64xx_register_clocks(void)
