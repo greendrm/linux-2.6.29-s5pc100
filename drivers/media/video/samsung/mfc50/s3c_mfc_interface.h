@@ -100,6 +100,8 @@ typedef struct {
 	int in_profile_level;	/* [IN]  profile & level */
 	int in_gop_num;		/* [IN]  GOP Number (interval of I-frame) */	
 	int in_vop_quant;	/* [IN]  VOP quant */
+	int in_vop_quant_p;	/* [IN]  VOP quant for P frame */
+	int in_vop_quant_b;	/* [IN]  VOP quant for B frame */
 
 	/* [IN]  RC enable */
 	int in_RC_frm_enable;	/* [IN]	RC enable (0:disable, 1:frame level RC) */
@@ -145,6 +147,8 @@ typedef struct {
 	int in_profile_level;	/* [IN] profile & level */
 	int in_gop_num;		/* [IN] GOP Number (interval of I-frame) */
 	int in_vop_quant;	/* [IN] VOP quant */
+	int in_vop_quant_p;	/* [IN]  VOP quant for P frame */
+	int in_vop_quant_b;	/* [IN]  VOP quant for B frame */
 
 	/* [IN]  RC enable */
 	int in_RC_frm_enable;	/* [IN]	RC enable (0:disable, 1:frame level RC) */	
@@ -222,6 +226,8 @@ typedef struct {
 	unsigned int in_strm_end; /*[IN]Out-buffer end addr of encoded strm */
 	unsigned int out_frame_type; /* [OUT] frame type  */
 	int out_encoded_size;        /* [OUT] Length of Encoded video stream */	
+	unsigned int out_Y_addr;    /*[OUT]Out-buffer addr of encoded Y component */
+	unsigned int out_CbCr_addr; /*[OUT]Out-buffer addr of encoded CbCr component */	
 } s3c_mfc_enc_exe_arg;
 
 typedef struct {

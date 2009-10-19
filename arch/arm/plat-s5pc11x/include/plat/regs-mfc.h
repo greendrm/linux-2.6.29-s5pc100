@@ -286,6 +286,8 @@
 #define S3C_FIMV_ENC_SI_PIC_CNT		S3C_FIMVREG(0x2008) /* picture count */
 #define S3C_FIMV_ENC_SI_WRITE_PTR	S3C_FIMVREG(0x200c) /* write pointer */
 #define S3C_FIMV_ENC_SI_SLICE_TYPE	S3C_FIMVREG(0x2010) /* slice type(I/P/B/IDR) */
+#define S3C_FIMV_ENCODED_Y_ADDR		S3C_FIMVREG(0x2014) /* the address of the encoded luminance picture*/
+#define S3C_FIMV_ENCODED_C_ADDR		S3C_FIMVREG(0x2018) /* the address of the encoded chrominance picture*/
 
 #define S3C_FIMV_ENC_SI_CH1_SB_U_ADR	S3C_FIMVREG(0x2044) /* addr of upper stream buf */
 #define S3C_FIMV_ENC_SI_CH1_SB_L_ADR	S3C_FIMVREG(0x2048) /* addr of lower stream buf */

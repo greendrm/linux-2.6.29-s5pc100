@@ -71,6 +71,16 @@ unsigned int s3c_mfc_get_fw_buf_phys_addr()
 	return phys_addr; 
 }
 
+// Buf for MFC fw 9/30 buf for each instance
+unsigned int s3c_mfc_get_fw_context_phys_addr(int inst_no)	
+{
+	unsigned int phys_addr;
+	
+	phys_addr = s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_SYSTEM_SIZE + inst_no*MFC_FW_BUF_SIZE;
+	
+	return phys_addr; 
+}
+
 // Buf for desc, motion vector, bitplane0/1/2, etc
 unsigned int s3c_mfc_get_risc_buf_phys_addr(int inst_no)	
 {

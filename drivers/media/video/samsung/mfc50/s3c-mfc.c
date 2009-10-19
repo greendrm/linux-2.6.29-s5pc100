@@ -43,7 +43,7 @@
 
 struct s3c_mfc_ctrl s3c_mfc;
 
-static int s3c_mfc_openhandle_count = 0;
+int s3c_mfc_openhandle_count = 0;
 static struct resource	*s3c_mfc_mem;
 void __iomem		*s3c_mfc_sfr_virt_base;
 
