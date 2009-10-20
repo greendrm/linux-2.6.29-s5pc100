@@ -383,9 +383,9 @@ static struct regulator_init_data max8698_buck1_data = {
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
-			.uV	= 0,
-			.mode	= REGULATOR_MODE_NORMAL,
-			.enabled = 0,
+			.uV		= 0,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled 	= 0,
 		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(buck1_consumers),
@@ -406,9 +406,9 @@ static struct regulator_init_data max8698_buck2_data = {
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
-			.uV	= 0,
-			.mode	= REGULATOR_MODE_NORMAL,
-			.enabled = 0,
+			.uV		= 0,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled 	= 0,
 		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(buck2_consumers),
@@ -422,11 +422,10 @@ static struct regulator_init_data max8698_buck3_data = {
 		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.state_mem	= {
-			.uV	= 1800000,
-			.mode	= REGULATOR_MODE_NORMAL,
-			.enabled = 1,
+			.uV		= 1800000,
+			.mode		= REGULATOR_MODE_NORMAL,
+			.enabled 	= 1,
 		},
-		//.initial_state	= PM_SUSPEND_MEM,
 	},
 };
 
@@ -438,9 +437,9 @@ static struct regulator_init_data max8698_ldo2_data = {
 		.apply_uV	= 1,
 		.always_on	= 1,
 		.state_mem	= {
-			.uV	= 1100000,
-			.mode	= REGULATOR_MODE_STANDBY,
-			.enabled = 1,
+			.uV		= 1100000,
+			.mode		= REGULATOR_MODE_STANDBY,
+			.enabled 	= 1,
 		},
 	},
 };
@@ -454,7 +453,7 @@ static struct regulator_init_data max8698_ldo3_data = {
 		.state_mem 	={
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled	= 0,
+			.enabled	= 0,	/* LDO3 should be OFF in sleep mode */
 		},
 	},
 };
@@ -469,7 +468,8 @@ static struct regulator_init_data max8698_ldo4_data = {
 		.state_mem 	={
 			.uV		= 1800000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled	= 0,
+			.enabled	= 0,	/* LDO4 should be OFF in sleep mode */
+
 		},
 	},
 };
@@ -516,6 +516,7 @@ static struct regulator_init_data max8698_ldo7_data = {
 	},
 };
 
+
 static struct regulator_init_data max8698_ldo8_data = {
 	.constraints	= {
 		.name		= "VUOTG_A_3.3V/VUHOST_A_3.3V",
@@ -525,7 +526,7 @@ static struct regulator_init_data max8698_ldo8_data = {
 		.state_mem 	={
 			.uV		= 0,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled	= 0,
+			.enabled	= 0,	/* LDO8 should be OFF in sleep mode */
 		},
 	},
 };
@@ -572,7 +573,7 @@ static struct max8698_platform_data max8698_platform_data = {
 	.dvsarm4	= 0x3,
 
 	.dvsint1	= 0x9,
-	.dvsint2	= 0x7,
+	.dvsint2	= 0x5,
 };
 
 /* I2C0 */

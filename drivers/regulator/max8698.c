@@ -122,7 +122,7 @@ static u8 max8698_read_reg(struct max8698_data *max8698, u8 reg)
 	return val;
 }
 
-static int max8698_write_reg(struct max8698_data *max8698, u8 value, u8 reg)
+static int max8698_write_reg(struct max8698_data *max8698, u8 reg, u8 value)
 {
 	mutex_lock(&max8698->mutex);
 
@@ -479,17 +479,17 @@ static int max8698_buck_set_voltage(struct regulator_dev *rdev,
 	int ldo = max8698_get_ldo(rdev);
 
 	if (ldo == MAX8698_BUCK1) {
-		if (min_vol == pdata->dvsarm2)
+		if (min_vol == buck12_voltage_map[pdata->dvsarm2])
 			return max8698_set_buck_dvs(max8698, MAX8698_DVSARM2);
-		else if (min_vol == pdata->dvsarm3)
+		else if (min_vol == buck12_voltage_map[pdata->dvsarm3])
 			return max8698_set_buck_dvs(max8698, MAX8698_DVSARM3);
-		else if (min_vol == pdata->dvsarm4)
+		else if (min_vol == buck12_voltage_map[pdata->dvsarm4])
 			return max8698_set_buck_dvs(max8698, MAX8698_DVSARM4);
 
 		return max8698_set_buck_dvs(max8698, MAX8698_DVSARM1);
 	}
 	if (ldo == MAX8698_BUCK2) {
-		if (min_vol == pdata->dvsint2)
+		if (min_vol == buck12_voltage_map[pdata->dvsint2])
 			return max8698_set_buck_dvs(max8698, MAX8698_DVSINT2);
 
 		return max8698_set_buck_dvs(max8698, MAX8698_DVSINT1);
@@ -587,12 +587,14 @@ static struct regulator_desc regulators[] = {
 		.name		= "BUCK1",
 		.id		= MAX8698_BUCK1,
 		.ops		= &max8698_buck_ops,
+		.n_voltages	= ARRAY_SIZE(buck12_voltage_map),
 		.type		= REGULATOR_VOLTAGE,
 		.owner		= THIS_MODULE,
 	}, {
 		.name		= "BUCK2",
 		.id		= MAX8698_BUCK2,
 		.ops		= &max8698_buck_ops,
+		.n_voltages	= ARRAY_SIZE(buck12_voltage_map),
 		.type		= REGULATOR_VOLTAGE,
 		.owner		= THIS_MODULE,
 	}, {
@@ -649,9 +651,9 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 	    pdata->dvsarm4 &&
 	    gpio_is_valid(pdata->set1) && gpio_is_valid(pdata->set2)) {
 		max8698_write_reg(max8698, MAX8698_REG_DVSARM12,
-			pdata->dvsarm1 | (pdata->dvsarm2<<4));
+			pdata->dvsarm1 | (pdata->dvsarm2 << 4));
 		max8698_write_reg(max8698, MAX8698_REG_DVSARM34,
-			pdata->dvsarm3 | (pdata->dvsarm4));
+			pdata->dvsarm3 | (pdata->dvsarm4 << 4));
 
 		ret = gpio_request(pdata->set1, "MAX8698 SET1");
 		if (ret)
@@ -665,7 +667,7 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 
 	if (pdata->dvsint1 && pdata->dvsint2 && gpio_is_valid(pdata->set3)) {
 		max8698_write_reg(max8698, MAX8698_REG_DVSINT12,
-			pdata->dvsint1 | (pdata->dvsint2<<4));
+			pdata->dvsint1 | (pdata->dvsint2 << 4));
 
 		ret = gpio_request(pdata->set3, "MAX8698 SET3");
 		if (ret)
