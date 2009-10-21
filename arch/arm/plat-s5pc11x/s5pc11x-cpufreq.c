@@ -110,6 +110,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	int ret = 0;
 	unsigned long arm_clk;
 	unsigned int index ,reg , arm_volt, int_volt;
+	unsigned int pll_changing = 0;
+	unsigned int bus_speed_changing = 0;
 
 	freqs.old = s5pc110_getspeed(0);
 
@@ -140,6 +142,23 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		}
 	}
 	
+	switch (index) {
+	case L1:
+		if (freqs.new > freqs.old)
+			break;
+	case L0:
+		pll_changing = 1;
+		break;
+	case L2:
+		if (freqs.new < freqs.old)
+			break;
+	case L3:
+		bus_speed_changing = 1;
+		break;
+	default:
+		break;
+	}
+
 	if (index == L3) {
 		__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);	// DRAM refresh counter setting
 #if defined(CONFIG_S5PC110_AC_TYPE)
@@ -152,7 +171,9 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	/* APLL should be changed in this level */
 	/* APLL -> MPLL(for stable transition) -> APLL */
-	if (index == L0) {
+	if (pll_changing) {
+		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
+			
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &=~(S5P_CLKSRC0_MUX200_MASK);	
 		reg |= (0x1 << S5P_CLKSRC0_MUX200_SHIFT); // SCLKAPLL -> SCLKMPLL	
@@ -162,8 +183,6 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
 		} while (reg & (0x1<<18));
 		
-		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
-
 #if defined(CONFIG_S5PC110_H_TYPE)
 		/* DMC0 source clock : SCLKA2M -> SCLKMPLL */
 		__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
@@ -186,11 +205,6 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			reg = __raw_readl(S5P_CLK_MUX_STAT1);
 		} while (reg & (1<<11));
 #endif
-	} else if (index == L1) {
-		/* Only care L0 -> L1 transition */
-		if (freqs.new < freqs.old) {
-			__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);	
-		} 
 	}
 	
 	reg = __raw_readl(S5P_CLK_DIV0);
@@ -211,14 +225,91 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		reg = __raw_readl(S5P_CLK_DIV_STAT0);
 	} while (reg & 0xff);
 
+	if (pll_changing) {
+		reg = __raw_readl(S5P_CLK_SRC6);
+		reg &=~S5P_CLKSRC6_HPM_MASK;
+		reg |= (1<<S5P_CLKSRC6_HPM_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC6);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & (1<<18));
+		
+		// Deselect APLL output : FOUTAPLL -> FINPLL
+		reg = __raw_readl(S5P_CLK_SRC0);
+		reg &=~S5P_CLKSRC0_APLL_MASK;
+		reg |= 0<<S5P_CLKSRC0_APLL_SHIFT;
+		__raw_writel(reg, S5P_CLK_SRC0);
+		
+		// Power OFF PLL
+		reg = __raw_readl(S5P_APLL_CON);
+		reg &=~(1<<31);
+		__raw_writel(reg, S5P_APLL_CON);
+		
+		// Lock time = 300us*24Mhz = 7200(0x1c20)
+		__raw_writel(0x1c20, S5P_APLL_LOCK);
+
+		if (index == L0)
+			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
+		else
+			__raw_writel(APLL_VAL_800, S5P_APLL_CON);
+
+		do {
+			reg = __raw_readl(S5P_APLL_CON);
+		} while (!(reg & (0x1<<29)));
+		
+		// Select APLL output : FINPLL -> FOUTAPLL
+		reg = __raw_readl(S5P_CLK_SRC0);
+		reg &=~S5P_CLKSRC0_APLL_MASK;
+		reg |= 1<<S5P_CLKSRC0_APLL_SHIFT;
+		__raw_writel(reg, S5P_CLK_SRC0);
+		
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT0);
+		} while (reg & (1<<2));
+				
+		reg = __raw_readl(S5P_CLK_SRC0);
+		reg &=~(S5P_CLKSRC0_MUX200_MASK);	
+		reg |= (0x0 << S5P_CLKSRC0_MUX200_SHIFT); // SCLKMPLL -> SCLKAPLL	
+		__raw_writel(reg, S5P_CLK_SRC0);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT0);
+		} while (reg & (0x1<<18));
+	
+		__raw_writel(0x618, S5P_VA_DMC1 + 0x30);
+
+#if defined(CONFIG_S5PC110_H_TYPE)
+		/* DMC0 source clock : SCLKMPLL -> SCLKA2M */
+		reg = __raw_readl(S5P_CLK_SRC6);
+		reg &=~(S5P_CLKSRC6_ONEDRAM_MASK);
+		reg |= (0x0<<S5P_CLKSRC6_ONEDRAM_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC6); 
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & (1<<11));
+		
+		reg = __raw_readl(S5P_CLK_DIV6);
+		reg &=~(S5P_CLKDIV6_ONEDRAM_MASK);
+		reg |= (0x0 << S5P_CLKDIV6_ONEDRAM_SHIFT);
+		__raw_writel(reg, S5P_CLK_DIV6);		
+	
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT1);
+		} while (reg & (1<<15));
+
+		__raw_writel(0x618, S5P_VA_DMC0 + 0x30);
+#endif
+
+	}
+
+
 /* L3 level need to change memory bus speed, hence onedram clock divier and 
  * memory refresh parameter should be changed 
+ * Only care L2 <-> L3 transition
  */
-	switch (index) {
-	case L2:
-		if (freqs.new < freqs.old)
-			break;
-	case L3:
+	if (bus_speed_changing) {
 		reg = __raw_readl(S5P_CLK_DIV6);
 		reg &=~S5P_CLKDIV6_ONEDRAM_MASK;
 		reg |= (clkdiv_val[index][8]<<S5P_CLKDIV6_ONEDRAM_SHIFT);
@@ -236,9 +327,6 @@ static int s5pc110_target(struct cpufreq_policy *policy,
         	        __raw_writel(0x618, S5P_VA_DMC0 + 0x30);
 #endif
 		}
-		break;
-	default:
-		break;
 	}
 
 	if (!pm_mode) {

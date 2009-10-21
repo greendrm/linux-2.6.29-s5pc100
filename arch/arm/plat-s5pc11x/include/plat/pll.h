@@ -25,6 +25,8 @@
 
 #define APLL_VAL_1664	(1<<31)|(417<<16)|(3<<8)|(0)
 #define APLL_VAL_1332	(1<<31)|(444<<16)|(4<<8)|(0)
+#define APLL_VAL_1000	(1<<31)|(0xfa<<16)|(0x6<<8)|(0x1)
+#define APLL_VAL_800	(1<<31)|(0xc8<<16)|(0x6<<8)|(0x1)
 
 enum s5pc11x_base_pll_t{
 	S5PC11X_PLL_APLL,
