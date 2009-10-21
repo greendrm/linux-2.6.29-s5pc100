@@ -981,19 +981,7 @@ bool _s5p_tv_if_start(void)
 		break;
 	}
 
-/*
-	if (out_mode == TVOUT_OUTPUT_DVI) {
-		st->bg_color[0].color_y = 0;
-		st->bg_color[0].color_cb = 0;
-		st->bg_color[0].color_cr = 0;
-		st->bg_color[1].color_y = 0;
-		st->bg_color[1].color_cb = 0;
-		st->bg_color[1].color_cr = 0;
-		st->bg_color[2].color_y = 0;
-		st->bg_color[2].color_cb = 0;
-		st->bg_color[2].color_cr = 0;
-	}
-*/
+
 	if (!_s5p_tv_if_init_vm_reg()) {
 		return false;
 	}
