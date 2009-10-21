@@ -38,7 +38,8 @@ static struct clk * mpu_clk;
 static struct regulator *arm_regulator;
 static struct regulator *internal_regulator;
 
-#define MAX8698_RAMP_RATE	10	// 10mV/us (default)
+#define MAX_FREQUENCY	800*1000
+
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
 	{L0, 800*1000},
@@ -98,6 +99,8 @@ unsigned int s5pc110_getspeed(unsigned int cpu)
 	return rate;
 }
 
+static int pm_mode = 0;
+
 static int s5pc110_target(struct cpufreq_policy *policy,
 		       unsigned int target_freq,
 		       unsigned int relation)
@@ -124,36 +127,62 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	
 	arm_volt = s5pc110_dvs_conf[index].arm_volt;
 	int_volt = s5pc110_dvs_conf[index].int_volt;
-	
-	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
 
-	if (freqs.new > freqs.old) {
-		// Voltage up code
-		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
-		regulator_set_voltage(internal_regulator, int_volt, int_volt);
+	if (!pm_mode) {	
+
+		cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
+
+		if (freqs.new > freqs.old) {
+			// Voltage up code
+			regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
+			regulator_set_voltage(internal_regulator, int_volt, int_volt);
+		}
 	}
-		
 	reg = __raw_readl(S5P_CLK_DIV0);
 	reg &=~CLK_DIV0_MASK;
 	reg |= ((clkdiv0_val[index][0]<<0)|(clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
 	__raw_writel(reg, S5P_CLK_DIV0);
 
 
-	if (freqs.new < freqs.old) {
-		// Voltage down
-		regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
-		regulator_set_voltage(internal_regulator, int_volt, int_volt);
-	}
-	
+	if (!pm_mode) {
+		if (freqs.new < freqs.old) {
+			// Voltage down
+			regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
+			regulator_set_voltage(internal_regulator, int_volt, int_volt);
+		}
+
 	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
 
+	}
 	mpu_clk->rate = freqs.new * KHZ_T;
 
-	printk("Perf changed[L%d]\n",index);
+	printk("Perf changed[L%d], relation[%d]\n",index, relation);
 
 out: 	
 	return ret;
 }
+
+#ifdef CONFIG_PM
+static int s5pc110_cpufreq_suspend(struct cpufreq_policy *policy, pm_message_t pmsg)
+{
+	int ret = 0;
+
+	pm_mode = 1;
+
+	ret = s5pc110_target(policy, MAX_FREQUENCY, 0);
+
+	return ret;
+}
+
+static int s5pc110_cpufreq_resume(struct cpufreq_policy *policy)
+{
+	int ret = 0;
+
+	pm_mode = 0;
+
+	return ret;
+}
+#endif
 
 static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 {
@@ -202,6 +231,10 @@ static struct cpufreq_driver s5pc110_driver = {
 	.get		= s5pc110_getspeed,
 	.init		= s5pc110_cpu_init,
 	.name		= "s5pc110",
+#ifdef CONFIG_PM
+	.suspend	= s5pc110_cpufreq_suspend,
+	.resume		= s5pc110_cpufreq_resume,
+#endif
 };
 
 static int __init s5pc110_cpufreq_init(void)

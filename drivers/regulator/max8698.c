@@ -498,6 +498,21 @@ static int max8698_buck_set_voltage(struct regulator_dev *rdev,
 	return max8698_set_voltage(rdev, min_uV, max_uV);
 }
 
+static int max8698_set_suspend_voltage(struct regulator_dev *rdev, int uV)
+{
+	int ldo = max8698_get_ldo(rdev);
+	
+	switch (ldo) {
+
+	case MAX8698_BUCK1 ... MAX8698_BUCK3:
+		return max8698_buck_set_voltage(rdev, uV, uV);
+	case MAX8698_LDO1 ... MAX8698_LDO9:
+		return max8698_set_voltage(rdev, uV, uV);
+	default:
+		return -EINVAL;
+	}
+}
+
 static struct regulator_ops max8698_ldo_ops = {
 	.list_voltage	= max8698_ldo_list_voltage,
 	.is_enabled	= max8698_ldo_is_enabled,
@@ -507,6 +522,7 @@ static struct regulator_ops max8698_ldo_ops = {
 	.set_voltage	= max8698_set_voltage,
 	.set_suspend_enable	= max8698_ldo_enable,
 	.set_suspend_disable	= max8698_ldo_disable,
+	.set_suspend_voltage	= max8698_set_suspend_voltage,
 };
 
 static struct regulator_ops max8698_buck_ops = {
@@ -518,6 +534,7 @@ static struct regulator_ops max8698_buck_ops = {
 	.set_voltage	= max8698_buck_set_voltage,
 	.set_suspend_enable	= max8698_ldo_enable,
 	.set_suspend_disable	= max8698_ldo_disable,
+	.set_suspend_voltage	= max8698_set_suspend_voltage,
 };
 
 static struct regulator_desc regulators[] = {
