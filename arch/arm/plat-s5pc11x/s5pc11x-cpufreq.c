@@ -38,15 +38,16 @@ static struct clk * mpu_clk;
 static struct regulator *arm_regulator;
 static struct regulator *internal_regulator;
 
-#define MAX_FREQUENCY	800*1000
+#define OVERCLOCKED_FREQ	1000*1000	// 1GHz
+#define BOOTUP_FREQ		800*1000	// 800MHz
 
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
-	{L0, 800*1000},
-	{L1, 400*1000},
-	{L2, 200*1000},
+	{L0, 1000*1000},	// OVerclocked
+	{L1, 800*1000},
+	{L2, 400*1000},
+//	{L2, 200*1000},
 	{L3, 100*1000},
-//	{L4, 83*1000},
 	{0, CPUFREQ_TABLE_END},
 };
 
@@ -59,23 +60,23 @@ struct s5pc11x_dvs_conf {
 static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
 	{
 		.lvl		= L0,
-		.arm_volt	= 1200000,
+		.arm_volt	= 1300000,
 		.int_volt	= 1200000,
 	}, {
 		.lvl		= L1,
-		.arm_volt	= 1100000,
+		.arm_volt	= 1200000,
 		.int_volt	= 1200000,
 
 	}, {
 		.lvl		= L2,
-		.arm_volt	= 1000000,
-		.int_volt	= 1000000,
+		.arm_volt	= 1200000,
+		.int_volt	= 1200000,
 		
 	}, { 
 		.lvl		= L3,
-		.arm_volt	= 900000,
+		.arm_volt	= 1000000,
 		.int_volt	= 1000000,
-	},	
+	},
 };
 
 int s5pc110_verify_speed(struct cpufreq_policy *policy)
@@ -138,11 +139,107 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			regulator_set_voltage(internal_regulator, int_volt, int_volt);
 		}
 	}
+	
+	if (index == L3) {
+		__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);	// DRAM refresh counter setting
+#if defined(CONFIG_S5PC110_AC_TYPE)
+		__raw_writel(0x287, S5P_VA_DMC0 + 0x30);
+#else
+		__raw_writel(0x30c, S5P_VA_DMC0 + 0x30);
+#endif
+
+	}
+
+	/* APLL should be changed in this level */
+	/* APLL -> MPLL(for stable transition) -> APLL */
+	if (index == L0) {
+		reg = __raw_readl(S5P_CLK_SRC0);
+		reg &=~(S5P_CLKSRC0_MUX200_MASK);	
+		reg |= (0x1 << S5P_CLKSRC0_MUX200_SHIFT); // SCLKAPLL -> SCLKMPLL	
+		__raw_writel(reg, S5P_CLK_SRC0);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT0);
+		} while (reg & (0x1<<18));
+		
+		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
+
+#if defined(CONFIG_S5PC110_H_TYPE)
+		/* DMC0 source clock : SCLKA2M -> SCLKMPLL */
+		__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
+
+		reg = __raw_readl(S5P_CLK_DIV6);
+		reg &=~(S5P_CLKDIV6_ONEDRAM_MASK);
+		reg |= (0x3 << S5P_CLKDIV6_ONEDRAM_SHIFT);
+		__raw_writel(reg, S5P_CLK_DIV6);		
+	
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT1);
+		} while (reg & (1<<15));
+
+		reg = __raw_readl(S5P_CLK_SRC6);
+		reg &=~(S5P_CLKSRC6_ONEDRAM_MASK);
+		reg |= (0x1<<S5P_CLKSRC6_ONEDRAM_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC6); 
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & (1<<11));
+#endif
+	} else if (index == L1) {
+		/* Only care L0 -> L1 transition */
+		if (freqs.new < freqs.old) {
+			__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);	
+		} 
+	}
+	
 	reg = __raw_readl(S5P_CLK_DIV0);
-	reg &=~CLK_DIV0_MASK;
-	reg |= ((clkdiv0_val[index][0]<<0)|(clkdiv0_val[index][1]<<8)|(clkdiv0_val[index][2]<<12));
+	
+	reg &=~(S5P_CLKDIV0_APLL_MASK | S5P_CLKDIV0_A2M_MASK \
+		| S5P_CLKDIV0_HCLK200_MASK | S5P_CLKDIV0_PCLK100_MASK \
+		| S5P_CLKDIV0_HCLK166_MASK | S5P_CLKDIV0_PCLK83_MASK \
+		| S5P_CLKDIV0_HCLK133_MASK | S5P_CLKDIV0_PCLK66_MASK);
+	
+	reg |= ((clkdiv_val[index][0]<<S5P_CLKDIV0_APLL_SHIFT)|(clkdiv_val[index][1]<<S5P_CLKDIV0_A2M_SHIFT) \
+		|(clkdiv_val[index][2]<<S5P_CLKDIV0_HCLK200_SHIFT)|(clkdiv_val[index][3]<<S5P_CLKDIV0_PCLK100_SHIFT) \
+		|(clkdiv_val[index][4]<<S5P_CLKDIV0_HCLK166_SHIFT)|(clkdiv_val[index][5]<<S5P_CLKDIV0_PCLK83_SHIFT) \
+		|(clkdiv_val[index][6]<<S5P_CLKDIV0_HCLK133_SHIFT)|(clkdiv_val[index][7]<<S5P_CLKDIV0_PCLK66_SHIFT));
+	
 	__raw_writel(reg, S5P_CLK_DIV0);
 
+	do {
+		reg = __raw_readl(S5P_CLK_DIV_STAT0);
+	} while (reg & 0xff);
+
+/* L3 level need to change memory bus speed, hence onedram clock divier and 
+ * memory refresh parameter should be changed 
+ */
+	switch (index) {
+	case L2:
+		if (freqs.new < freqs.old)
+			break;
+	case L3:
+		reg = __raw_readl(S5P_CLK_DIV6);
+		reg &=~S5P_CLKDIV6_ONEDRAM_MASK;
+		reg |= (clkdiv_val[index][8]<<S5P_CLKDIV6_ONEDRAM_SHIFT);
+		__raw_writel(reg, S5P_CLK_DIV6);
+
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT1);
+		} while (reg & (1<<15));
+
+		if (index == L2) {
+	                __raw_writel(0x618, S5P_VA_DMC1 + 0x30);        // DRAM refresh counter setting
+#if defined(CONFIG_S5PC110_AC_TYPE)
+	                __raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
+#else
+        	        __raw_writel(0x618, S5P_VA_DMC0 + 0x30);
+#endif
+		}
+		break;
+	default:
+		break;
+	}
 
 	if (!pm_mode) {
 		if (freqs.new < freqs.old) {
@@ -151,8 +248,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			regulator_set_voltage(internal_regulator, int_volt, int_volt);
 		}
 
-	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
-
+		cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
 	}
 	mpu_clk->rate = freqs.new * KHZ_T;
 
@@ -169,7 +265,7 @@ static int s5pc110_cpufreq_suspend(struct cpufreq_policy *policy, pm_message_t p
 
 	pm_mode = 1;
 
-	ret = s5pc110_target(policy, MAX_FREQUENCY, 0);
+	ret = s5pc110_target(policy, BOOTUP_FREQ, 0);
 
 	return ret;
 }

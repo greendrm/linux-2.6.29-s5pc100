@@ -567,13 +567,13 @@ static struct max8698_platform_data max8698_platform_data = {
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
 	
-	.dvsarm1	= 0x9,
-	.dvsarm2	= 0x7,
-	.dvsarm3	= 0x5,
-	.dvsarm4	= 0x3,
+	.dvsarm1	= 0xb,	// 1.3V
+	.dvsarm2	= 0x9,	// 1.2V
+	.dvsarm3	= 0x7,	// 1.1V
+	.dvsarm4	= 0x5,	// 1.0V
 
-	.dvsint1	= 0x9,
-	.dvsint2	= 0x5,
+	.dvsint1	= 0x9,	// 1.2V
+	.dvsint2	= 0x5,	// 1.0V
 };
 
 /* I2C0 */

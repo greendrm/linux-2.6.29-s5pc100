@@ -71,16 +71,16 @@ enum perf_level {
 //	L4,
 };
 
-static u32 clkdiv0_val[4][3] = {
-	{0, 3, 1},	/* L0 : 800/200/100 */
-	{1, 1, 1},	/* L1 : 400/200/100 */
-	{3, 0, 1},	/* L2 : 200/200/100 */
-	{7, 0, 1},	/* L3 : 100/100/50 */
-	//{7, 0, 0},	/* L4 " 83/83 */
-	/*{ APLL_RATIO, HCLK_MSYS_RATIO, PCLK_MSYS_RATIO }*/
+static u32 clkdiv_val[4][9] = {
+/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
+ *	HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
+ *		ONEDRAM}
+ */		
+	{0, 4, 4, 1, 3, 1, 4, 1, 3},	/* L0 : [1000/200/100][166/83][133/66] */
+	{0, 3, 3, 1, 3, 1, 4, 1, 3},	/* L1 : [800/200/100][166/83][133/66] */
+	{1, 3, 1, 1, 3, 1, 4, 1, 3},	/* L2 : [400/200/100][166/83][133/66] */
+	{7, 7, 0, 0, 7, 0, 9, 0, 7},	/* L3 : [100/100/50][83/83][66/66] */
 };
-
-#define CLK_DIV0_MASK	((0x7<<0)|(0x7<<8)|(0x7<<12))	// APLL,HCLK_MSYS,PCLK_MSYS mask value 
 
 #endif	/* CONFIG_CPU_S5PC100 */
 

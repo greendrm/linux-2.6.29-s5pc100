@@ -101,7 +101,17 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.pfn		= __phys_to_pfn(S5PC11X_PA_CHIPID),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-	}, 
+	}, {
+		.virtual	= (unsigned long)S5P_VA_DMC0,
+		.pfn		= __phys_to_pfn(S5P_PA_DMC0),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
+	}, {
+		.virtual	= (unsigned long)S5P_VA_DMC1,
+		.pfn		= __phys_to_pfn(S5P_PA_DMC1),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
+	},      
 };
 
 /* read cpu identification code */
