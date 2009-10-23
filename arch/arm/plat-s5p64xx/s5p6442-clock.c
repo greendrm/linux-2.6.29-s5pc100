@@ -413,10 +413,10 @@ static struct clk *clkset_cam0_list[] = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,	
+	NULL,
 	&clk_mout_mpll.clk,
 	&clk_mout_epll.clk,
-	NULL,	
+	NULL,
 };
 
 static struct clk *clkset_cam1_list[] = {
@@ -425,10 +425,10 @@ static struct clk *clkset_cam1_list[] = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,	
+	NULL,
 	&clk_mout_mpll.clk,
 	&clk_mout_epll.clk,
-	NULL,	
+	NULL,
 };
 
 static struct clk_sources clkset_cam0 = {
@@ -447,10 +447,10 @@ static struct clk *clkset_fimc0_list[] = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,	
+	NULL,
 	&clk_mout_mpll.clk,
 	&clk_mout_epll.clk,
-	NULL,	
+	NULL,
 };
 
 static struct clk *clkset_fimc1_list[] = {
@@ -459,10 +459,10 @@ static struct clk *clkset_fimc1_list[] = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,	
+	NULL,
 	&clk_mout_mpll.clk,
 	&clk_mout_epll.clk,
-	NULL,	
+	NULL,
 };
 
 static struct clk *clkset_fimc2_list[] = {
@@ -471,10 +471,10 @@ static struct clk *clkset_fimc2_list[] = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,	
+	NULL,
 	&clk_mout_mpll.clk,
 	&clk_mout_epll.clk,
-	NULL,	
+	NULL,
 };
 
 static struct clk_sources clkset_fimc0 = {
@@ -899,14 +899,14 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	unsigned long xtal;
 	unsigned long fclk;
 	unsigned long a2m;
-	unsigned long hclkd0;
-	unsigned long hclkd1;
-	unsigned long pclkd0;
-	unsigned long pclkd1;
 	unsigned long epll;
 	unsigned long apll;
 	unsigned long mpll;
 	unsigned int ptr;
+	unsigned long hclkd0 =0;
+	unsigned long hclkd1 =0;
+	unsigned long pclkd0 =0;
+	unsigned long pclkd1 =0;
 	u32 clkdiv0;
 	u32 clkdiv3;
 	u32 mux_stat0;
@@ -1012,9 +1012,9 @@ void __init_or_cpufreq s5p6442_setup_clocks(void)
 	clk_set_parent(&clk_mmc1.clk, &clk_mout_mpll.clk);
 	clk_set_parent(&clk_mmc2.clk, &clk_mout_mpll.clk);
 
-	clk_set_parent(&clk_i2s.clk, &clk_i2s_cd0); 
+	clk_set_parent(&clk_i2s.clk, &clk_i2s_cd0);
 	/* For I2S CLK_OUT 12Mhz */
-	clk_set_parent(&clk_clk_out.clk, &clk_oscclk); 
+	clk_set_parent(&clk_clk_out.clk, &clk_oscclk);
 
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5p6442_set_clksrc(init_parents[ptr]);
@@ -1036,7 +1036,7 @@ static struct clk *clks[] __initdata = {
 	&clk_cam1.clk,
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
-	&clk_fimc2.clk,	
+	&clk_fimc2.clk,
 	&clk_i2s.clk,
 	&clk_i2s_cd0,
 	&clk_i2s_XXTI,
