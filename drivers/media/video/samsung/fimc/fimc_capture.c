@@ -149,6 +149,19 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	if (cam->initialized)
 		return 0;
 
+	/* 
+	 * WriteBack mode doesn't need to set clock and power,
+	 * but it needs to set source width, height depend on LCD resolution.
+	*/
+	if (cam->id == CAMERA_WB) {
+		s3cfb_direct_ioctl(0, S3CFB_GET_LCD_WIDTH, (unsigned long)&cam->width);	
+		s3cfb_direct_ioctl(0, S3CFB_GET_LCD_HEIGHT, (unsigned long)&cam->height);
+		cam->window.width = cam->width;
+		cam->window.height = cam->height;
+		cam->initialized = 1;
+		return 0;
+	}
+	
 	/* set rate for mclk */
 	if (cam->clk->set_rate) {
 		cam->clk->set_rate(cam->clk, cam->clk_rate);
@@ -260,6 +273,11 @@ int fimc_g_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
+	/* WriteBack doesn't have subdev_call */
+	if (ctrl->cam->id == CAMERA_WB) {
+		return 0;
+	}
+	
 	mutex_lock(&ctrl->v4l2_lock);
 	ret = subdev_call(ctrl, video, g_parm, a);
 	mutex_unlock(&ctrl->v4l2_lock);
@@ -274,6 +292,11 @@ int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a)
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
+	/* WriteBack doesn't have subdev_call */
+	if (ctrl->cam->id == CAMERA_WB) {
+		return 0;
+	}
+	
 	mutex_lock(&ctrl->v4l2_lock);
 	ret = subdev_call(ctrl, video, s_parm, a);
 	mutex_unlock(&ctrl->v4l2_lock);
@@ -553,6 +576,12 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 		cap->lastirq = 1;
 	}
 
+	/* WriteBack doesn't have subdev_call */
+	if (ctrl->cam->id == CAMERA_WB) {
+		mutex_unlock(&ctrl->v4l2_lock);
+		return 0;
+	}
+	
 	ret = subdev_call(ctrl, video, s_fmt, f);
 
 	mutex_unlock(&ctrl->v4l2_lock);
@@ -715,6 +744,9 @@ int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c)
 
 	default:
 		/* get ctrl supported by subdev */
+		/* WriteBack doesn't have subdev_call */
+		if (ctrl->cam->id == CAMERA_WB)
+			break;
 		ret = subdev_call(ctrl, core, g_ctrl, c);
 		break;
 	}
@@ -758,6 +790,9 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 
 	default:
 		/* try on subdev */
+		/* WriteBack doesn't have subdev_call */
+		if (ctrl->cam->id == CAMERA_WB)
+			break;
 		ret = subdev_call(ctrl, core, s_ctrl, c);
 		break;
 	}
@@ -874,6 +909,10 @@ int fimc_streamon_capture(void *fh)
 	if (!ctrl->cam->initialized)
 		fimc_init_camera(ctrl);
 
+	/* Set FIMD to write back */
+	if (ctrl->cam->id == CAMERA_WB)
+		s3cfb_direct_ioctl(0, S3CFB_SET_WRITEBACK, 1);
+	
 	fimc_hwset_camera_source(ctrl);
 	fimc_hwset_camera_offset(ctrl);
 	fimc_hwset_camera_type(ctrl);

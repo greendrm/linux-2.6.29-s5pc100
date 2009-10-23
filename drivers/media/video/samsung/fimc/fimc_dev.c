@@ -787,6 +787,12 @@ static int fimc_init_global(struct platform_device *pdev)
 		if (!cam)
 			break;
 
+		/* WriteBack doesn't need clock setting */
+		if(cam->id == CAMERA_WB) { 
+			fimc_dev->camera[cam->id] = cam;
+			break;
+		}
+		
 		srclk = clk_get(&pdev->dev, cam->srclk_name);
 		if (IS_ERR(srclk)) {
 			dev_err(&pdev->dev, "%s: failed to get mclk source\n",

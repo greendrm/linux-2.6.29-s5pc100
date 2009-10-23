@@ -758,7 +758,9 @@ static int smdkc110_mipi_cam_power(int onoff)
 #undef S5K3BA_ENABLED
 #undef S5K4BA_ENABLED
 #define S5K4EA_ENABLED
+//#undef S5K4EA_ENABLED
 #undef S5K6AA_ENABLED
+#define WRITEBACK_ENABLED
 
 /* External camera module setting */
 /* 2 ITU Cameras */
@@ -980,13 +982,43 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 };
 #endif
 
+#ifdef WRITEBACK_ENABLED
+static struct i2c_board_info  __initdata writeback_i2c_info = {
+	I2C_BOARD_INFO("WriteBack", 0x0),
+};
+
+static struct s3c_platform_camera __initdata writeback = {
+	.id		= CAMERA_WB,
+	.fmt		= ITU_601_YCBCR422_8BIT,
+	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.i2c_busnum	= 0,
+	.info		= &writeback_i2c_info,
+//	.pixelformat	= V4L2_PIX_FMT_UYVY,	/* not sure */
+	.pixelformat	= V4L2_PIX_FMT_YUV444,
+	.line_length	= 800,
+	.width		= 480,
+	.height		= 800,
+	.window		= {
+		.left	= 0,
+		.top	= 0,
+		.width	= 480,
+		.height	= 800,
+	},
+
+	.initialized 	= 0,
+};
+
+#endif
+
 /* Interface setting */
 static struct s3c_platform_fimc __initdata fimc_plat = {
 #if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
 	.default_cam	= CAMERA_CSI_C,
 #else
 
-#ifdef CAM_ITU_CH_A
+#ifdef WRITEBACK_ENABLED
+	.default_cam 	= CAMERA_WB,
+#elif CAM_ITU_CH_A
 	.default_cam	= CAMERA_PAR_A,
 #else
 	.default_cam	= CAMERA_PAR_B,
@@ -1005,6 +1037,9 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #endif
 #ifdef S5K6AA_ENABLED
 		&s5k6aa,
+#endif
+#ifdef WRITEBACK_ENABLED
+		&writeback,
 #endif
 	}
 };

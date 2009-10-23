@@ -32,7 +32,7 @@
 
 #define FIMC_DEVICES		3
 #define FIMC_SUBDEVS		3
-#define FIMC_MAXCAMS		4
+#define FIMC_MAXCAMS  		5 /* added 1 because of WriteBack */
 #define FIMC_PHYBUFS		4
 #define FIMC_OUTBUFS		3
 #define FIMC_INQ_BUFS		3
@@ -198,7 +198,7 @@ struct s3cfb_user_window {
 #define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
-
+#define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {

@@ -267,10 +267,13 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 
 	cfg = readl(ctrl->regs + S3C_CIGCTRL);
 	cfg &= ~(S3C_CIGCTRL_TESTPATTERN_MASK | S3C_CIGCTRL_SELCAM_ITU_MASK |
-		S3C_CIGCTRL_SELCAM_MIPI_MASK | S3C_CIGCTRL_SELCAM_FIMC_MASK);
+		S3C_CIGCTRL_SELCAM_MIPI_MASK | S3C_CIGCTRL_SELCAM_FIMC_MASK |
+		S3C_CIGCTRL_SELWB_CAMIF_MASK);
 
 	/* Interface selection */
-	if (cam->type == CAM_TYPE_MIPI) {
+	if (cam->id == CAMERA_WB) {
+		cfg |= S3C_CIGCTRL_SELWB_CAMIF_WRITEBACK;
+	} else if (cam->type == CAM_TYPE_MIPI) {
 		cfg |= S3C_CIGCTRL_SELCAM_FIMC_MIPI;
 
 		/* FIXME: temporary only A support */
