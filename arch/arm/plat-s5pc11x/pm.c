@@ -609,10 +609,16 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	/* flush cache back to ram */
 	flush_cache_all();
 #ifndef CONFIG_S5P_DEEP_IDLE_TEST
-	/* USB & OSC Clock pad Enable */
+	/* USB & OSC Clock pad should be disabled
+	 * in C110 EVT0. If not, wakeup failure occures 
+	 * sometimes. 
+	 */
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)	
 	tmp = __raw_readl(S5P_SLEEP_CFG);
-	tmp |= (S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
+	tmp &=~(S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
 	__raw_writel(tmp , S5P_SLEEP_CFG);
+#endif
+
 #endif
 	/* Power mode Config setting */
 	tmp = __raw_readl(S5P_PWR_CFG);

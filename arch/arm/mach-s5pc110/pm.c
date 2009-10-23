@@ -52,7 +52,20 @@ void s5pc110_cpu_suspend(void)
  * MCR p15,0,<Rd>,c7,c10,4 ; Data Synchronization Barrier operation.
  * MCR p15,0,<Rd>,c7,c0,4 ; Wait For Interrupt.
  */
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
 
+	tmp = __raw_readl(S5P_PWR_CFG);
+	tmp &= S5P_CFG_WFI_CLEAN;
+	__raw_writel(tmp, S5P_PWR_CFG);
+	
+	/*
+	 * Use POWER MODE register to enter sleep mode.
+	 */
+	tmp = (1<<2);
+	__raw_writel(tmp, S5P_PWR_MODE);
+	
+	while(1);
+#else
 	asm("b 1f\n\t"
 	    ".align 5\n\t"
 	    "1:\n\t"
@@ -63,6 +76,8 @@ void s5pc110_cpu_suspend(void)
 	/* we should never get past here */
 
 	panic("sleep resumed to originator?");
+
+#endif
 }
 
 static void s5pc110_pm_prepare(void)
