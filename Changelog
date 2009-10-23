@@ -2370,7 +2370,7 @@ v2.6.29.4-dev-1-4-54: Sang-Beom Kim
 
 	Modified Files:
 		M	arch/arm/plat-s5p64xx/Makefile
-		
+
 v2.6.29.4-dev-1-4-55: Jaeryul Oh
 	- Modified MFC fw(10/16) & driver on SMDKC110
 
@@ -2383,3 +2383,10 @@ v2.6.29.4-dev-1-4-55: Jaeryul Oh
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_memory.c
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_memory.h
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+v2.6.29.4-dev-1-4-56: Sang-Beom Kim
+	- Modified clock code for prevent
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
