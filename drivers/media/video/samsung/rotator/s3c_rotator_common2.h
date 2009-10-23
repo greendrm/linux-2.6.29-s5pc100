@@ -90,11 +90,11 @@ typedef struct{
 	unsigned int dst_addr_cb;		/* Base Address of the Destination Image (CB Component) */
 	unsigned int dst_addr_cr;		/* Base Address of the Destination Image (CR Component) */
 
-	unsigned int dst_window_width;		/* Horizontal pixel size of a source image */
-	unsigned int dst_window_height;		/* Vertical pixel size of a source image */
+	unsigned int dst_window_width;		/* Horizontal pixel size of a dst image */
+	unsigned int dst_window_height;		/* Vertical pixel size of a dst image */
 
-	unsigned int dst_window_offset_x;		/* Horizontal pixel size of a image to be rotated */
-	unsigned int dst_window_offset_y;		/* Vertical pixel size of a image to be rotated */
+	unsigned int dst_window_offset_x;		/* The pixel coordinates on X-axis of a image to be rotated */
+	unsigned int dst_window_offset_y;		/* The pixel coordinates on Y-axis of a image to be rotated */
 
 } ro_params;
 #endif /* _S3C_ROTATOR_COMMON2_H_  */
