@@ -2390,3 +2390,15 @@ v2.6.29.4-dev-1-4-56: Sang-Beom Kim
 	Modified Files:
 		M	arch/arm/plat-s5p64xx/clock.c
 		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-57: Jang-Hyuck Kim
+	- Added WriteBack feature in FIMC
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/include/plat/fimc.h
+		M	arch/arm/plat-s5pc11x/include/plat/regs-fimc.h
+		M	drivers/media/video/samsung/fimc/fimc.h
+		M	drivers/media/video/samsung/fimc/fimc43_regs.c
+		M	drivers/media/video/samsung/fimc/fimc_capture.c
+		M	drivers/media/video/samsung/fimc/fimc_dev.c
