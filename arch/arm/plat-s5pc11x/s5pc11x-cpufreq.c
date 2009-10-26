@@ -126,7 +126,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	freqs.cpu = 0;
 
 	if (freqs.new == freqs.old)
-		return -EINVAL;
+		return 0;
 	
 	arm_volt = s5pc110_dvs_conf[index].arm_volt;
 	int_volt = s5pc110_dvs_conf[index].int_volt;
@@ -169,8 +169,12 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	}
 
-	/* APLL should be changed in this level */
-	/* APLL -> MPLL(for stable transition) -> APLL */
+/* APLL should be changed in this level
+ * APLL -> MPLL(for stable transition) -> APLL
+ * Some clock source's clock API  are not prepared. Do not use clock API
+ * in below code.
+ */
+	
 	if (pll_changing) {
 		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
 			
@@ -182,7 +186,26 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
 		} while (reg & (0x1<<18));
-		
+	
+		/* Change APLL to MPLL in MFC_MUX and G3D MUX */
+		reg = __raw_readl(S5P_CLK_DIV2);
+		reg &=~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+		reg |= (0x3<<S5P_CLKDIV2_G3D_SHIFT)|(0x3<<S5P_CLKDIV2_MFC_MASK);	
+		__raw_writel(reg, S5P_CLK_DIV2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT0);
+		} while (reg & ((1<<16)|(1<<17)));
+
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &=~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
+		reg |= (1<<S5P_CLKSRC2_G3D_SHIFT) | (1<<S5P_CLKSRC2_MFC_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1<<7)|(1<<3)));
+
 #if defined(CONFIG_S5PC110_H_TYPE)
 		/* DMC0 source clock : SCLKA2M -> SCLKMPLL */
 		__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
@@ -267,7 +290,27 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
 		} while (reg & (1<<2));
-				
+			
+		/* Change MPLL to APLL in MFC_MUX and G3D MUX */
+		reg = __raw_readl(S5P_CLK_DIV2);
+		reg &=~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+		reg |= (0x0<<S5P_CLKDIV2_G3D_SHIFT)|(0x0<<S5P_CLKDIV2_MFC_MASK);	
+		__raw_writel(reg, S5P_CLK_DIV2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT0);
+		} while (reg & ((1<<16)|(1<<17)));
+
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &=~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
+		reg |= (0<<S5P_CLKSRC2_G3D_SHIFT) | (0<<S5P_CLKSRC2_MFC_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1<<7)|(1<<3)));
+
+		/* Change MPLL to APLL in MSYS_MUX and HPM_MUX */	
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &=~(S5P_CLKSRC0_MUX200_MASK);	
 		reg |= (0x0 << S5P_CLKSRC0_MUX200_SHIFT); // SCLKMPLL -> SCLKAPLL	
