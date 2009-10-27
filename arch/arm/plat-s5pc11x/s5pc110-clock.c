@@ -25,7 +25,7 @@
 #include <plat/cpu-freq.h>
 
 #include <plat/regs-clock.h>
-#include <plat/regs-audss.c>
+#include <plat/regs-audss.h>
 #include <plat/clock.h>
 #include <plat/cpu.h>
 #include <plat/pll.h>

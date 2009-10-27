@@ -25,7 +25,7 @@
 #include <mach/map.h>
 
 #include <plat/regs-clock.h>
-#include <plat/regs-audss.c>
+#include <plat/regs-audss.h>
 #include <plat/cpu.h>
 #include <plat/devs.h>
 #include <plat/clock.h>
