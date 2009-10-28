@@ -2402,3 +2402,10 @@ v2.6.29.4-dev-1-4-57: Jang-Hyuck Kim
 		M	drivers/media/video/samsung/fimc/fimc43_regs.c
 		M	drivers/media/video/samsung/fimc/fimc_capture.c
 		M	drivers/media/video/samsung/fimc/fimc_dev.c
+
+v2.6.29.4-dev-1-5-0: Jang-Hyuck Kim
+	- Fix buffer allocation in FIMC
+
+	Modified Files:
+		M	drivers/media/video/samsung/fimc/fimc_capture.c
+		M	drivers/media/video/samsung/fimc/fimc_dev.c

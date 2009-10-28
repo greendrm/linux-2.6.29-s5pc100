@@ -957,11 +957,15 @@ int fimc_streamon_capture(void *fh)
 int fimc_streamoff_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
+	int i;
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
 	ctrl->status = FIMC_READY_OFF;
 	fimc_stop_capture(ctrl);
+	for(i = 0; i < FIMC_PHYBUFS; i++)
+		fimc_add_inqueue(ctrl, cap->outq[i]);
 	ctrl->status = FIMC_STREAMOFF;
 
 	return 0;
