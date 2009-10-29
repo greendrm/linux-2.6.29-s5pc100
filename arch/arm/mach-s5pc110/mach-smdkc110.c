@@ -1144,7 +1144,10 @@ static void __init smdkc110_machine_init(void)
 #ifdef CONFIG_FB_S3C_TL2796
 	spi_register_board_info(spi_board_info, ARRAY_SIZE(spi_board_info));
 #endif
+
+#ifdef CONFIG_S5PC11X_DEV_FB
 	s3cfb_set_platdata(NULL);
+#endif
 
 #if defined(CONFIG_TOUCHSCREEN_S3C)
         s3c_ts_set_platdata(&s3c_ts_platform);
