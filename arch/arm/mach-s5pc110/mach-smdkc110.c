@@ -1069,6 +1069,15 @@ static void __init smdk_backlight_register(void)
 #define smdk_backlight_register()	do { } while (0)
 #endif
 
+static void smdkc110_power_off(void)
+{
+	unsigned long reg;
+
+	reg = __raw_readl(S5P_PS_HOLD_CONTROL);
+	reg &=~(0x1<<8);
+	__raw_writel(reg, S5P_PS_HOLD_CONTROL);
+}
+
 static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
@@ -1080,6 +1089,8 @@ static void __init smdkc110_map_io(void)
 	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
 #endif
 	s5pc11x_reserve_bootmem();
+
+	pm_power_off = smdkc110_power_off;
 }
 
 static void __init smdkc110_dm9000_set(void)

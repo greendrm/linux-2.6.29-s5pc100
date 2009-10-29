@@ -74,7 +74,7 @@ static void __init s3c_button_init(void)
 	set_irq_type(IRQ_EINT4, IRQF_TRIGGER_FALLING);
 	setup_irq(IRQ_EINT4, &s3c_button_irq);
 #endif
-	set_irq_type(IRQ_EINT(31), IRQF_TRIGGER_FALLING);
+	set_irq_type(IRQ_EINT(31), IRQ_TYPE_LEVEL_LOW);
 	set_irq_wake(IRQ_EINT(31), 1);
 	setup_irq(IRQ_EINT(31), &s3c_button_irq);	
 }
