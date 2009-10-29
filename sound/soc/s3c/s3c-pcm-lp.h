@@ -21,10 +21,15 @@
 #define ST_RUNNING		(1<<0)
 #define ST_OPENED		(1<<1)
 
+/* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
+ * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
+ * Also, this value must be aligned at KB bounday (multiple of 1024). */
 #ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
 #define MAX_LP_BUFF	(128 * 1024) /* 128KB in S5PC100 */
+#define LP_DMA_PERIOD (105 * 1024)
 #else
-#define MAX_LP_BUFF	(160 * 1024) /* 160KB in S5PC110 (Unused RP) */
+#define MAX_LP_BUFF	(160 * 1024)
+#define LP_DMA_PERIOD (128 * 1024)
 #endif
 
 #define LP_TXBUFF_ADDR    (0xC0000000)
