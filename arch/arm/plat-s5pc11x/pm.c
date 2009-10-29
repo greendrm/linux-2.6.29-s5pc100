@@ -55,6 +55,9 @@
 #include <plat/pm.h>
 
 #define PFX "s5pc11x-pm: "
+
+extern void printascii(const char *);
+
 static struct sleep_save core_save[] = {
 /* Clock source */
 	SAVE_ITEM(S5P_CLK_SRC0),
@@ -579,6 +582,8 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	unsigned long regs_save[16];
 	unsigned int tmp;
 
+	char buf[128];
+
 	/* ensure the debug is initialised (if enabled) */
 
 	DBG("s5pc11x_pm_enter(%d)\n", state);
@@ -643,14 +648,17 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
 	__raw_writel(tmp,S5P_IDLE_CFG);
 #endif
-
-	/* Set wakeup mask regsiter */
-	__raw_writel(0xFFFF , S5P_WAKEUP_MASK);
-
-	tmp = 0xFFFFFFFF;
-	tmp &= ~(1 << 4);
-	tmp &= ~(1 << 31);
-	__raw_writel(tmp, S5P_EINT_WAKEUP_MASK);
+	/* Clear all EINT PENDING bit */
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF40);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF40);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF44);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF44);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF48);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF48);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF4C);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF4C);
+	
+	__raw_writel(0xFFFF , S5P_WAKEUP_STAT);
 
 #ifdef CONFIG_S5P_DEEP_IDLE_TEST
 	tmp = __raw_readl(S5P_WAKEUP_MASK);
@@ -675,6 +683,21 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	/* s5pc11x_cpu_save will also act as our return point from when
 	 * we resume as it saves its own register state, so use the return
 	 * code to differentiate return from save and return from sleep */
+
+	sprintf(buf, "WAKEUP_STAT:%08x\n", __raw_readl(S5P_WAKEUP_STAT));
+	printascii(buf);
+	
+	sprintf(buf, "EINTPENDING0:%08x\n", __raw_readl(S5PC11X_VA_GPIO + 0xf40));
+	printascii(buf);
+
+	sprintf(buf, "EINTPENDING1:%08x\n", __raw_readl(S5PC11X_VA_GPIO + 0xf44));
+	printascii(buf);
+	
+	sprintf(buf, "EINTPENDING2:%08x\n", __raw_readl(S5PC11X_VA_GPIO + 0xf44));
+	printascii(buf);
+	
+	sprintf(buf, "EINTPENDING3:%08x\n", __raw_readl(S5PC11X_VA_GPIO + 0xf4c));
+	printascii(buf);
 
 	if (s5pc110_cpu_save(regs_save) == 0) {
 		flush_cache_all();
@@ -731,6 +754,8 @@ int __init s5pc11x_pm_init(void)
 	tmp = __raw_readl(S5P_CLK_OUT);
 	tmp |= (0xf << 12);
 	__raw_writel(tmp , S5P_CLK_OUT);
+
+	__raw_writel(0xffff, S5P_WAKEUP_MASK);
 
 	/* set the irq configuration for wake */
 	suspend_set_ops(&s5pc11x_pm_ops);
