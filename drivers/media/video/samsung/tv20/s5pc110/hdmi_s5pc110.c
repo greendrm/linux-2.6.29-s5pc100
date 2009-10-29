@@ -600,7 +600,7 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd,
 	temp_reg8 = readb(hdmi_base + S5P_HDMI_CON_1);
 
 	/* clear */
-	temp_reg8 &= ~ HDMI_CON_PXL_REP_RATIO_MASK;
+	temp_reg8 &= ~HDMI_CON_PXL_REP_RATIO_MASK;
 
 	if (video_params[mode].repetition) {
 		/* set pixel repetition */
@@ -1017,6 +1017,9 @@ void __s5p_hdmi_init_hpd_onoff(bool on_off)
 	HDMIPRINTK("0x%08x\n\r", readl(hdmi_base + S5P_HPD));
 }
 
+
+#ifndef CONFIG_SND_S5P_SPDIF
+
 static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 					u32 sample_rate, 
 					u32 bits_per_sample, 
@@ -1101,7 +1104,6 @@ static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 
 
 
-//.[ d: sichoi 091013 (compliance)
 /* 
 	writel(0x00, hdmi_base + S5P_ASP_SP_FLAT);
 	writel(0x08, hdmi_base + S5P_ASP_CHCFG0);
@@ -1121,6 +1123,7 @@ static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 		hdmi_base + S5P_HDMI_CON_0);
 */		
 }
+#endif
 
 s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec, 
 				u32 sample_rate, u32 bits, u32 frame_size_code)
@@ -1131,7 +1134,6 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 	__s5p_hdmi_audio_irq_enable(IRQ_BUFFER_OVERFLOW_ENABLE);
 	__s5p_hdmi_audio_clock_enable();
 	
-//.[ d: sichoi 091013 (compliance)
 /*
 	__s5p_hdmi_audio_set_asp();
 	__s5p_hdmi_audio_set_acr(sample_rate);
@@ -1140,10 +1142,8 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 #else 
 	__s5p_hdmi_audio_i2s_config(audio_codec, sample_rate, bits, frame_size_code);
 #endif
-//.[ i: sichoi 091013 (compliance)
 	__s5p_hdmi_audio_set_asp();
 	__s5p_hdmi_audio_set_acr(sample_rate);
-//.] sichoi 091013
 
 	__s5p_hdmi_audio_set_aui(audio_codec, sample_rate, bits);
 

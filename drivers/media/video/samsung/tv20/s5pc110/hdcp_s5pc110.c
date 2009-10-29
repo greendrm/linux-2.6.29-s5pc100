@@ -533,7 +533,6 @@ void set_sw_hpd(bool level)
  */
 void reset_authentication(void)
 {
-	u32 hdmi_con0;
 	u8 reg;
 
 	hdcp_info.time_out 	= INFINITE;

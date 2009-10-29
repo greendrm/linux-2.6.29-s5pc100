@@ -710,8 +710,10 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->cap) {
-		for (i = 0; i < FIMC_CAPBUFS; i++)
+		for (i = 0; i < FIMC_CAPBUFS; i++) {
 			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 0);
+			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 1);
+		}
 
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
