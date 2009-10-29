@@ -23,9 +23,11 @@
 
 #include <mach/hardware.h>
 #include <mach/map.h>
+#include <mach/system-reset.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
+#include <asm/cacheflush.h>
 
 #include <plat/regs-serial.h>
 
@@ -114,6 +116,29 @@ static struct map_desc s3c_iodesc[] __initdata = {
 	},      
 };
 
+/* Hook for arm_pm_restart to ensure we execute the reset code
+ * with the caches enabled. It seems at least the S3C2440 has a problem
+ * resetting if there is bus activity interrupted by the reset.
+ */
+static void s5pc11x_pm_restart(char mode)
+{
+	printk("Restarting system %s\n","S5PC11X");
+	if (mode != 's') {
+		unsigned long flags;
+
+		local_irq_save(flags);
+		__cpuc_flush_kern_all();
+		__cpuc_flush_user_all();
+
+		arch_reset(mode);
+		local_irq_restore(flags);
+	}
+
+	/* fallback, or unhandled */
+	arm_machine_restart(mode);
+}
+
+
 /* read cpu identification code */
 
 void __init s5pc11x_init_io(struct map_desc *mach_desc, int size)
@@ -125,6 +150,8 @@ void __init s5pc11x_init_io(struct map_desc *mach_desc, int size)
 	iotable_init(mach_desc, size);
 
 	idcode = __raw_readl(S5PC11X_VA_CHIPID);
+
+	arm_pm_restart = s5pc11x_pm_restart;
 
 	s3c_init_cpu(idcode, cpu_ids, ARRAY_SIZE(cpu_ids));
 }

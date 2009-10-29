@@ -8,12 +8,11 @@
  * S5PC110 - system implementation
  */
 
- #include <mach/idle.h>
-
 #ifndef __ASM_ARCH_SYSTEM_H
 #define __ASM_ARCH_SYSTEM_H __FILE__
 
 void (*s5pc11x_idle)(void);
+void (*s5pc11x_reset_hook)(void);
 
 void s5pc11x_default_idle(void)
 {
@@ -28,9 +27,6 @@ static void arch_idle(void)
 		s5pc11x_default_idle();
 }
 
-static void arch_reset(char mode)
-{
-	/* nothing here yet */
-}
+#include <mach/system-reset.h>
 
 #endif /* __ASM_ARCH_IRQ_H */

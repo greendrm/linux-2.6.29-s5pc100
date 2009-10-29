@@ -1,0 +1,172 @@
+diff --git a/arch/arm/mach-s5pc110/button-smdkc110.c b/arch/arm/mach-s5pc110/button-smdkc110.c
+index 882a063..7ffcdb8 100644
+--- a/arch/arm/mach-s5pc110/button-smdkc110.c
++++ b/arch/arm/mach-s5pc110/button-smdkc110.c
+@@ -74,7 +74,7 @@ static void __init s3c_button_init(void)
+ 	set_irq_type(IRQ_EINT4, IRQF_TRIGGER_FALLING);
+ 	setup_irq(IRQ_EINT4, &s3c_button_irq);
+ #endif
+-	set_irq_type(IRQ_EINT(31), IRQF_TRIGGER_FALLING);
++	set_irq_type(IRQ_EINT(31), IRQ_TYPE_LEVEL_LOW);
+ 	set_irq_wake(IRQ_EINT(31), 1);
+ 	setup_irq(IRQ_EINT(31), &s3c_button_irq);	
+ }
+diff --git a/arch/arm/mach-s5pc110/cpu.c b/arch/arm/mach-s5pc110/cpu.c
+index ef4f5dc..4d9fbd3 100644
+--- a/arch/arm/mach-s5pc110/cpu.c
++++ b/arch/arm/mach-s5pc110/cpu.c
+@@ -31,6 +31,7 @@
+ #include <mach/hardware.h>
+ #include <mach/idle.h>
+ #include <mach/map.h>
++#include <mach/reset.h>
+ 
+ #include <plat/cpu-freq.h>
+ #include <plat/regs-serial.h>
+@@ -100,6 +101,18 @@ static void s5pc110_idle(void)
+ 
+ 	cpu_do_idle();
+ }
++
++static void s5pc110_swreset(void)
++{
++	/* To be implemented */
++	unsigned long reg;
++
++	reg = __raw_readl(S5P_RST_STAT);
++	reg &=~(0x1<<3);
++	reg |=(0x1<<3);
++	__raw_writel(reg, S5P_RST_STAT);
++}
++
+ void __init s5pc110_map_io(void)
+ {
+ 	iotable_init(s5pc110_iodesc, ARRAY_SIZE(s5pc110_iodesc));
+@@ -117,6 +130,9 @@ void __init s5pc110_map_io(void)
+ 
+ 	/* set s5pc110 idle function */
+ 	s5pc11x_idle = s5pc110_idle;
++
++	/* set custom reset hook */
++	s5pc11x_reset_hook = s5pc110_swreset;
+ }
+ 
+ void __init s5pc110_init_clocks(int xtal)
+diff --git a/arch/arm/mach-s5pc110/include/mach/system.h b/arch/arm/mach-s5pc110/include/mach/system.h
+index c8e9a9f..9e2ee3b 100644
+--- a/arch/arm/mach-s5pc110/include/mach/system.h
++++ b/arch/arm/mach-s5pc110/include/mach/system.h
+@@ -8,12 +8,11 @@
+  * S5PC110 - system implementation
+  */
+ 
+- #include <mach/idle.h>
+-
+ #ifndef __ASM_ARCH_SYSTEM_H
+ #define __ASM_ARCH_SYSTEM_H __FILE__
+ 
+ void (*s5pc11x_idle)(void);
++void (*s5pc11x_reset_hook)(void);
+ 
+ void s5pc11x_default_idle(void)
+ {
+@@ -28,9 +27,6 @@ static void arch_idle(void)
+ 		s5pc11x_default_idle();
+ }
+ 
+-static void arch_reset(char mode)
+-{
+-	/* nothing here yet */
+-}
++#include <mach/system-reset.h>
+ 
+ #endif /* __ASM_ARCH_IRQ_H */
+diff --git a/arch/arm/mach-s5pc110/mach-smdkc110.c b/arch/arm/mach-s5pc110/mach-smdkc110.c
+index e7a36c8..b1a635d 100644
+--- a/arch/arm/mach-s5pc110/mach-smdkc110.c
++++ b/arch/arm/mach-s5pc110/mach-smdkc110.c
+@@ -1069,6 +1069,19 @@ static void __init smdk_backlight_register(void)
+ #define smdk_backlight_register()	do { } while (0)
+ #endif
+ 
++static void smdkc110_power_off(void)
++{
++	int ret;
++	if (gpio_is_valid(S5PC11X_GPH0(0))) {
++		ret = gpio_request(S5PC11X_GPH0(0), "GPH0");	
++		if (ret) {
++			printk(KERN_ERR, "failed to get gpio[%s][%d]\n","GPH0", 0);
++		}
++		gpio_direction_output(S5PC11X_GPH0(0),0);
++	}
++	return;
++}
++
+ static void __init smdkc110_map_io(void)
+ {
+ 	s3c_device_nand.name = "s5pc100-nand";
+@@ -1080,6 +1093,8 @@ static void __init smdkc110_map_io(void)
+ 	writel((readl(S5P_CLK_DIV4) & ~(0xffff0000)) | 0x44440000, S5P_CLK_DIV4);
+ #endif
+ 	s5pc11x_reserve_bootmem();
++
++	pm_power_off = smdkc110_power_off;
+ }
+ 
+ static void __init smdkc110_dm9000_set(void)
+diff --git a/arch/arm/plat-s5pc11x/cpu.c b/arch/arm/plat-s5pc11x/cpu.c
+index 6b237db..d629223 100644
+--- a/arch/arm/plat-s5pc11x/cpu.c
++++ b/arch/arm/plat-s5pc11x/cpu.c
+@@ -23,9 +23,11 @@
+ 
+ #include <mach/hardware.h>
+ #include <mach/map.h>
++//#include <mach/system.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++//#include <asm/cacheflush.h>
+ 
+ #include <plat/regs-serial.h>
+ 
+@@ -114,6 +116,31 @@ static struct map_desc s3c_iodesc[] __initdata = {
+ 	},      
+ };
+ 
++/* Hook for arm_pm_restart to ensure we execute the reset code
++ * with the caches enabled. It seems at least the S3C2440 has a problem
++ * resetting if there is bus activity interrupted by the reset.
++ */
++static void s5pc11x_pm_restart(char mode)
++{
++	printk("Restarting system %s\n","S5PC110");
++#if 0	
++	if (mode != 's') {
++		unsigned long flags;
++
++		local_irq_save(flags);
++		__cpuc_flush_kern_all();
++		__cpuc_flush_user_all();
++
++		arch_reset(mode);
++		local_irq_restore(flags);
++	}
++
++	/* fallback, or unhandled */
++	arm_machine_restart(mode);
++#endif
++}
++
++
+ /* read cpu identification code */
+ 
+ void __init s5pc11x_init_io(struct map_desc *mach_desc, int size)
+@@ -126,5 +153,7 @@ void __init s5pc11x_init_io(struct map_desc *mach_desc, int size)
+ 
+ 	idcode = __raw_readl(S5PC11X_VA_CHIPID);
+ 
++	arm_pm_restart = s5pc11x_pm_restart;
++
+ 	s3c_init_cpu(idcode, cpu_ids, ARRAY_SIZE(cpu_ids));
+ }
