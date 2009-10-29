@@ -637,8 +637,8 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		h_factor = grp_scaling_factor(width, dst_width, 1);
 		v_factor = grp_scaling_factor(height, dst_height, 0);
 		
-		temp_reg = (temp_reg & ~((0x3<<28)|(0x3<<12)) 
-				| h_factor << 28 | v_factor << 12);		
+		temp_reg &= ~((0x3<<28)|(0x3<<12));
+		temp_reg |= h_factor << 28 | v_factor << 12;		
 
 		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC0_WH);		
 		
@@ -672,9 +672,10 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC1_WH);
 		h_factor = grp_scaling_factor(width, dst_width, 1);
 		v_factor = grp_scaling_factor(height, dst_height, 0);
-		temp_reg = (temp_reg & ~((0x3<<28)|(0x3<<12)) 
-				| h_factor << 28 | v_factor << 12);		
-		
+
+		temp_reg &= ~((0x3<<28)|(0x3<<12));
+		temp_reg |= h_factor << 28 | v_factor << 12;	
+
 		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC1_WH);			
 		break;
 
