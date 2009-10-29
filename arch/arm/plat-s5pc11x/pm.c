@@ -56,6 +56,8 @@
 
 #define PFX "s5pc11x-pm: "
 
+//#define DEBUG_S5P_PM
+
 extern void printascii(const char *);
 
 static struct sleep_save core_save[] = {
@@ -630,10 +632,10 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp &= S5P_CFG_WFI_CLEAN;
 
 #ifdef CONFIG_S5P_DEEP_IDLE_TEST
-	printk("deep idle mode\n");
+	DBG("deep idle mode\n");
 	tmp |= S5P_CFG_WFI_IDLE;
 #else
-	printk("sleep mode\n");
+	DBG("sleep mode\n");
 	tmp |= S5P_CFG_WFI_SLEEP;
 #endif
 	__raw_writel(tmp,S5P_PWR_CFG);
@@ -684,6 +686,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	 * we resume as it saves its own register state, so use the return
 	 * code to differentiate return from save and return from sleep */
 
+#ifdef DEBUG_S5P_PM
 	sprintf(buf, "WAKEUP_STAT:%08x\n", __raw_readl(S5P_WAKEUP_STAT));
 	printascii(buf);
 	
@@ -698,6 +701,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	
 	sprintf(buf, "EINTPENDING3:%08x\n", __raw_readl(S5PC11X_VA_GPIO + 0xf4c));
 	printascii(buf);
+#endif
 
 	if (s5pc110_cpu_save(regs_save) == 0) {
 		flush_cache_all();
