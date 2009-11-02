@@ -47,113 +47,81 @@ static struct timer_list keypad_timer;
 static int is_timer_on = FALSE;
 static struct clk *keypad_clock;
 
-static int keypad_scan(u32 *keymask_low, u32 *keymask_high)
+static unsigned  prevmask[KEYPAD_COLUMNS];
+
+static int keypad_scan(u32 keymask[])
 {
-	int i,j = 0;
-	u32 cval,rval,cscan,rscan;
+	int i;
+	u32 cval,rval;
 
 	writel(readl(key_base+S3C_KEYIFCON) & ~(INT_F_EN|INT_R_EN), key_base+S3C_KEYIFCON);
 
 	for (i=0; i<KEYPAD_COLUMNS; i++) {
-		cval = readl(key_base+S3C_KEYIFCOL) | KEYCOL_DMASK;
-		cval &= ~(1 << i);
-		writel(cval, key_base+S3C_KEYIFCOL);
 
-		udelay(KEYPAD_DELAY);
-
-		rval = ~(readl(key_base+S3C_KEYIFROW)) & KEYROW_DMASK;
-		
-		if ((i*KEYPAD_ROWS) < MAX_KEYMASK_NR)
-#if defined(CONFIG_CPU_S5PC110)			
-			*keymask_low |= (rval << (i * KEYPAD_COLUMNS));
-#else			
-			*keymask_low |= (rval << (i * KEYPAD_ROWS));
-#endif
-		else {
-#if defined(CONFIG_CPU_S5PC110)			
-			*keymask_high |= (rval << (j * KEYPAD_COLUMNS));
+#if defined(CONFIG_ARCH_S5PC1XX)
+		cval = (0x1 << i) ^ KEYCOL_DMASK;
 #else
-			*keymask_high |= (rval << (j * KEYPAD_ROWS));
+		cval = ((0x1 << i) ^ KEYCOL_DMASK) << KEYPAD_COLUMNS; /* use High-Z */
 #endif
-			j = j +1;
-		}
+
+		writel(cval , key_base+S3C_KEYIFCOL);
+		
+		udelay(KEYPAD_DELAY);
+		rval = ~(readl(key_base+S3C_KEYIFROW)) & KEYROW_DMASK;
+		keymask[i] = rval;
 	}
 
 	writel(KEYIFCOL_CLEAR, key_base+S3C_KEYIFCOL);
+	writel(KEYIFSTSCLR_CLEAR, key_base+S3C_KEYIFSTSCLR);
 
 	return 0;
+
 }
 
-static unsigned prevmask_low = 0, prevmask_high = 0;
 
 static void keypad_timer_handler(unsigned long data)
 {
-	u32 keymask_low = 0, keymask_high = 0;
-	u32 press_mask_low, press_mask_high;
-	u32 release_mask_low, release_mask_high;
+	u32 keymask[KEYPAD_COLUMNS];
+	u32 press_mask;
+	u32 release_mask;
+	u32 detect_press=0;
+	int k,j;
 	int i;
 	struct s3c_keypad *pdata = (struct s3c_keypad *)data;
 	struct input_dev *dev = pdata->dev;
 
-	keypad_scan(&keymask_low, &keymask_high);
+	keypad_scan(keymask);
+		
+	for(k=0,i=0;k<KEYPAD_COLUMNS;k++)
+	{
+		i = k*KEYPAD_ROWS;
+		if (keymask[k] != prevmask[k]) {
+			press_mask =
+				((keymask[k] ^ prevmask[k]) & keymask[k]); 
+			release_mask =
+				((keymask[k] ^ prevmask[k]) & prevmask[k]); 
+			for(j=0;j<KEYPAD_ROWS;j++){
+				if(press_mask & 1){
+					input_report_key(dev,pdata->keycodes[i+j],1);
+					DPRINTK("key pressed: c=%d,r=%d,index=%d,keycode=%d\n",
+						i, j, i+j, pdata->keycodes[i+j]);
+				}
+				press_mask >>= 1;
 
-	if (keymask_low != prevmask_low) {
-		press_mask_low =
-			((keymask_low ^ prevmask_low) & keymask_low); 
-		release_mask_low =
-			((keymask_low ^ prevmask_low) & prevmask_low); 
-
-		i = 0;
-		while (press_mask_low) {
-			if (press_mask_low & 1) {
-				input_report_key(dev,pdata->keycodes[i],1);
-				DPRINTK("low Pressed  : %d\n",i);
+				if (release_mask & 1) {
+					input_report_key(dev,pdata->keycodes[i+j],0);
+					DPRINTK("key released: c=%d,r=%d,index=%d,keycode=%d\n",
+						i, j, i+j, pdata->keycodes[i+j]);
+				}
+				release_mask >>= 1;
 			}
-			press_mask_low >>= 1;
-			i++;
 		}
 
-		i = 0;
-		while (release_mask_low) {
-			if (release_mask_low & 1) {
-				input_report_key(dev,pdata->keycodes[i],0);
-				DPRINTK("low Released : %d\n",i);
-			}
-			release_mask_low >>= 1;
-			i++;
-		}
-		prevmask_low = keymask_low;
+		prevmask[k] = keymask[k];
+		detect_press |= keymask[k];
 	}
 
-	if (keymask_high != prevmask_high) {
-		press_mask_high =
-			((keymask_high ^ prevmask_high) & keymask_high); 
-		release_mask_high =
-			((keymask_high ^ prevmask_high) & prevmask_high);
-
-		i = 0;
-		while (press_mask_high) {
-			if (press_mask_high & 1) {
-				input_report_key(dev,pdata->keycodes[i+MAX_KEYMASK_NR],1);
-				DPRINTK("high Pressed  : %d %d\n",pdata->keycodes[i+MAX_KEYMASK_NR],i);
-			}
-			press_mask_high >>= 1;
-			i++;
-		}
-
-		i = 0;
-		while (release_mask_high) {
-			if (release_mask_high & 1) {
-				input_report_key(dev,pdata->keycodes[i+MAX_KEYMASK_NR],0);
-				DPRINTK("high Released : %d\n",pdata->keycodes[i+MAX_KEYMASK_NR]);
-			}
-			release_mask_high >>= 1;
-			i++;
-		}
-		prevmask_high = keymask_high;
-	}
-
-	if (keymask_low | keymask_high) {
+	if (detect_press){
 		mod_timer(&keypad_timer,jiffies + HZ/10);
 	} else {
 		writel(KEYIFCON_INIT, key_base+S3C_KEYIFCON);
@@ -235,8 +203,11 @@ static int __init s3c_keypad_probe(struct platform_device *pdev)
 	writel(KEYIFFC_DIV, key_base+S3C_KEYIFFC);
 
 	/* Set GPIO Port for keypad mode and pull-up disable*/
+#if defined(CONFIG_KEYPAD_S3C_MSM)
+	s3c_setup_keypad_cfg_gpio();
+#else
 	s3c_setup_keypad_cfg_gpio(KEYPAD_ROWS, KEYPAD_COLUMNS);
-
+#endif
 	writel(KEYIFCOL_CLEAR, key_base+S3C_KEYIFCOL);
 
 	/* create and register the input driver */
