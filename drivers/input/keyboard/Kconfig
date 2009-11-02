@@ -317,15 +317,8 @@ config KEYPAD_S3C
 
 choice
 	prompt "Select keypad interface type"
-	default KEYPAD_S3C_MSM
-
-config KEYPAD_S3C_MSM
-	bool "Port1 : [KEYPAD : MSM(8x16)]"
 	depends on KEYPAD_S3C
-	help
-	  Say Y here if you want to use the S3C SMDK keypad.(8x16)
-   	  To compile this driver as a module, choose M here: the
-   	  module will be called s3c-keypad.
+	default KEYPAD_S3C_INT 
  
 config KEYPAD_S3C_INT
 	bool "Port0 : [KEYPAD : INT(8x8)]"
@@ -335,6 +328,15 @@ config KEYPAD_S3C_INT
  
            To compile this driver as a module, choose M here: the
            module will be called s3c-keypad.
+
+config KEYPAD_S3C_MSM
+	bool "Port1 : [KEYPAD : MSM(8x16)]"
+	depends on KEYPAD_S3C && CPU_S5PC110
+	help
+	  Say Y here if you want to use the S3C SMDK keypad.(8x16)
+   	  To compile this driver as a module, choose M here: the
+   	  module will be called s3c-keypad.
+
 endchoice
 
 config KEYBOARD_MAPLE

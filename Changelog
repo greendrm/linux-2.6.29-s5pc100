@@ -2409,3 +2409,12 @@ v2.6.29.4-dev-1-5-0: Jang-Hyuck Kim
 	Modified Files:
 		M	drivers/media/video/samsung/fimc/fimc_capture.c
 		M	drivers/media/video/samsung/fimc/fimc_dev.c
+
+v2.6.29.4-dev-1-6-1: Sunil Choi
+	- Modified keypad scan algorithm for 8x16 (c110 port0)
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	drivers/input/keyboard/Kconfig
+		M	drivers/input/keyboard/s3c-keypad.c
+		M	drivers/input/keyboard/s3c-keypad.h
