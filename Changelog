@@ -2418,3 +2418,11 @@ v2.6.29.4-dev-1-6-1: Sunil Choi
 		M	drivers/input/keyboard/Kconfig
 		M	drivers/input/keyboard/s3c-keypad.c
 		M	drivers/input/keyboard/s3c-keypad.h
+
+v2.6.29.4-dev-1-6-2: Jae-Cheol lee
+	- Support watchdog reset on s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+		M	arch/arm/mach-s5pc110/include/mach/system-reset.h
+		M	arch/arm/plat-s5pc11x/cpu.c
