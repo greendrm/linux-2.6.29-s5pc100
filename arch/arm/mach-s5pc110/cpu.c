@@ -127,7 +127,13 @@ void __init s5pc110_map_io(void)
 	s5pc11x_idle = s5pc110_idle;
 
 	/* set custom reset hook */
+#if defined(CONFIG_S3C2410_WATCHDOG)
+	/*
+	 * If there were watchdog device driver, watchdog software reset is not enabled.
+	 * Therefore software reset should use S5PC110's SWRESET feature. 
+	 */
 	s5pc11x_reset_hook = s5pc110_swreset;
+#endif
 }
 
 void __init s5pc110_init_clocks(int xtal)
