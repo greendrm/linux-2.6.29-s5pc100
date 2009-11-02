@@ -2426,3 +2426,12 @@ v2.6.29.4-dev-1-6-2: Jae-Cheol lee
 		M	arch/arm/mach-s5pc110/cpu.c
 		M	arch/arm/mach-s5pc110/include/mach/system-reset.h
 		M	arch/arm/plat-s5pc11x/cpu.c
+
+v2.6.29.4-dev-1-6-3: Jang-Hyuck Kim
+	- Add FIMC WriteBack definition for 6442, C100
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/include/plat/fimc.h
+		M	arch/arm/plat-s5p64xx/include/plat/regs-fimc.h
+		M	arch/arm/plat-s5pc1xx/include/plat/fimc.h
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-fimc.h
