@@ -71,17 +71,6 @@ enum perf_level {
 //	L4,
 };
 
-static u32 clkdiv_val[4][9] = {
-/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
- *	HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
- *		ONEDRAM}
- */		
-	{0, 4, 4, 1, 3, 1, 4, 1, 3},	/* L0 : [1000/200/100][166/83][133/66] */
-	{0, 3, 3, 1, 3, 1, 4, 1, 3},	/* L1 : [800/200/100][166/83][133/66] */
-	{1, 3, 1, 1, 3, 1, 4, 1, 3},	/* L2 : [400/200/100][166/83][133/66] */
-	{7, 7, 0, 0, 7, 0, 9, 0, 7},	/* L3 : [100/100/50][83/83][66/66] */
-};
-
 #endif	/* CONFIG_CPU_S5PC100 */
 
 struct s3c_cpufreq_info;
@@ -94,6 +83,12 @@ struct s3c_freq {
 	unsigned long	hclk_tns;	/* in 10ths of ns */
 	unsigned long	hclk;
 	unsigned long	pclk;
+#if defined(CONFIG_CPU_S5PC110)
+	unsigned long	hclk_msys;
+	unsigned long	pclk_msys;
+	unsigned long	hclk_dsys;
+	unsigned long	pclk_dsys;
+#endif
 };
 
 /* wrapper 'struct cpufreq_freqs' so that any drivers receiving the

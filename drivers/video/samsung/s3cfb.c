@@ -29,7 +29,9 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/memory.h>
+#include <linux/cpufreq.h>
 #include <plat/clock.h>
+#include <plat/cpu-freq.h>
 
 #ifdef CONFIG_FB_S3C_LTE480WV
 #include "logo_rgb24_wvga_landscape.h"
@@ -1039,6 +1041,54 @@ static int s3cfb_sysfs_store_win_power(struct device *dev,
 static DEVICE_ATTR(win_power, 0644,
 		   s3cfb_sysfs_show_win_power, s3cfb_sysfs_store_win_power);
 
+#ifdef CONFIG_CPU_FREQ
+/*
+ * CPU clock speed change handler.  We need to adjust the LCD timing
+ * parameters when the CPU clock is adjusted by the power management
+ * subsystem.
+ */
+static int
+s3cfb_freq_transition(struct notifier_block *nb, unsigned long val,
+			 void *data)
+{
+	struct s3cfb_global *fbdev = container_of(nb, struct s3cfb_global, freq_transition);
+	struct s3c_cpufreq_freqs *f = to_s3c_cpufreq(data);
+
+	printk("f->new.hclk_msys =%d, f->old.hclk_msys=%d\n",f->new.hclk_msys,f->old.hclk_msys);
+	
+	if (f->new.hclk_msys == f->old.hclk_msys)
+		return 0;
+
+	switch (val) {
+	case CPUFREQ_PRECHANGE:
+		printk("s3cfb cpufreq prechange\n");
+		break;
+
+	case CPUFREQ_POSTCHANGE:
+		printk("s3cfb cpufreq postchange\n");
+		break;
+	}
+	return 0;
+}
+
+static int
+s3cfb_freq_policy(struct notifier_block *nb, unsigned long val,
+		     void *data)
+{
+	struct s3cfb_global *fbdev = container_of(nb, struct s3cfb_global, freq_policy);
+	struct cpufreq_policy *policy = data;
+
+	switch (val) {
+	case CPUFREQ_ADJUST:
+	case CPUFREQ_INCOMPATIBLE:
+		break;
+	case CPUFREQ_NOTIFY:
+		break;
+	}
+	return 0;
+}
+#endif
+
 static int s3cfb_probe(struct platform_device *pdev)
 {
 	struct s3c_platform_fb *pdata;
@@ -1136,6 +1186,13 @@ static int s3cfb_probe(struct platform_device *pdev)
 		dev_err(fbdev->dev, "failed to add sysfs entries\n");
 
 	dev_info(fbdev->dev, "registered successfully\n");
+
+#ifdef CONFIG_CPU_FREQ
+	fbdev->freq_transition.notifier_call = s3cfb_freq_transition;
+	fbdev->freq_policy.notifier_call = s3cfb_freq_policy;
+	cpufreq_register_notifier(&fbdev->freq_transition, CPUFREQ_TRANSITION_NOTIFIER);
+	cpufreq_register_notifier(&fbdev->freq_policy, CPUFREQ_POLICY_NOTIFIER);
+#endif
 
 	return 0;
 
