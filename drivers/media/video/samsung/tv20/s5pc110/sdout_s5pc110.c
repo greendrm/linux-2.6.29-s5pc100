@@ -1742,63 +1742,7 @@ static s5p_tv_sd_err __s5p_sdout_init_oversampling_filter_coeff_default(s5p_tv_o
 	case TVOUT_OUTPUT_SVIDEO:
 
 	case TVOUT_OUTPUT_COMPONENT_YPBPR_INERLACED:
-		temp_reg = (u32)(sdout_base + S5P_SDO_OSFC00_0);
-
-		for (i = 0; i < 3; i++) { 
-			// Setting SFR data from SDOUT_OSFC00_0 to SDOUT_OSFC23_2
-			temp_reg = (u32)((i == 0) ? sdout_base + S5P_SDO_OSFC00_0 :
-				       (i == 1) ? sdout_base + S5P_SDO_OSFC00_1 :
-				       sdout_base + S5P_SDO_OSFC00_2);
-				       
-			writel(((-2&0xfff) << 0) | ((-3&0xfff) << 0), 
-				temp_reg + 0);
-			writel(0, 
-				temp_reg + 1);
-			writel((4 << 0) | (5 << 16), 
-				temp_reg + 2);
-			writel(((-1&0xfff) << 0) | (0 << 16), 
-				temp_reg + 3);
-			writel(((-6&0xfff) << 0) | ((-9&0xfff) << 16), 
-				temp_reg + 4);
-			writel((1 << 0) | (0 << 16), 
-				temp_reg + 5);
-			writel((10 << 0) | (14 << 16), 
-				temp_reg + 6);
-			writel(((-1&0xfff) << 0) | (0 << 16), 
-				temp_reg + 7);
-			writel(((-14&0xfff) << 0) | ((-20&0xfff) << 16), 
-				temp_reg + 8);
-			writel((1 << 0) | (0 << 16), 
-				temp_reg + 9);
-			writel((20 << 0) | (29 << 16), 
-				temp_reg + 10);
-			writel(((-2&0xfff) << 0) | (0 << 16), 
-				temp_reg + 11);
-			writel(((-28&0xfff) << 0) | ((-40&0xfff) << 16), 
-				temp_reg + 12);
-			writel((2 << 0) | (0 << 16), 
-				temp_reg + 13);
-			writel((40 << 0) | (56 << 16), 
-				temp_reg + 14);
-			writel(((-3&0xfff) << 0) | (0 << 16), 
-				temp_reg + 15);
-			writel(((-57&0xfff) << 0) | ((-80&0xfff) << 16), 
-				temp_reg + 16);
-			writel((5 << 0) | (0 << 16), 
-				temp_reg + 17);
-			writel((86 << 0) | (121 << 16), 
-				temp_reg + 18);
-			writel(((-10&0xfff) << 0) | (0 << 16), 
-				temp_reg + 19);
-			writel(((-154&0xfff) << 0) | ((-212&0xfff) << 16),
-				temp_reg + 20);
-			writel((27 << 0) | (0 << 16), 
-				temp_reg + 21);
-			writel((613 << 0) | (651 << 16), 
-				temp_reg + 22);
-			writel(((-308&0xfff) << 0) | (1024 << 16), 
-				temp_reg + 23);
-		}
+		/* Hareware default values on TV encoder are recommended */
 
 		break;
 

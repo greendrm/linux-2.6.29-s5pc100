@@ -2451,3 +2451,10 @@ v2.6.29.4-dev-1-6-4: Jaeryul Oh
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
 
+v2.6.29.4-dev-1-6-5: Sunil Choi
+        - Improved video quality of analog tv out for C110
+		(Default values for oversampling filter are used.)
+
+	Modified Files:
+		M	drivers/media/video/samsung/tv20/s5pc110/sdout_s5pc110.c
+
