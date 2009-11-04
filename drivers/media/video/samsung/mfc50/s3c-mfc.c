@@ -374,8 +374,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		if ((in_param.args.mem_alloc.codec_type == H264_ENC) || 
 			(in_param.args.mem_alloc.codec_type == H263_ENC) ||
 			(in_param.args.mem_alloc.codec_type == MPEG4_ENC)) 
-			mfc_ctx->port_no = 1;
-		
+			mfc_ctx->port_no = 1;		
 		else 
 			mfc_ctx->port_no = 0;		
 		

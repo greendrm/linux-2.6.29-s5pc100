@@ -18,7 +18,7 @@
 #include <linux/videodev2.h>
 
 #define FIMC_SRC_MAX_W		1920
-#define FIMC_SRC_MAX_H		1080
+#define FIMC_SRC_MAX_H		1088
 
 struct platform_device;
 
@@ -52,6 +52,7 @@ enum fimc_cam_index {
 	CAMERA_PAR_B	= 1,
 	CAMERA_CSI_C	= 2,
 	CAMERA_PATTERN	= 3,	/* Not actual camera but test pattern */
+	CAMERA_WB 	= 4,	/* Not actual camera but write back */
 };
 
 /* struct s3c_platform_camera: abstraction for input camera */

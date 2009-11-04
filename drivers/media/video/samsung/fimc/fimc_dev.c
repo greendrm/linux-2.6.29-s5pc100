@@ -710,8 +710,10 @@ static int fimc_release(struct file *filp)
 	}
 
 	if (ctrl->cap) {
-		for (i = 0; i < FIMC_CAPBUFS; i++)
+		for (i = 0; i < FIMC_CAPBUFS; i++) {
 			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 0);
+			fimc_dma_free(ctrl, &ctrl->cap->bufs[i], 1);
+		}
 
 		kfree(ctrl->cap);
 		ctrl->cap = NULL;
@@ -787,6 +789,12 @@ static int fimc_init_global(struct platform_device *pdev)
 		if (!cam)
 			break;
 
+		/* WriteBack doesn't need clock setting */
+		if(cam->id == CAMERA_WB) { 
+			fimc_dev->camera[cam->id] = cam;
+			break;
+		}
+		
 		srclk = clk_get(&pdev->dev, cam->srclk_name);
 		if (IS_ERR(srclk)) {
 			dev_err(&pdev->dev, "%s: failed to get mclk source\n",

@@ -32,12 +32,13 @@
 
 #define DESC_BUF_SIZE		(0x20000)   	/* 128KB : 128x1024 */
 #define RISC_BUF_SIZE		(0x80000)   	/* 512KB : 512x1024 size per instance */
-#define SHARED_MEM_SIZE		(0x400)		/* 1KB : 1024 size */
+#define SHARED_MEM_SIZE		(0x1000)	/* 4KB   : 4x1024 size */
 
 
 #define CPB_BUF_SIZE		(0x400000)  	/* 4MB : 4x1024x1024 for decoder */
 
 #define STREAM_BUF_SIZE		(0x200000) 	/* 2MB : 2x1024x1024 for encoder */
+
 #define ENC_UP_INTRA_PRED_SIZE	(0x10000) 	/* 64KB : 64x1024 for encoder */
 
 volatile unsigned char *s3c_mfc_get_fw_buf_virt_addr(void);		

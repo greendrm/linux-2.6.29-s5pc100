@@ -2370,7 +2370,7 @@ v2.6.29.4-dev-1-4-54: Sang-Beom Kim
 
 	Modified Files:
 		M	arch/arm/plat-s5p64xx/Makefile
-		
+
 v2.6.29.4-dev-1-4-55: Jaeryul Oh
 	- Modified MFC fw(10/16) & driver on SMDKC110
 
@@ -2383,3 +2383,71 @@ v2.6.29.4-dev-1-4-55: Jaeryul Oh
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_memory.c
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_memory.h
 		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+
+v2.6.29.4-dev-1-4-56: Sang-Beom Kim
+	- Modified clock code for prevent
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/clock.c
+		M	arch/arm/plat-s5p64xx/s5p6442-clock.c
+
+v2.6.29.4-dev-1-4-57: Jang-Hyuck Kim
+	- Added WriteBack feature in FIMC
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	arch/arm/plat-s5pc11x/include/plat/fimc.h
+		M	arch/arm/plat-s5pc11x/include/plat/regs-fimc.h
+		M	drivers/media/video/samsung/fimc/fimc.h
+		M	drivers/media/video/samsung/fimc/fimc43_regs.c
+		M	drivers/media/video/samsung/fimc/fimc_capture.c
+		M	drivers/media/video/samsung/fimc/fimc_dev.c
+
+v2.6.29.4-dev-1-5-0: Jang-Hyuck Kim
+	- Fix buffer allocation in FIMC
+
+	Modified Files:
+		M	drivers/media/video/samsung/fimc/fimc_capture.c
+		M	drivers/media/video/samsung/fimc/fimc_dev.c
+
+v2.6.29.4-dev-1-6-1: Sunil Choi
+	- Modified keypad scan algorithm for 8x16 (c110 port0)
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/mach-smdkc110.c
+		M	drivers/input/keyboard/Kconfig
+		M	drivers/input/keyboard/s3c-keypad.c
+		M	drivers/input/keyboard/s3c-keypad.h
+
+v2.6.29.4-dev-1-6-2: Jae-Cheol lee
+	- Support watchdog reset on s5pc110
+
+	Modified Files:
+		M	arch/arm/mach-s5pc110/cpu.c
+		M	arch/arm/mach-s5pc110/include/mach/system-reset.h
+		M	arch/arm/plat-s5pc11x/cpu.c
+
+v2.6.29.4-dev-1-6-3: Jang-Hyuck Kim
+	- Add FIMC WriteBack definition for 6442, C100
+
+	Modified Files:
+		M	arch/arm/plat-s5p64xx/include/plat/fimc.h
+		M	arch/arm/plat-s5p64xx/include/plat/regs-fimc.h
+		M	arch/arm/plat-s5pc1xx/include/plat/fimc.h
+		M	arch/arm/plat-s5pc1xx/include/plat/regs-fimc.h
+
+v2.6.29.4-dev-1-6-4: Jaeryul Oh
+	- Modified MFC fw(10/30) & driver on SMDKC110
+
+	Modified Files :
+		M	arch/arm/plat-s5pc11x/include/plat/fimc.h
+		M       arch/arm/plat-s5pc11x/include/plat/regs-mfc.h
+		M       drivers/media/video/samsung/mfc50/s3c-mfc.c
+		M	drivers/media/video/samsung/mfc50/s3c_mfc_common.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_fw.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_fw.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_interface.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_memory.h
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.c
+		M       drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
+

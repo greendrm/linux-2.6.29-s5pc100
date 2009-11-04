@@ -267,6 +267,10 @@ typedef struct {
 	int out_display_status; 
 	int out_pic_time_top;
 	int out_pic_time_bottom;
+	int out_crop_right_offset;
+	int out_crop_left_offset;
+	int out_crop_bottom_offset;
+	int out_crop_top_offset;
 } s3c_mfc_dec_exe_arg_t;
 
 typedef struct {

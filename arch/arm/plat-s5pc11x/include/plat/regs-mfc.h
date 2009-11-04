@@ -219,10 +219,15 @@
 #define S3C_FIMV_ENC_COZERO_FLAG_ADR	S3C_FIMVREG(0x0610) /* direct cozero flag addr */
 #define S3C_FIMV_ENC_UP_INTRA_MD_ADR	S3C_FIMVREG(0x0608) /* upper intra MD addr */
 
+
 #define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x0740) /* upper intra PRED addr */
 
 #define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
 #define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
+#if 1 // MFC fw 10/30 
+#define S3C_FIMV_ENC_REF_B_LUMA_ADR	S3C_FIMVREG(0x062c) /* ref B Luma addr */
+#define S3C_FIMV_ENC_REF_B_CHROMA_ADR	S3C_FIMVREG(0x0630) /* ref B Chroma addr */
+#endif
 #define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0700) /* ref0 Chroma addr */
 #define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0620) /* ref1 Luma addr */
 #define S3C_FIMV_ENC_REF1_CHROMA_ADR	S3C_FIMVREG(0x0704) /* ref1 Chroma addr */

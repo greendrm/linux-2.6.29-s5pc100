@@ -130,9 +130,10 @@ MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_m
 	 */
 	buf_width = (mfc_ctx->img_width+15)/16*16;
 	buf_height = (mfc_ctx->img_height+31)/32*32;
-	
-	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2;
-	
+	// for MFC fw 10/30
+	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*3 +
+						Align(buf_width*buf_height/2, 64*BUF_L_UNIT);
+		
 	memset(&local_param, 0, sizeof(local_param));
 	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.strm_ref_y, 2*BUF_S_UNIT);
 	local_param.mem_alloc.mapped_addr = init_arg->in_mapped_addr; 
