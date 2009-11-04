@@ -194,7 +194,12 @@ int s3c_gpio_setcfg_s5pc11x(struct s3c_gpio_chip *chip,
 	con &= ~(0xf << shift);
 	con |= cfg;
 	__raw_writel(con, reg);
-
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	/* Need to re-read after writing GPIO register in case of Alive part
+	 * GPIO. This will be fixed in EVT1. 
+	 */
+	con = __raw_readl(reg);
+#endif
 	return 0;
 }
 #endif /* CONFIG_PLAT_S5PC1XX */
@@ -234,6 +239,12 @@ int s3c_gpio_setpull_updown(struct s3c_gpio_chip *chip,
 	pup &= ~(3 << shift);
 	pup |= (pull << shift);
 	__raw_writel(pup, reg);
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	/* Need to re-read after writing GPIO register in case of Alive part
+	 * GPIO. This will be fixed in EVT1. 
+	 */
+	pup = __raw_readl(reg);
+#endif
 
 	return 0;
 }
@@ -269,6 +280,12 @@ int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
 	lvl &= ~(1 << off);
 	lvl |= (level << off);
 	__raw_writel(lvl, reg);
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	/* Need to re-read after writing GPIO register in case of Alive part
+	 * GPIO. This will be fixed in EVT1. 
+	 */
+	lvl = __raw_readl(reg);
+#endif
 
 	return 0;
 }

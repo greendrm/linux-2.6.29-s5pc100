@@ -38,6 +38,8 @@ static struct clk * mpu_clk;
 static struct regulator *arm_regulator;
 static struct regulator *internal_regulator;
 
+struct s3c_cpufreq_freqs s3c_freqs;
+
 #define OVERCLOCKED_FREQ	1000*1000	// 1GHz
 #define BOOTUP_FREQ		800*1000	// 800MHz
 
@@ -79,6 +81,61 @@ static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
 	},
 };
 
+static u32 clkdiv_val[4][9] = {
+/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
+ *	HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
+ *		ONEDRAM}
+ */		
+	{0, 4, 4, 1, 3, 1, 4, 1, 3},	/* L0 : [1000/200/100][166/83][133/66] */
+	{0, 3, 3, 1, 3, 1, 4, 1, 3},	/* L1 : [800/200/100][166/83][133/66] */
+	{1, 3, 1, 1, 3, 1, 4, 1, 3},	/* L2 : [400/200/100][166/83][133/66] */
+	{7, 7, 0, 0, 7, 0, 9, 0, 7},	/* L3 : [100/100/50][83/83][66/66] */
+};
+
+static struct s3c_freq s5pc110_clk_info[] = {
+	{ 
+		.fclk 		= 1000000, 
+		.armclk 	= 1000000, 
+		.hclk_tns 	= 0, 
+		.hclk 		= 133000, 
+		.pclk 		= 66000, 
+		.hclk_msys 	= 200000, 
+		.pclk_msys 	= 100000, 
+		.hclk_dsys 	= 166000, 
+		.pclk_dsys 	= 83000,
+	}, { 
+		.fclk 		= 800000, 
+		.armclk 	= 800000, 
+		.hclk_tns 	= 0, 
+		.hclk 		= 133000, 
+		.pclk 		= 66000, 
+		.hclk_msys 	= 200000, 
+		.pclk_msys 	= 100000, 
+		.hclk_dsys 	= 166000, 
+		.pclk_dsys 	= 83000,
+	}, { 
+		.fclk 		= 800000, 
+		.armclk 	= 400000, 
+		.hclk_tns 	= 0, 
+		.hclk 		= 133000, 
+		.pclk 		= 66000, 
+		.hclk_msys 	= 200000, 
+		.pclk_msys 	= 100000, 
+		.hclk_dsys 	= 166000, 
+		.pclk_dsys 	= 83000,
+	}, { 
+		.fclk 		= 800000, 
+		.armclk 	= 100000, 
+		.hclk_tns 	= 0, 
+		.hclk 		= 66000, 
+		.pclk 		= 66000, 
+		.hclk_msys 	= 100000, 
+		.pclk_msys 	= 50000, 
+		.hclk_dsys 	= 83000, 
+		.pclk_dsys 	= 83000,
+	},	
+};
+
 int s5pc110_verify_speed(struct cpufreq_policy *policy)
 {
 
@@ -106,14 +163,13 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		       unsigned int target_freq,
 		       unsigned int relation)
 {
-	struct cpufreq_freqs freqs;
 	int ret = 0;
 	unsigned long arm_clk;
 	unsigned int index ,reg , arm_volt, int_volt;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
 
-	freqs.old = s5pc110_getspeed(0);
+	s3c_freqs.freqs.old = s5pc110_getspeed(0);
 
 	if (cpufreq_frequency_table_target(policy, s5pc110_freq_table, target_freq, relation, &index)) {
 		ret = -EINVAL;
@@ -122,42 +178,36 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	arm_clk = s5pc110_freq_table[index].frequency;
 
-	freqs.new = arm_clk;
-	freqs.cpu = 0;
+	s3c_freqs.freqs.new = arm_clk;
+	s3c_freqs.freqs.cpu = 0;
 
-	if (freqs.new == freqs.old)
-		return -EINVAL;
+	if (s3c_freqs.freqs.new == s3c_freqs.freqs.old)
+		return 0;
 	
 	arm_volt = s5pc110_dvs_conf[index].arm_volt;
 	int_volt = s5pc110_dvs_conf[index].int_volt;
 
+	/* iNew clock inforamtion update */
+	memcpy(&s3c_freqs.new, &s5pc110_clk_info[index], sizeof(struct s3c_freq));
+
 	if (!pm_mode) {	
 
-		cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
+		cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_PRECHANGE);
 
-		if (freqs.new > freqs.old) {
+		if (s3c_freqs.freqs.new > s3c_freqs.freqs.old) {
 			// Voltage up code
 			regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 			regulator_set_voltage(internal_regulator, int_volt, int_volt);
 		}
 	}
-	
-	switch (index) {
-	case L1:
-		if (freqs.new > freqs.old)
-			break;
-	case L0:
+
+	/* Check if there need to change PLL */
+	if (s3c_freqs.new.fclk != s3c_freqs.old.fclk)	
 		pll_changing = 1;
-		break;
-	case L2:
-		if (freqs.new < freqs.old)
-			break;
-	case L3:
+		
+	/* Check if there need to change System bus clock */
+	if (s3c_freqs.new.hclk_msys != s3c_freqs.old.hclk_msys)
 		bus_speed_changing = 1;
-		break;
-	default:
-		break;
-	}
 
 	if (index == L3) {
 		__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);	// DRAM refresh counter setting
@@ -169,8 +219,12 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 	}
 
-	/* APLL should be changed in this level */
-	/* APLL -> MPLL(for stable transition) -> APLL */
+/* APLL should be changed in this level
+ * APLL -> MPLL(for stable transition) -> APLL
+ * Some clock source's clock API  are not prepared. Do not use clock API
+ * in below code.
+ */
+	
 	if (pll_changing) {
 		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
 			
@@ -182,7 +236,26 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
 		} while (reg & (0x1<<18));
-		
+	
+		/* Change APLL to MPLL in MFC_MUX and G3D MUX */
+		reg = __raw_readl(S5P_CLK_DIV2);
+		reg &=~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+		reg |= (0x3<<S5P_CLKDIV2_G3D_SHIFT)|(0x3<<S5P_CLKDIV2_MFC_MASK);	
+		__raw_writel(reg, S5P_CLK_DIV2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT0);
+		} while (reg & ((1<<16)|(1<<17)));
+
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &=~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
+		reg |= (1<<S5P_CLKSRC2_G3D_SHIFT) | (1<<S5P_CLKSRC2_MFC_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1<<7)|(1<<3)));
+
 #if defined(CONFIG_S5PC110_H_TYPE)
 		/* DMC0 source clock : SCLKA2M -> SCLKMPLL */
 		__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
@@ -267,7 +340,27 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
 		} while (reg & (1<<2));
-				
+			
+		/* Change MPLL to APLL in MFC_MUX and G3D MUX */
+		reg = __raw_readl(S5P_CLK_DIV2);
+		reg &=~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+		reg |= (0x0<<S5P_CLKDIV2_G3D_SHIFT)|(0x0<<S5P_CLKDIV2_MFC_MASK);	
+		__raw_writel(reg, S5P_CLK_DIV2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT0);
+		} while (reg & ((1<<16)|(1<<17)));
+
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &=~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
+		reg |= (0<<S5P_CLKSRC2_G3D_SHIFT) | (0<<S5P_CLKSRC2_MFC_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1<<7)|(1<<3)));
+
+		/* Change MPLL to APLL in MSYS_MUX and HPM_MUX */	
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &=~(S5P_CLKSRC0_MUX200_MASK);	
 		reg |= (0x0 << S5P_CLKSRC0_MUX200_SHIFT); // SCLKMPLL -> SCLKAPLL	
@@ -330,16 +423,18 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	}
 
 	if (!pm_mode) {
-		if (freqs.new < freqs.old) {
+		if (s3c_freqs.freqs.new < s3c_freqs.freqs.old) {
 			// Voltage down
 			regulator_set_voltage(arm_regulator, arm_volt, arm_volt);
 			regulator_set_voltage(internal_regulator, int_volt, int_volt);
 		}
 
-		cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
+		cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
 	}
-	mpu_clk->rate = freqs.new * KHZ_T;
+	mpu_clk->rate = s3c_freqs.freqs.new * KHZ_T;
 
+	memcpy(&s3c_freqs.old, &s3c_freqs.new, sizeof(struct s3c_freq));
+	
 	printk("Perf changed[L%d], relation[%d]\n",index, relation);
 
 out: 	
@@ -404,6 +499,8 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 	cpufreq_frequency_table_get_attr(s5pc110_freq_table, policy->cpu);
 
 	policy->cpuinfo.transition_latency = 40000;	//1us
+
+	memcpy(&s3c_freqs.old, &s5pc110_clk_info[1], sizeof(struct s3c_freq));
 
 	return cpufreq_frequency_table_cpuinfo(policy, s5pc110_freq_table);
 }

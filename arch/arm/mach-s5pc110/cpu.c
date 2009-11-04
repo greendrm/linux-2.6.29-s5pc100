@@ -31,6 +31,7 @@
 #include <mach/hardware.h>
 #include <mach/idle.h>
 #include <mach/map.h>
+#include <mach/reset.h>
 
 #include <plat/cpu-freq.h>
 #include <plat/regs-serial.h>
@@ -100,6 +101,13 @@ static void s5pc110_idle(void)
 
 	cpu_do_idle();
 }
+
+static void s5pc110_swreset(void)
+{
+	printk("SW reset of %s\n","S5PC110");
+	__raw_writel(0x1, S5P_SWRESET);
+}
+
 void __init s5pc110_map_io(void)
 {
 	iotable_init(s5pc110_iodesc, ARRAY_SIZE(s5pc110_iodesc));
@@ -117,6 +125,15 @@ void __init s5pc110_map_io(void)
 
 	/* set s5pc110 idle function */
 	s5pc11x_idle = s5pc110_idle;
+
+	/* set custom reset hook */
+#if defined(CONFIG_S3C2410_WATCHDOG)
+	/*
+	 * If there were watchdog device driver, watchdog software reset is not enabled.
+	 * Therefore software reset should use S5PC110's SWRESET feature. 
+	 */
+	s5pc11x_reset_hook = s5pc110_swreset;
+#endif
 }
 
 void __init s5pc110_init_clocks(int xtal)

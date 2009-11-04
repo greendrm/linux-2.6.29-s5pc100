@@ -55,7 +55,14 @@ static int s5pc11x_gpiolib_input(struct gpio_chip *chip, unsigned offset)
 	con = __raw_readl(base + OFF_GPCON);
 	con &= ~(0xf << con_4bit_shift(offset));
 	__raw_writel(con, base + OFF_GPCON);
-
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	/* Need to re-read after writing GPIO register in case of Alive part
+	 * GPIO. This will be fixed in EVT1. 
+	 */
+	if ((base >= S5PC11X_GPH0_BASE) && (base <= S5PC11X_GPH3_BASE)) {
+		unsigned long tmp = __raw_readl(base + OFF_GPCON);
+	}
+#endif
 	gpio_dbg("%s: %p: CON now %08lx\n", __func__, base, con);
 
 	return 0;
@@ -80,8 +87,26 @@ static int s5pc11x_gpiolib_output(struct gpio_chip *chip,
 		dat &= ~(1 << offset);
 
 	__raw_writel(dat, base + OFF_GPDAT);
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	unsigned long evt0_flag, tmp = 0;
+	if ((base >= S5PC11X_GPH0_BASE) && (base <= S5PC11X_GPH3_BASE)) {
+		evt0_flag = 1;
+		tmp = __raw_readl(base + OFF_GPDAT);
+	}
+#endif
 	__raw_writel(con, base + OFF_GPCON);
+	
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	if (evt0_flag) {
+		tmp = __raw_readl(base + OFF_GPCON);
+	}
+#endif
 	__raw_writel(dat, base + OFF_GPDAT);
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	if (evt0_flag) {
+		tmp = __raw_readl(base + OFF_GPDAT);
+	}
+#endif
 
 	gpio_dbg("%s: %p: CON %08lx, DAT %08lx\n", __func__, base, con, dat);
 

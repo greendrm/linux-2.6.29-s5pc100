@@ -52,6 +52,7 @@ enum fimc_cam_index {
 	CAMERA_PAR_B	= 1,
 	CAMERA_CSI_C	= 2,
 	CAMERA_PATTERN	= 3,	/* Not actual camera but test pattern */
+	CAMERA_WB 	= 4,	/* Not actual camera but write back */
 };
 
 /* struct s3c_platform_camera: abstraction for input camera */

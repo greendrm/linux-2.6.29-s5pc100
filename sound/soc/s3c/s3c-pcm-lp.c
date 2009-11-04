@@ -35,12 +35,6 @@
 #include "s3c-pcm-lp.h"
 #include "s3c-i2s.h"
 
-/* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
- * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
- * Also, this value must be aligned at KB bounday (multiple of 1024). */
-#define LP_DMA_PERIOD (105 * 1024) //when LCD is enabled
-//#define LP_DMA_PERIOD (125 * 1024)   //when LCD is disabled
-
 struct s5p_pcm_pdata s3c_pcm_pdat;
 
 struct s5p_runtime_data {

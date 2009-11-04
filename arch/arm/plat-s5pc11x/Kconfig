@@ -180,4 +180,11 @@ config S5PC11X_HIGH_RES_TIMERS
 	help
 	  Support for HRtimer and Dynamic Tick system.
  
+config CPU_S5PC110_EVT0_ERRATA
+	bool
+	depends on CPU_S5PC110 && !S5P_DEEP_IDLE_TEST
+	default y
+	help
+	  Fixup known bug on S5PC110 EVT0 version.
+
 endif

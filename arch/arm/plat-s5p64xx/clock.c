@@ -94,7 +94,7 @@ int s3c_fclk_set_rate(struct clk *clk, unsigned long rate)
 {
 	u32 round_tmp;
 	u32 iter;
-	u32 clk_div0_tmp,tmp,flag;
+	u32 clk_div0_tmp,tmp;
 	u32 cur_clk = s3c_fclk_get_rate();
 
 	round_tmp = s3c_fclk_round_rate(clk,rate);
@@ -484,7 +484,7 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_PCM1,
-	}, 
+	},
 
 
 };
@@ -506,10 +506,6 @@ void __init s5p64xx_register_clocks(void)
 	clkp = init_clocks;
 	for (ptr = 0; ptr < ARRAY_SIZE(init_clocks); ptr++, clkp++) {
 		ret = s3c24xx_register_clock(clkp);
-		if (ret < 0) {
-			printk(KERN_ERR "Failed to register clock %s (%d)\n",
-			       clkp->name, ret);
-		}
 	}
 
 	clkp = init_clocks_disable;

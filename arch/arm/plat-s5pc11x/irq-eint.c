@@ -77,6 +77,9 @@ static inline void s3c_irq_eint_mask(unsigned int irq)
 	mask = __raw_readl(S5PC11X_EINTMASK(eint_mask_reg(irq)));
 	mask |= eint_irq_to_bit(irq);
 	__raw_writel(mask, S5PC11X_EINTMASK(eint_mask_reg(irq)));
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	mask = __raw_readl(S5PC11X_EINTMASK(eint_mask_reg(irq)));
+#endif
 }
 
 static void s3c_irq_eint_unmask(unsigned int irq)
@@ -86,11 +89,17 @@ static void s3c_irq_eint_unmask(unsigned int irq)
 	mask = __raw_readl(S5PC11X_EINTMASK(eint_mask_reg(irq)));
 	mask &= ~(eint_irq_to_bit(irq));
 	__raw_writel(mask, S5PC11X_EINTMASK(eint_mask_reg(irq)));
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	mask = __raw_readl(S5PC11X_EINTMASK(eint_mask_reg(irq)));
+#endif
 }
 
 static inline void s3c_irq_eint_ack(unsigned int irq)
 {
 	__raw_writel(eint_irq_to_bit(irq), S5PC11X_EINTPEND(eint_pend_reg(irq)));
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	unsigned long tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
+#endif	
 }
 
 static void s3c_irq_eint_maskack(unsigned int irq)
@@ -144,7 +153,9 @@ static int s3c_irq_eint_set_type(unsigned int irq, unsigned int type)
 	ctrl &= ~mask;
 	ctrl |= newvalue << shift;
 	__raw_writel(ctrl, S5PC11X_EINTCON(eint_conf_reg(irq)));
-
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	ctrl = __raw_readl(S5PC11X_EINTCON(eint_conf_reg(irq)));
+#endif	
 	if((0 <= offs) && (offs < 8))
 		s3c_gpio_cfgpin(S5PC11X_GPH0(offs&0x7), 0xf<<((offs&0x7)*4));
 	else if((8 <= offs) && (offs < 16))
@@ -180,6 +191,13 @@ static int s3c_irq_eint_set_wake(unsigned int irq, unsigned int on)
 
 	__raw_writel(mask_val, S5P_EINT_WAKEUP_MASK);
 
+	mask_val = __raw_readl(S5PC11X_EINTFLTCON(offs));
+	mask_val &=~(0xff<<((offs%4)*8));
+	mask_val |= (0x80<<((offs%4)*8)); 
+	__raw_writel(mask_val, (S5PC11X_EINTFLTCON(offs)));
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	mask_val = __raw_readl((S5PC11X_EINTFLTCON(offs)));
+#endif
 	return 0;
 }
 
@@ -248,6 +266,14 @@ static void s3c_irq_vic_eint_unmask(unsigned int irq)
 static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 {
 	__raw_writel(eint_irq_to_bit(irq), S5PC11X_EINTPEND(eint_pend_reg(irq)));
+
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	/* After clearing pending bit by writing EINT_PEND register,
+	 * We should read same register to remove EVT0 bug.
+	 * Please refer ERRATA doc for more information.
+	 */
+	unsigned long tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
+#endif
 }
 
 static void s3c_irq_vic_eint_maskack(unsigned int irq)
@@ -265,6 +291,7 @@ static struct irq_chip s3c_irq_vic_eint = {
 	.mask_ack = s3c_irq_vic_eint_maskack,
 	.ack = s3c_irq_vic_eint_ack,
 	.set_type = s3c_irq_eint_set_type,
+	.set_wake	= s3c_irq_eint_set_wake,
 };
 
 

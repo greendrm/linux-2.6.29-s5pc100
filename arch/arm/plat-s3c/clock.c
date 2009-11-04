@@ -143,7 +143,7 @@ int clk_enable(struct clk *clk)
 					if (tmp_clks->enable)
 						(tmp_clks->enable)(tmp_clks, 1);
 				}
-#endif			
+#endif
 				(clk->pd->pd_set)(clk->pd, 1);
 #if defined(CONFIG_CPU_S5PC110)
 				/* Disable all clocks on this power block */
