@@ -41,6 +41,7 @@
 #define FIMC_CAPBUFS		16
 #define FIMC_ONESHOT_TIMEOUT	200
 #define FIMC_DQUEUE_TIMEOUT	200
+#define FIMC_FIFOOFF_CNT	1000000	/* Sufficiently big value for stop */
 
 #define FORMAT_FLAGS_PACKED	0x1
 #define FORMAT_FLAGS_PLANAR	0x2
@@ -59,13 +60,14 @@
  *
 */
 enum fimc_status {
+	FIMC_READY_OFF,
 	FIMC_STREAMOFF,
 	FIMC_READY_ON,
 	FIMC_STREAMON,
 	FIMC_STREAMON_IDLE,	/* oneshot mode */
-	FIMC_READY_OFF,
-	FIMC_ON_SLEEP,
 	FIMC_OFF_SLEEP,
+	FIMC_ON_SLEEP,
+	FIMC_ON_IDLE_SLEEP,	/* oneshot mode */
 	FIMC_READY_RESUME,
 };
 
@@ -182,8 +184,6 @@ struct s3cfb_window {
 	int			local_channel;
 	int			dma_burst;
 	unsigned int		pseudo_pal[16];
-	int			(*suspend_fifo)(void);
-	int			(*resume_fifo)(void);
 };
 
 struct s3cfb_user_window {
@@ -191,11 +191,14 @@ struct s3cfb_user_window {
 	int y;
 };
 
+enum s3cfb_data_path_t {
+	DATA_PATH_FIFO = 0,
+	DATA_PATH_DMA = 1,
+	DATA_PATH_IPC = 2,
+};
 
 #define S3CFB_WIN_OFF_ALL		_IO  ('F', 202)
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
-#define S3CFB_SET_SUSPEND_FIFO		_IOW ('F', 300, unsigned long)
-#define S3CFB_SET_RESUME_FIFO		_IOW ('F', 301, unsigned long)
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
 #define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
@@ -210,7 +213,7 @@ struct fimc_fbinfo {
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
-	int (*close_fifo)(int id, int (*do_priv)(void *), void *param, int sleep);
+	int (*close_fifo)(int id, int (*do_priv)(void *), void *param);
 };
 
 /* scaler abstraction: local use recommended */
@@ -290,8 +293,8 @@ extern struct fimc_limit fimc_limits[FIMC_DEVICES];
 
 /* FIMD */
 extern int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg);
-extern int s3cfb_open_fifo(int id, int ch, int (*do_priv)(void *), void *param);
-extern int s3cfb_close_fifo(int id, int (*do_priv)(void *), void *param, int sleep);
+extern int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param);
+extern int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param);
 
 /* general */
 extern void s3c_csis_start(int lanes, int settle, int align, int width, int height);
@@ -327,6 +330,8 @@ extern int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
 
 /* output device */
 extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t *base);
+extern int fimc_outdev_set_param(struct fimc_control *ctrl);
+extern int fimc_start_fifo(struct fimc_control *ctrl);
 extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
 extern int fimc_outdev_start_camif(void *param);
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
@@ -413,7 +418,11 @@ extern int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 
 extern int fimc_hwset_input_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
+extern int fimc_hw_wait_winoff(struct fimc_control *ctrl);
+extern int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl);
 
+/* IPC related file */
+extern void ipc_start(void);
 /*
  * D R I V E R  H E L P E R S
  *

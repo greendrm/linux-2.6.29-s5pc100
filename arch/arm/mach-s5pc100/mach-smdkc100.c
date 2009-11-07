@@ -521,7 +521,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.camera		= { 
 		&camera_a, 
 		&camera_c,
-	}
+	},
+	.hw_ver		= 0x40,
 };
 
 /*

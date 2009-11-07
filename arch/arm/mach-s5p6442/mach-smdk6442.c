@@ -626,7 +626,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #ifdef S5K6AA_ENABLED
 		&s5k6aa,
 #endif
-	}
+	},
+	.hw_ver		= 0x43,
 };
 
 #if defined(CONFIG_HAVE_PWM)

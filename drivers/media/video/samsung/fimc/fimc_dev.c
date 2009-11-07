@@ -523,105 +523,6 @@ int fimc_get_scaler_factor(u32 src, u32 tar, u32 *ratio, u32 *shift)
 	return 0;
 }
 
-#if 0
-static int fimc_wakeup_fifo(struct fimc_control *ctrl)
-{
-	int ret = -1;
-
-	/* Set the rot, pp param register. */
-	ret = fimc_check_param(ctrl);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "fimc_check_param failed\n");
-		return -EINVAL;
-	}
-
-	if (ctrl->rot.degree != 0) {
-		ret = s3c_rp_rot_set_param(ctrl);
-		if (ret < 0) {
-			rp_err(ctrl->log_level,
-					"s3c_rp_rot_set_param failed\n");
-			return -1;
-		}
-	}
-
-	ret = s3c_rp_pp_set_param(ctrl);
-	if (ret < 0) {
-		rp_err(ctrl->log_level, "s3c_rp_pp_set_param failed\n");
-		return -1;
-	}
-
-	/* Start PP */
-	ret = s3c_rp_pp_start(ctrl, ctrl->pp.buf_idx.run);
-	if (ret < 0) {
-		rp_err(ctrl->log_level, "Failed : s3c_rp_pp_start()\n");
-		return -1;
-	}
-
-	ctrl->status = FIMC_STREAMON;
-
-	return 0;
-}
-#endif
-
-#if 0
-int fimc_wakeup(void)
-{
-	struct fimc_control	*ctrl;
-	int			ret = -1;
-
-	ctrl = &s3c_rp;
-
-	if (ctrl->status == FIMC_READY_RESUME) {
-		ret = fimc_wakeup_fifo(ctrl);
-		if (ret < 0) {
-			dev_err(ctrl->dev,
-				"s3c_rp_wakeup_fifo failed in %s\n", __func__);
-			return -EINVAL;
-		}
-	}
-
-	return 0;
-}
-#endif
-
-#if 0
-static void fimc_sleep_fifo(struct fimc_control *ctrl)
-{
-	if (ctrl->rot.status != ROT_IDLE)
-		rp_err(ctrl->log_level,
-			"[%s : %d] ROT status isn't idle\n",
-			__func__, __LINE__);
-
-	if ((ctrl->incoming_queue[0] != -1) || (ctrl->inside_queue[0] != -1))
-		rp_err(ctrl->log_level,
-			"[%s : %d] queue status isn't stable\n",
-			__func__, __LINE__);
-
-	if ((ctrl->pp.buf_idx.next != -1) || (ctrl->pp.buf_idx.prev != -1))
-		rp_err(ctrl->log_level,
-			"[%s : %d] PP status isn't stable\n",
-			__func__, __LINE__);
-
-	s3c_rp_pp_fifo_stop(ctrl, FIFO_SLEEP);
-}
-#endif
-
-#if 0
-int fimc_sleep(void)
-{
-	struct fimc_control *ctrl;
-
-	ctrl = &s3c_rp;
-
-	if (ctrl->status == FIMC_STREAMON)
-		fimc_sleep_fifo(ctrl);
-
-	ctrl->status		= FIMC_ON_SLEEP;
-
-	return 0;
-}
-#endif
-
 static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
@@ -662,20 +563,6 @@ static int fimc_open(struct file *filp)
 
 	ctrl->status = FIMC_STREAMOFF;
 
-#if 0
-	/* To do : have to send ctrl to the fimd driver. */
-	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_SUSPEND_FIFO,
-			(unsigned long)fimc_sleep);
-	if (ret < 0)
-		dev_err(ctrl->dev,
-			"s3cfb_direct_ioctl(S3CFB_SET_SUSPEND_FIFO) fail\n");
-
-	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_RESUME_FIFO,
-			(unsigned long)fimc_wakeup);
-	if (ret < 0)
-		dev_err(ctrl->dev,
-			"s3cfb_direct_ioctl(S3CFB_SET_SUSPEND_FIFO) fail\n");
-#endif
 	mutex_unlock(&ctrl->lock);
 
 	return 0;
@@ -986,13 +873,87 @@ static int fimc_remove(struct platform_device *pdev)
 }
 
 #ifdef CONFIG_PM
-int fimc_suspend(struct platform_device *dev, pm_message_t state)
+int fimc_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	struct fimc_control *ctrl;
+	struct s3c_platform_fimc *pdata;
+	int id;
+
+	id = pdev->id;
+	ctrl = get_fimc_ctrl(id);
+	pdata = to_fimc_plat(ctrl->dev);
+
+	if (ctrl->status == FIMC_STREAMON) {
+		if (ctrl->out->in_queue[0] != -1)
+			dev_err(&pdev->dev, 
+				"[%s : %d] in queue status isn't stable\n",
+				__func__, __LINE__);
+
+		if ((ctrl->out->idx.next != -1) || (ctrl->out->idx.prev != -1))
+			dev_err(&pdev->dev, 
+				"[%s : %d] FIMC status isn't stable\n",
+				__func__, __LINE__);
+
+		fimc_outdev_stop_streaming(ctrl);
+
+		if (ctrl->status == FIMC_STREAMON_IDLE)
+			ctrl->status = FIMC_ON_IDLE_SLEEP;
+		else
+			ctrl->status = FIMC_ON_SLEEP;
+	} else if (ctrl->status == FIMC_STREAMON_IDLE) {
+		ctrl->status = FIMC_ON_IDLE_SLEEP;
+	} else {
+		ctrl->status = FIMC_OFF_SLEEP;
+	}
+
+	if (pdata->clk_off)
+		pdata->clk_off(pdev, ctrl->clk);
+
 	return 0;
 }
 
-int fimc_resume(struct platform_device *dev)
+int fimc_resume(struct platform_device *pdev)
 {
+	struct fimc_control *ctrl;
+	struct s3c_platform_fimc *pdata;
+	int id, ret = -1;
+        u32 index = 0;
+
+	id = pdev->id;
+	ctrl = get_fimc_ctrl(id);
+	pdata = to_fimc_plat(ctrl->dev);
+
+	if (pdata->clk_on)
+		pdata->clk_on(pdev, ctrl->clk);
+
+	if (ctrl->status == FIMC_ON_SLEEP) {
+	        ctrl->status = FIMC_READY_ON;
+
+	        ret = fimc_outdev_set_param(ctrl);
+	        if (ret < 0)
+	                dev_err(ctrl->dev, "Fail: fimc_outdev_set_param\n");
+
+#if defined(CONFIG_VIDEO_IPC)
+                if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+                        ipc_start();
+#endif
+		index = ctrl->out->idx.active;
+                fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
+
+                ret = fimc_start_fifo(ctrl);
+                if (ret < 0)
+                        dev_err(ctrl->dev, "Fail: fimc_start_fifo\n");
+
+                ctrl->status = FIMC_STREAMON;
+	} else if (ctrl->status == FIMC_ON_IDLE_SLEEP) {
+		ctrl->status = FIMC_STREAMON_IDLE;
+	} else if (ctrl->status == FIMC_OFF_SLEEP) {
+		ctrl->status = FIMC_STREAMOFF;
+	} else {
+		dev_err(ctrl->dev, "%s: Undefined status : %d\n", 
+						__func__, ctrl->status);
+	}
+
 	return 0;
 }
 #else

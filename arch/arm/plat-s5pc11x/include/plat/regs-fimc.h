@@ -95,6 +95,8 @@
 #define S3C_CISTATUS_GET_FRAME_COUNT(x)		(((x) >> 26) & 0x3)
 #define S3C_CISTATUS_GET_FRAME_END(x)		(((x) >> 17) & 0x1)
 #define S3C_CISTATUS_GET_LAST_CAPTURE_END(x)	(((x) >> 16) & 0x1)
+#define S3C_CISTATUS_GET_LCD_STATUS(x)		(((x) >> 9) & 0x1)
+#define S3C_CISTATUS_GET_ENVID_STATUS(x)	((x) & 0x1)
 
 #define S3C_CIIMGEFF_PAT_CB(x)			((x) << 13)
 #define S3C_CIIMGEFF_PAT_CR(x)			((x) << 0)
@@ -103,6 +105,7 @@
 #define S3C_CIREAL_ISIZE_WIDTH(x)		((x) << 0)
 
 #define S3C_MSCTRL_SUCCESSIVE_COUNT(x)		((x) << 24)
+#define S3C_MSCTRL_GET_INDMA_STATUS(x)		((x) & 0x1)
 
 #define S3C_CIOYOFF_VERTICAL(x)			((x) << 16)
 #define S3C_CIOYOFF_HORIZONTAL(x)		((x) << 0)

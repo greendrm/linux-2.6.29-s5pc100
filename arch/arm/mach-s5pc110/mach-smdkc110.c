@@ -1041,7 +1041,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #ifdef WRITEBACK_ENABLED
 		&writeback,
 #endif
-	}
+	},
+	.hw_ver		= 0x43,
 };
 
 #if defined(CONFIG_HAVE_PWM)

@@ -404,7 +404,8 @@ int s3cfb_window_off(struct s3cfb_global *ctrl, int id)
 	unsigned int cfg;
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
-	cfg &= ~S3C_WINCON_ENWIN_ENABLE;
+	cfg &= ~(S3C_WINCON_ENWIN_ENABLE | S3C_WINCON_DATAPATH_MASK);
+	cfg |= S3C_WINCON_DATAPATH_DMA;
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
 
 	dev_dbg(ctrl->dev, "[fb%d] turn off\n", id);
@@ -435,7 +436,7 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 		if (win->path == DATA_PATH_FIFO) {
 			cfg |= S3C_WINCON_INRGB_RGB;
 			cfg |= S3C_WINCON_BPPMODE_24BPP_888;
-		} else {
+		} else if (win->path == DATA_PATH_IPC) {
 			cfg |= S3C_WINCON_INRGB_YUV;
 			cfg |= S3C_WINCON_BPPMODE_24BPP_888;
 		}
