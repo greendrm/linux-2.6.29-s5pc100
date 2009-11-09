@@ -90,7 +90,7 @@ int fimc_outdev_stop_streaming(struct fimc_control *ctrl)
 	dev_dbg(ctrl->dev, "%s: called\n", __func__);
 
 	if (ctrl->out->fbuf.base) {	/* DMA OUT */
-		ret = wait_event_interruptible_timeout(ctrl->wq, \
+		ret = wait_event_timeout(ctrl->wq, \
 				(ctrl->status == FIMC_STREAMON_IDLE), \
 				FIMC_ONESHOT_TIMEOUT);
 		if (ret == 0)
@@ -1468,7 +1468,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 
 	ret = fimc_detach_out_queue(ctrl, &index);
 	if (ret < 0) {
-		ret = wait_event_interruptible_timeout(ctrl->wq, \
+		ret = wait_event_timeout(ctrl->wq, \
 			(ctrl->out->out_queue[0] != -1), FIMC_DQUEUE_TIMEOUT);
 		if (ret == 0) {
 			fimc_dump_context(ctrl);

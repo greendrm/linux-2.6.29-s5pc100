@@ -185,7 +185,7 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 		wakeup = fimc_irq_out_fimd(ctrl);
 
 	if (wakeup == 1)
-		wake_up_interruptible(&ctrl->wq);
+		wake_up(&ctrl->wq);
 }
 
 static inline void fimc_irq_cap(struct fimc_control *ctrl)
@@ -200,12 +200,12 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 		/* odd value of pp means one frame is made with top/bottom */
 		if (pp & 0x1) {	
 			cap->irq = 1;
-			wake_up_interruptible(&ctrl->wq);
+			wake_up(&ctrl->wq);
 		}
 	}
 	else {
 		cap->irq = 1;
-		wake_up_interruptible(&ctrl->wq);
+		wake_up(&ctrl->wq);
 	}	
 	
 }

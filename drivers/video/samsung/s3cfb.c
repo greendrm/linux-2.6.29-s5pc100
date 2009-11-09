@@ -92,7 +92,7 @@ static irqreturn_t s3cfb_irq_frame(int irq, void *dev_id)
 	s3cfb_clear_interrupt(fbdev);
 
 	fbdev->wq_count++;
-	wake_up_interruptible(&fbdev->wq);
+	wake_up(&fbdev->wq);
 
 	return IRQ_HANDLED;
 }
@@ -505,7 +505,7 @@ static int s3cfb_wait_for_vsync(void)
 {
 	dev_dbg(fbdev->dev, "waiting for VSYNC interrupt\n");
 
-	interruptible_sleep_on_timeout(&fbdev->wq, HZ / 10);
+	sleep_on_timeout(&fbdev->wq, HZ / 10);
 
 	dev_dbg(fbdev->dev, "got a VSYNC interrupt\n");
 
