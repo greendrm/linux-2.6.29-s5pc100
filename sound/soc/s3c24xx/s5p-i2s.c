@@ -33,7 +33,7 @@
 #include <mach/map.h>
 #include <mach/dma.h>
 
-#include "s3c24xx-pcm.h"
+#include "s3c-audio.h"
 #include "s5p-i2s.h"
 
 static struct s3c2410_dma_client s5p_dma_client_out = {
@@ -44,7 +44,7 @@ static struct s3c2410_dma_client s5p_dma_client_in = {
 	.name		= "I2S PCM Stereo in"
 };
 
-static struct s3c24xx_pcm_dma_params s5p_i2s_pcm_stereo_out[] = {
+static struct s3c_dma_params s5p_i2s_pcm_stereo_out[] = {
 	[0] = {
 		.channel	= DMACH_I2S0_OUT,
 		.client		= &s5p_dma_client_out,
@@ -62,7 +62,7 @@ static struct s3c24xx_pcm_dma_params s5p_i2s_pcm_stereo_out[] = {
 	},
 };
 
-static struct s3c24xx_pcm_dma_params s5p_i2s_pcm_stereo_in[] = {
+static struct s3c_dma_params s5p_i2s_pcm_stereo_in[] = {
 	[0] = {
 		.channel	= DMACH_I2S0_IN,
 		.client		= &s5p_dma_client_in,
@@ -148,7 +148,7 @@ EXPORT_SYMBOL_GPL(s5p_i2s_get_clock);
 
 struct snd_soc_dai s5p_i2s_dai[] = {
 	{
-		.name		= "s5p-i2s",
+		.name		= "s5p-i2s-v5",
 		.id		= 0,
 		.playback = {
 			.channels_min	= 2,
@@ -186,7 +186,7 @@ struct snd_soc_dai s5p_i2s_dai[] = {
 		},
 	},
 	{
-		.name		= "s5p-i2s-v5",
+		.name		= "s5p-i2s",
 		.id		= 2,
 		.playback = {
 			.channels_min	= 2,
