@@ -2499,3 +2499,12 @@ v2.6.29.4-dev-1-6-7: Jonghun Han
 		M       drivers/media/video/samsung/fimc/fimc_output.c
 		M       drivers/media/video/samsung/fimc/fimc_overlay.c
 		M       drivers/video/samsung/s3cfb_fimd6x.c
+
+v2.6.29.4-dev-1-6-8: Jonghun Han
+        - FIMD / FIMC wait_event, interruptible_sleep_on API change
+
+	Modified Files:
+		M       drivers/media/video/samsung/fimc/fimc_dev.c
+		M       drivers/media/video/samsung/fimc/fimc_output.c
+		M       drivers/video/samsung/s3cfb.c
+
