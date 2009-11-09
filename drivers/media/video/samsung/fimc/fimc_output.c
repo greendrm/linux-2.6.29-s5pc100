@@ -898,7 +898,7 @@ int fimc_outdev_set_param(struct fimc_control *ctrl)
 	return 0;
 }
 
-static int fimc_fimd_rect(const struct fimc_control *ctrl,
+int fimc_fimd_rect(const struct fimc_control *ctrl,
 		struct v4l2_rect *fimd_rect)
 {
 	switch (ctrl->out->rotate) {
