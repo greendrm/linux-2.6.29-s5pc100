@@ -306,22 +306,22 @@ static struct s3c_dma_map __initdata s5pc100_dma_mappings[] = {
 		.hw_addr.to	= S3C_PDMA1_SPI2_TX,
 	},
 #endif
-	[DMACH_PCM0_IN] = {
+	[DMACH_PCM0_RX] = {
 		.name		= "pcm0-in",
 		.channels	= MAP2(S3C_PDMA1_PCM0_RX),
 		.hw_addr.from	= S3C_PDMA1_PCM0_RX,
 	},
-	[DMACH_PCM0_OUT] = {
+	[DMACH_PCM0_TX] = {
 		.name		= "pcm0-out",
 		.channels	= MAP2(S3C_PDMA1_PCM0_TX),
 		.hw_addr.to	= S3C_PDMA1_PCM0_TX,
 	},
-	[DMACH_PCM1_IN] = {
+	[DMACH_PCM1_RX] = {
 		.name		= "pcm1-in",
 		.channels	= MAP2(S3C_PDMA1_PCM1_RX),
 		.hw_addr.from	= S3C_PDMA1_PCM1_RX,
 	},
-	[DMACH_PCM1_OUT] = {
+	[DMACH_PCM1_TX] = {
 		.name		= "pcm1-out",
 		.channels	= MAP2(S3C_PDMA1_PCM1_TX),
 		.hw_addr.to	= S3C_PDMA1_PCM1_TX,
