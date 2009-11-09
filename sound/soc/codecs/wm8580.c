@@ -567,7 +567,7 @@ static int wm8580_set_dai_pll(struct snd_soc_dai *codec_dai,
 /*
  * Set PCM DAI bit size and sample rate.
  */
-static int wm8580_paif_hw_params(struct snd_pcm_substream *substream,
+static int wm8580_hw_params(struct snd_pcm_substream *substream,
 				 struct snd_pcm_hw_params *params,
 				 struct snd_soc_dai *dai)
 {
@@ -595,10 +595,11 @@ static int wm8580_paif_hw_params(struct snd_pcm_substream *substream,
 	}
 
 	wm8580_write(codec, WM8580_PAIF3 + dai->id, paifb);
+
 	return 0;
 }
 
-static int wm8580_set_paif_dai_fmt(struct snd_soc_dai *codec_dai,
+static int wm8580_set_dai_fmt(struct snd_soc_dai *codec_dai,
 				      unsigned int fmt)
 {
 	struct snd_soc_codec *codec = codec_dai->codec;
@@ -927,21 +928,21 @@ static int wm8580_saif_startup(struct snd_pcm_substream *substream, struct snd_s
 	unsigned int reg;
 
 	/* Set the SAIFTX source as ADC output */
-	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg = wm8580_read(codec, WM8580_SAIF2);
 	reg &= ~WM8580_SAIFTX_SRC_MASK;
 	reg |= WM8580_SAIFTX_SRC_ADC;
-	snd_soc_write(codec, WM8580_SAIF2, reg);
+	wm8580_write(codec, WM8580_SAIF2, reg);
 
 	/* Set DAC1's source as SAIF-RX */
-	reg = snd_soc_read(codec, WM8580_PAIF3);
+	reg = wm8580_read(codec, WM8580_PAIF3);
 	reg &= ~WM8580_DAC1_SRC_MASK;
 	reg |= WM8580_DAC1_SRC_SAIFRX;
-	snd_soc_write(codec, WM8580_PAIF3, reg);
+	wm8580_write(codec, WM8580_PAIF3, reg);
 
 	/* Enable the SAIF */
-	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg = wm8580_read(codec, WM8580_SAIF2);
 	reg |= WM8580_SAIF_EN;
-	snd_soc_write(codec, WM8580_SAIF2, reg);
+	wm8580_write(codec, WM8580_SAIF2, reg);
 
 	return 0;
 }
@@ -952,15 +953,15 @@ static void wm8580_saif_shutdown(struct snd_pcm_substream *substream, struct snd
 	unsigned int reg;
 
 	/* Set DAC1's source as PAIF-RX */
-	reg = snd_soc_read(codec, WM8580_PAIF3);
+	reg = wm8580_read(codec, WM8580_PAIF3);
 	reg &= ~WM8580_DAC1_SRC_MASK;
 	reg |= WM8580_DAC1_SRC_PAIFRX;
-	snd_soc_write(codec, WM8580_PAIF3, reg);
+	wm8580_write(codec, WM8580_PAIF3, reg);
 
 	/* Disable the SAIF */
-	reg = snd_soc_read(codec, WM8580_SAIF2);
+	reg = wm8580_read(codec, WM8580_SAIF2);
 	reg &= ~WM8580_SAIF_EN;
-	snd_soc_write(codec, WM8580_SAIF2, reg);
+	wm8580_write(codec, WM8580_SAIF2, reg);
 }
 
 #define WM8580_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |\
@@ -978,8 +979,8 @@ struct snd_soc_dai wm8580_dai[] = {
 			.formats = WM8580_FORMATS,
 		},
 		.ops = {
-			 .hw_params = wm8580_paif_hw_params,
-			 .set_fmt = wm8580_set_paif_dai_fmt,
+			 .hw_params = wm8580_hw_params,
+			 .set_fmt = wm8580_set_dai_fmt,
 			 .set_clkdiv = wm8580_set_dai_clkdiv,
 			 .set_pll = wm8580_set_dai_pll,
 			 .digital_mute = wm8580_digital_mute,
@@ -996,10 +997,37 @@ struct snd_soc_dai wm8580_dai[] = {
 			.formats = WM8580_FORMATS,
 		},
 		.ops = {
-			 .hw_params = wm8580_paif_hw_params,
-			 .set_fmt = wm8580_set_paif_dai_fmt,
+			 .hw_params = wm8580_hw_params,
+			 .set_fmt = wm8580_set_dai_fmt,
 			 .set_clkdiv = wm8580_set_dai_clkdiv,
 			 .set_pll = wm8580_set_dai_pll,
+		 },
+	},
+	{
+		.name = "WM8580 SAIF",
+		.id = WM8580_DAI_SAIF,
+		.playback = {
+			.stream_name = "Playback",
+			.channels_min = 2,
+			.channels_max = 2,
+			.rates = SNDRV_PCM_RATE_8000_192000,
+			.formats = WM8580_FORMATS,
+		},
+		.capture = {
+			.stream_name = "Capture",
+			.channels_min = 2,
+			.channels_max = 2,
+			.rates = SNDRV_PCM_RATE_8000_192000,
+			.formats = WM8580_FORMATS,
+		},
+		.ops = {
+			 .startup = wm8580_saif_startup,
+			 .shutdown = wm8580_saif_shutdown,
+			 .hw_params = wm8580_hw_params,
+			 .set_fmt = wm8580_set_dai_fmt,
+			 .set_clkdiv = wm8580_set_dai_clkdiv,
+			 .set_pll = wm8580_set_dai_pll,
+			 .digital_mute = wm8580_digital_mute,
 		 },
 	},
 };
