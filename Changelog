@@ -2489,3 +2489,13 @@ v2.6.29.4-dev-1-6-6: Jonghun Han
 		M       drivers/video/samsung/s3cfb.h
 		M       drivers/video/samsung/s3cfb_fimd6x.c
 
+v2.6.29.4-dev-1-6-7: Jonghun Han
+        - FIMC runtime position change support for C110 / C100 / 6442
+
+	Modified Files:
+		M       arch/arm/plat-s5p64xx/include/plat/regs-fb.h
+		M       arch/arm/plat-s5pc11x/include/plat/regs-fb.h
+		M       drivers/media/video/samsung/fimc/fimc.h
+		M       drivers/media/video/samsung/fimc/fimc_output.c
+		M       drivers/media/video/samsung/fimc/fimc_overlay.c
+		M       drivers/video/samsung/s3cfb_fimd6x.c
