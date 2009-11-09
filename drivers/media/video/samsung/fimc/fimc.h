@@ -332,6 +332,7 @@ extern int fimc_s_parm(struct file *file, void *fh, struct v4l2_streamparm *a);
 extern void fimc_outdev_set_src_addr(struct fimc_control *ctrl, dma_addr_t *base);
 extern int fimc_outdev_set_param(struct fimc_control *ctrl);
 extern int fimc_start_fifo(struct fimc_control *ctrl);
+extern int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect);
 extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
 extern int fimc_outdev_start_camif(void *param);
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
