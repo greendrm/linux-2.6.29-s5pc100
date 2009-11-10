@@ -182,7 +182,7 @@
 #define S3C_DMACH_I2S_IN	DMACH_I2S0_IN
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
-#define PCLKCLK			"i2s_v50"
+#define PCLKCLK			"iis"
 
 #ifdef CONFIG_SND_WM8580_MASTER /* ?? */
 #define EXTPRNT "i2s_cdclk0"

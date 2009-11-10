@@ -636,7 +636,7 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		return -ENODEV;
 	}
 
-	s3c_i2s.iis_clk = clk_get(NULL, PCLKCLK);
+	s3c_i2s.iis_clk = clk_get(&pdev->dev, PCLKCLK);
 	if (IS_ERR(s3c_i2s.iis_clk)) {
 		printk("failed to get clk(%s)\n", PCLKCLK);
 		goto lb4;

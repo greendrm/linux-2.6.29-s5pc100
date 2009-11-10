@@ -461,14 +461,14 @@ static struct clk init_clocks[] = {
 
 	/* Audio (IP3) devices */
 	{
-		.name		= "i2s_v50",
-		.id		= -1,
+		.name		= "iis",
+		.id		= 0,
 		.parent		= &clk_pd1,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S0, /* I2S0 is v5.0 */
 	}, {
-		.name		= "i2s_v32",
-		.id		= 0,
+		.name		= "iis",
+		.id		= 1,
 		.parent		= &clk_p,
 		.enable		= s5p64xx_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S1, /* I2S1 is v3.2 */

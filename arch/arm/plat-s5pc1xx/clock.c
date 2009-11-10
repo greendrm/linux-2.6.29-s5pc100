@@ -674,20 +674,20 @@ static struct clk init_clocks[] = {
 
 	/* Audio (D1_5) devices */
 	{
-		.name		= "i2s_v50",
-		.id		= -1,
+		.name		= "iis",
+		.id		= 0,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D15_IIS0, /* I2S0 is v5.0 */
 	}, {
-		.name		= "i2s_v32",
-		.id		= 0,
+		.name		= "iis",
+		.id		= 1,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D15_IIS1, /* I2S1 is v3.2 */
 	}, {
-		.name		= "i2s_v32",
-		.id		= 1,
+		.name		= "iis",
+		.id		= 2,
 		.parent		= &clk_p,
 		.enable		= s5pc1xx_clk_d15_ctrl,
 		.ctrlbit	= S5P_CLKGATE_D15_IIS2, /* I2S2 is v3.2 */
