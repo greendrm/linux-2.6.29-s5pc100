@@ -86,6 +86,10 @@
 /* AUDIO SUB SYSTEM */ 
 #define S5P64XX_PA_AUDSS                (0xC0900000)
 
+/* PCM */
+#define S5P64XX_PA_PCM0		(0xF2400000)
+#define S5P64XX_PA_PCM1		(0xF2500000)
+
 #define S5P64XX_PA_RTC	   	(0xEA300000)
 
 /* place VICs close together */
