@@ -1024,8 +1024,8 @@ static struct clk_sources clkset_audio0 = {
 
 static struct clksrc_clk clk_audio0 = {
 	.clk	= {
-		.name		= "sclk_audio0",
-		.id		= -1,
+		.name		= "sclk_audio",
+		.id		= 0,
 		.ctrlbit        = S5P_CLKGATE_SCLK1_AUDIO0,
 		.enable		= s5pc1xx_sclk1_ctrl,
 		.set_parent	= s5pc1xx_setparent_clksrc,
@@ -1057,8 +1057,8 @@ static struct clk_sources clkset_audio1 = {
 
 static struct clksrc_clk clk_audio1 = {
 	.clk	= {
-		.name		= "sclk_audio1",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 1,
 		.ctrlbit        = S5P_CLKGATE_SCLK1_AUDIO1,
 		.enable		= s5pc1xx_sclk1_ctrl,
 		.set_parent	= s5pc1xx_setparent_clksrc,
@@ -1089,8 +1089,8 @@ static struct clk_sources clkset_audio2 = {
 
 static struct clksrc_clk clk_audio2 = {
 	.clk	= {
-		.name		= "sclk_audio2",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 2,
 		.ctrlbit        = S5P_CLKGATE_SCLK1_AUDIO2,
 		.enable		= s5pc1xx_sclk1_ctrl,
 		.set_parent	= s5pc1xx_setparent_clksrc,
@@ -1120,8 +1120,8 @@ static struct clk_sources clkset_i2sclkd2 = {
 extern struct powerdomain pd_audio;
 static struct clksrc_clk clk_i2sclkd2 = {
 	.clk	= {
-		.name		= "i2sclkd2",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 0,
 		.pd		= &pd_audio,
 		.ctrlbit        = S5P_CLKGATE_D20_I2SD2,
 		.enable		= s5pc1xx_clk_d20_ctrl,

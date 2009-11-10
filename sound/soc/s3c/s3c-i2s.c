@@ -636,24 +636,24 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 		return -ENODEV;
 	}
 
-	s3c_i2s.iis_clk = clk_get(&pdev->dev, PCLKCLK);
+	s3c_i2s.iis_clk = clk_get(&pdev->dev, "iis");
 	if (IS_ERR(s3c_i2s.iis_clk)) {
-		printk("failed to get clk(%s)\n", PCLKCLK);
+		printk("failed to get clk(iis)\n");
 		goto lb4;
 	}
-	s3cdbg("Got Clock -> %s\n", PCLKCLK);
+	s3cdbg("Got Clock -> iis\n");
 	clk_enable(s3c_i2s.iis_clk);
 	s3c_i2s.clk_rate = clk_get_rate(s3c_i2s.iis_clk);
 
 	/* To avoid switching between sources(LP vs NM mode),
-	 * we use EXTPRNT as parent clock of i2sclkd2.
+	 * we use EXTPRNT as parent clock of audio-bus.
 	 */
-	s3c_i2s.audio_bus = clk_get(NULL, EXTCLK);
+	s3c_i2s.audio_bus = clk_get(&pdev->dev, "audio-bus");
 	if (IS_ERR(s3c_i2s.audio_bus)) {
-		printk("failed to get clk(%s)\n", EXTCLK);
+		printk("failed to get clk(audio-bus)\n");
 		goto lb3;
 	}
-	s3cdbg("Got Audio Bus Clock -> %s\n", EXTCLK);
+	s3cdbg("Got Audio Bus Clock -> audio-bus\n");
 
 	cm = clk_get(NULL, EXTPRNT);
 	if (IS_ERR(cm)) {
@@ -663,10 +663,10 @@ static int s3c_i2s_probe(struct platform_device *pdev,
 	s3cdbg("Got Audio Bus Source Clock -> %s\n", EXTPRNT);
 
 	if(clk_set_parent(s3c_i2s.audio_bus, cm)){
-		printk("failed to set %s as parent of %s\n", EXTPRNT, EXTCLK);
+		printk("failed to set %s as parent of audio-bus\n", EXTPRNT);
 		goto lb1;
 	}
-	s3cdbg("Set %s as parent of %s\n", EXTPRNT, EXTCLK);
+	s3cdbg("Set %s as parent of audio-bus\n", EXTPRNT);
 
 #if defined(CONFIG_MACH_SMDKC110)
 	cf = clk_get(NULL, "fout_epll");

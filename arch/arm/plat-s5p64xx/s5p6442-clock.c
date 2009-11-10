@@ -680,8 +680,8 @@ static struct clk_sources clkset_i2sclk = {
 
 static struct clksrc_clk clk_i2s = {
 	.clk	= {
-		.name		= "i2sclk",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 0,
 //		.pd		= &pd_audio,
 		.ctrlbit        = S5P_AUDSS_CLKGATE_CLKI2S,
 		.enable		= s5p64xx_audss_clkctrl,

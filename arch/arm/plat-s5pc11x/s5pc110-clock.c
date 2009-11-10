@@ -975,8 +975,8 @@ static struct clk_sources clkset_audio0 = {
 
 static struct clksrc_clk clk_audio0 = {
 	.clk	= {
-		.name		= "sclk_audio0",
-		.id		= -1,
+		.name		= "sclk_audio",
+		.id		= 0,
 		.ctrlbit        = S5P_CLKGATE_IP3_I2S0,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
@@ -1011,8 +1011,8 @@ static struct clk_sources clkset_audio1 = {
 
 static struct clksrc_clk clk_audio1 = {
 	.clk	= {
-		.name		= "sclk_audio1",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 1,
 		.ctrlbit        = S5P_CLKGATE_IP3_I2S1,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
@@ -1047,8 +1047,8 @@ static struct clk_sources clkset_audio2 = {
 
 static struct clksrc_clk clk_audio2 = {
 	.clk	= {
-		.name		= "sclk_audio2",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 2,
 		.ctrlbit        = S5P_CLKGATE_IP3_I2S2,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
@@ -1132,8 +1132,8 @@ static struct clk_sources clkset_i2sclk = {
 
 static struct clksrc_clk clk_i2sclk = {
 	.clk	= {
-		.name		= "i2sclk",
-		.id		= -1,
+		.name		= "audio-bus",
+		.id		= 0,
 		.pd		= &pd_audio,
 		.ctrlbit        = S5P_AUDSS_CLKGATE_CLKI2S,
 		.enable		= s5pc11x_audss_clkctrl,
