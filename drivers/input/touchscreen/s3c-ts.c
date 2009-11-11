@@ -72,16 +72,30 @@
 #define AUTOPST	     (S3C_ADCTSC_YM_SEN | S3C_ADCTSC_YP_SEN | S3C_ADCTSC_XP_SEN | \
 		     S3C_ADCTSC_AUTO_PST | S3C_ADCTSC_XY_PST(0))
 
+#define SEL_MUX_MASK	(0xf<<0)
+
+#define YP_PRESSURE_ADCTSC	(S3C_ADCTSC_YP_SEN | S3C_ADCTSC_XM_SEN | \
+				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
+#define YP_SEL_MUX		(0x3<<0)
+
+#define XP_PRESSURE_ADCTSC	(S3C_ADCTSC_XP_SEN | S3C_ADCTSC_XM_SEN | \
+				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
+#define XP_SEL_MUX		(0x5<<0)
+
+#define YM_PRESSURE_ADCTSC	(S3C_ADCTSC_XP_SEN | S3C_ADCTSC_XM_SEN | \
+				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
+#define YM_SEL_MUX		(0x2<<0)
+
+#define PRESSURE_CHECKING
 
 #define DEBUG_LVL    KERN_DEBUG
 
-
 /* Touchscreen default configuration */
 struct s3c_ts_mach_info s3c_ts_default_cfg __initdata = {
-                .delay = 		10000,
-                .presc = 		49,
-                .oversampling_shift = 	2,
-		.resol_bit = 		10
+	.delay			= 10000,
+	.presc			= 49,
+	.oversampling_shift	= 2,
+	.resol_bit		= 10
 };
 
 /*
@@ -94,16 +108,74 @@ static struct resource		*ts_irq;
 static struct clk		*ts_clock;
 static struct s3c_ts_info 	*ts;
 
+static int curr_measure;
+
+enum {
+	XP_PRESSURE = 1,
+	YM_PRESSURE,
+	YP_PRESSURE,
+};
+
+/*
+ * Store measured data for pressure calculation
+ * [0] = R, [1] = XP, [2] = YM, [3] = YP
+ */
+static unsigned long long pressure_info[4];
+
+
+static void touch_start_pressure_measure(int data)
+{
+	unsigned long yp, xp, ym, rz = 0;
+	unsigned long adc_sel_mux, adc_tsc, adccon_reg;
+	int cnt = 0;
+	int tmp;
+
+	switch (data) {
+	case YP_PRESSURE:
+		adc_sel_mux = YP_SEL_MUX;
+		adc_tsc = YP_PRESSURE_ADCTSC;
+		break;
+	case XP_PRESSURE:
+		adc_sel_mux = XP_SEL_MUX;
+		adc_tsc = XP_PRESSURE_ADCTSC;
+		break;
+	case YM_PRESSURE:
+		adc_sel_mux = YM_SEL_MUX;
+		adc_tsc = YM_PRESSURE_ADCTSC;
+		break;
+	default:
+		break;
+	}
+	
+	writel(adc_tsc , ts_base+S3C_ADCTSC);
+
+	writel(adc_sel_mux, ts_base+S3C_ADCMUX);
+
+	adccon_reg = readl(ts_base+S3C_ADCCON);
+	adccon_reg |= (1<<0);
+	writel(adccon_reg, ts_base+S3C_ADCCON);
+
+	curr_measure = data;
+}
+
+
+static void check_valid_pressure(void)
+{
+	touch_start_pressure_measure(XP_PRESSURE);
+}
+
 static void touch_timer_fire(unsigned long data)
 {
 	unsigned long data0;
 	unsigned long data1;
 	int updown;
+	int pressure;
 
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
 
-	updown = (!(data0 & S3C_ADCDAT0_UPDOWN)) && (!(data1 & S3C_ADCDAT1_UPDOWN));
+	updown = (!(data0 & S3C_ADCDAT0_UPDOWN)) && 
+		(!(data1 & S3C_ADCDAT1_UPDOWN));
 
 	if (updown) {
 		if (ts->count) {
@@ -115,23 +187,32 @@ static void touch_timer_fire(unsigned long data)
 				printk(KERN_INFO "T: %06d, X: %03ld, Y: %03ld\n", (int)tv.tv_usec, ts->xp, ts->yp);
 			}
 #endif
+			ts->xp = (ts->xp >> ts->shift);
+			ts->yp = (ts->yp >> ts->shift);
+			if (ts->pressure < ts->threshold_pressure) {
+				input_report_abs(ts->dev, ABS_X, ts->xp);
+				input_report_abs(ts->dev, ABS_Y, ts->yp);
 
-			input_report_abs(ts->dev, ABS_X, ts->xp);
-			input_report_abs(ts->dev, ABS_Y, ts->yp);
-
-			input_report_key(ts->dev, BTN_TOUCH, 1);
-			input_report_abs(ts->dev, ABS_PRESSURE, 1);
-			input_sync(ts->dev);
+				input_report_key(ts->dev, BTN_TOUCH, 1);
+				input_report_abs(ts->dev, ABS_PRESSURE, 1);
+				input_sync(ts->dev);
+			}
 		}
 
 		ts->xp = 0;
 		ts->yp = 0;
 		ts->count = 0;
 
-		writel(S3C_ADCTSC_PULL_UP_DISABLE | AUTOPST, ts_base+S3C_ADCTSC);
-		writel(readl(ts_base+S3C_ADCCON) | S3C_ADCCON_ENABLE_START, ts_base+S3C_ADCCON);
-	}
-	else {
+#if !defined(PRESSURE_CHECKING)
+		writel(S3C_ADCTSC_PULL_UP_DISABLE | AUTOPST, 
+				ts_base+S3C_ADCTSC);
+		writel(readl(ts_base+S3C_ADCCON) | S3C_ADCCON_ENABLE_START, 
+				ts_base+S3C_ADCCON);
+#else
+
+		check_valid_pressure();
+#endif
+	} else {
 
 		ts->count = 0;
 
@@ -155,7 +236,8 @@ static irqreturn_t stylus_updown(int irqno, void *param)
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
 
-	updown = (!(data0 & S3C_ADCDAT0_UPDOWN)) && (!(data1 & S3C_ADCDAT1_UPDOWN));
+	updown = (!(data0 & S3C_ADCDAT0_UPDOWN)) && (!(data1 & 
+				S3C_ADCDAT1_UPDOWN));
 
 #ifdef CONFIG_TOUCHSCREEN_S3C_DEBUG
        printk(KERN_INFO "   %c\n",	updown ? 'D' : 'U');
@@ -166,37 +248,90 @@ static irqreturn_t stylus_updown(int irqno, void *param)
 	 * timer isn't running anyways. */
 
 	if (updown)
+#if !defined(PRESSURE_CHECKING)
 		touch_timer_fire(0);
-
-	if(ts->s3c_adc_con==ADC_TYPE_2) {
-       		__raw_writel(0x0, ts_base+S3C_ADCCLRWK);
-        	__raw_writel(0x0, ts_base+S3C_ADCCLRINT);
+#else
+		check_valid_pressure();
+#endif
+	if (ts->s3c_adc_con == ADC_TYPE_2) {
+		__raw_writel(0x0, ts_base+S3C_ADCCLRWK);
+		__raw_writel(0x0, ts_base+S3C_ADCCLRINT);
 	}
-        
+	
 	return IRQ_HANDLED;
+}
+
+static int calc_pressure(void)
+{
+	int ret;
+
+	if (pressure_info[2] <= pressure_info[1])
+		return -EINVAL;
+
+	pressure_info[0] = ts->resistance * pressure_info[3] * 
+		((unsigned int)pressure_info[2] * 100000 / 
+		 (unsigned int)pressure_info[1] - 100000);
+
+	do_div(pressure_info[0], (2^ts->resol_bit)*100000);
+	printk(KERN_INFO "Raw pressure [%llu]\n", pressure_info[0]);
+	ts->pressure = (int)(pressure_info[0]);
+	printk(KERN_INFO "pressure = %d\n", ts->pressure);
+
+	return 0;
 }
 
 static irqreturn_t stylus_action(int irqno, void *param)
 {
 	unsigned long data0;
 	unsigned long data1;
+	unsigned long long calc_tmp;
 
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
 
-	if(ts->resol_bit==12) {
+#if defined(PRESSURE_CHECKING)
+	if (curr_measure) {
+		pressure_info[curr_measure] = (0xfff & data0);
+		curr_measure ++;
+	
+		if (curr_measure > 2) {
+			if (curr_measure > 3) {
+				curr_measure = 0;
+				/*
+				 * If there is wrong value measured
+			 	 * Pressure check will be start again
+			 	 */ 
+				if (calc_pressure()) {
+					check_valid_pressure();
+					goto int_clear;
+				}
+			}
+			goto start_conversion;
+		} else {
+			touch_start_pressure_measure(curr_measure);	
+		}
+		goto int_clear;
+	}
+#endif
+
+start_conversion:
+
+	if (ts->resol_bit==12) {
 #if defined(CONFIG_TOUCHSCREEN_NEW)
-		ts->yp += S3C_ADCDAT0_XPDATA_MASK_12BIT - (data0 & S3C_ADCDAT0_XPDATA_MASK_12BIT);
-		ts->xp += S3C_ADCDAT1_YPDATA_MASK_12BIT - (data1 & S3C_ADCDAT1_YPDATA_MASK_12BIT);
+		ts->yp += S3C_ADCDAT0_XPDATA_MASK_12BIT -
+				(data0 & S3C_ADCDAT0_XPDATA_MASK_12BIT);
+		ts->xp += S3C_ADCDAT1_YPDATA_MASK_12BIT -
+				(data1 & S3C_ADCDAT1_YPDATA_MASK_12BIT);
 #else 
 		ts->xp += data0 & S3C_ADCDAT0_XPDATA_MASK_12BIT;
 		ts->yp += data1 & S3C_ADCDAT1_YPDATA_MASK_12BIT;
 #endif
-	}
-	else {
+	} else {
 #if defined(CONFIG_TOUCHSCREEN_NEW)
-		ts->yp += S3C_ADCDAT0_XPDATA_MASK - (data0 & S3C_ADCDAT0_XPDATA_MASK);
-		ts->xp += S3C_ADCDAT1_YPDATA_MASK - (data1 & S3C_ADCDAT1_YPDATA_MASK);
+		ts->yp += S3C_ADCDAT0_XPDATA_MASK -
+				(data0 & S3C_ADCDAT0_XPDATA_MASK);
+		ts->xp += S3C_ADCDAT1_YPDATA_MASK -
+				(data1 & S3C_ADCDAT1_YPDATA_MASK);
 #else
 		ts->xp += data0 & S3C_ADCDAT0_XPDATA_MASK;
 		ts->yp += data1 & S3C_ADCDAT1_YPDATA_MASK;
@@ -204,25 +339,29 @@ static irqreturn_t stylus_action(int irqno, void *param)
 	}
 
 	ts->count++;
+	printk(KERN_INFO "count [%d]\n",ts->count);
 
 	if (ts->count < (1<<ts->shift)) {
 		writel(S3C_ADCTSC_PULL_UP_DISABLE | AUTOPST, ts_base+S3C_ADCTSC);
-		writel(readl(ts_base+S3C_ADCCON) | S3C_ADCCON_ENABLE_START, ts_base+S3C_ADCCON);
+		writel(readl(ts_base+S3C_ADCCON) | S3C_ADCCON_ENABLE_START, 
+			ts_base+S3C_ADCCON);
 	} else {
 		mod_timer(&touch_timer, jiffies+1);
 		writel(WAIT4INT(1), ts_base+S3C_ADCTSC);
 	}
 
-	if(ts->s3c_adc_con==ADC_TYPE_2) {
-       		__raw_writel(0x0, ts_base+S3C_ADCCLRWK);
-        	__raw_writel(0x0, ts_base+S3C_ADCCLRINT);
+int_clear:
+
+	if (ts->s3c_adc_con == ADC_TYPE_2) {
+		__raw_writel(0x0, ts_base+S3C_ADCCLRWK);
+		__raw_writel(0x0, ts_base+S3C_ADCCLRINT);
 	}
 	
 	return IRQ_HANDLED;
 }
 
 
-static struct s3c_ts_mach_info *s3c_ts_get_platdata (struct device *dev)
+static struct s3c_ts_mach_info *s3c_ts_get_platdata(struct device *dev)
 {
 	if (dev->platform_data != NULL)
 		return (struct s3c_ts_mach_info *)dev->platform_data;
@@ -238,14 +377,14 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	struct resource *res;
 	struct device *dev;
 	struct input_dev *input_dev;
-	struct s3c_ts_mach_info * s3c_ts_cfg;
+	struct s3c_ts_mach_info *s3c_ts_cfg;
 	int ret, size;
 
 	dev = &pdev->dev;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res == NULL) {
-		dev_err(dev,"no memory resource specified\n");
+		dev_err(dev, "no memory resource specified\n");
 		return -ENOENT;
 	}
 
@@ -276,8 +415,8 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	s3c_ts_cfg = s3c_ts_get_platdata(&pdev->dev);
 		
 	if ((s3c_ts_cfg->presc&0xff) > 0)
-		writel(S3C_ADCCON_PRSCEN | S3C_ADCCON_PRSCVL(s3c_ts_cfg->presc&0xFF),\
-				ts_base+S3C_ADCCON);
+		writel(S3C_ADCCON_PRSCEN | S3C_ADCCON_PRSCVL(s3c_ts_cfg->presc&0xFF),
+			ts_base+S3C_ADCCON);
 	else
 		writel(0, ts_base+S3C_ADCCON);
 
@@ -286,14 +425,16 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	if ((s3c_ts_cfg->delay&0xffff) > 0)
 		writel(s3c_ts_cfg->delay & 0xffff, ts_base+S3C_ADCDLY);
 
-	if (s3c_ts_cfg->resol_bit==12) {
-		switch(s3c_ts_cfg->s3c_adc_con) {
+	if (s3c_ts_cfg->resol_bit == 12) {
+		switch (s3c_ts_cfg->s3c_adc_con) {
 		case ADC_TYPE_2:
-			writel(readl(ts_base+S3C_ADCCON)|S3C_ADCCON_RESSEL_12BIT, ts_base+S3C_ADCCON);
+			writel(readl(ts_base+S3C_ADCCON)|S3C_ADCCON_RESSEL_12BIT, 
+				ts_base+S3C_ADCCON);
 			break;
-
+		
 		case ADC_TYPE_1:
-			writel(readl(ts_base+S3C_ADCCON)|S3C_ADCCON_RESSEL_12BIT_1, ts_base+S3C_ADCCON);
+			writel(readl(ts_base+S3C_ADCCON)|S3C_ADCCON_RESSEL_12BIT_1, 
+				ts_base+S3C_ADCCON);
 			break;
 			
 		default:
@@ -305,7 +446,7 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	writel(WAIT4INT(0), ts_base+S3C_ADCTSC);
 
 	ts = kzalloc(sizeof(struct s3c_ts_info), GFP_KERNEL);
-	
+
 	input_dev = input_allocate_device();
 
 	if (!input_dev) {
@@ -314,15 +455,16 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	}
 	
 	ts->dev = input_dev;
-
-	ts->dev->evbit[0] = ts->dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+	
+	ts->dev->evbit[0] = ts->dev->evbit[0] = 
+			BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+			
 	ts->dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
 
-	if (s3c_ts_cfg->resol_bit==12) {
+	if (s3c_ts_cfg->resol_bit == 12) {
 		input_set_abs_params(ts->dev, ABS_X, 0, 0xFFF, 0, 0);
 		input_set_abs_params(ts->dev, ABS_Y, 0, 0xFFF, 0, 0);
-	}
-	else {
+	} else {
 		input_set_abs_params(ts->dev, ABS_X, 0, 0x3FF, 0, 0);
 		input_set_abs_params(ts->dev, ABS_Y, 0, 0x3FF, 0, 0);
 	}
@@ -341,7 +483,8 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 	ts->shift = s3c_ts_cfg->oversampling_shift;
 	ts->resol_bit = s3c_ts_cfg->resol_bit;
 	ts->s3c_adc_con = s3c_ts_cfg->s3c_adc_con;
-	
+	ts->resistance = s3c_ts_cfg->panel_resistance;
+	ts->threshold_pressure = s3c_ts_cfg->threshold;
 	/* For IRQ_PENDUP */
 	ts_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	if (ts_irq == NULL) {
@@ -349,10 +492,11 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 		ret = -ENOENT;
 		goto err_irq;
 	}
-
-	ret = request_irq(ts_irq->start, stylus_updown, IRQF_SAMPLE_RANDOM, "s3c_updown", ts);
+	
+	ret = request_irq(ts_irq->start, stylus_updown, IRQF_SAMPLE_RANDOM,
+			"s3c_updown", ts);
 	if (ret != 0) {
-		dev_err(dev,"s3c_ts.c: Could not allocate ts IRQ_PENDN !\n");
+		dev_err(dev, "s3c_ts.c: Could not allocate ts IRQ_PENDN !\n");
 		ret = -EIO;
 		goto err_irq;
 	}
@@ -364,8 +508,8 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 		ret = -ENOENT;
 		goto err_irq;
 	}
-
-	ret = request_irq(ts_irq->start, stylus_action, IRQF_SAMPLE_RANDOM, "s3c_action", ts);
+	ret = request_irq(ts_irq->start, stylus_action, IRQF_SAMPLE_RANDOM,
+			"s3c_action", ts);
 	if (ret != 0) {
 		dev_err(dev, "s3c_ts.c: Could not allocate ts IRQ_ADC !\n");
 		ret =  -EIO;
@@ -376,8 +520,7 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 
 	/* All went ok, so register to the input system */
 	ret = input_register_device(ts->dev);
-	
-	if(ret) {
+	if (ret) {
 		dev_err(dev, "s3c_ts.c: Could not register input device(touchscreen)!\n");
 		ret = -EIO;
 		goto fail;
@@ -388,7 +531,7 @@ static int __init s3c_ts_probe(struct platform_device *pdev)
 fail:
 	free_irq(ts_irq->start, ts->dev);
 	free_irq(ts_irq->end, ts->dev);
-	
+
 err_irq:
 	input_free_device(input_dev);
 	kfree(ts);
@@ -396,7 +539,7 @@ err_irq:
 err_alloc:
 	clk_disable(ts_clock);
 	clk_put(ts_clock);
-	
+
 err_clk:
 	iounmap(ts_base);
 
@@ -411,10 +554,8 @@ err_req:
 static int s3c_ts_remove(struct platform_device *dev)
 {
 	printk(KERN_INFO "s3c_ts_remove() of TS called !\n");
-
 	disable_irq(IRQ_ADC);
 	disable_irq(IRQ_PENDN);
-	
 	free_irq(IRQ_PENDN, ts->dev);
 	free_irq(IRQ_ADC, ts->dev);
 
@@ -441,7 +582,7 @@ static int s3c_ts_suspend(struct platform_device *dev, pm_message_t state)
 
 	disable_irq(IRQ_ADC);
 	disable_irq(IRQ_PENDN);
-	
+
 	clk_disable(ts_clock);
 
 	return 0;

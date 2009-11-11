@@ -691,6 +691,8 @@ static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
 	.oversampling_shift	= 2,
 	.resol_bit 		= 12,
 	.s3c_adc_con		= ADC_TYPE_2,
+	.panel_resistance	= 1,	// For measuring pressure
+	.threshold		= 300,
 };
 
 static struct s3c_adc_mach_info s3c_adc_platform __initdata = {
