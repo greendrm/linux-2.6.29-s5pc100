@@ -45,7 +45,6 @@
 #define S3C_WINCON3		S3C_LCDREG(0x002C)  	/* Window control 3 */
 #define S3C_WINCON4		S3C_LCDREG(0x0030)  	/* Window control 4 */
 
-/* no meanings, just to avoid compile errors */
 #define S3C_WINSHMAP		S3C_LCDREG(0x0034)  	/* Window Shadow control */
 
 #define S3C_VIDOSD0A		S3C_LCDREG(0x0040)  	/* Video Window 0 position control */
@@ -293,6 +292,9 @@
 #define S3C_WINCON1_LOCALSEL_FIMC1		(0 << 23)
 #define S3C_WINCON1_LOCALSEL_VP			(1 << 23)
 #define S3C_WINCON1_LOCALSEL_MASK		(1 << 23)
+
+/* WINSHMAP */
+#define S3C_WINSHMAP_PROTECT(x)			(((x) & 0x1f) << 10)
 
 /* VIDOSDxA, VIDOSDxB */
 #define S3C_VIDOSD_LEFT_X(x)			(((x) & 0x7ff) << 11)

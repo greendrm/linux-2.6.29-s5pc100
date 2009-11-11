@@ -48,27 +48,37 @@ static int fimc_outdev_stop_camif(void *param)
 	struct fimc_control *ctrl = (struct fimc_control *)param;
 
 	fimc_hwset_stop_input_dma(ctrl);
+	fimc_hwset_disable_autoload(ctrl);
 	fimc_hwset_stop_scaler(ctrl);
 	fimc_hwset_disable_capture(ctrl);
 
 	return 0;
 }
 
-static int fimc_stop_fifo(struct fimc_control *ctrl, u32 sleep)
+static int fimc_stop_fifo(struct fimc_control *ctrl)
 {
+	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
 	int ret = -1;
 
 	dev_dbg(ctrl->dev, "%s: called\n", __func__);
 
-	ret = ctrl->fb.close_fifo(ctrl->id, fimc_outdev_stop_camif,
-			(void *)ctrl, sleep);
-	if (ret < 0)
-		dev_err(ctrl->dev, "FIMD FIFO close fail\n");
-
+	if (pdata->hw_ver == 0x40) {		/* to support C100 */
+		ret = ctrl->fb.close_fifo(ctrl->id, fimc_outdev_stop_camif,
+				(void *)ctrl);
+		if (ret < 0)
+			dev_err(ctrl->dev, "FIMD FIFO close fail\n");
+	} else if (pdata->hw_ver == 0x43) {	/* to support C110/6442 */
+		ret = ctrl->fb.close_fifo(ctrl->id, NULL, NULL);
+		if (ret < 0)
+			dev_err(ctrl->dev, "FIMD FIFO close fail\n");
+		fimc_hw_wait_winoff(ctrl);
+		fimc_outdev_stop_camif(ctrl);
+		fimc_hw_wait_stop_input_dma(ctrl);
 #if defined (CONFIG_VIDEO_IPC)
-	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
-		ipc_stop();
+		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+			ipc_stop();
 #endif
+	}
 
 	return 0;
 }
@@ -80,7 +90,7 @@ int fimc_outdev_stop_streaming(struct fimc_control *ctrl)
 	dev_dbg(ctrl->dev, "%s: called\n", __func__);
 
 	if (ctrl->out->fbuf.base) {	/* DMA OUT */
-		ret = wait_event_interruptible_timeout(ctrl->wq, \
+		ret = wait_event_timeout(ctrl->wq, \
 				(ctrl->status == FIMC_STREAMON_IDLE), \
 				FIMC_ONESHOT_TIMEOUT);
 		if (ret == 0)
@@ -91,7 +101,7 @@ int fimc_outdev_stop_streaming(struct fimc_control *ctrl)
 		fimc_outdev_stop_camif(ctrl);
 	} else {				/* FIMD FIFO */
 		ctrl->status = FIMC_READY_OFF;
-		fimc_stop_fifo(ctrl, FIFO_CLOSE);
+		fimc_stop_fifo(ctrl);
 	}
 
 	return ret;
@@ -124,7 +134,8 @@ int fimc_init_out_buf(struct fimc_control *ctrl, enum v4l2_memory mem_type)
 	case V4L2_PIX_FMT_NV12T:
 		y_size = (width * height);
 		cbcr_size = (y_size>>2);
-		total_size = PAGE_ALIGN(y_size + (cbcr_size<<1)) * FIMC_OUTBUFS;
+		total_size = PAGE_ALIGN(y_size + (cbcr_size << 1)) \
+								* FIMC_OUTBUFS;
 		break;
 
 	default: 
@@ -248,7 +259,8 @@ static int fimc_outdev_check_param(struct fimc_control *ctrl)
 	return ret;
 }
 
-static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt, enum v4l2_field field)
+static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt, \
+							enum v4l2_field field)
 {
 	fimc_hwset_input_burst_cnt(ctrl, 4);
 	fimc_hwset_input_colorspace(ctrl, pixfmt);
@@ -259,7 +271,8 @@ static void fimc_outdev_set_src_format(struct fimc_control *ctrl, u32 pixfmt, en
 	fimc_hwset_input_addr_style(ctrl, pixfmt);
 }
 
-static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, struct v4l2_pix_format *pixfmt)
+static void fimc_outdev_set_dst_format(struct fimc_control *ctrl, \
+						struct v4l2_pix_format *pixfmt)
 {
 	fimc_hwset_output_colorspace(ctrl, pixfmt->pixelformat);
 	fimc_hwset_output_yuv(ctrl, pixfmt->pixelformat);
@@ -273,7 +286,8 @@ static void fimc_outdev_set_format(struct fimc_control *ctrl)
 	struct v4l2_pix_format pixfmt;
 	memset(&pixfmt, 0, sizeof(pixfmt));
 
-	fimc_outdev_set_src_format(ctrl, ctrl->out->pix.pixelformat, ctrl->out->pix.field);
+	fimc_outdev_set_src_format(ctrl, ctrl->out->pix.pixelformat, \
+							ctrl->out->pix.field);
 
 	if (ctrl->out->fbuf.base) {
 		pixfmt.pixelformat = ctrl->out->fbuf.fmt.pixelformat;
@@ -837,7 +851,7 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 	return 0;
 }
 
-static int fimc_outdev_set_param(struct fimc_control *ctrl)
+int fimc_outdev_set_param(struct fimc_control *ctrl)
 {
 	int ret = -1;
 #if defined (CONFIG_VIDEO_IPC)
@@ -846,7 +860,7 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 	memset(&dst, 0, sizeof(dst));
 #endif
 
-	if (ctrl->status != FIMC_STREAMOFF) {
+	if ((ctrl->status != FIMC_STREAMOFF) && (ctrl->status != FIMC_READY_ON)) {
 		dev_err(ctrl->dev, "FIMC is running\n");
 		return -EBUSY;
 	}
@@ -884,7 +898,7 @@ static int fimc_outdev_set_param(struct fimc_control *ctrl)
 	return 0;
 }
 
-static int fimc_fimd_rect(const struct fimc_control *ctrl,
+int fimc_fimd_rect(const struct fimc_control *ctrl,
 		struct v4l2_rect *fimd_rect)
 {
 	switch (ctrl->out->rotate) {
@@ -938,7 +952,7 @@ static int fimc_fimd_rect(const struct fimc_control *ctrl,
 	return 0;
 }
 
-static int fimc_start_fifo(struct fimc_control *ctrl)
+int fimc_start_fifo(struct fimc_control *ctrl)
 {
 	struct v4l2_rect fimd_rect;
 	struct fb_var_screeninfo var;
@@ -961,15 +975,15 @@ static int fimc_start_fifo(struct fimc_control *ctrl)
 		return -EINVAL;
 	}
 
-	/* Don't allocate the memory. */
-	if (ctrl->out->pix.field == V4L2_FIELD_NONE)
-		ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 0);
-	else if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
-		ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, 2);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "direct_ioctl(FBIO_ALLOC) fail\n");
-		return -EINVAL;
-	}
+        /* Don't allocate the memory. */
+        if (ctrl->out->pix.field == V4L2_FIELD_NONE)
+                ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, DATA_PATH_FIFO);
+        else if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+                ret = s3cfb_direct_ioctl(id, FBIO_ALLOC, DATA_PATH_IPC);
+        if (ret < 0) {
+                dev_err(ctrl->dev, "direct_ioctl(FBIO_ALLOC) fail\n");
+                return -EINVAL;
+        }
 
 	/* Update WIN size  */
 	var.xres = fimd_rect.width;
@@ -1454,7 +1468,7 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 
 	ret = fimc_detach_out_queue(ctrl, &index);
 	if (ret < 0) {
-		ret = wait_event_interruptible_timeout(ctrl->wq, \
+		ret = wait_event_timeout(ctrl->wq, \
 			(ctrl->out->out_queue[0] != -1), FIMC_DQUEUE_TIMEOUT);
 		if (ret == 0) {
 			fimc_dump_context(ctrl);

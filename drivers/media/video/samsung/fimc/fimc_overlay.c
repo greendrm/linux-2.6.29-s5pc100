@@ -30,11 +30,6 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 			__func__, f->fmt.win.w.top, f->fmt.win.w.left, \
 			f->fmt.win.w.width, f->fmt.win.w.height);
 
-	if (ctrl->status != FIMC_STREAMOFF) {
-		dev_err(ctrl->dev, "FIMC is running\n");
-		return -EBUSY;
-	}
-
 	if (ctrl->out->fbuf.base) /* OUTPUT path : memory */
 		return 0;
 
@@ -80,6 +75,46 @@ int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 	return 0;
 }
 
+static int fimc_check_pos(struct fimc_control *ctrl, struct v4l2_format *f)
+{
+	if(ctrl->out->win.w.width != f->fmt.win.w.width) {
+		dev_err(ctrl->dev, "%s: cannot change width\n", __func__);
+		return -EINVAL;
+	} else if (ctrl->out->win.w.height != f->fmt.win.w.height) {
+		dev_err(ctrl->dev, "%s: cannot change height\n", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int fimc_change_fifo_position(struct fimc_control *ctrl)
+{
+	struct v4l2_rect fimd_rect;
+	struct s3cfb_user_window window;
+	int ret = -1;
+
+	memset(&fimd_rect, 0, sizeof(struct v4l2_rect));
+
+	ret = fimc_fimd_rect(ctrl, &fimd_rect);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "fimc_fimd_rect fail\n");
+		return -EINVAL;
+	}
+
+	/* Update WIN position */
+	window.x = fimd_rect.left;
+	window.y = fimd_rect.top;
+	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_WIN_POSITION,
+			(unsigned long)&window);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "direct_ioctl(S3CFB_WIN_POSITION) fail\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
@@ -87,17 +122,35 @@ int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 
 	dev_info(ctrl->dev, "%s: called\n", __func__);
 
-	/* Check stream status */
-	if (ctrl->status != FIMC_STREAMOFF) {
+	switch (ctrl->status) {
+	case FIMC_STREAMON:
+		ret = fimc_check_pos(ctrl, f);
+		if (ret < 0) {
+			dev_err(ctrl->dev, "When FIMC is running, "
+					"you can only move the position.\n");
+			return -EBUSY;
+		}
+
+		ret = fimc_try_fmt_overlay(file, fh, f);
+		if (ret < 0)
+			return ret;
+
+		ctrl->out->win = f->fmt.win;
+		fimc_change_fifo_position(ctrl);
+
+		break;
+	case FIMC_STREAMOFF:
+		ret = fimc_try_fmt_overlay(file, fh, f);
+		if (ret < 0)
+			return ret;
+		ctrl->out->win = f->fmt.win;
+
+		break;
+
+	default:
 		dev_err(ctrl->dev, "FIMC is running\n");
 		return -EBUSY;
 	}
-
-	ret = fimc_try_fmt_overlay(file, fh, f);
-	if (ret < 0)
-		return ret;
-
-	ctrl->out->win = f->fmt.win;
 
 	return ret;
 }

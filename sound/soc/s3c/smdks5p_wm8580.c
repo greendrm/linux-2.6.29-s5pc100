@@ -378,7 +378,7 @@ static int __init smdks5p_audio_init(void)
 	s3c_pcm_pdat.set_mode(lowpower, &s3c_i2s_pdat);
 	s3c_i2s_pdat.set_mode(lowpower);
 
-	smdks5p_snd_device = platform_device_alloc("soc-audio", -1);
+	smdks5p_snd_device = platform_device_alloc("soc-audio", 0);
 	if (!smdks5p_snd_device)
 		return -ENOMEM;
 

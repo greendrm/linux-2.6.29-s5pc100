@@ -68,3 +68,4 @@ obj-$(CONFIG_S5P64XX_SETUP_FIMC2) += setup-fimc2.o
 obj-$(CONFIG_S5P64XX_DEV_FB)	  += dev-fb.o
 obj-$(CONFIG_S5P64XX_SETUP_FB)	  += setup-fb.o
 
+obj-$(CONFIG_SND_S3C24XX_SOC) += dev-audio.o

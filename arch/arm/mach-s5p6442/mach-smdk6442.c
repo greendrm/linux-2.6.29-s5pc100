@@ -395,6 +395,10 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 #if defined CONFIG_USB_GADGET_S3C_OTGD 
 	&s3c_device_usbgadget,
 #endif
+#ifdef CONFIG_SND_S5P_SOC_I2S
+	&s5p6442_device_iis0,
+	&s5p6442_device_iis1,
+#endif
 	&s3c_device_fimc0,
 	&s3c_device_fimc1,
 	&s3c_device_fimc2,
@@ -626,7 +630,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #ifdef S5K6AA_ENABLED
 		&s5k6aa,
 #endif
-	}
+	},
+	.hw_ver		= 0x43,
 };
 
 #if defined(CONFIG_HAVE_PWM)

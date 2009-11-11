@@ -72,6 +72,24 @@ extern struct platform_device s3c_device_smc911x;
 extern struct platform_device s3c_device_dm9000;
 #endif
 
+extern struct platform_device s5pc100_device_iis0;
+extern struct platform_device s5pc100_device_iis1;
+extern struct platform_device s5pc100_device_iis2;
+extern struct platform_device s5pc100_device_pcm0;
+extern struct platform_device s5pc100_device_pcm1;
+
+extern struct platform_device s5pc110_device_iis0;
+extern struct platform_device s5pc110_device_iis1;
+extern struct platform_device s5pc110_device_iis2;
+extern struct platform_device s5pc110_device_pcm0;
+extern struct platform_device s5pc110_device_pcm1;
+extern struct platform_device s5pc110_device_pcm2;
+
+extern struct platform_device s5p6442_device_iis0;
+extern struct platform_device s5p6442_device_iis1;
+extern struct platform_device s5p6442_device_pcm0;
+extern struct platform_device s5p6442_device_pcm1;
+
 extern struct platform_device s3c_device_mfc;
 extern struct platform_device s3c_device_ac97;
 

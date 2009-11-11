@@ -1,22 +1,49 @@
 config SND_S3C24XX_SOC
-	tristate "SoC Audio for the Samsung S3C24XX chips"
-	depends on ARCH_S3C2410
+	tristate "Samsung SoC Audio Drivers"
+	depends on ARCH_S5PC1XX || ARCH_S5PC11X || ARCH_S5P64XX
 	help
 	  Say Y or M if you want to add support for codecs attached to
-	  the S3C24XX AC97, I2S or SSP interface. You will also need
+	  the Samsung AC97, I2S or SSP interface. You will also need
 	  to select the audio interfaces to support below.
 
 config SND_S3C24XX_SOC_I2S
 	tristate
 
+config SND_S3C_I2SV2_SOC
+	tristate
+
 config SND_S3C2412_SOC_I2S
 	tristate
+
+config SND_S5P_SOC_I2S
+	tristate
+	select SND_S3C_I2SV2_SOC
 
 config SND_S3C2443_SOC_AC97
 	tristate
 	select AC97_BUS
 	select SND_SOC_AC97_BUS
-	
+
+config SND_S3C_SOC_PCM
+	tristate
+
+config SND_S5P_SOC_WM8580
+	tristate "SoC I2S Audio support for WM8580 on SMDK-S5P"
+	depends on SND_S3C24XX_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
+	select SND_SOC_WM8580
+	select SND_S5P_SOC_I2S if ARCH_S5PC1XX
+	select SND_S5P_SOC_I2S if ARCH_S5PC11X
+	select SND_S5P_SOC_I2S if ARCH_S5P64XX
+	help
+	  Sat Y if you want to add support for SoC audio on the SMDKS5P.
+
+config SND_WM8580_MASTER
+	bool "WM8580 Codec is I2S Master"
+	depends on SND_S5P_SOC_WM8580
+	default n
+	help
+	  Say Y if you want to run SoC as I2S-Slave and CODEC as I2S-Master.
+
 config SND_S3C24XX_SOC_NEO1973_WM8753
 	tristate "SoC I2S Audio support for NEO1973 - WM8753"
 	depends on SND_S3C24XX_SOC && MACH_NEO1973_GTA01

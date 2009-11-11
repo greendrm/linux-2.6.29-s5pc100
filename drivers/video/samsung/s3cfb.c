@@ -92,7 +92,7 @@ static irqreturn_t s3cfb_irq_frame(int irq, void *dev_id)
 	s3cfb_clear_interrupt(fbdev);
 
 	fbdev->wq_count++;
-	wake_up_interruptible(&fbdev->wq);
+	wake_up(&fbdev->wq);
 
 	return IRQ_HANDLED;
 }
@@ -137,10 +137,10 @@ static int s3cfb_disable_localpath(int id)
 	struct s3cfb_window *win = fbdev->fb[id]->par;
 
 	if (s3cfb_channel_localpath_off(fbdev, id)) {
-		win->enabled = 0;
+		win->enabled = 1;
 		return -EFAULT;
 	} else {
-		win->enabled = 1;
+		win->enabled = 0;
 		return 0;
 	}
 }
@@ -505,7 +505,7 @@ static int s3cfb_wait_for_vsync(void)
 {
 	dev_dbg(fbdev->dev, "waiting for VSYNC interrupt\n");
 
-	interruptible_sleep_on_timeout(&fbdev->wq, HZ / 10);
+	sleep_on_timeout(&fbdev->wq, HZ / 10);
 
 	dev_dbg(fbdev->dev, "got a VSYNC interrupt\n");
 
@@ -633,10 +633,6 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 
 	win->local_channel = ch;
 
-	s3cfb_set_vsync_interrupt(fbdev, 1);
-	s3cfb_wait_for_vsync();
-	s3cfb_set_vsync_interrupt(fbdev, 0);
-
 	if (do_priv) {
 		if (do_priv(param)) {
 			dev_err(fbdev->dev, "failed to run for "
@@ -653,28 +649,16 @@ int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 	return 0;
 }
 
-/* new function to close fifo */
-int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param, int sleep)
+int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param)
 {
 	struct s3cfb_window *win = fbdev->fb[id]->par;
+	win->path = DATA_PATH_DMA;
 
 	dev_dbg(fbdev->dev, "[fb%d] close fifo\n", win->id);
 
-	if (sleep)
-		win->path = DATA_PATH_FIFO;
-	else
-		win->path = DATA_PATH_DMA;
-
-	s3cfb_set_vsync_interrupt(fbdev, 1);
-	s3cfb_wait_for_vsync();
-	s3cfb_set_vsync_interrupt(fbdev, 0);
-
-	s3cfb_display_off(fbdev);
-	s3cfb_check_line_count(fbdev);
-	s3cfb_disable_window(id);
-	s3cfb_disable_localpath(id);
-
 	if (do_priv) {
+		s3cfb_display_off(fbdev);
+
 		if (do_priv(param)) {
 			dev_err(fbdev->dev, "failed to run for"
 				"private fifo close\n");
@@ -682,44 +666,16 @@ int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param, int sleep)
 			s3cfb_display_on(fbdev);
 			return -EFAULT;
 		}
+
+		s3cfb_disable_window(id);
+		s3cfb_disable_localpath(id);
+		s3cfb_display_on(fbdev);
+	} else {
+		s3cfb_disable_window(id);
+		s3cfb_disable_localpath(id);	/* Only for FIMD 6.2 */
 	}
 
-	s3cfb_display_on(fbdev);
-
 	return 0;
-}
-
-/* for backward compatibilities */
-void s3cfb_enable_local(int id, int in_yuv, int ch)
-{
-	struct s3cfb_window *win = fbdev->fb[id]->par;
-
-	win->path = DATA_PATH_FIFO;
-	win->local_channel = ch;
-
-	s3cfb_set_vsync_interrupt(fbdev, 1);
-	s3cfb_wait_for_vsync();
-	s3cfb_set_vsync_interrupt(fbdev, 0);
-
-	s3cfb_set_window_control(fbdev, id);
-	s3cfb_enable_window(id);
-}
-
-/* for backward compatibilities */
-void s3cfb_enable_dma(int id)
-{
-	struct s3cfb_window *win = fbdev->fb[id]->par;
-
-	win->path = DATA_PATH_DMA;
-
-	s3cfb_set_vsync_interrupt(fbdev, 1);
-	s3cfb_wait_for_vsync();
-	s3cfb_set_vsync_interrupt(fbdev, 0);
-
-	s3cfb_disable_window(id);
-	s3cfb_display_off(fbdev);
-	s3cfb_set_window_control(fbdev, id);
-	s3cfb_display_on(fbdev);
 }
 
 int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
@@ -787,14 +743,6 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 			win->y = user_win.y;
 
 		s3cfb_set_window_position(fbdev, win->id);
-		break;
-
-	case S3CFB_SET_SUSPEND_FIFO:
-		win->suspend_fifo = argp;
-		break;
-
-	case S3CFB_SET_RESUME_FIFO:
-		win->resume_fifo = argp;
 		break;
 
 	case S3CFB_GET_LCD_WIDTH:
@@ -1240,20 +1188,9 @@ static int s3cfb_remove(struct platform_device *pdev)
 int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(&pdev->dev);
-	struct s3cfb_window *win;
-	int i;
 
 	if (fbdev->lcd->deinit_ldi)
 		fbdev->lcd->deinit_ldi();
-
-	for (i = 0; i < pdata->nr_wins; i++) {
-		win = fbdev->fb[i]->par;
-		if (win->path != DATA_PATH_DMA && win->suspend_fifo) {
-			if (win->suspend_fifo())
-				dev_info(fbdev->dev, "failed to run "
-					 "the suspend for fifo\n");
-		}
-	}
 
 	s3cfb_display_off(fbdev);
 	pdata->clk_off(pdev, &fbdev->clock);
@@ -1278,16 +1215,9 @@ int s3cfb_resume(struct platform_device *pdev)
 	for (i = 0; i < pdata->nr_wins; i++) {
 		fb = fbdev->fb[i];
 		win = fb->par;
-
-		if (win->path != DATA_PATH_DMA && win->resume_fifo) {
-			if (win->resume_fifo())
-				dev_info(fbdev->dev,
-					 "failed to run the resume for fifo\n");
-		} else {
-			if (win->enabled) {
-				s3cfb_set_par(fb);
-				s3cfb_enable_window(win->id);
-			}
+		if ((win->path == DATA_PATH_DMA) && (win->enabled)) {
+			s3cfb_set_par(fb);
+			s3cfb_enable_window(win->id);
 		}
 	}
 

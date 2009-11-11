@@ -653,6 +653,10 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 #elif defined(CONFIG_SPI_CNTRLR_2)
 	&s3c_device_spi2,
 #endif
+#ifdef CONFIG_SND_S5P_SOC_I2S
+	&s5pc110_device_iis0,
+	&s5pc110_device_iis1,
+#endif
 	&s3c_device_usb_ohci,
 	&s3c_device_usb_ehci,
 	&s3c_device_usbgadget,
@@ -1043,7 +1047,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #ifdef WRITEBACK_ENABLED
 		&writeback,
 #endif
-	}
+	},
+	.hw_ver		= 0x43,
 };
 
 #if defined(CONFIG_HAVE_PWM)

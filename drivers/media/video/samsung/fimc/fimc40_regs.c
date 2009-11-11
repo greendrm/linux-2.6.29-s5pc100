@@ -1076,3 +1076,14 @@ int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;	
 }
 
+int fimc_hw_wait_winoff(struct fimc_control *ctrl)
+{
+	return 0;
+}
+
+int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl)
+{
+	return 0;
+}
+
+

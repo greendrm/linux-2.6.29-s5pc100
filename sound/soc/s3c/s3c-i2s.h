@@ -178,16 +178,10 @@
 #define IRQ_S3C_IISV32		IRQ_I2S1
 #define IRQ_S3C_IISV50		IRQ_I2S0
 
-/* below definitions have moved to "arch/arm/mach-s5pc100/include/mach/map.h"
--#define S3C_PA_IIS_V32         S5PC1XX_PA_IIS_V32
--#define S3C_PA_IIS_V50         S5PC1XX_PA_IIS_V50
-*/
-
-#define S3C_DMACH_I2S_OUT	DMACH_I2S_V50_OUT
-#define S3C_DMACH_I2S_IN	DMACH_I2S_V50_IN
+#define S3C_DMACH_I2S_OUT	DMACH_I2S0_OUT
+#define S3C_DMACH_I2S_IN	DMACH_I2S0_IN
 #define S3C_IIS_PABASE		S3C_PA_IIS_V50
 #define S3C_IISIRQ		IRQ_S3C_IISV50
-#define PCLKCLK			"i2s_v50"
 
 #ifdef CONFIG_SND_WM8580_MASTER /* ?? */
 #define EXTPRNT "i2s_cdclk0"
@@ -200,10 +194,8 @@
 #endif
 
 #if defined(CONFIG_SND_SMDKC100_WM8580)
-#define EXTCLK			"i2sclkd2"
 #define RATESRCCLK 		EXTPRNT
 #else
-#define EXTCLK			"i2sclk"
 #define RATESRCCLK 		"fout_epll"
 #endif
 

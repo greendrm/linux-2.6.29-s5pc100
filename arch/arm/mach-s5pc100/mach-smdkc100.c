@@ -386,6 +386,10 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s3c_device_g3d,
 	&s3c_device_g2d,
+#ifdef CONFIG_SND_S5P_SOC_I2S
+	&s5pc100_device_iis0,
+	&s5pc100_device_iis1,
+#endif
 	&s3c_device_rotator,
 	&s3c_device_csis,
 #if defined(CONFIG_HAVE_PWM)
@@ -521,7 +525,8 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 	.camera		= { 
 		&camera_a, 
 		&camera_c,
-	}
+	},
+	.hw_ver		= 0x40,
 };
 
 /*

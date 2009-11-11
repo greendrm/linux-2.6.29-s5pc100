@@ -42,6 +42,7 @@ struct platform_device s3c_device_fimc1 = {
 
 static struct s3c_platform_fimc default_fimc1_data __initdata = {
 	.default_cam	= CAMERA_PAR_A,
+	.hw_ver		= 0x43,
 };
 
 void __init s3c_fimc1_set_platdata(struct s3c_platform_fimc *pd)

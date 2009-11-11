@@ -1137,3 +1137,46 @@ int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;	
 }
 
+int fimc_hw_wait_winoff(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CISTATUS);
+	u32 status = S3C_CISTATUS_GET_LCD_STATUS(cfg);
+	int i = FIMC_FIFOOFF_CNT;
+
+ 	while(status && i--) {
+		cfg = readl(ctrl->regs + S3C_CISTATUS);
+		status = S3C_CISTATUS_GET_LCD_STATUS(cfg);
+	}
+
+	if(i < 1) {
+		dev_err(ctrl->dev, "Fail : %s\n", __func__);
+		return -EBUSY;
+	} else
+		return 0;
+}
+
+int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_MSCTRL);
+	u32 status = S3C_MSCTRL_GET_INDMA_STATUS(cfg);
+	int i = FIMC_FIFOOFF_CNT, j = FIMC_FIFOOFF_CNT;
+
+ 	while(status && i--) {
+		cfg = readl(ctrl->regs + S3C_MSCTRL);
+		status = S3C_MSCTRL_GET_INDMA_STATUS(cfg);
+	}
+
+	cfg = readl(ctrl->regs + S3C_CISTATUS);
+	status = S3C_CISTATUS_GET_ENVID_STATUS(cfg);
+ 	while(status && j--) {
+		cfg = readl(ctrl->regs + S3C_CISTATUS);
+		status = S3C_CISTATUS_GET_ENVID_STATUS(cfg);
+	}
+
+	if((i < 1) || (j < 1)) {
+		dev_err(ctrl->dev, "Fail : %s\n", __func__);
+		return -EBUSY;
+	} else
+		return 0;
+}
+

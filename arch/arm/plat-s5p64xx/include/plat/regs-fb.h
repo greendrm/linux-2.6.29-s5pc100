@@ -293,6 +293,9 @@
 #define S3C_WINCON1_LOCALSEL_VP			(1 << 23)
 #define S3C_WINCON1_LOCALSEL_MASK		(1 << 23)
 
+/* WINSHMAP */
+#define S3C_WINSHMAP_PROTECT(x)			(((x) & 0x1f) << 10)
+
 /* VIDOSDxA, VIDOSDxB */
 #define S3C_VIDOSD_LEFT_X(x)			(((x) & 0x7ff) << 11)
 #define S3C_VIDOSD_TOP_Y(x)			(((x) & 0x7ff) << 0)
