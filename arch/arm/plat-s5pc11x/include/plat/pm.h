@@ -65,3 +65,4 @@ extern void s5pc11x_pm_do_restore_phy(struct sleep_save_phy *ptr, struct platfor
 extern void s5pc11x_pm_do_save(struct sleep_save *ptr, int count);
 extern void s5pc11x_pm_do_restore(struct sleep_save *ptr, int count);
 
+extern void printascii(const char *);
