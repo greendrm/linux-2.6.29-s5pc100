@@ -246,7 +246,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		reg = __raw_readl(S5P_CLK_DIV2);
 		reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
 		reg |= (0x3<<S5P_CLKDIV2_G3D_SHIFT) |
-			(0x3<<S5P_CLKDIV2_MFC_MASK);
+			(0x3<<S5P_CLKDIV2_MFC_SHIFT);
 		__raw_writel(reg, S5P_CLK_DIV2);
 
 		do {
@@ -354,7 +354,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		/* Change MPLL to APLL in MFC_MUX and G3D MUX */
 		reg = __raw_readl(S5P_CLK_DIV2);
 		reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
-		reg |= (0x0<<S5P_CLKDIV2_G3D_SHIFT)|(0x0<<S5P_CLKDIV2_MFC_MASK);
+		reg |= (0x0<<S5P_CLKDIV2_G3D_SHIFT)|(0x0<<S5P_CLKDIV2_MFC_SHIFT);
 		__raw_writel(reg, S5P_CLK_DIV2);
 
 		do {
