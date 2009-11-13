@@ -29,8 +29,11 @@
 
 #include "s3c-keypad.h"
 
+#ifdef CONFIG_S3C_KEYPAD_DEBUG
+#define S3C_KEYPAD_DEBUG	1 
+#else
 #undef S3C_KEYPAD_DEBUG 
-//#define S3C_KEYPAD_DEBUG 
+#endif
 
 #ifdef S3C_KEYPAD_DEBUG
 #define DPRINTK(x...) printk("S3C-Keypad " x)
@@ -338,6 +341,8 @@ static int s3c_keypad_resume(struct platform_device *dev)
 
 	writel(keyifcon, key_base+S3C_KEYIFCON);
 	writel(keyiffc, key_base+S3C_KEYIFFC);
+
+	keypad_timer_handler(keypad_timer.data);
 
 	enable_irq(IRQ_KEYPAD);
 

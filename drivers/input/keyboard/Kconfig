@@ -314,6 +314,16 @@ config KEYPAD_S3C
           To compile this driver as a module, choose M here: the
           module will be called s3c-keypad.
 
+config S3C_KEYPAD_DEBUG 
+        bool "Print debug messages for S3C keypad"
+        depends on KEYPAD_S3C
+        default n
+        help
+          Say Y here if you want to print debug messages for S3C keypad.
+
+          To compile this driver as a module, choose M here: the
+          module will be called s3c-keypad.
+
 
 choice
 	prompt "Select keypad interface type"
