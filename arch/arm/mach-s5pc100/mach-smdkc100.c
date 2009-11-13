@@ -341,12 +341,12 @@ static struct s3c2410_uartcfg smdkc100_uartcfgs[] __initdata = {
 struct map_desc smdkc100_iodesc[] = {};
 
 static struct platform_device *smdkc100_devices[] __initdata = {
+	&s3c_device_keypad,
 #ifdef CONFIG_FB_S3C
 	&s3c_device_fb,
 #endif
         &s3c_device_nand,
         &s3c_device_onenand,
-	&s3c_device_keypad,
 	&s3c_device_ts,
 	&s3c_device_adc,
         &s3c_device_rtc,
