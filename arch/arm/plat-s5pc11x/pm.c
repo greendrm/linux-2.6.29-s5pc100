@@ -56,7 +56,18 @@
 
 #define PFX "s5pc11x-pm: "
 
-/*#define DEBUG_S5P_PM */
+#define DEBUG_S5P_PM
+
+#if defined(DEBUG_S5P_PM)
+static void s5p_low_lvl_debug(char *buf, char *name, void  __iomem *regs)
+{
+	sprintf(buf, "%s:%08x\n", name,
+			__raw_readl(regs));
+	printascii(buf);
+}
+#else
+#define s5p_low_lvl_debug()	NULL
+#endif
 
 static struct sleep_save core_save[] = {
 	/* Clock source */
@@ -646,17 +657,6 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 #endif
-	/* Clear all EINT PENDING bit */
-	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF40);
-	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF40);
-	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF44);
-	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF44);
-	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF48);
-	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF48);
-	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF4C);
-	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF4C);
-
-	__raw_writel(0xFFFF , S5P_WAKEUP_STAT);
 
 #ifdef CONFIG_S5P_DEEP_IDLE_TEST
 	tmp = __raw_readl(S5P_WAKEUP_MASK);
@@ -673,6 +673,18 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_SOFT_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_SOFT_CLEAR));
 
+	/* Clear all EINT PENDING bit */
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF40);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF40);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF44);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF44);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF48);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF48);
+	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF4C);
+	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF4C);
+
+	__raw_writel(0xFFFF , S5P_WAKEUP_STAT);
+
 	/* SYSC INT Disable */
 	tmp = __raw_readl(S5P_OTHERS);
 	tmp |= S5P_OTHER_SYSC_INTOFF;
@@ -683,25 +695,49 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	 * code to differentiate return from save and return from sleep */
 
 #ifdef DEBUG_S5P_PM
-	sprintf(buf, "WAKEUP_STAT:%08x\n",
-			__raw_readl(S5P_WAKEUP_STAT));
-	printascii(buf);
+	
+	s5p_low_lvl_debug(buf, "WAKEUP_STAT", S5P_WAKEUP_STAT);
+	s5p_low_lvl_debug(buf, "EINT_WAKEUP_MASK", S5P_EINT_WAKEUP_MASK);
+	s5p_low_lvl_debug(buf, "WAKEUP_MASK", S5P_WAKEUP_MASK);
+	s5p_low_lvl_debug(buf, "EINTPENDING0", (S5PC11X_VA_GPIO + 0xf40));
+	s5p_low_lvl_debug(buf, "EINTPENDING1", (S5PC11X_VA_GPIO + 0xf44));
+	s5p_low_lvl_debug(buf, "EINTPENDING2", (S5PC11X_VA_GPIO + 0xf48));
+	s5p_low_lvl_debug(buf, "EINTPENDING3", (S5PC11X_VA_GPIO + 0xf4c));
+	s5p_low_lvl_debug(buf, "GPH0CON", S5PC11X_GPH0CON);
+	s5p_low_lvl_debug(buf, "GPH1CON", S5PC11X_GPH1CON);
+	s5p_low_lvl_debug(buf, "GPH2CON", S5PC11X_GPH2CON);
+	s5p_low_lvl_debug(buf, "GPH3CON", S5PC11X_GPH3CON);
 
-	sprintf(buf, "EINTPENDING0:%08x\n",
-			__raw_readl(S5PC11X_VA_GPIO + 0xf40));
-	printascii(buf);
+	s5p_low_lvl_debug(buf, "EINT0CON", S5PC11X_EINT30CON);
+	s5p_low_lvl_debug(buf, "EINT1CON", S5PC11X_EINT31CON);
+	s5p_low_lvl_debug(buf, "EINT2CON", S5PC11X_EINT32CON);
+	s5p_low_lvl_debug(buf, "EINT3CON", S5PC11X_EINT33CON);
 
-	sprintf(buf, "EINTPENDING1:%08x\n",
-			__raw_readl(S5PC11X_VA_GPIO + 0xf44));
-	printascii(buf);
+	s5p_low_lvl_debug(buf, "EINT0MSK", S5PC11X_EINT30MASK);
+	s5p_low_lvl_debug(buf, "EINT1MSK", S5PC11X_EINT31MASK);
+	s5p_low_lvl_debug(buf, "EINT2MSK", S5PC11X_EINT32MASK);
+	s5p_low_lvl_debug(buf, "EINT3MSK", S5PC11X_EINT33MASK);
+	
+	s5p_low_lvl_debug(buf, "EINT00FLTCON", S5PC11X_EINT30FLTCON0);
+	s5p_low_lvl_debug(buf, "EINT01FLTCON", S5PC11X_EINT30FLTCON1);
+	s5p_low_lvl_debug(buf, "EINT10FLTCON", S5PC11X_EINT31FLTCON0);
+	s5p_low_lvl_debug(buf, "EINT11FLTCON", S5PC11X_EINT31FLTCON1);
 
-	sprintf(buf, "EINTPENDING2:%08x\n",
-			__raw_readl(S5PC11X_VA_GPIO + 0xf44));
-	printascii(buf);
+	s5p_low_lvl_debug(buf, "EINT20FLTCON", S5PC11X_EINT32FLTCON0);
+	s5p_low_lvl_debug(buf, "EINT21FLTCON", S5PC11X_EINT32FLTCON1);
+	s5p_low_lvl_debug(buf, "EINT31FLTCON", S5PC11X_EINT33FLTCON0);
+	s5p_low_lvl_debug(buf, "EINT32FLTCON", S5PC11X_EINT33FLTCON1);
 
-	sprintf(buf, "EINTPENDING3:%08x\n",
-			__raw_readl(S5PC11X_VA_GPIO + 0xf4c));
-	printascii(buf);
+
+	s5p_low_lvl_debug(buf, "VIC0IRQSTATUS", S5PC110_VIC0REG(VIC_IRQ_STATUS));
+	s5p_low_lvl_debug(buf, "VIC1IRQSTATUS", S5PC110_VIC1REG(VIC_IRQ_STATUS));
+	s5p_low_lvl_debug(buf, "VIC2IRQSTATUS", S5PC110_VIC2REG(VIC_IRQ_STATUS));
+	s5p_low_lvl_debug(buf, "VIC3IRQSTATUS", S5PC110_VIC3REG(VIC_IRQ_STATUS));
+	s5p_low_lvl_debug(buf, "VIC0RAWSTATUS", S5PC110_VIC0REG(VIC_RAW_STATUS));
+	s5p_low_lvl_debug(buf, "VIC1RAWSTATUS", S5PC110_VIC1REG(VIC_RAW_STATUS));
+	s5p_low_lvl_debug(buf, "VIC2RAWSTATUS", S5PC110_VIC2REG(VIC_RAW_STATUS));
+	s5p_low_lvl_debug(buf, "VIC3RAWSTATUS", S5PC110_VIC3REG(VIC_RAW_STATUS));
+
 #endif
 
 	if (s5pc110_cpu_save(regs_save) == 0) {
