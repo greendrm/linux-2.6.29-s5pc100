@@ -43,6 +43,11 @@ extern void ChangeClkDiv0(unsigned int val);
 */
 static unsigned long s5pc11x_roundrate_clksrc(struct clk *clk, unsigned long rate);
 
+/* xtat_rate
+ * Only used in this code.
+ */ 
+static unsigned long xtal_rate;
+
 struct clk clk_ext_xtal_mux = {
 	.name		= "ext_xtal",
 	.id		= -1,
@@ -92,10 +97,21 @@ static struct clk_sources clk_src_apll = {
 	.nr_sources	= ARRAY_SIZE(clk_src_apll_list),
 };
 
+static unsigned long s5pc11x_clk_moutapll_get_rate(struct clk *clk)
+{
+	unsigned long rate;
+
+	rate = s5pc11x_get_pll(xtal_rate, __raw_readl(S5P_APLL_CON),
+						S5PC11X_PLL_APLL);
+
+	return rate;
+}
+
 struct clksrc_clk clk_mout_apll = {
 	.clk	= {
 		.name		= "mout_apll",
 		.id		= -1,
+		.get_rate	= s5pc11x_clk_moutapll_get_rate,
 	},
 	.shift		= S5P_CLKSRC0_APLL_SHIFT,
 	.mask		= S5P_CLKSRC0_APLL_MASK,
@@ -1230,7 +1246,7 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	xtal_clk = clk_get(NULL, "xtal");
 	BUG_ON(IS_ERR(xtal_clk));
 
-	xtal = clk_get_rate(xtal_clk);
+	xtal_rate = xtal = clk_get_rate(xtal_clk);
 	clk_put(xtal_clk);
 
 	printk(KERN_DEBUG "%s: xtal is %ld\n", __func__, xtal);
