@@ -57,6 +57,7 @@
 #define PFX "s5pc11x-pm: "
 
 #define DEBUG_S5P_PM
+#undef DEBUG_S5P_PM
 
 #if defined(DEBUG_S5P_PM)
 static void s5p_low_lvl_debug(char *buf, char *name, void  __iomem *regs)
@@ -485,7 +486,7 @@ void s5pc11x_pm_do_save(struct sleep_save *ptr, int count)
 void s5pc11x_pm_do_restore(struct sleep_save *ptr, int count)
 {
 	for (; count > 0; count--, ptr++) {
-		printk(KERN_DEBUG "restore %p (restore %08lx, was %08x)\n",
+		DBG("restore %p (restore %08lx, was %08x)\n",
 				ptr->reg, ptr->val, __raw_readl(ptr->reg));
 
 		__raw_writel(ptr->val, ptr->reg);
@@ -683,7 +684,9 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	__raw_writel(0xff, S5PC11X_VA_GPIO + 0xF4C);
 	tmp = __raw_readl(S5PC11X_VA_GPIO + 0xF4C);
 
-	__raw_writel(0xFFFF , S5P_WAKEUP_STAT);
+	/* Clear wakeup status register */
+	tmp = __raw_readl(S5P_WAKEUP_STAT);
+	__raw_writel(tmp , S5P_WAKEUP_STAT);
 
 	/* SYSC INT Disable */
 	tmp = __raw_readl(S5P_OTHERS);
@@ -696,7 +699,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 
 #ifdef DEBUG_S5P_PM
 	
-	s5p_low_lvl_debug(buf, "WAKEUP_STAT", S5P_WAKEUP_STAT);
+	s5p_low_lvl_debug(buf, "WAKEUP_STAT_BEFOR", S5P_WAKEUP_STAT);
 	s5p_low_lvl_debug(buf, "EINT_WAKEUP_MASK", S5P_EINT_WAKEUP_MASK);
 	s5p_low_lvl_debug(buf, "WAKEUP_MASK", S5P_WAKEUP_MASK);
 	s5p_low_lvl_debug(buf, "EINTPENDING0", (S5PC11X_VA_GPIO + 0xf40));
@@ -759,6 +762,9 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 
 	s5pc11x_pm_check_restore();
 
+#ifdef DEBUG_S5P_PM
+	s5p_low_lvl_debug(buf, "WAKEUP_STAT_AFTER", S5P_WAKEUP_STAT);
+#endif	
 	/* ok, let's return from sleep */
 	DBG("S3C6410 PM Resume (post-restore)\n");
 	return 0;
