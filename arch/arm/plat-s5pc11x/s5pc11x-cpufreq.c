@@ -39,8 +39,7 @@ static struct regulator *internal_regulator;
 
 struct s3c_cpufreq_freqs s3c_freqs;
 
-#define OVERCLOCKED_FREQ	(1000*1000)	/* 1GHz */
-#define BOOTUP_FREQ		(800*1000)	/* 800MHz */
+#define BOOTUP_LEVEL		(L1)	/* 800MHz */
 
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
@@ -158,8 +157,6 @@ unsigned int s5pc110_getspeed(unsigned int cpu)
 	return rate;
 }
 
-static int pm_mode;
-
 static int s5pc110_target(struct cpufreq_policy *policy,
 		       unsigned int target_freq,
 		       unsigned int relation)
@@ -192,17 +189,15 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	/* iNew clock inforamtion update */
 	memcpy(&s3c_freqs.new, &s5pc110_clk_info[index],
 					sizeof(struct s3c_freq));
-	if (!pm_mode) {
 
-		cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_PRECHANGE);
+	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_PRECHANGE);
 
-		if (s3c_freqs.freqs.new > s3c_freqs.freqs.old) {
-			/* Voltage up */
-			regulator_set_voltage(arm_regulator, arm_volt,
-					arm_volt);
-			regulator_set_voltage(internal_regulator, int_volt,
-					int_volt);
-		}
+	if (s3c_freqs.freqs.new > s3c_freqs.freqs.old) {
+		/* Voltage up */
+		regulator_set_voltage(arm_regulator, arm_volt,
+				arm_volt);
+		regulator_set_voltage(internal_regulator, int_volt,
+				int_volt);
 	}
 
 	/* Check if there need to change PLL */
@@ -432,18 +427,16 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		}
 	}
 
-	if (!pm_mode) {
-		if (s3c_freqs.freqs.new < s3c_freqs.freqs.old) {
-			/* Voltage down */
-			regulator_set_voltage(arm_regulator, arm_volt,
-					arm_volt);
-			regulator_set_voltage(internal_regulator, int_volt,
-					int_volt);
-		}
-
-		cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
+	if (s3c_freqs.freqs.new < s3c_freqs.freqs.old) {
+		/* Voltage down */
+		regulator_set_voltage(arm_regulator, arm_volt,
+				arm_volt);
+		regulator_set_voltage(internal_regulator, int_volt,
+				int_volt);
 	}
-	mpu_clk->rate = s3c_freqs.freqs.new * KHZ_T;
+
+	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
+	
 	memcpy(&s3c_freqs.old, &s3c_freqs.new, sizeof(struct s3c_freq));
 	printk(KERN_INFO "Perf changed[L%d]\n", index);
 
@@ -457,18 +450,15 @@ static int s5pc110_cpufreq_suspend(struct cpufreq_policy *policy,
 {
 	int ret = 0;
 
-	pm_mode = 1;
-
-	ret = s5pc110_target(policy, BOOTUP_FREQ, 0);
-
 	return ret;
 }
 
 static int s5pc110_cpufreq_resume(struct cpufreq_policy *policy)
 {
 	int ret = 0;
-
-	pm_mode = 0;
+	/* Clock inforamtion update with wakeup value */
+	memcpy(&s3c_freqs.old, &s5pc110_clk_info[BOOTUP_LEVEL],
+					sizeof(struct s3c_freq));
 
 	return ret;
 }
@@ -477,7 +467,6 @@ static int s5pc110_cpufreq_resume(struct cpufreq_policy *policy)
 static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 {
 	u32 reg;
-	u32 err;
 
 #ifdef CLK_OUT_PROBING
 	reg = __raw_readl(S5P_CLK_OUT);
@@ -511,8 +500,6 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 	policy->cpuinfo.transition_latency = 40000;
 
 	memcpy(&s3c_freqs.old, &s5pc110_clk_info[1], sizeof(struct s3c_freq));
-
-	pm_mode = 0;
 
 	return cpufreq_frequency_table_cpuinfo(policy, s5pc110_freq_table);
 }
