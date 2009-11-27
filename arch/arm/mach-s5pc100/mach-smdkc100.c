@@ -539,7 +539,16 @@ static void smdkc100_reset_camera(void)
 {
 	void __iomem *regs = ioremap(S5PC1XX_PA_FIMC0, SZ_4K);
 	u32 cfg;
+	struct clk *clk = NULL;
+	struct platform_device *pdev = &s3c_device_fimc0;
 
+	clk = clk_get(&pdev->dev, "fimc");
+	if (IS_ERR(clk)) {
+		dev_err(&pdev->dev, "failed to get fimc clock on reset camera\n");
+		goto err_clk;
+	}
+
+	clk_enable(clk);
 	/* based on s5k4ba at the channel A */
 #if 0
 	/* high reset */
@@ -582,7 +591,12 @@ static void smdkc100_reset_camera(void)
 	udelay(2000);
 #endif
 
+	clk_disable(clk);
+	clk_put(clk);
+
+err_clk:
 	iounmap(regs);
+
 }
 
 #if defined(CONFIG_HAVE_PWM)
@@ -680,7 +694,6 @@ static void __init smdkc100_machine_init(void)
 	s3c_fimc1_set_platdata(&fimc_plat);
 	s3c_fimc2_set_platdata(&fimc_plat);
 	s3c_csis_set_platdata(NULL);
-	smdkc100_reset_camera();
 
 	/* fb */
 #ifdef CONFIG_FB_S3C
@@ -697,6 +710,7 @@ static void __init smdkc100_machine_init(void)
 	s3c_sdhci_set_platdata();
 #endif
 
+	smdkc100_reset_camera();
 }
 
 MACHINE_START(SMDKC100, "SMDKC100")
