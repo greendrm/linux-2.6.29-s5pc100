@@ -187,12 +187,12 @@
 #define S3C_SPI_PA_SPI2 	S5PC11X_PA_SPI2
 #endif
 
-#define DMACH_SPIIN_0       	DMACH_SPI0_IN
-#define DMACH_SPIOUT_0       	DMACH_SPI0_OUT
-#define DMACH_SPIIN_1        	DMACH_SPI1_IN
-#define DMACH_SPIOUT_1       	DMACH_SPI1_OUT
-#define DMACH_SPIIN_2        	DMACH_SPI2_IN
-#define DMACH_SPIOUT_2       	DMACH_SPI2_OUT
+#define DMACH_SPIIN_0       	DMACH_SPI0_RX
+#define DMACH_SPIOUT_0       	DMACH_SPI0_TX
+#define DMACH_SPIIN_1        	DMACH_SPI1_RX
+#define DMACH_SPIOUT_1       	DMACH_SPI1_TX
+#define DMACH_SPIIN_2        	DMACH_SPI2_RX
+#define DMACH_SPIOUT_2       	DMACH_SPI2_TX
 
 #if defined (CONFIG_CPU_S5PC110)
 #define GPCLK_0              0

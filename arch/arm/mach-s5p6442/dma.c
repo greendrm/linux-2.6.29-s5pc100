@@ -117,12 +117,12 @@ static struct s3c_dma_map __initdata s5p6442_dma_mappings[] = {
 		.channels	= MAP1(S3C_DMA1_PCM1_TX),
 		.hw_addr.to	= S3C_DMA1_PCM1_TX,
 	},
-	[DMACH_SPI0_IN] = {
+	[DMACH_SPI0_RX] = {
 		.name		= "spi0-in",
 		.channels	= MAP1(S3C_DMA1_SPI0_RX),
 		.hw_addr.from	= S3C_DMA1_SPI0_RX,
 	},
-	[DMACH_SPI0_OUT] = {
+	[DMACH_SPI0_TX] = {
 		.name		= "spi0-out",
 		.channels	= MAP1(S3C_DMA1_SPI0_RX),
 		.hw_addr.to	= S3C_DMA1_SPI0_RX,
