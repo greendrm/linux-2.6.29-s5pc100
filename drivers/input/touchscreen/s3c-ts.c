@@ -125,10 +125,7 @@ static unsigned long long pressure_info[4];
 
 static void touch_start_pressure_measure(int data)
 {
-	unsigned long yp, xp, ym, rz = 0;
-	unsigned long adc_sel_mux, adc_tsc, adccon_reg;
-	int cnt = 0;
-	int tmp;
+	unsigned long adc_sel_mux=0, adc_tsc=0, adccon_reg;
 
 	switch (data) {
 	case YP_PRESSURE:
@@ -169,7 +166,6 @@ static void touch_timer_fire(unsigned long data)
 	unsigned long data0;
 	unsigned long data1;
 	int updown;
-	int pressure;
 
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
@@ -263,8 +259,6 @@ static irqreturn_t stylus_updown(int irqno, void *param)
 
 static int calc_pressure(void)
 {
-	int ret;
-
 	if (pressure_info[2] <= pressure_info[1])
 		return -EINVAL;
 
@@ -284,7 +278,6 @@ static irqreturn_t stylus_action(int irqno, void *param)
 {
 	unsigned long data0;
 	unsigned long data1;
-	unsigned long long calc_tmp;
 
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
