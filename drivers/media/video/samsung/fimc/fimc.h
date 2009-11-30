@@ -102,6 +102,13 @@ enum fimc_autoload {
 	FIMC_ONE_SHOT,
 };
 
+enum fimc_log {
+	FIMC_LOG_DEBUG		= 0x1000,
+	FIMC_LOG_INFO_L2	= 0x0200,
+	FIMC_LOG_INFO_L1	= 0x0100,
+	FIMC_LOG_WARN		= 0x0010,
+	FIMC_LOG_ERR		= 0x0001,
+};
 
 /*
  * S T R U C T U R E S
@@ -273,6 +280,7 @@ struct fimc_control {
 	struct fimc_scaler		sc;		/* scaler info */
 
 	enum fimc_status		status;
+	enum fimc_log			log;
 };
 
 /* global */
@@ -281,6 +289,52 @@ struct fimc_global {
 	struct s3c_platform_camera	*camera[FIMC_MAXCAMS];
 	int				initialized;
 };
+
+/* debug macro */
+#define FIMC_LOG_DEFAULT	(FIMC_LOG_WARN | FIMC_LOG_ERR)
+
+#define FIMC_DEBUG(fmt, ...)						\
+	do {								\
+		if (ctrl->log & FIMC_LOG_DEBUG)				\
+			printk(KERN_DEBUG FIMC_NAME ": "		\
+				fmt, ##__VA_ARGS__);			\
+	} while(0)
+
+#define FIMC_INFO_L2(fmt, ...)						\
+	do {								\
+		if (ctrl->log & FIMC_LOG_INFO_L2)				\
+			printk(KERN_INFO FIMC_NAME ": "			\
+				fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+#define FIMC_INFO_L1(fmt, ...)						\
+	do {								\
+		if (ctrl->log & FIMC_LOG_INFO_L1)				\
+			printk(KERN_INFO FIMC_NAME ": "			\
+				fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+#define FIMC_WARN(fmt, ...)						\
+	do {								\
+		if (ctrl->log & FIMC_LOG_WARN)				\
+			printk(KERN_WARNING FIMC_NAME ": "		\
+				fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+
+#define FIMC_ERROR(fmt, ...)						\
+	do {								\
+		if (ctrl->log & FIMC_LOG_ERR)				\
+			printk(KERN_ERR FIMC_NAME ": "			\
+				fmt, ##__VA_ARGS__);			\
+	} while (0)
+
+
+#define fimc_dbg(fmt, ...)		FIMC_DEBUG(fmt, ##__VA_ARGS__)
+#define fimc_info2(fmt, ...)		FIMC_INFO_L2(fmt, ##__VA_ARGS__)
+#define fimc_info1(fmt, ...)		FIMC_INFO_L1(fmt, ##__VA_ARGS__)
+#define fimc_warn(fmt, ...)		FIMC_WARN(fmt, ##__VA_ARGS__)
+#define fimc_err(fmt, ...)		FIMC_ERROR(fmt, ##__VA_ARGS__)
 
 /*
  * E X T E R N S
@@ -424,6 +478,7 @@ extern int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl);
 
 /* IPC related file */
 extern void ipc_start(void);
+
 /*
  * D R I V E R  H E L P E R S
  *

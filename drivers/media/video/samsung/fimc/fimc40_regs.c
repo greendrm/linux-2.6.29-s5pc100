@@ -196,7 +196,7 @@ int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 	u32 cfg, h1, h2, v1, v2;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n",
+		fimc_err("%s: no active camera\n",
 			__func__);
 		return -ENODEV;
 	}
@@ -227,7 +227,7 @@ int fimc_hwset_camera_polarity(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n",
+		fimc_err("%s: no active camera\n",
 			__func__);
 		return -ENODEV;
 	}
@@ -260,8 +260,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 	u32 cfg;
 
 	if (!cam) {
-		dev_err(ctrl->dev, "%s: no active camera\n",
-			__func__);
+		fimc_err("%s: no active camera\n", __func__);
 		return -ENODEV;
 	}
 
@@ -281,7 +280,7 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		/* switch to ITU interface */
 		cfg |= S3C_CIGCTRL_SELCAM_FIMC_ITU;
 	} else {
-		dev_err(ctrl->dev, "%s: invalid camera bus type selected\n",
+		fimc_err("%s: invalid camera bus type selected\n",
 			__func__);
 		return -EINVAL;
 	}
@@ -338,7 +337,7 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "%s: invalid pixel format\n", __func__);
+		fimc_err("%s: invalid pixel format\n", __func__);
 		break;
 	}
 
@@ -795,8 +794,8 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_MSCTRL_INFORMAT_RGB;
 		break;
 	default: 
-		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
+		fimc_err("%s: Invalid pixelformt : %d\n", 
+				__func__, pixelformat);
 		return -EINVAL;
 	}
 
@@ -824,8 +823,8 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 	case V4L2_PIX_FMT_RGB32:
 		break;
 	default: 
-		dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
-				__FUNCTION__, pixelformat);
+		fimc_err("%s: Invalid pixelformt : %d\n", 
+				__func__, pixelformat);
 	}
 
 	writel(cfg, ctrl->regs + S3C_MSCTRL);
@@ -899,7 +898,7 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 		(bounds->height == crop->height))
 		return -EINVAL;
 
-	dev_dbg(ctrl->dev, "%s: left: %d, top: %d, width: %d, height: %d\n",
+	fimc_dbg("%s: left: %d, top: %d, width: %d, height: %d\n",
 		__func__, crop->left, crop->top, crop->width, crop->height);
 
 	switch (pixelformat) {
@@ -997,8 +996,8 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 
 			break;
 		default: 
-			dev_err(ctrl->dev, "%s: Invalid pixelformt : %d\n", 
-					__FUNCTION__, pixelformat);
+			fimc_err("%s: Invalid pixelformt : %d\n", 
+					__func__, pixelformat);
 		}
 	}
 
