@@ -469,6 +469,7 @@ static int s3c_dma_start(struct s3c2410_dma_chan *chan)
  *
  * work out if we can queue another buffer into the DMA engine
  */
+#ifdef PL330_WILL_BE_USE
 static int s3c_dma_canload(struct s3c2410_dma_chan *chan)
 {
 	if (chan->load_state == S3C_DMALOAD_NONE || chan->load_state == S3C_DMALOAD_1RUNNING)
@@ -476,7 +477,7 @@ static int s3c_dma_canload(struct s3c2410_dma_chan *chan)
 
 	return 0;
 }
-
+#endif
 /* s3c2410_dma_enqueue
  *
  * queue an given buffer for dma transfer.
@@ -562,11 +563,11 @@ int s3c2410_dma_enqueue(unsigned int channel, void *id,
 		}
 
 	} else if (chan->state == S3C_DMA_IDLE) {
-		if (chan->flags & S3C2410_DMAF_AUTOSTART) {
+		if (chan->flags & S3C2410_DMAF_AUTOSTART)
 			s3c2410_dma_ctrl(channel, S3C2410_DMAOP_START);
-		} else {
+		else
 			pr_debug("loading onto stopped channel\n");
-		}
+		
 	}
 
 	local_irq_restore(flags);
@@ -1055,6 +1056,9 @@ int s3c2410_dma_ctrl(unsigned int channel, enum s3c_chan_op op)
 
 	case S3C2410_DMAOP_TIMEOUT:
 		return 0;
+	case S3C2410_DMAOP_ABORT:
+		printk("Invalid operation entered \n");
+		return -ENOENT;      /* unknown, don't bother */
 	}
 
 	printk("Invalid operation entered \n");
@@ -1210,32 +1214,40 @@ int s3c2410_dma_devconfig(int channel,
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
 
 #ifndef SECURE_M2P_DMA_MODE_SET
-		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_FIXED|
-				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_INC|
-				      hwcfg;
+		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|
+					S3C_DMACONTROL_DEST_FIXED|
+					S3C_DMACONTROL_SP_NON_SECURE|
+					S3C_DMACONTROL_SRC_INC|
+					hwcfg;
 #else	/* SECURE_M2M_DMA_MODE */
-		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_FIXED|
-				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_INC|
-				      hwcfg;
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|
+					S3C_DMACONTROL_DEST_FIXED|
+			 		S3C_DMACONTROL_SP_SECURE|
+					S3C_DMACONTROL_SRC_INC|
+					hwcfg;
 #endif /* SECURE_M2M_DMA_MODE */
 
-		//chan->control_flags = hwcfg;
 		return 0;
 
 	case S3C2410_DMASRC_HW:
 		/* source is peripheral : Peri-to-Mem ( Read from FIFO) */
 		chan->config_flags = chan->map->hw_addr.from;
 
+
 		hwcfg = S3C_DMACONTROL_DBSIZE(1)|S3C_DMACONTROL_SBSIZE(1);
 
 #ifndef SECURE_P2M_DMA_MODE_SET
-		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|S3C_DMACONTROL_DEST_INC|
-				      S3C_DMACONTROL_SP_NON_SECURE|S3C_DMACONTROL_SRC_FIXED|
-				      hwcfg;
+		chan->control_flags = S3C_DMACONTROL_DP_NON_SECURE|
+					S3C_DMACONTROL_DEST_INC|
+					S3C_DMACONTROL_SP_NON_SECURE|
+					S3C_DMACONTROL_SRC_FIXED|
+					hwcfg;
 #else /*SECURE_P2M_DMA_MODE_SET*/
-		chan->control_flags = S3C_DMACONTROL_DP_SECURE|S3C_DMACONTROL_DEST_INC|
-				      S3C_DMACONTROL_SP_SECURE|S3C_DMACONTROL_SRC_FIXED|
-				      hwcfg;
+		chan->control_flags = S3C_DMACONTROL_DP_SECURE|
+					S3C_DMACONTROL_DEST_INC|
+					S3C_DMACONTROL_SP_SECURE|
+					S3C_DMACONTROL_SRC_FIXED|
+					hwcfg;
 #endif /*SECURE_P2M_DMA_MODE_SET*/
 		return 0;
 

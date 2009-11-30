@@ -231,7 +231,7 @@ static int encodeDmaStorePeri(u8 * mcode_ptr, u8 mPeriNum, u8 m_uBurstSz)
 
 	return 2;
 }
-
+#ifdef PL330_WILL_BE_USE
 /* DMASTZ  */
 static int encodeDmaStoreZero(u8 * mcode_ptr)
 {
@@ -247,6 +247,7 @@ static int encodeDmaStoreZero(u8 * mcode_ptr)
 
 	return 1;
 }
+#endif
 
 /* DMALP  */
 static int encodeDmaLoop(u8 * mcode_ptr, u8 uLoopCnt, u8 uIteration)
@@ -329,6 +330,7 @@ static int encodeDmaWaitForPeri(u8 * mcode_ptr, u8 mPeriNum)
 	return 2;
 }
 
+#ifdef PL330_WILL_BE_USE
 /* DMAWFE (Wait For Event) : 0 ~ 31 */
 static int encodeDmaWaitForEvent(u8 * mcode_ptr, u8 uEventNum)
 {
@@ -350,6 +352,7 @@ static int encodeDmaWaitForEvent(u8 * mcode_ptr, u8 uEventNum)
 
 	return 2;
 }
+#endif
 
 /*  DMAFLUSHP (Flush and notify Peripheral) */
 static int encodeDmaFlushPeri(u8 * mcode_ptr, u8 mPeriNum)
@@ -381,6 +384,7 @@ static int encodeDmaEnd(u8 * mcode_ptr)
 	return 1;
 }
 
+#ifdef PL330_WILL_BE_USE
 /* DMAADDH (Add Halfword) */
 static int encodeDmaAddHalfword(u8 * mcode_ptr, bool bSrcDir, u16 uStAddr)
 {
@@ -399,7 +403,9 @@ static int encodeDmaAddHalfword(u8 * mcode_ptr, bool bSrcDir, u16 uStAddr)
 
 	return 3;
 }
+#endif
 
+#ifdef PL330_WILL_BE_USE
 /* DMAKILL (Kill) */
 static int encodeDmaKill(u8 * mcode_ptr)
 {
@@ -414,7 +420,9 @@ static int encodeDmaKill(u8 * mcode_ptr)
 
 	return 1;
 }
+#endif
 
+#ifdef PL330_WILL_BE_USE
 /* DMANOP (No operation) */
 static int encodeDmaNop(u8 * mcode_ptr)
 {
@@ -429,7 +437,7 @@ static int encodeDmaNop(u8 * mcode_ptr)
 
 	return 1;
 }
-
+#endif
 
 /* DMARMB (Read Memory Barrier) */
 static int encodeDmaReadMemBarrier(u8 * mcode_ptr)
