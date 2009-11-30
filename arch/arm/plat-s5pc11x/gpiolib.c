@@ -52,6 +52,10 @@ static int s5pc11x_gpiolib_input(struct gpio_chip *chip, unsigned offset)
 	void __iomem *base = ourchip->base;
 	unsigned long con;
 
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)	
+	unsigned long tmp;
+#endif
+
 	con = __raw_readl(base + OFF_GPCON);
 	con &= ~(0xf << con_4bit_shift(offset));
 	__raw_writel(con, base + OFF_GPCON);
@@ -60,7 +64,7 @@ static int s5pc11x_gpiolib_input(struct gpio_chip *chip, unsigned offset)
 	 * GPIO. This will be fixed in EVT1. 
 	 */
 	if ((base >= S5PC11X_GPH0_BASE) && (base <= S5PC11X_GPH3_BASE)) {
-		unsigned long tmp = __raw_readl(base + OFF_GPCON);
+		tmp = __raw_readl(base + OFF_GPCON);
 	}
 #endif
 	gpio_dbg("%s: %p: CON now %08lx\n", __func__, base, con);
@@ -76,6 +80,10 @@ static int s5pc11x_gpiolib_output(struct gpio_chip *chip,
 	unsigned long con;
 	unsigned long dat;
 
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+	unsigned long evt0_flag, tmp = 0;
+#endif	
+
 	con = __raw_readl(base + OFF_GPCON);
 	con &= ~(0xf << con_4bit_shift(offset));
 	con |= 0x1 << con_4bit_shift(offset);
@@ -88,7 +96,6 @@ static int s5pc11x_gpiolib_output(struct gpio_chip *chip,
 
 	__raw_writel(dat, base + OFF_GPDAT);
 #if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
-	unsigned long evt0_flag, tmp = 0;
 	if ((base >= S5PC11X_GPH0_BASE) && (base <= S5PC11X_GPH3_BASE)) {
 		evt0_flag = 1;
 		tmp = __raw_readl(base + OFF_GPDAT);

@@ -1085,4 +1085,51 @@ int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_hw_smdkc100_reset_camera(struct fimc_control *ctrl)
+{
+	u32 cfg;
 
+	/* based on s5k4ba at the channel A */
+#if 0
+	/* high reset */
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	udelay(2000);
+#else
+	/* low reset */
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg &= ~S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	udelay(200);
+
+	cfg = readl(ctrl->regs + S3C_CIGCTRL);
+	cfg |= S3C_CIGCTRL_CAMRST_A;
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	udelay(2000);
+#endif
+
+#if 0
+	/* channel B reset: should be done by following after ch A reset */
+	cfg = readl(S5PC1XX_GPH3CON);
+	cfg &= ~S5PC1XX_GPH3_CONMASK(6);
+	cfg |= S5PC1XX_GPH3_OUTPUT(6);
+	writel(cfg, S5PC1XX_GPH3CON);
+
+	cfg = readl(S5PC1XX_GPH3DAT);
+	cfg &= ~(0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(200);
+
+	cfg |= (0x1 << 6);
+	writel(cfg, S5PC1XX_GPH3DAT);
+	udelay(2000);
+#endif
+
+	return 0;	
+}
