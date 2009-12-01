@@ -2508,3 +2508,8 @@ v2.6.29.4-dev-1-6-8: Jonghun Han
 		M       drivers/media/video/samsung/fimc/fimc_output.c
 		M       drivers/video/samsung/s3cfb.c
 
+v2.6.29.4-dev-1-6-9: Sooyoung Kang
+        - MFC  MFC 6442 firmware upgrade to V13F
+
+	Modified Files:
+		M       drivers/media/video/samsung/mfc10/prism_s_v13d.c
