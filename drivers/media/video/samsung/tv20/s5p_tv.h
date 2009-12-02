@@ -733,7 +733,7 @@ s5p_tv_vmx_err 	__s5p_vm_init_layer(s5p_tv_vmx_layer layer, bool show, bool winb
 
 /* for grp layer scaling */
 #ifdef CONFIG_CPU_S5PC110
-s5p_tv_vmx_err 	__s5p_vm_init_layer(s5p_tv_vmx_layer layer, bool show, bool winblending, u32 alpha, u32 priority, s5p_tv_vmx_color_fmt color, bool blankchange, bool pixelblending, bool premul, u32 blankcolor, u32 baseaddr, u32 span, u32 width, u32 height, u32 src_offs_x, u32 src_offs_y, u32 dst_offs_x, u32 dst_offs_y, u32 dst_x, u32 dst_y);
+s5p_tv_vmx_err 	__s5p_vm_init_layer(s5p_tv_disp_mode mode, s5p_tv_vmx_layer layer, bool show, bool winblending, u32 alpha, u32 priority, s5p_tv_vmx_color_fmt color, bool blankchange, bool pixelblending, bool premul, u32 blankcolor, u32 baseaddr, u32 span, u32 width, u32 height, u32 src_offs_x, u32 src_offs_y, u32 dst_offs_x, u32 dst_offs_y, u32 dst_x, u32 dst_y);
 #endif 
 
 void 	__s5p_vm_init_bg_dither_enable(bool cr_dither_enable, bool cdither_enable, bool y_dither_enable);

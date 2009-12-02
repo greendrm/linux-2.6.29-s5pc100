@@ -69,7 +69,8 @@ bool _s5p_grp_start(s5p_tv_vmx_layer vm_layer)
 #endif
 
 #ifdef CONFIG_CPU_S5PC110
-	merr = __s5p_vm_init_layer(vm_layer,
+	merr = __s5p_vm_init_layer(s5ptv_status.tvout_param.disp_mode,
+			  vm_layer,
 			  true,
 			  s5ptv_overlay[vm_layer].win_blending,
 			  s5ptv_overlay[vm_layer].win.global_alpha,
