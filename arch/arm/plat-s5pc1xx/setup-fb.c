@@ -48,6 +48,7 @@ void s3cfb_cfg_gpio(struct platform_device *pdev)
 
 int s3cfb_backlight_on(struct platform_device *pdev)
 {
+#if !defined(CONFIG_HAVE_PWM)
 	int err;
 
 	err = gpio_request(S5PC1XX_GPD(0), "GPD");
@@ -59,7 +60,7 @@ int s3cfb_backlight_on(struct platform_device *pdev)
 
 	gpio_direction_output(S5PC1XX_GPD(0), 1);
 	gpio_free(S5PC1XX_GPD(0));
-
+#endif
 	return 0;
 }
 
