@@ -1001,12 +1001,12 @@ s3cfb_freq_transition(struct notifier_block *nb, unsigned long val,
 {
 	struct s3cfb_global *fbdev = container_of(nb, struct s3cfb_global, freq_transition);
 	struct s3c_cpufreq_freqs *f = to_s3c_cpufreq(data);
-
+#if defined(CONFIG_CPU_S5PC110)
 	printk("f->new.hclk_msys =%d, f->old.hclk_msys=%d\n",f->new.hclk_msys,f->old.hclk_msys);
 	
 	if (f->new.hclk_msys == f->old.hclk_msys)
 		return 0;
-
+#endif
 	switch (val) {
 	case CPUFREQ_PRECHANGE:
 		printk("s3cfb cpufreq prechange\n");
