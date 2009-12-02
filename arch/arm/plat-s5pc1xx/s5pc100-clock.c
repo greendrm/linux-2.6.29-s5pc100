@@ -795,7 +795,7 @@ static struct clksrc_clk clk_uart_uclk1 = {
 
 static struct clksrc_clk clk_spi0 = {
 	.clk	= {
-		.name		= "spi_epll",
+		.name		= "sclk_spi",
 		.id		= 0,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_SPI0,
 		.enable		= s5pc1xx_sclk0_ctrl,
@@ -814,7 +814,7 @@ static struct clksrc_clk clk_spi0 = {
 
 static struct clksrc_clk clk_spi1 = {
 	.clk	= {
-		.name		= "spi_epll",
+		.name		= "sclk_spi",
 		.id		= 1,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_SPI1,
 		.enable		= s5pc1xx_sclk0_ctrl,
@@ -833,7 +833,7 @@ static struct clksrc_clk clk_spi1 = {
 
 static struct clksrc_clk clk_spi2 = {
 	.clk	= {
-		.name		= "spi_epll",
+		.name		= "sclk_spi",
 		.id		= 2,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_SPI2,
 		.enable		= s5pc1xx_sclk0_ctrl,

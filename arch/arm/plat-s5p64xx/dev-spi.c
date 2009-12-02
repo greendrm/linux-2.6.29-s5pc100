@@ -23,7 +23,7 @@
 #define SPICLK "sclk_spi_48"
 
 #elif defined(CONFIG_SPICLK_SRC_EPLL) || defined(CONFIG_SPICLK_SRC_SPIEXT)
-#define SPICLK "spi_epll"
+#define SPICLK "sclk_spi"
 
 #if defined(CONFIG_SPICLK_EPLL_MOUTEPLL)
 #define SPICLK_SRC "mout_epll"
