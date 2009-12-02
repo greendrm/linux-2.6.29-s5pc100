@@ -203,11 +203,10 @@ BOOL s3c_mfc_is_running(void)
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state)
 {
 
-	if(ctx->MfcState > state)
+	if((ctx->MfcState < MFCINST_STATE_RESET) && (ctx->MfcState > state))
 		return 0;
 
 	ctx->MfcState = state;
 	return  1;
-
 }
 

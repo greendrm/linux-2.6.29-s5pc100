@@ -40,7 +40,10 @@ typedef enum
 	/* Instance is initialized for encoding */
 	MFCINST_STATE_ENC_INITIALIZE = 40, 
 	MFCINST_STATE_ENC_EXE,
-	MFCINST_STATE_ENC_EXE_DONE
+	MFCINST_STATE_ENC_EXE_DONE,
+
+	MFCINST_STATE_RESET = 60,
+	MFCINST_STATE_RESET_WAIT
 } s3c_mfc_inst_state;
 
 typedef enum
@@ -81,30 +84,31 @@ typedef enum
 
 typedef struct tag_mfc_inst_ctx
 {
-	unsigned int MfcSfr[S3C_FIMV_REG_COUNT];
+	u32 MfcSfr[S3C_FIMV_REG_COUNT];
 
-	int InstNo;
-	unsigned int DPBCnt;
-	unsigned int totalDPBCnt;
-	unsigned int extraDPB;
-	unsigned int displayDelay;
-	unsigned int postEnable;
-	unsigned int endOfFrame;
-	unsigned int forceSetFrameType;
-	unsigned int img_width;
-	unsigned int img_height;
-	unsigned int dwAccess;  // for Power Management.
-	unsigned int IsPackedPB;
+	s32 InstNo;
+	u32 DPBCnt;
+	u32 totalDPBCnt;
+	u32 extraDPB;
+	u32 displayDelay;
+	u32 postEnable;
+	u32 endOfFrame;
+	u32 forceSetFrameType;
+	u32 img_width;
+	u32 img_height;
+	u32 dwAccess;  // for Power Management.
+	u32 IsPackedPB;
 	
 	s3c_mfc_frame_type FrameType;
 	MFC_CODEC_TYPE MfcCodecType;
 	s3c_mfc_inst_state MfcState;
+
+	u32 virt_stream_buffer;
 } s3c_mfc_inst_ctx;
 
 unsigned int s3c_mfc_get_codec_type(MFC_CODEC_TYPE    codec_type);
 int s3c_mfc_get_fw_buf_offset(MFC_CODEC_TYPE codecType);
 int s3c_mfc_get_fw_buf_size(MFC_CODEC_TYPE codecType);
-int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
 void s3c_mfc_init_inst_no(void);
 int s3c_mfc_get_inst_no(void);
 void s3c_mfc_return_inst_no(int inst_no);

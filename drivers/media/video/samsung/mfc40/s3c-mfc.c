@@ -68,7 +68,6 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 
 #if defined(MFC_PM)
 	writel(readl(S5P_NORMAL_CFG)|(1<<1),S5P_NORMAL_CFG);
-//	writel(readl(S5P_MTC_STABLE)|(0<<1),S5P_MTC_STABLE);
 	writel(readl(S5P_BLK_PWR_STAT)|(1<<1),S5P_BLK_PWR_STAT);
 
 	mfc_debug("LP Mode or Normal Mode [1]:%x\n",readl(S5P_NORMAL_CFG));
@@ -332,12 +331,39 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_DEC_EXE:
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
-		if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_DEC_EXE)) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
+		
+	        if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
+			mfc_warn("MFCINST_STATE_RESET\n");   
+			if((InParm.ret_code
+			= s3c_mfc_init_decode(MfcCtx, &(InParm.args)))
+			!= MFCINST_RET_OK) {
+				mutex_unlock(&s3c_mfc_mutex);			
+			    	break;
+			}
+
+			if((InParm.ret_code
+			= s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args)))
+			!= MFCINST_RET_OK) {
+				mutex_unlock(&s3c_mfc_mutex);			
+				break;
+			}
+		    
+			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
+				mfc_err("MFC_IOControl", "MFCINST_ERR_STATE_INVALID\n");
+				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
+				mutex_unlock(&s3c_mfc_mutex);
+		                break;
+			}
+	        }
+
+		if (MfcCtx->MfcState != MFCINST_STATE_RESET_WAIT) {
+			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_DEC_EXE)) {
+				mfc_err("MFCINST_ERR_STATE_INVALID\n");
+				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
 		}
 
 		InParm.ret_code = s3c_mfc_exe_decode(MfcCtx, &(InParm.args));

@@ -23,6 +23,7 @@
 #include "s3c_mfc_fw.h"
 #include "s3c_mfc_buffer_manager.h"
 #include "s3c_mfc_interface.h"
+#include "s3c_mfc_intr.h"
 
 extern void __iomem *s3c_mfc_sfr_virt_base;
 extern dma_addr_t s3c_mfc_phys_data_buf;
@@ -47,6 +48,8 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *MfcCtx, in
 static MFC_ERROR_CODE s3c_mfc_set_vsp_buffer(int InstNo);
 static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_dec_exe_arg_t *DecArg, unsigned int *consumedStrmSize);
 
+static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *start_pos, u32* slice_type);
+static u32 u_e(u32 *pre_bit_pos, u8 *in);
 
 static void s3c_mfc_cmd_reset(void)
 {
@@ -121,15 +124,14 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *MfcCtx, in
 {
 	unsigned int    Width, Height, FrameSize, dec_dpb_addr;
 
-
 	mfc_debug("buf_addr : 0x%08x  buf_size : %d\n", buf_addr, buf_size);
 
 	Width = (MfcCtx->img_width + 15)/16*16;
 	Height = (MfcCtx->img_height + 31)/32*32;
 	FrameSize = (Width*Height*3)>>1;
 
-	mfc_debug("width : %d height : %d framesize : %d buf_size : %d MfcCtx->DPBCnt :%d\n", \
-								Width, Height, FrameSize, buf_size, MfcCtx->DPBCnt);
+	mfc_debug("width : %d height : %d framesize : %d buf_size : %d MfcCtx->DPBCnt :%d\n",
+		Width, Height, FrameSize, buf_size, MfcCtx->DPBCnt);
 	if(buf_size < FrameSize*MfcCtx->totalDPBCnt){
 		mfc_err("MFCINST_ERR_FRM_BUF_SIZE\n");
 		return MFCINST_ERR_FRM_BUF_SIZE;
@@ -322,7 +324,7 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 
 	s3c_mfc_cmd_dma_start();
 
-	if(s3c_mfc_wait_for_done(MFC_INTR_DMA_DONE) == 0){
+	if(s3c_mfc_wait_for_done(MFC_INTR_DMA_DONE, NULL) == 0){
 		mfc_err("MFCINST_ERR_FW_DMA_SET_FAIL\n");
 		return MFCINST_ERR_FW_DMA_SET_FAIL;
 	}
@@ -374,7 +376,7 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 
 	s3c_mfc_cmd_frame_start();
 
-	if(s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE) == 0){
+	if(s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx) == 0){
 		mfc_err("MFCINST_ERR_FW_LOAD_FAIL\n");
 		return MFCINST_ERR_FW_LOAD_FAIL;
 	}
@@ -397,7 +399,7 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 
 	s3c_mfc_cmd_frame_start();
 
-	if(s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE) == 0){
+	if(s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx) == 0){
 		mfc_err("MFCINST_ERR_FW_LOAD_FAIL\n");
 		return MFCINST_ERR_FW_LOAD_FAIL;
 	}
@@ -458,7 +460,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 	s3c_mfc_cmd_frame_start();
 
-	if (s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE) == 0) {
+	if (s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx) == 0) {
 		mfc_err("MFCINST_ERR_ENC_ENCODE_DONE_FAIL\n");
 		return MFCINST_ERR_ENC_ENCODE_DONE_FAIL;
 	}
@@ -484,9 +486,17 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	InitArg = (s3c_mfc_dec_init_arg_t *)args;
 	FWPhyBuf = s3c_mfc_get_fw_buf_phys_addr();
 
-	/* Context setting from input param */
-	MfcCtx->MfcCodecType = InitArg->in_codec_type;
-	MfcCtx->IsPackedPB = InitArg->in_packed_PB;
+	if(MfcCtx->MfcState < MFCINST_STATE_DEC_EXE) {
+		mfc_debug("InitArg->in_strm_buf", "0x%X\n", InitArg->in_strm_buf);
+		MfcCtx->virt_stream_buffer = __phys_to_virt(InitArg->in_strm_buf); 
+		mfc_debug("MfcCtx->virt_stream_buffer", "0x%X\n", MfcCtx->virt_stream_buffer);
+	}
+
+	if (MfcCtx->MfcState != MFCINST_STATE_RESET) {
+		/* Context setting from input param */
+		MfcCtx->MfcCodecType = InitArg->in_codec_type;
+		MfcCtx->IsPackedPB = InitArg->in_packed_PB;
+	}
 	
 	/* 3. CHANNEL SET
 	 * 	- set codec firmware
@@ -507,7 +517,7 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 
 	s3c_mfc_cmd_frame_start();
 	
-	if((ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE)) == 0){
+	if((ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx)) == 0){
 		mfc_err("MFCINST_ERR_FW_LOAD_FAIL\n");
 		return MFCINST_ERR_FW_LOAD_FAIL;
 	}
@@ -529,7 +539,7 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	
 	s3c_mfc_cmd_frame_start();
 
-	if(s3c_mfc_wait_for_done(MFC_POLLING_HEADER_DONE) == 0){
+	if(s3c_mfc_wait_for_done(MFC_POLLING_HEADER_DONE, MfcCtx) == 0){
 		mfc_err("MFCINST_ERR_DEC_HEADER_DECODE_FAIL\n");
 		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
 	}
@@ -538,19 +548,9 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	MfcCtx->img_width = READL(S3C_FIMV_IMG_SIZE_X);
 	MfcCtx->img_height = READL(S3C_FIMV_IMG_SIZE_Y);
 
-	InitArg->out_img_width = READL(S3C_FIMV_IMG_SIZE_X);
-	InitArg->out_img_height = READL(S3C_FIMV_IMG_SIZE_Y);
-
-	/* in the case of VC1 interlace, height will be the multiple of 32
-	 * otherwise, height and width is the mupltiple of 16
-	 */
-	InitArg->out_buf_width = (READL(S3C_FIMV_IMG_SIZE_X)+ 15)/16*16;
-	InitArg->out_buf_height = (READL(S3C_FIMV_IMG_SIZE_Y) + 31)/32*32;
-
-
 	switch (MfcCtx->MfcCodecType) {
 	case H264_DEC: 
-		InitArg->out_dpb_cnt = (READL(S3C_FIMV_DPB_SIZE)*3)>>1; 
+		MfcCtx->totalDPBCnt = (READL(S3C_FIMV_DPB_SIZE)*3)>>1;
 		MfcCtx->DPBCnt = READL(S3C_FIMV_DPB_SIZE);
 		break;
 
@@ -558,33 +558,51 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	case MPEG2_DEC: 
 	case DIVX_DEC: 
 	case XVID_DEC:
-		InitArg->out_dpb_cnt = ((NUM_MPEG4_DPB * 3) >> 1) + NUM_POST_DPB + MfcCtx->extraDPB;
+		MfcCtx->totalDPBCnt = ((NUM_MPEG4_DPB*3)>>1) + NUM_POST_DPB + MfcCtx->extraDPB;
 		MfcCtx->DPBCnt = NUM_MPEG4_DPB;
 		break;
 
 	case VC1_DEC:
-		InitArg->out_dpb_cnt = ((NUM_VC1_DPB * 3) >> 1)+ MfcCtx->extraDPB;
+		MfcCtx->totalDPBCnt = ((NUM_VC1_DPB*3)>>1)+ MfcCtx->extraDPB;
 		MfcCtx->DPBCnt = NUM_VC1_DPB + MfcCtx->extraDPB;
 		break;
-
 	default:
-		InitArg->out_dpb_cnt = ((NUM_MPEG4_DPB * 3) >> 1)+ NUM_POST_DPB + MfcCtx->extraDPB;
+		MfcCtx->totalDPBCnt = ((NUM_MPEG4_DPB*3)>>1)+ NUM_POST_DPB + MfcCtx->extraDPB;
 		MfcCtx->DPBCnt = NUM_MPEG4_DPB;
+		break;
 	}
 
-	MfcCtx->totalDPBCnt = InitArg->out_dpb_cnt;
+	if (MfcCtx->MfcState != MFCINST_STATE_RESET) {
+		InitArg->out_img_width = READL(S3C_FIMV_IMG_SIZE_X);
+		InitArg->out_img_height = READL(S3C_FIMV_IMG_SIZE_Y);
 
-	mfc_debug("buf_width : %d buf_height : %d out_dpb_cnt : %d MfcCtx->DPBCnt : %d\n", \
-				InitArg->out_img_width, InitArg->out_img_height, InitArg->out_dpb_cnt, MfcCtx->DPBCnt);
-	mfc_debug("img_width : %d img_height : %d\n", \
-				InitArg->out_img_width, InitArg->out_img_height);
+		// in the case of VC1 interlace, height will be the multiple of 32
+		// otherwise, height and width is the mupltiple of 16
+		InitArg->out_buf_width = (InitArg->out_img_width + 15)/16*16;
+		InitArg->out_buf_height = (InitArg->out_img_height + 31)/32*32; 
+
+		InitArg->out_dpb_cnt = MfcCtx->totalDPBCnt;
+		
+		mfc_debug("buf_width : %d "
+			"buf_height : %d "
+			"out_dpb_cnt : %d "
+			"MfcCtx->DPBCnt : %d\n",
+			InitArg->out_img_width,
+			InitArg->out_img_height,
+			InitArg->out_dpb_cnt,
+			MfcCtx->DPBCnt);
+		
+		mfc_debug("img_width : %d "
+			"img_height : %d\n",
+			InitArg->out_img_width,
+			InitArg->out_img_height);
+	}
 
 	s3c_mfc_backup_context(MfcCtx);
 
 	mfc_debug("--\n");
 	return MFCINST_RET_OK;
 }
-
 
 MFC_ERROR_CODE s3c_mfc_start_decode_seq(s3c_mfc_inst_ctx *MfcCtx, s3c_mfc_args *args)
 {
@@ -610,10 +628,9 @@ MFC_ERROR_CODE s3c_mfc_start_decode_seq(s3c_mfc_inst_ctx *MfcCtx, s3c_mfc_args *
 
 	s3c_mfc_cmd_seq_start();
 
-	ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE);
+	ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx);
 	if(ret == 0)
 		return MFCINST_ERR_SEQ_START_FAIL;
-
 
 	return MFCINST_RET_OK;
 }
@@ -623,6 +640,8 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 	int ret;
 	unsigned int frame_type;
 	static int count = 0;
+	int timeout = 0;
+	int err_status_256 = 0;
 
 	count++;
 	
@@ -635,7 +654,6 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 		MfcCtx->endOfFrame = 0;
 	} else {
 		WRITEL(0, S3C_FIMV_LAST_DEC);
-		//s3c_mfc_set_dec_stream_buffer(DecArg->in_strm_buf, DecArg->in_strm_size);
 	}
 
 	s3c_mfc_set_dec_stream_buffer(DecArg->in_strm_buf, DecArg->in_strm_size);
@@ -657,9 +675,18 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 
 	s3c_mfc_cmd_frame_start();
 
+	if ((ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_FW_DONE, MfcCtx)) == 0) {
+		mfc_err("MFCDecodeOneFrame : MFCINST_ERR_DEC_DECODE_DONE_FAIL\n");
+		mfc_warn("MFCDecodeOneFrame : TIMEOUT & RESET !!! (%d) Times \n", ++timeout);
+		s3c_mfc_init_hw();
+		MfcCtx->MfcState = MFCINST_STATE_RESET;
+		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
+	}
 
-	if ((ret = s3c_mfc_wait_for_done(MFC_INTR_FRAME_FW_DONE)) == 0) {
-		mfc_err("MFCINST_ERR_DEC_DECODE_DONE_FAIL\n");
+	if (READL(S3C_FIMV_ERROR_STATUS) == 256) {
+		mfc_warn("MFCDecodeOneFrame : ERROR_STATUS 256 & RESET !!! (%d)times \n", ++err_status_256);	
+		s3c_mfc_init_hw();
+		MfcCtx->MfcState = MFCINST_STATE_RESET;
 		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
 	}
 
@@ -670,7 +697,6 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 		DecArg->out_display_Y_addr = READL(S3C_FIMV_DISPLAY_Y_ADR);
 		DecArg->out_display_C_addr = READL(S3C_FIMV_DISPLAY_C_ADR);
 	}
-
 
 	if ((ret & MFC_INTR_FW_DONE) == MFC_INTR_FW_DONE) {
 		DecArg->out_display_status = 0; /* no more frame to display */
@@ -696,12 +722,30 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 {
 	MFC_ERROR_CODE ret;
 	s3c_mfc_dec_exe_arg_t *DecArg;
-	unsigned int consumedStrmSize;
+	u32 consumedStrmSize;
+	u32 slice_type = 0;
+	BOOL is_idr = FALSE;
 	
 	/* 6. Decode Frame */
 	mfc_debug("++\n");
 
 	DecArg = (s3c_mfc_dec_exe_arg_t *)args;
+
+	if (MfcCtx->MfcState == MFCINST_STATE_RESET_WAIT) {
+		if (is_idr_or_islice((u8 *)MfcCtx->virt_stream_buffer,
+			DecArg->in_strm_size, &is_idr, NULL, &slice_type)) {
+			if(!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_DEC_EXE)) {
+				mfc_err("MFC_IOControl : MFCINST_ERR_STATE_INVALID\n");
+				ret = MFCINST_ERR_STATE_INVALID;
+				return ret;
+			}
+		} else {
+			mfc_err("MFCDecodeExe : MFC is resetted! Header+I is needed! (%d) \n", slice_type);
+			ret = MFCINST_ERR_DEC_INVALID_STRM;
+			return ret;
+		}
+	}
+	
 	ret = s3c_mfc_decode_one_frame(MfcCtx,  DecArg, &consumedStrmSize);
 
 	if((MfcCtx->IsPackedPB) && (MfcCtx->FrameType == MFC_RET_FRAME_P_FRAME) \
@@ -712,7 +756,6 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 		ret = s3c_mfc_decode_one_frame(MfcCtx,  DecArg, &consumedStrmSize);
 	}
-	mfc_debug("--\n");
 
 	return ret; 
 }
@@ -820,5 +863,113 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	}
 	
 	return MFCINST_RET_OK;
+}
+
+static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *pre_start_pos, u32* slice_type)
+{
+	BOOL islice = FALSE;
+	u32 start_code = 0xFFFFFFFF;
+	s32 i;
+	BOOL sc_found = FALSE;
+	u32 nal_type;
+	u32 start_pos;
+    
+	if (is_idr)
+		*is_idr = FALSE;
+
+	if (pre_start_pos)
+		*pre_start_pos = 0;
+
+	for (i=0; i < in_size; i++) {
+		if (sc_found) {
+			nal_type = in[i] & 0x1F;
+
+			mfc_debug("--- uiNalType : %d \n", nal_type);
+			if (nal_type == 1) {
+				u32 bit_pos = 0;
+				u32 vlc_value = 0;
+
+				vlc_value = u_e(&bit_pos, &in[i+1]);
+				vlc_value = u_e(&bit_pos, &in[i+1]);
+
+				if (slice_type)
+					*slice_type = vlc_value;
+				
+				if (vlc_value == 2 || vlc_value == 7) {
+					islice = TRUE;
+					break;
+				}
+			} else if (nal_type == 5) {
+		                islice = TRUE;
+		                if (*is_idr)
+		                    *is_idr = TRUE;
+	                        break;
+			}
+			
+			sc_found = FALSE;
+			start_code = 0xFFFFFFFF;
+	        }
+
+		if (in[i] == 1 && (start_code == 0xFF000000 || start_code == 0xFFFF0000))
+		{
+			if (start_code == 0xFF000000)
+				start_pos = i - 3;
+			else if (start_code == 0xFFFF0000)
+				start_pos = i -2;
+
+			sc_found = TRUE;
+			start_code = (start_code << 8) | in[i];
+			continue;
+		} else if (in[i] == 0) {
+			start_code = start_code << 8;
+		} else {
+			start_code = 0xFFFFFFFF;
+		}
+	}
+
+	if (islice && pre_start_pos)
+		*pre_start_pos = start_pos;
+	
+	return islice;
+}
+
+static u32 u_e(u32 *pre_bit_pos, u8 *in)
+{
+	u32 value = 0;
+	u32 byte_pos = 0;
+	u32 bit_size = 0;
+	u32 bit_pos = 0;
+	u32 i;
+
+	while (TRUE) {
+		byte_pos  = *pre_bit_pos / 8;
+		bit_pos   = (0x80) >> (*pre_bit_pos & 0x7);
+		*pre_bit_pos = *pre_bit_pos + 1;
+		if (in[byte_pos] & bit_pos)
+			break;
+
+		bit_size++;
+	}
+
+	for (i=0; i < bit_size; i++) {
+		byte_pos  = *pre_bit_pos / 8;
+		bit_pos   = (0x80) >> (*pre_bit_pos & 0x7);
+		*pre_bit_pos = *pre_bit_pos + 1;
+
+		if (in[byte_pos] & bit_pos)
+			value = (value << 1) + 1;
+		else
+			value = value << 1;
+	}
+
+	if (bit_size) {
+		u32 base = 1;
+		for (i=0; i < bit_size; i++)
+			base = base * 2;
+
+		value = value + base - 1;
+	}
+
+	return value;
 }
 
