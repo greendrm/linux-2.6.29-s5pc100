@@ -571,7 +571,8 @@ u32 grp_scaling_factor(u32 src, u32 dst, u32 h_v)
 }
 
 
-s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
+s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_disp_mode mode,
+				s5p_tv_vmx_layer layer,
 				bool show,               //video,grp
 				bool win_blending,        //video,grp
 				u32 alpha,     //video,grp
@@ -636,9 +637,40 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		temp_reg = readl(mixer_base + S5P_MXR_GRAPHIC0_WH);
 		h_factor = grp_scaling_factor(width, dst_width, 1);
 		v_factor = grp_scaling_factor(height, dst_height, 0);
-		
+
 		temp_reg &= ~((0x3<<28)|(0x3<<12));
-		temp_reg |= h_factor << 28 | v_factor << 12;		
+
+		if ( v_factor) {
+
+			u32 reg = readl( mixer_base + S5P_MXR_CFG);
+
+			/* In interlaced mode, vertical scaling must be
+			 * replaced by PROGRESSIVE_MODE - pixel duplication
+			 */
+			if ( mode == TVOUT_1080I_50 ||
+			     mode == TVOUT_1080I_59 ||
+			     mode == TVOUT_1080I_60) {
+			     	/* scaled up by progressive setting */
+				reg |= S5P_MXR_PROGRESSVE_MODE;
+				writel(reg, mixer_base + S5P_MXR_CFG);
+			} else
+				/* scaled up by scale factor */
+				temp_reg |= v_factor << 12;		
+		} else {
+			u32 reg = readl( mixer_base + S5P_MXR_CFG);
+
+			/* 
+			 * if v_factor is 0, recover the original mode 
+			 */
+			if ( mode == TVOUT_1080I_50 ||
+			     mode == TVOUT_1080I_59 ||
+			     mode == TVOUT_1080I_60) {
+				reg &= S5P_MXR_INTERLACE_MODE;
+				writel(reg, mixer_base + S5P_MXR_CFG);
+			} 
+		}
+
+		temp_reg |= h_factor << 28;
 
 		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC0_WH);		
 		
@@ -674,7 +706,38 @@ s5p_tv_vmx_err __s5p_vm_init_layer(s5p_tv_vmx_layer layer,
 		v_factor = grp_scaling_factor(height, dst_height, 0);
 
 		temp_reg &= ~((0x3<<28)|(0x3<<12));
-		temp_reg |= h_factor << 28 | v_factor << 12;	
+		
+		if ( v_factor) {
+
+			u32 reg = readl( mixer_base + S5P_MXR_CFG);
+
+			/* In interlaced mode, vertical scaling must be
+			 * replaced by PROGRESSIVE_MODE - pixel duplication
+			 */
+			if ( mode == TVOUT_1080I_50 ||
+			     mode == TVOUT_1080I_59 ||
+			     mode == TVOUT_1080I_60) {
+			     	/* scaled up by progressive setting */
+				reg |= S5P_MXR_PROGRESSVE_MODE;
+				writel(reg, mixer_base + S5P_MXR_CFG);
+			} else
+				/* scaled up by scale factor */
+				temp_reg |= v_factor << 12;		
+		} else {
+			u32 reg = readl( mixer_base + S5P_MXR_CFG);
+
+			/* 
+			 * if v_factor is 0, recover the original mode 
+			 */
+			if ( mode == TVOUT_1080I_50 ||
+			     mode == TVOUT_1080I_59 ||
+			     mode == TVOUT_1080I_60) {
+				reg &= S5P_MXR_INTERLACE_MODE;
+				writel(reg, mixer_base + S5P_MXR_CFG);
+			} 
+		}
+
+		temp_reg |= h_factor << 28;	
 
 		writel( temp_reg , mixer_base + S5P_MXR_GRAPHIC1_WH);			
 		break;

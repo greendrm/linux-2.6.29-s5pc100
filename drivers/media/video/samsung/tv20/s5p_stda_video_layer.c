@@ -268,7 +268,8 @@ bool _s5p_vlayer_start(void)
 #endif
 
 #ifdef CONFIG_CPU_S5PC110
-	merr = __s5p_vm_init_layer(VM_VIDEO_LAYER,true,w_blend,alpha,priority,
+	merr = __s5p_vm_init_layer(s5ptv_status.tvout_param.disp_mode,
+					VM_VIDEO_LAYER,true,w_blend,alpha,priority,
 					VM_DIRECT_RGB565,false,false,false,
 					0,0,0,0,0,0,0,0,0,0,0);
 #endif
