@@ -27,8 +27,6 @@
 #include <linux/clk.h>
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
-#include <linux/spi/spi.h>
-#include <linux/spi/spi_gpio.h>
 #include <linux/videodev2.h>
 #include <media/s5k4ba_platform.h>
 #include <media/s5k6aa_platform.h>
@@ -69,7 +67,6 @@
 #include <plat/gpio-bank-d.h>
 #include <plat/gpio-bank-h3.h>
 #include <plat/regs-clock.h>
-#include <plat/spi.h>
 
 #ifdef CONFIG_USB_SUPPORT
 #include <plat/regs-otg.h>
@@ -94,190 +91,6 @@ extern void s5pc1xx_reserve_bootmem(void);
 
 #if defined(CONFIG_MMC_SDHCI_S3C)
 extern void s3c_sdhci_set_platdata(void);
-#endif
-
-#if defined(CONFIG_SPI_CNTRLR_0) || defined(CONFIG_SPI_CNTRLR_1)
-static void s3c_cs_suspend(int pin, pm_message_t pm)
-{
-	/* Whatever need to be done */
-}
-
-static void s3c_cs_resume(int pin)
-{
-	/* Whatever need to be done */
-}
-
-static void s3c_cs_set(int pin, int lvl)
-{
-	if(lvl == CS_HIGH)
-	   s3c_gpio_setpin(pin, 1);
-	else
-	   s3c_gpio_setpin(pin, 0);
-}
-
-static void s3c_cs_config(int pin, int mode, int pull)
-{
-	s3c_gpio_cfgpin(pin, mode);
-
-	if(pull == CS_HIGH)
-	   s3c_gpio_setpull(pin, S3C_GPIO_PULL_UP);
-	else
-	   s3c_gpio_setpull(pin, S3C_GPIO_PULL_DOWN);
-}
-#endif
-
-#if defined(CONFIG_SPI_CNTRLR_0)
-static struct s3c_spi_pdata s3c_slv_pdata_0[] __initdata = {
-	[0] = {	/* Slave-0 */
-		.cs_level     = CS_FLOAT,
-		.cs_pin       = S5PC1XX_GPB(3),
-		.cs_mode      = S5PC1XX_GPB_OUTPUT(3),
-		.cs_set       = s3c_cs_set,
-		.cs_config    = s3c_cs_config,
-		.cs_suspend   = s3c_cs_suspend,
-		.cs_resume    = s3c_cs_resume,
-	},
-	[1] = {	/* Slave-1 */
-		.cs_level     = CS_FLOAT,
-		.cs_pin       = S5PC1XX_GPA1(2),
-		.cs_mode      = S5PC1XX_GPA1_OUTPUT(2),
-		.cs_set       = s3c_cs_set,
-		.cs_config    = s3c_cs_config,
-		.cs_suspend   = s3c_cs_suspend,
-		.cs_resume    = s3c_cs_resume,
-	},
-};
-#endif
-
-#if defined(CONFIG_SPI_CNTRLR_1)
-static struct s3c_spi_pdata s3c_slv_pdata_1[] __initdata = {
-	[0] = {	/* Slave-0 */
-		.cs_level     = CS_FLOAT,
-		.cs_pin       = S5PC1XX_GPB(7),
-		.cs_mode      = S5PC1XX_GPB_OUTPUT(7),
-		.cs_set       = s3c_cs_set,
-		.cs_config    = s3c_cs_config,
-		.cs_suspend   = s3c_cs_suspend,
-		.cs_resume    = s3c_cs_resume,
-	},
-	[1] = {	/* Slave-1 */
-		.cs_level     = CS_FLOAT,
-		.cs_pin       = S5PC1XX_GPA1(3),
-		.cs_mode      = S5PC1XX_GPA1_OUTPUT(3),
-		.cs_set       = s3c_cs_set,
-		.cs_config    = s3c_cs_config,
-		.cs_suspend   = s3c_cs_suspend,
-		.cs_resume    = s3c_cs_resume,
-	},
-	[2] = {	/* Slave-2 */
-		.cs_level     = CS_FLOAT,
-		.cs_pin       = S5PC1XX_GPD(6),
-		.cs_mode      = S5PC1XX_GPD_OUTPUT(6),
-		.cs_set       = s3c_cs_set,
-		.cs_config    = s3c_cs_config,
-		.cs_suspend   = s3c_cs_suspend,
-		.cs_resume    = s3c_cs_resume,
-	},
-};
-#endif
-
-#define SPI_GPIO_ID 0
-#define SPI_GPIO_DEVNUM 0
-#define SPI_GPIO_BUSNUM 0
-
-static struct spi_board_info s3c_spi_devs[] __initdata = {
-#if defined(CONFIG_SPI_CNTRLR_0)
-	[0] = {
-		.modalias	 = "spidev", /* Test Interface */
-		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
-		.max_speed_hz    = 100000,
-		/* Connected to SPI-0 as 1st Slave */
-		.bus_num	 = 0,
-		.irq		 = IRQ_SPI0,
-		.chip_select	 = 0,
-	},
-	[1] = {
-		.modalias	 = "spidev", /* Test Interface */
-		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
-		.max_speed_hz    = 100000,
-		/* Connected to SPI-0 as 2nd Slave */
-		.bus_num	 = 0,
-		.irq		 = IRQ_SPI0,
-		.chip_select	 = 1,
-	},
-#undef SPI_GPIO_ID
-#define SPI_GPIO_ID 1
-#undef SPI_GPIO_DEVNUM
-#define SPI_GPIO_DEVNUM 2
-#undef SPI_GPIO_BUSNUM
-#define SPI_GPIO_BUSNUM 1
-#endif
-
-#if defined(CONFIG_SPI_CNTRLR_1)
-	[2] = {
-		.modalias	 = "spidev", /* Test Interface */
-		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
-		.max_speed_hz    = 100000,
-		/* Connected to SPI-1 as 1st Slave */
-		.bus_num	 = 1,
-		.irq		 = IRQ_SPI1,
-		.chip_select	 = 0,
-	},
-	[3] = {
-		.modalias	 = "spidev", /* Test Interface */
-		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
-		.max_speed_hz    = 100000,
-		/* Connected to SPI-1 as 2nd Slave */
-		.bus_num	 = 1,
-		.irq		 = IRQ_SPI1,
-		.chip_select	 = 1,
-	},
-	[4] = {
-		.modalias	 = "spidev", /* MMC SPI */
-		.mode		 = SPI_MODE_0 | SPI_CS_HIGH,	/* CPOL=0, CPHA=0 & CS is Active High */
-		.max_speed_hz    = 100000,
-		/* Connected to SPI-1 as 3rd Slave */
-		.bus_num	 = 1,
-		.irq		 = IRQ_SPI1,
-		.chip_select	 = 2,
-	},
-#undef SPI_GPIO_ID
-#define SPI_GPIO_ID 2
-#undef SPI_GPIO_DEVNUM
-#define SPI_GPIO_DEVNUM 5
-#undef SPI_GPIO_BUSNUM
-#define SPI_GPIO_BUSNUM 2
-#endif
-
-#if defined(CONFIG_SPI_GPIO)
-	[SPI_GPIO_DEVNUM] = {
-		.modalias	 = "mmc_spi", /* MMC SPI */
-		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
-		.max_speed_hz    = 400000,
-		/* Connected to SPI-0 as 1st Slave */
-		.bus_num	 = SPI_GPIO_BUSNUM,
-		.chip_select	 = 0,
-		.controller_data = S5PC1XX_GPH1(0),
-	},
-#endif
-};
-
-#if defined(CONFIG_SPI_GPIO)
-struct spi_gpio_platform_data s3c_spigpio_pdata = {
-	.sck = S5PC1XX_GPG2(0),
-	.miso = S5PC1XX_GPG2(2),
-	.mosi = S5PC1XX_GPG2(3),
-	.num_chipselect = 1,
-};
-
-/* Generic GPIO Bitbanging contoller */
-struct platform_device s3c_device_spi_gpio = {
-	.name		= "spi_gpio",
-	.id		= SPI_GPIO_ID,
-	.dev		= {
-		.platform_data = &s3c_spigpio_pdata,
-	}
-};
 #endif
 
 static struct s3c24xx_uart_clksrc smdkc100_serial_clocks[] = {
@@ -364,18 +177,6 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 #endif        
 #ifdef CONFIG_S3C_DEV_HSMMC2     
 	&s3c_device_hsmmc2,
-#endif
-#ifdef CONFIG_SPI_CNTRLR_0
-        &s3c_device_spi0,
-#endif
-#ifdef CONFIG_SPI_CNTRLR_1
-        &s3c_device_spi1,
-#endif
-#ifdef CONFIG_SPI_CNTRLR_2
-	&s3c_device_spi2,
-#endif
-#if defined(CONFIG_SPI_GPIO)
-        &s3c_device_spi_gpio,
 #endif
 	&s3c_device_mfc,
 	&s3c_device_jpeg,
@@ -678,18 +479,6 @@ static void __init smdkc100_machine_init(void)
 	s3c_i2c1_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
-
-	/* spi */
-#if defined(CONFIG_SPI_CNTRLR_0)
-	s3cspi_set_slaves(BUSNUM(0), ARRAY_SIZE(s3c_slv_pdata_0), s3c_slv_pdata_0);
-#endif
-#if defined(CONFIG_SPI_CNTRLR_1)
-	s3cspi_set_slaves(BUSNUM(1), ARRAY_SIZE(s3c_slv_pdata_1), s3c_slv_pdata_1);
-#endif
-#if defined(CONFIG_SPI_CNTRLR_2)
-	//s3cspi_set_slaves(BUSNUM(2), ARRAY_SIZE(s3c_slv_pdata_2), s3c_slv_pdata_2);
-#endif
-	spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
 
 	/* fimc */
 	s3c_fimc0_set_platdata(&fimc_plat);
