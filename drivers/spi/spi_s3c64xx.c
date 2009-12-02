@@ -253,7 +253,7 @@ static void enable_datapath(struct s3c64xx_spi_driver_data *sdd,
 		chcfg |= S3C64XX_SPI_CH_TXCH_ON;
 		if (dma_mode) {
 			modecfg |= S3C64XX_SPI_MODE_TXDMA_ON;
-			s3c2410_dma_config(sdd->tx_dmach, 1);
+			s3c2410_dma_config(sdd->tx_dmach, 1, 0);
 			s3c2410_dma_enqueue(sdd->tx_dmach, (void *)sdd,
 						xfer->tx_dma, xfer->len);
 			s3c2410_dma_ctrl(sdd->tx_dmach, S3C2410_DMAOP_START);
@@ -278,7 +278,7 @@ static void enable_datapath(struct s3c64xx_spi_driver_data *sdd,
 			writel(((xfer->len * 8 / sdd->cur_bpw) & 0xffff)
 					| S3C64XX_SPI_PACKET_CNT_EN,
 					regs + S3C64XX_SPI_PACKET_CNT);
-			s3c2410_dma_config(sdd->rx_dmach, 1);
+			s3c2410_dma_config(sdd->rx_dmach, 1, 0);
 			s3c2410_dma_enqueue(sdd->rx_dmach, (void *)sdd,
 						xfer->rx_dma, xfer->len);
 			s3c2410_dma_ctrl(sdd->rx_dmach, S3C2410_DMAOP_START);
@@ -693,7 +693,7 @@ static int acquire_dma(struct s3c64xx_spi_driver_data *sdd)
 		return 0;
 	}
 	s3c2410_dma_set_buffdone_fn(sdd->rx_dmach, s3c64xx_spi_dma_rxcb);
-	s3c2410_dma_devconfig(sdd->rx_dmach, S3C2410_DMASRC_HW,
+	s3c2410_dma_devconfig(sdd->rx_dmach, S3C2410_DMASRC_HW, 0,
 					sdd->sfr_start + S3C64XX_SPI_RX_DATA);
 
 	if (s3c2410_dma_request(sdd->tx_dmach,
@@ -703,7 +703,7 @@ static int acquire_dma(struct s3c64xx_spi_driver_data *sdd)
 		return 0;
 	}
 	s3c2410_dma_set_buffdone_fn(sdd->tx_dmach, s3c64xx_spi_dma_txcb);
-	s3c2410_dma_devconfig(sdd->tx_dmach, S3C2410_DMASRC_MEM,
+	s3c2410_dma_devconfig(sdd->tx_dmach, S3C2410_DMASRC_MEM, 0,
 					sdd->sfr_start + S3C64XX_SPI_TX_DATA);
 
 	return 1;
@@ -776,6 +776,9 @@ static int s3c64xx_spi_transfer(struct spi_device *spi,
 	return 0;
 }
 
+/* the spi->mode bits understood by this driver: */
+#define MODEBITS (SPI_CPOL | SPI_CPHA | SPI_CS_HIGH)
+
 /*
  * Here we only check the validity of requested configuration
  * and save the configuration in a local data-structure.
@@ -820,6 +823,16 @@ static int s3c64xx_spi_setup(struct spi_device *spi)
 	}
 
 	spin_unlock_irqrestore(&sdd->lock, flags);
+
+	if (spi->mode & ~MODEBITS) {
+		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",
+			spi->mode & ~MODEBITS);
+		err = -EINVAL;
+		goto setup_exit;
+	}
+
+	if (!spi->bits_per_word)
+		spi->bits_per_word = 8;
 
 	if (spi->bits_per_word != 8
 			&& spi->bits_per_word != 16
@@ -962,9 +975,6 @@ static int __init s3c64xx_spi_probe(struct platform_device *pdev)
 	master->setup = s3c64xx_spi_setup;
 	master->transfer = s3c64xx_spi_transfer;
 	master->num_chipselect = sci->num_cs;
-	master->dma_alignment = 8;
-	/* the spi->mode bits understood by this driver: */
-	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
 
 	if (request_mem_region(mem_res->start,
 			resource_size(mem_res), pdev->name) == NULL) {
@@ -1016,7 +1026,7 @@ static int __init s3c64xx_spi_probe(struct platform_device *pdev)
 	}
 
 	sdd->workqueue = create_singlethread_workqueue(
-						dev_name(master->dev.parent));
+						master->dev.parent->bus_id);
 	if (sdd->workqueue == NULL) {
 		dev_err(&pdev->dev, "Unable to create workqueue\n");
 		ret = -ENOMEM;
