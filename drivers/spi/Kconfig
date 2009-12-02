@@ -199,7 +199,7 @@ config SPI_S3C24XX_GPIO
 
 config SPI_S3C64XX
 	tristate "Samsung S3C64XX series type SPI"
-	depends on (ARCH_S3C64XX || ARCH_S5P64XX || ARCH_S5PC1XX) && EXPERIMENTAL
+	depends on (ARCH_S3C64XX || ARCH_S5P64XX || ARCH_S5PC1XX || ARCH_S5PC11X) && EXPERIMENTAL
 	help
 	  SPI driver for Samsung S3C64XX and newer SoCs.
 
