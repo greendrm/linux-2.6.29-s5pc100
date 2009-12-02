@@ -27,6 +27,7 @@
 #include <linux/clk.h>
 #include <linux/mm.h>
 #include <linux/pwm_backlight.h>
+#include <linux/spi/spi.h>
 #include <linux/videodev2.h>
 #include <media/s5k4ba_platform.h>
 #include <media/s5k6aa_platform.h>
@@ -67,6 +68,8 @@
 #include <plat/gpio-bank-d.h>
 #include <plat/gpio-bank-h3.h>
 #include <plat/regs-clock.h>
+#include <plat/s5p-spi.h>
+#include <plat/spi.h>
 
 #ifdef CONFIG_USB_SUPPORT
 #include <plat/regs-otg.h>
@@ -178,6 +181,9 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 #ifdef CONFIG_S3C_DEV_HSMMC2     
 	&s3c_device_hsmmc2,
 #endif
+#ifdef CONFIG_SPI_S3C64XX
+	&s5pc1xx_device_spi0,
+#endif
 	&s3c_device_mfc,
 	&s3c_device_jpeg,
 	&s3c_device_fimc0,
@@ -226,6 +232,43 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x57), },
 };
+
+#ifdef CONFIG_SPI_S3C64XX
+static void smdk_mmcspi_cs_set_level(int high)
+{
+	u32 val;
+
+	val = readl(S5PC1XX_GPBDAT);
+
+	if (high)
+		val |= (1<<3);
+	else
+		val &= ~(1<<3);
+
+	writel(val, S5PC1XX_GPBDAT);
+}
+
+#define SMDK_MMCSPI_CS 0
+
+static struct s3c64xx_spi_csinfo smdk_spi0_csi[] = {
+	[SMDK_MMCSPI_CS] = {
+		.set_level = smdk_mmcspi_cs_set_level,
+		.fb_delay = 0x3,
+	},
+};
+
+static struct spi_board_info s3c_spi_devs[] __initdata = {
+	{
+		.modalias	 = "mmc_spi", /* MMC SPI */
+		.mode		 = SPI_MODE_0,	/* CPOL=0, CPHA=0 */
+		.max_speed_hz    = 10000000,
+		/* Connected to SPI-0 as 1st Slave */
+		.bus_num	 = 0,
+		.chip_select	 = 0,
+		.controller_data = &smdk_spi0_csi[SMDK_MMCSPI_CS],
+	},
+};
+#endif
 
 /* External camera module setting */
 static struct s5k4ba_platform_data s5k4ba = {
@@ -466,6 +509,26 @@ static void __init smdkc100_smc911x_set(void)
 
 static void __init smdkc100_machine_init(void)
 {
+	/* spi */
+#ifdef CONFIG_SPI_S3C64XX
+	u32 val;
+
+	val = __raw_readl(S5PC1XX_GPBCON);
+	val &= ~(0xf<<12);
+	val |= (0x1<<12);
+	__raw_writel(val, S5PC1XX_GPBCON);
+
+	val = __raw_readl(S5PC1XX_GPBPUD);
+	val &= ~(0x3<<6);
+	val |= (0x2<<6);
+	__raw_writel(val, S5PC1XX_GPBPUD);
+
+	s3c64xx_spi_set_info(BUSNUM(0), S5PC1XX_SPI_SRCCLK_PCLK,
+			 ARRAY_SIZE(smdk_spi0_csi));
+
+	spi_register_board_info(s3c_spi_devs, ARRAY_SIZE(s3c_spi_devs));
+#endif
+
         s3c_device_nand.dev.platform_data = &s3c_nand_mtd_part_info;
 	s3c_device_onenand.dev.platform_data = &s3c_onenand_data;
 
