@@ -56,9 +56,12 @@ static void s3c_irq_eint_unmask(unsigned int irq)
 
 static inline void s3c_irq_eint_ack(unsigned int irq)
 {
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+        unsigned long tmp;
+#endif
 	__raw_writel(eint_irq_to_bit(irq), S5PC11X_EINTPEND(eint_pend_reg(irq)));
 #if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
-	unsigned long tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
+	tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
 #endif	
 }
 
@@ -225,6 +228,9 @@ static void s3c_irq_vic_eint_unmask(unsigned int irq)
 
 static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 {
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
+        unsigned long tmp;
+#endif
 	__raw_writel(eint_irq_to_bit(irq), S5PC11X_EINTPEND(eint_pend_reg(irq)));
 
 #if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
@@ -232,7 +238,7 @@ static inline void s3c_irq_vic_eint_ack(unsigned int irq)
 	 * We should read same register to remove EVT0 bug.
 	 * Please refer ERRATA doc for more information.
 	 */
-	unsigned long tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
+	tmp = __raw_readl(S5PC11X_EINTPEND(eint_pend_reg(irq)));
 #endif
 }
 

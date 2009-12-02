@@ -25,7 +25,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	u32 is_rotate = 0;
 
-	dev_info(ctrl->dev, "%s: called\n\
+	fimc_info1("%s: called\n\
 			top(%d), left(%d), width(%d), height(%d)\n", \
 			__func__, f->fmt.win.w.top, f->fmt.win.w.left, \
 			f->fmt.win.w.width, f->fmt.win.w.height);
@@ -37,25 +37,25 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 	is_rotate = fimc_mapping_rot_flip(ctrl->out->rotate, ctrl->out->flip);
 	if (is_rotate & FIMC_ROT) {	/* Landscape mode */
 		if (f->fmt.win.w.width > ctrl->fb.lcd_vres) {
-			dev_warn(ctrl->dev, "The width is changed %d -> %d\n",
+			fimc_warn("The width is changed %d -> %d\n",
 				f->fmt.win.w.width, ctrl->fb.lcd_vres);
 			f->fmt.win.w.width = ctrl->fb.lcd_vres;
 		}
 
 		if (f->fmt.win.w.height > ctrl->fb.lcd_hres) {
-			dev_warn(ctrl->dev, "The height is changed %d -> %d\n",
+			fimc_warn("The height is changed %d -> %d\n",
 				f->fmt.win.w.height, ctrl->fb.lcd_hres);
 			f->fmt.win.w.height = ctrl->fb.lcd_hres;
 		}
 	} else {			/* Portrait mode */
 		if (f->fmt.win.w.width > ctrl->fb.lcd_hres) {
-			dev_warn(ctrl->dev, "The width is changed %d -> %d\n",
+			fimc_warn("The width is changed %d -> %d\n",
 				f->fmt.win.w.width, ctrl->fb.lcd_hres);
 			f->fmt.win.w.width = ctrl->fb.lcd_hres;
 		}
 
 		if (f->fmt.win.w.height > ctrl->fb.lcd_vres) {
-			dev_warn(ctrl->dev, "The height is changed %d -> %d\n",
+			fimc_warn("The height is changed %d -> %d\n",
 				f->fmt.win.w.height, ctrl->fb.lcd_vres);
 			f->fmt.win.w.height = ctrl->fb.lcd_vres;
 		}
@@ -68,7 +68,7 @@ int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 
-	dev_info(ctrl->dev, "%s: called\n", __func__);
+	fimc_info1("%s: called\n", __func__);
 
 	f->fmt.win = ctrl->out->win;
 
@@ -78,10 +78,10 @@ int fimc_g_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 static int fimc_check_pos(struct fimc_control *ctrl, struct v4l2_format *f)
 {
 	if(ctrl->out->win.w.width != f->fmt.win.w.width) {
-		dev_err(ctrl->dev, "%s: cannot change width\n", __func__);
+		fimc_err("%s: cannot change width\n", __func__);
 		return -EINVAL;
 	} else if (ctrl->out->win.w.height != f->fmt.win.w.height) {
-		dev_err(ctrl->dev, "%s: cannot change height\n", __func__);
+		fimc_err("%s: cannot change height\n", __func__);
 		return -EINVAL;
 	}
 
@@ -98,7 +98,7 @@ static int fimc_change_fifo_position(struct fimc_control *ctrl)
 
 	ret = fimc_fimd_rect(ctrl, &fimd_rect);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "fimc_fimd_rect fail\n");
+		fimc_err("fimc_fimd_rect fail\n");
 		return -EINVAL;
 	}
 
@@ -108,7 +108,7 @@ static int fimc_change_fifo_position(struct fimc_control *ctrl)
 	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_WIN_POSITION,
 			(unsigned long)&window);
 	if (ret < 0) {
-		dev_err(ctrl->dev, "direct_ioctl(S3CFB_WIN_POSITION) fail\n");
+		fimc_err("direct_ioctl(S3CFB_WIN_POSITION) fail\n");
 		return -EINVAL;
 	}
 
@@ -120,13 +120,13 @@ int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
 
-	dev_info(ctrl->dev, "%s: called\n", __func__);
+	fimc_info1("%s: called\n", __func__);
 
 	switch (ctrl->status) {
 	case FIMC_STREAMON:
 		ret = fimc_check_pos(ctrl, f);
 		if (ret < 0) {
-			dev_err(ctrl->dev, "When FIMC is running, "
+			fimc_err("When FIMC is running, "
 					"you can only move the position.\n");
 			return -EBUSY;
 		}
@@ -148,7 +148,7 @@ int fimc_s_fmt_vid_overlay(struct file *file, void *fh, struct v4l2_format *f)
 		break;
 
 	default:
-		dev_err(ctrl->dev, "FIMC is running\n");
+		fimc_err("FIMC is running\n");
 		return -EBUSY;
 	}
 
@@ -161,7 +161,7 @@ int fimc_g_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	u32 bpp = 1;
 	u32 format = ctrl->out->fbuf.fmt.pixelformat;
 
-	dev_info(ctrl->dev, "%s: called\n", __func__);
+	fimc_info1("%s: called\n", __func__);
 
 	fb->capability = ctrl->out->fbuf.capability;
 	fb->flags = 0;
@@ -193,7 +193,7 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	u32 bpp = 1;
 	u32 format = fb->fmt.pixelformat;
 
-	dev_info(ctrl->dev, "%s: called\n", __func__);
+	fimc_info1("%s: called\n", __func__);
 
 	ctrl->out->fbuf.capability = V4L2_FBUF_CAP_EXTERNOVERLAY;
 	ctrl->out->fbuf.flags = 0;
