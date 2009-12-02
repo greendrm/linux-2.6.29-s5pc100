@@ -72,23 +72,21 @@
 #define AUTOPST	     (S3C_ADCTSC_YM_SEN | S3C_ADCTSC_YP_SEN | S3C_ADCTSC_XP_SEN | \
 		     S3C_ADCTSC_AUTO_PST | S3C_ADCTSC_XY_PST(0))
 
-#define SEL_MUX_MASK	(0xf<<0)
+#define SEL_MUX_MASK	S3C_ADCMUX_MASK
 
 #define YP_PRESSURE_ADCTSC	(S3C_ADCTSC_YP_SEN | S3C_ADCTSC_XM_SEN | \
 				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
-#define YP_SEL_MUX		(0x3<<0)
+#define YP_SEL_MUX		S3C_ADCMUX_YP	
 
 #define XP_PRESSURE_ADCTSC	(S3C_ADCTSC_XP_SEN | S3C_ADCTSC_XM_SEN | \
 				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
-#define XP_SEL_MUX		(0x5<<0)
+#define XP_SEL_MUX		S3C_ADCMUX_XP
 
 #define YM_PRESSURE_ADCTSC	(S3C_ADCTSC_XP_SEN | S3C_ADCTSC_XM_SEN | \
 				S3C_ADCTSC_PULL_UP_DISABLE | S3C_ADCTSC_XY_PST(0))
-#define YM_SEL_MUX		(0x2<<0)
+#define YM_SEL_MUX		S3C_ADCMUX_YM
 
-#define PRESSURE_CHECKING
-
-#define DEBUG_LVL    KERN_DEBUG
+#define DEBUG_LVL    KERN_ERR
 
 /* Touchscreen default configuration */
 struct s3c_ts_mach_info s3c_ts_default_cfg __initdata = {
@@ -180,7 +178,7 @@ static void touch_timer_fire(unsigned long data)
 			{
 				struct timeval tv;
 				do_gettimeofday(&tv);
-				printk(KERN_INFO "T: %06d, X: %03ld, Y: %03ld\n", (int)tv.tv_usec, ts->xp, ts->yp);
+				printk(DEBUG_LVL "T: %06d, X: %03ld, Y: %03ld\n", (int)tv.tv_usec, ts->xp, ts->yp);
 			}
 #endif
 			ts->xp = (ts->xp >> ts->shift);
@@ -199,7 +197,7 @@ static void touch_timer_fire(unsigned long data)
 		ts->yp = 0;
 		ts->count = 0;
 
-#if !defined(PRESSURE_CHECKING)
+#if !defined(CONFIG_TOUCHSCREEN_PRESSURE_CHECK)
 		writel(S3C_ADCTSC_PULL_UP_DISABLE | AUTOPST,
 				ts_base+S3C_ADCTSC);
 		writel(readl(ts_base+S3C_ADCCON) | S3C_ADCCON_ENABLE_START,
@@ -236,7 +234,7 @@ static irqreturn_t stylus_updown(int irqno, void *param)
 				S3C_ADCDAT1_UPDOWN));
 
 #ifdef CONFIG_TOUCHSCREEN_S3C_DEBUG
-       printk(KERN_INFO "   %c\n",	updown ? 'D' : 'U');
+       printk(DEBUG_LVL "   %c\n",	updown ? 'D' : 'U');
 #endif
 
 	/* TODO we should never get an interrupt with updown set while
@@ -244,7 +242,7 @@ static irqreturn_t stylus_updown(int irqno, void *param)
 	 * timer isn't running anyways. */
 
 	if (updown)
-#if !defined(PRESSURE_CHECKING)
+#if !defined(CONFIG_TOUCHSCREEN_PRESSURE_CHECK)
 		touch_timer_fire(0);
 #else
 		check_valid_pressure();
@@ -267,9 +265,9 @@ static int calc_pressure(void)
 		 (unsigned int)pressure_info[1] - 100000);
 
 	do_div(pressure_info[0], (2^ts->resol_bit)*100000);
-	printk(KERN_INFO "Raw pressure [%llu]\n", pressure_info[0]);
+	printk(DEBUG_LVL "Raw pressure [%llu]\n", pressure_info[0]);
 	ts->pressure = (int)(pressure_info[0]);
-	printk(KERN_INFO "pressure = %d\n", ts->pressure);
+	printk(DEBUG_LVL "pressure = %d\n", ts->pressure);
 
 	return 0;
 }
@@ -282,7 +280,7 @@ static irqreturn_t stylus_action(int irqno, void *param)
 	data0 = readl(ts_base+S3C_ADCDAT0);
 	data1 = readl(ts_base+S3C_ADCDAT1);
 
-#if defined(PRESSURE_CHECKING)
+#if defined(CONFIG_TOUCHSCREEN_PRESSURE_CHECK)
 	if (curr_measure) {
 		pressure_info[curr_measure] = (0xfff & data0);
 		curr_measure++;
@@ -332,7 +330,7 @@ start_conversion:
 	}
 
 	ts->count++;
-	printk(KERN_INFO "count [%d]\n", ts->count);
+	printk(DEBUG_LVL "count [%d]\n", ts->count);
 
 	if (ts->count < (1<<ts->shift)) {
 		writel(S3C_ADCTSC_PULL_UP_DISABLE | AUTOPST, ts_base+S3C_ADCTSC);

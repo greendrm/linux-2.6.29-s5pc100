@@ -114,6 +114,27 @@
 #define S3C_ADCDAT1_YPDATA_MASK		(0x03FF)
 #define S3C_ADCDAT1_YPDATA_MASK_12BIT	(0x0FFF)
 
+#define S3C_ADCMUX_MASK			(0xf)
+#if defined(CONFIG_CPU_S5PC100)
+#define S3C_ADCMUX_YM			(0x6)
+#define S3C_ADCMUX_YP			(0x7)
+#define S3C_ADCMUX_XM			(0x8)
+#define S3C_ADCMUX_XP			(0x9)
+
+#elif defined(CONFIG_CPU_S5PC110)
+#define S3C_ADCMUX_YM			(0x2)
+#define S3C_ADCMUX_YP			(0x3)
+#define S3C_ADCMUX_XM			(0x4)
+#define S3C_ADCMUX_XP			(0x5)
+
+#else
+
+#define S3C_ADCMUX_YM			(0x6)
+#define S3C_ADCMUX_YP			(0x7)
+#define S3C_ADCMUX_XM			(0x8)
+#define S3C_ADCMUX_XP			(0x9)
+#endif
+
 #endif /* __ASM_ARCH_REGS_ADC_H */
 
 

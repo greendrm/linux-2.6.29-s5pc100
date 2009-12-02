@@ -95,6 +95,13 @@ config TOUCHSCREEN_NEW
           Say N here to enable the driver for the old version touchscreen on the
           S3C SMDK board.
 
+config TOUCHSCREEN_PRESSURE_CHECK
+        bool "Checking contact resistance of touch pannel"
+        depends on TOUCHSCREEN_S3C && (ARCH_S5PC1XX || ARCH_S5PC11X)
+        default n
+        help
+          Say Y here to enable check contact resistance to verify valid user input.
+
 config TOUCHSCREEN_DA9034
 	tristate "Touchscreen support for Dialog Semiconductor DA9034"
 	depends on PMIC_DA903X
