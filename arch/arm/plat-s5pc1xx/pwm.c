@@ -61,23 +61,64 @@ static struct clk *clk_scaler[2];
 		}					\
 	}
 
-#define DEFINE_S3C_TIMER(_tmr_no, _irq)			\
+#define DEFINE_S3C_TIMER(_tmr_no, _irq, _plat_data)	\
 	.name		= "s3c24xx-pwm",		\
 	.id		= _tmr_no,			\
 	.num_resources	= TIMER_RESOURCE_SIZE,		\
 	.resource	= TIMER_RESOURCE(_tmr_no, _irq),	\
+	.dev		= {					\
+			.platform_data	= _plat_data,	\
+	}							\
 
 /* since we already have an static mapping for the timer, we do not
  * bother setting any IO resource for the base.
  */
 
-struct platform_device s3c_device_timer[] = {
-	[0] = { DEFINE_S3C_TIMER(0, IRQ_TIMER0) },
-	[1] = { DEFINE_S3C_TIMER(1, IRQ_TIMER1) },
-	[2] = { DEFINE_S3C_TIMER(2, IRQ_TIMER2) },
-	[3] = { DEFINE_S3C_TIMER(3, IRQ_TIMER3) },
-	[4] = { DEFINE_S3C_TIMER(4, IRQ_TIMER4) },
+struct s3c_pwm_pdata {
+	/* PWM output port */
+	unsigned int gpio_no;
+	const char	*gpio_name;
+	unsigned int gpio_set_value;
 };
+
+struct s3c_pwm_pdata pwm_data[] = {
+	{
+		.gpio_no	= S5PC1XX_GPD(0),
+		.gpio_name	= "GPD",
+		.gpio_set_value	= S5PC1XX_GPD0_TOUT_0,
+	}, {
+		.gpio_no 	= S5PC1XX_GPD(1),
+		.gpio_name	= "GPD",
+		.gpio_set_value	= S5PC1XX_GPD1_TOUT_1,
+	}, {
+		.gpio_no 	= 0,
+		.gpio_name      = NULL,
+		.gpio_set_value = 0,
+	}, {
+		.gpio_no 	= 0,
+		.gpio_name      = NULL,
+		.gpio_set_value = 0,
+	}, {
+		.gpio_no 	= 0,
+		.gpio_name	= NULL,
+		.gpio_set_value = 0,
+	}
+};
+
+struct platform_device s3c_device_timer[] = {
+	[0] = { DEFINE_S3C_TIMER(0, IRQ_TIMER0, &pwm_data[0]) },
+	[1] = { DEFINE_S3C_TIMER(1, IRQ_TIMER1, &pwm_data[1]) },
+	[2] = { DEFINE_S3C_TIMER(2, IRQ_TIMER2, &pwm_data[2]) },
+	[3] = { DEFINE_S3C_TIMER(3, IRQ_TIMER3, &pwm_data[3]) },
+	[4] = { DEFINE_S3C_TIMER(4, IRQ_TIMER4, &pwm_data[4]) },
+};
+
+struct s3c_pwm_pdata *to_pwm_pdata(struct device *dev)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+
+	return (struct s3c_pwm_pdata *)pdev->dev.platform_data;
+}
 
 static inline int pwm_is_tdiv(struct pwm_device *pwm)
 {
@@ -145,7 +186,7 @@ int pwm_enable(struct pwm_device *pwm)
 	local_irq_save(flags);
 
 	tcon = __raw_readl(S3C2410_TCON);
-	tcon |= pwm_tcon_start(pwm);
+	tcon |= (pwm_tcon_start(pwm) | pwm_tcon_invert(pwm));
 	__raw_writel(tcon, S3C2410_TCON);
 
 	local_irq_restore(flags);
@@ -170,6 +211,7 @@ void pwm_disable(struct pwm_device *pwm)
 	local_irq_restore(flags);
 
 	pwm->running = 0;
+	pwm->period_ns = -1;
 }
 
 EXPORT_SYMBOL(pwm_disable);
@@ -293,32 +335,17 @@ static int s3c_pwm_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct pwm_device *pwm;
+	struct s3c_pwm_pdata *pdata = to_pwm_pdata(dev);
 	unsigned long flags;
 	unsigned long tcon;
 	unsigned int id = pdev->id;
 	int ret;
 
-	if (id == 0) {
-		if(gpio_is_valid(S5PC1XX_GPD(0))) {
-			ret = gpio_request(S5PC1XX_GPD(0), "GPD");
-
-			if (ret) {
-				printk(KERN_ERR "failed to request GPD for PWM-OUT 0\n");
-			}
-			s3c_gpio_cfgpin(S5PC1XX_GPD(0), S5PC1XX_GPD0_TOUT_0);			 
-		}
-	} else if(id == 1) {
-		if(gpio_is_valid(S5PC1XX_GPD(1))) {
-			ret = gpio_request(S5PC1XX_GPD(1), "GPD");
-
-			if (ret) {
-				printk(KERN_ERR "failed to request GPD for PWM-OUT 1\n");
-			}
-			s3c_gpio_cfgpin(S5PC1XX_GPD(1), S5PC1XX_GPD1_TOUT_1);			 
-		}
-	
-	} else {
-		printk(KERN_ERR "This PWM dosen't support PWM out\n");
+	if (gpio_is_valid(pdata->gpio_no)) {
+		ret = gpio_request(pdata->gpio_no, pdata->gpio_name);
+		if (ret)
+			printk(KERN_ERR "failed to get GPIO for PWM0\n");
+		s3c_gpio_cfgpin(pdata->gpio_no, pdata->gpio_set_value);
 	}
 
 	if (id == 4) {
