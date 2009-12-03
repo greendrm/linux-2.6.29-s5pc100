@@ -54,7 +54,7 @@ obj-$(CONFIG_S5P64XX_SETUP_POST) += setup-post.o
 obj-$(CONFIG_S5P64XX_ADC) 	 += adc.o
 obj-$(CONFIG_HAVE_PWM) 		 += pwm.o
 
-obj-$(CONFIG_SPI_S5P6442)   += dev-spi.o
+obj-$(CONFIG_SPI_S3C64XX)   += dev-spi.o
 
 # Device setup - FIMC
 obj-$(CONFIG_S5P64XX_DEV_FIMC0)	  += dev-fimc0.o

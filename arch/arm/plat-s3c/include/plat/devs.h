@@ -55,6 +55,16 @@ extern struct platform_device s3c_device_spi0;
 extern struct platform_device s3c_device_spi1;
 extern struct platform_device s3c_device_spi2;
 
+extern struct platform_device s5p64xx_device_spi0;
+
+extern struct platform_device s5pc1xx_device_spi0;
+extern struct platform_device s5pc1xx_device_spi1;
+extern struct platform_device s5pc1xx_device_spi2;
+
+extern struct platform_device s5pc11x_device_spi0;
+extern struct platform_device s5pc11x_device_spi1;
+extern struct platform_device s5pc11x_device_spi2;
+
 extern struct platform_device s3c_device_nand;
 extern struct platform_device s3c_device_onenand;
 extern struct platform_device s3c_device_cfcon;

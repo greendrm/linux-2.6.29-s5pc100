@@ -284,38 +284,36 @@ static struct s3c_dma_map __initdata s5pc100_dma_mappings[] = {
 		.channels	= MAP2(S3C_PDMA1_I2S2_TX),
 		.hw_addr.to	= S3C_PDMA1_I2S2_TX,
 	},
-	[DMACH_SPI0_IN] = {
+	[DMACH_SPI0_RX] = {
 		.name		= "spi0-in",
 		.channels	= MAP1(S3C_PDMA0_SPI0_RX),
 		.hw_addr.from	= S3C_PDMA0_SPI0_RX,
 	},
-	[DMACH_SPI0_OUT] = {
+	[DMACH_SPI0_TX] = {
 		.name		= "spi0-out",
 		.channels	= MAP1(S3C_PDMA0_SPI0_TX),
 		.hw_addr.to	= S3C_PDMA0_SPI0_TX,
 	},
-	[DMACH_SPI1_IN] = {
+	[DMACH_SPI1_RX] = {
 		.name		= "spi1-in",
 		.channels	= MAP2(S3C_PDMA1_SPI1_RX),
 		.hw_addr.from	= S3C_PDMA1_SPI1_RX,
 	},
-	[DMACH_SPI1_OUT] = {
+	[DMACH_SPI1_TX] = {
 		.name		= "spi1-out",
 		.channels	= MAP2(S3C_PDMA1_SPI1_TX),
 		.hw_addr.to	= S3C_PDMA1_SPI1_TX,
 	},
-#if 0
-	[DMACH_SPI2_IN] = {
+	[DMACH_SPI2_RX] = {
 		.name		= "spi2-in",
 		.channels	= MAP2(S3C_PDMA1_SPI2_RX),
 		.hw_addr.from	= S3C_PDMA1_SPI2_RX,
 	},
-	[DMACH_SPI2_OUT] = {
+	[DMACH_SPI2_TX] = {
 		.name		= "spi2-out",
 		.channels	= MAP2(S3C_PDMA1_SPI2_TX),
 		.hw_addr.to	= S3C_PDMA1_SPI2_TX,
 	},
-#endif
 	[DMACH_PCM0_RX] = {
 		.name		= "pcm0-in",
 		.channels	= MAP2(S3C_PDMA1_PCM0_RX),

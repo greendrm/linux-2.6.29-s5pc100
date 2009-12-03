@@ -1,308 +1,233 @@
 /* linux/arch/arm/plat-s5pc1xx/dev-spi.c
  *
- * Copyright 2009 Samsung Electronics
+ * Copyright (C) 2009 Samsung Electronics Ltd.
+ *	Jaswinder Singh <jassi.brar@samsung.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-*/
+ */
 
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/platform_device.h>
-#include <linux/clk.h>
-#include <linux/err.h>
+#include <linux/dma-mapping.h>
 
+#include <mach/dma.h>
 #include <mach/map.h>
+#include <mach/gpio.h>
 
+#include <plat/s5p-spi.h>
 #include <plat/spi.h>
-#include <plat/devs.h>
-#include <plat/cpu.h>
+#include <plat/gpio-bank-b.h>
+#include <plat/gpio-bank-g3.h>
+#include <plat/gpio-cfg.h>
 #include <plat/irqs.h>
 
-#if defined(CONFIG_SPICLK_SRC_SCLK48M)
-#define SPICLK "sclk_spi_48"
+static char *spi_src_clks[] = {"pclk", "sclk_spi_48", "sclk_spi"};
 
-#elif defined(CONFIG_SPICLK_SRC_EPLL)
-#define SPICLK "spi_epll"
+/* SPI Controller platform_devices */
 
-#if defined(CONFIG_SPICLK_EPLL_MOUTEPLL)
-#define SPICLK_SRC "mout_epll"
-
-#elif defined(CONFIG_SPICLK_EPLL_DOUT)
-#define SPICLK_SRC "dout_mpll2"
-
-#elif defined(CONFIG_SPICLK_EPLL_FIN)
-#define SPICLK_SRC "ext_xtal"
-
-#elif defined(CONFIG_SPICLK_EPLL_MOUTHPLL)
-#define SPICLK_SRC "mout_hpll"
-#endif
-
-#endif
-
-#if 0
-#define dbg_printk(x...)	printk(x)
-#else
-#define dbg_printk(x...)	do{}while(0)
-#endif
-
-static int smi_getclcks(struct s3c_spi_mstr_info *smi)
+/* Since we emulate multi-cs capability, we do not touch the GPC-3,7.
+ * The emulated CS is toggled by board specific mechanism, as it can
+ * be either some immediate GPIO or some signal out of some other
+ * chip in between ... or some yet another way.
+ * We simply do not assume anything about CS.
+ */
+static int s5pc1xx_spi_cfg_gpio(struct platform_device *pdev)
 {
-	struct clk *cspi, *cp, *cm, *cf;
+	switch (pdev->id) {
+	case 0:
+		s3c_gpio_cfgpin(S5PC1XX_GPB(0), S5PC1XX_GPB0_SPI_MISO0);
+		s3c_gpio_cfgpin(S5PC1XX_GPB(1), S5PC1XX_GPB1_SPI_CLK0);
+		s3c_gpio_cfgpin(S5PC1XX_GPB(2), S5PC1XX_GPB2_SPI_MOSI0);
+		s3c_gpio_setpull(S5PC1XX_GPB(0), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPB(1), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPB(2), S3C_GPIO_PULL_UP);
+		break;
 
-	cp = NULL;
-	cm = NULL;
-	cf = NULL;
-	cspi = smi->clk;
+	case 1:
+		s3c_gpio_cfgpin(S5PC1XX_GPB(4), S5PC1XX_GPB4_SPI_MISO1);
+		s3c_gpio_cfgpin(S5PC1XX_GPB(5), S5PC1XX_GPB5_SPI_CLK1);
+		s3c_gpio_cfgpin(S5PC1XX_GPB(6), S5PC1XX_GPB6_SPI_MOSI1);
+		s3c_gpio_setpull(S5PC1XX_GPB(4), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPB(5), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPB(6), S3C_GPIO_PULL_UP);
+		break;
 
-	if(cspi == NULL){
-		cspi = clk_get(&smi->pdev->dev, "spi");
-		if(IS_ERR(cspi)){
-			printk("Unable to get spi!\n");
-			return -EBUSY;
-		}
+	case 2:
+		s3c_gpio_cfgpin(S5PC1XX_GPG3(0), S5PC1XX_GPG3_0_SPI_CLK2);
+		s3c_gpio_cfgpin(S5PC1XX_GPG3(2), S5PC1XX_GPG3_2_SPI_MISO2);
+		s3c_gpio_cfgpin(S5PC1XX_GPG3(3), S5PC1XX_GPG3_3_SPI_MOSI2);
+		s3c_gpio_setpull(S5PC1XX_GPG3(0), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPG3(2), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PC1XX_GPG3(3), S3C_GPIO_PULL_UP);
+		break;
+
+	default:
+		dev_err(&pdev->dev, "Invalid SPI Controller number!");
+		return -EINVAL;
 	}
-	dbg_printk("%s:%d Got clk=spi\n", __func__, __LINE__);
 
-#if defined(CONFIG_SPICLK_SRC_SCLK48M) || defined(CONFIG_SPICLK_SRC_EPLL)
-	cp = clk_get(&smi->pdev->dev, SPICLK);
-	if(IS_ERR(cp)){
-		printk("Unable to get parent clock(%s)!\n", SPICLK);
-		if(smi->clk == NULL){
-			clk_disable(cspi);
-			clk_put(cspi);
-		}
-		return -EBUSY;
-	}
-	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, SPICLK);
-
-#if defined(CONFIG_SPICLK_SRC_EPLL)
-	cm = clk_get(&smi->pdev->dev, SPICLK_SRC);
-	if(IS_ERR(cm)){
-		printk("Unable to get %s\n", SPICLK_SRC);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("%s:%d Got clk=%s\n", __func__, __LINE__, SPICLK_SRC);
-	if(clk_set_parent(cp, cm)){
-		printk("failed to set %s as the parent of %s\n", SPICLK_SRC, SPICLK);
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Set %s as the parent of %s\n", SPICLK_SRC, SPICLK);
-
-#if defined(CONFIG_SPICLK_EPLL_MOUTEPLL) /* MOUTepll through EPLL */
-	cf = clk_get(&smi->pdev->dev, "fout_epll");
-	if(IS_ERR(cf)){
-		printk("Unable to get fout_epll\n");
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Got fout_epll\n");
-	if(clk_set_parent(cm, cf)){
-		printk("failed to set FOUTepll as parent of %s\n", SPICLK_SRC);
-		clk_put(cf);
-		clk_put(cm);
-		clk_put(cp);
-		return -EBUSY;
-	}
-	dbg_printk("Set FOUTepll as parent of %s\n", SPICLK_SRC);
-	clk_put(cf);
-#endif
-	clk_put(cm);
-#endif
-
-	smi->prnt_clk = cp;
-#endif
-
-	smi->clk = cspi;
 	return 0;
 }
 
-static void smi_putclcks(struct s3c_spi_mstr_info *smi)
-{
-	if(smi->prnt_clk != NULL)
-		clk_put(smi->prnt_clk);
-
-	clk_put(smi->clk);
-}
-
-static int smi_enclcks(struct s3c_spi_mstr_info *smi)
-{
-	if(smi->prnt_clk != NULL)
-		clk_enable(smi->prnt_clk);
-
-	return clk_enable(smi->clk);
-}
-
-static void smi_disclcks(struct s3c_spi_mstr_info *smi)
-{
-	if(smi->prnt_clk != NULL)
-		clk_disable(smi->prnt_clk);
-
-	clk_disable(smi->clk);
-}
-
-static u32 smi_getrate(struct s3c_spi_mstr_info *smi)
-{
-	if(smi->prnt_clk != NULL)
-		return clk_get_rate(smi->prnt_clk);
-	else
-		return clk_get_rate(smi->clk);
-}
-
-static int smi_setrate(struct s3c_spi_mstr_info *smi, u32 r)
-{
- /* We don't take charge of the Src Clock, yet */
-	return 0;
-}
-
-/* SPI (0) */
-static struct resource s3c_spi0_resource[] = {
+static struct resource s5pc1xx_spi0_resource[] = {
 	[0] = {
-		.start = S3C_PA_SPI0,
-		.end   = S3C_PA_SPI0 + S3C_SZ_SPI0 - 1,
+		.start = S5PC1XX_PA_SPI0,
+		.end   = S5PC1XX_PA_SPI0 + 0x100 - 1,
 		.flags = IORESOURCE_MEM,
 	},
 	[1] = {
+		.start = DMACH_SPI0_TX,
+		.end   = DMACH_SPI0_TX,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.start = DMACH_SPI0_RX,
+		.end   = DMACH_SPI0_RX,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
 		.start = IRQ_SPI0,
 		.end   = IRQ_SPI0,
 		.flags = IORESOURCE_IRQ,
-	}
+	},
 };
 
-static struct s3c_spi_mstr_info sspi0_mstr_info = {
-	.pdev = NULL,
-	.clk = NULL,
-	.prnt_clk = NULL,
-	.num_slaves = 0,
-	.spiclck_get = smi_getclcks,
-	.spiclck_put = smi_putclcks,
-	.spiclck_en = smi_enclcks,
-	.spiclck_dis = smi_disclcks,
-	.spiclck_setrate = smi_setrate,
-	.spiclck_getrate = smi_getrate,
+static struct s3c64xx_spi_cntrlr_info s5pc1xx_spi0_pdata = {
+	.cfg_gpio = s5pc1xx_spi_cfg_gpio,
+	.fifo_lvl_mask = 0x7f,
+	.rx_lvl_offset = 13,
 };
 
-static u64 s3c_device_spi0_dmamask = 0xffffffffUL;
+static u64 spi_dmamask = DMA_BIT_MASK(32);
 
-struct platform_device s3c_device_spi0 = {
-	.name		= "s3c-spi",
-	.id		= 0,
-	.num_resources	= ARRAY_SIZE(s3c_spi0_resource),
-	.resource	= s3c_spi0_resource,
-	.dev		= {
-		.dma_mask = &s3c_device_spi0_dmamask,
-		.coherent_dma_mask = 0xffffffffUL,
-		.platform_data = &sspi0_mstr_info,
-	}
+struct platform_device s5pc1xx_device_spi0 = {
+	.name		  = "s3c64xx-spi",
+	.id		  = 0,
+	.num_resources	  = ARRAY_SIZE(s5pc1xx_spi0_resource),
+	.resource	  = s5pc1xx_spi0_resource,
+	.dev = {
+		.dma_mask		= &spi_dmamask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data = &s5pc1xx_spi0_pdata,
+	},
 };
-EXPORT_SYMBOL(s3c_device_spi0);
+EXPORT_SYMBOL(s5pc1xx_device_spi0);
 
-/* SPI (1) */
-static struct resource s3c_spi1_resource[] = {
+static struct resource s5pc1xx_spi1_resource[] = {
 	[0] = {
-		.start = S3C_PA_SPI1,
-		.end   = S3C_PA_SPI1 + S3C_SZ_SPI1 - 1,
+		.start = S5PC1XX_PA_SPI1,
+		.end   = S5PC1XX_PA_SPI1 + 0x100 - 1,
 		.flags = IORESOURCE_MEM,
 	},
 	[1] = {
+		.start = DMACH_SPI1_TX,
+		.end   = DMACH_SPI1_TX,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.start = DMACH_SPI1_RX,
+		.end   = DMACH_SPI1_RX,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
 		.start = IRQ_SPI1,
 		.end   = IRQ_SPI1,
 		.flags = IORESOURCE_IRQ,
-	}
+	},
 };
 
-static struct s3c_spi_mstr_info sspi1_mstr_info = {
-	.pdev = NULL,
-	.clk = NULL,
-	.prnt_clk = NULL,
-	.num_slaves = 0,
-	.spiclck_get = smi_getclcks,
-	.spiclck_put = smi_putclcks,
-	.spiclck_en = smi_enclcks,
-	.spiclck_dis = smi_disclcks,
-	.spiclck_setrate = smi_setrate,
-	.spiclck_getrate = smi_getrate,
+static struct s3c64xx_spi_cntrlr_info s5pc1xx_spi1_pdata = {
+	.cfg_gpio = s5pc1xx_spi_cfg_gpio,
+	.fifo_lvl_mask = 0x7f,
+	.rx_lvl_offset = 13,
 };
 
-static u64 s3c_device_spi1_dmamask = 0xffffffffUL;
-
-struct platform_device s3c_device_spi1 = {
-	.name		= "s3c-spi",
-	.id		= 1,
-	.num_resources	= ARRAY_SIZE(s3c_spi1_resource),
-	.resource	= s3c_spi1_resource,
-	.dev		= {
-		.dma_mask = &s3c_device_spi1_dmamask,
-		.coherent_dma_mask = 0xffffffffUL,
-		.platform_data = &sspi1_mstr_info,
-	}
+struct platform_device s5pc1xx_device_spi1 = {
+	.name		  = "s3c64xx-spi",
+	.id		  = 1,
+	.num_resources	  = ARRAY_SIZE(s5pc1xx_spi1_resource),
+	.resource	  = s5pc1xx_spi1_resource,
+	.dev = {
+		.dma_mask		= &spi_dmamask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data = &s5pc1xx_spi1_pdata,
+	},
 };
-EXPORT_SYMBOL(s3c_device_spi1);
+EXPORT_SYMBOL(s5pc1xx_device_spi1);
 
-/* SPI (2) */
-static struct resource s3c_spi2_resource[] = {
+static struct resource s5pc1xx_spi2_resource[] = {
 	[0] = {
-		.start = S3C_PA_SPI2,
-		.end   = S3C_PA_SPI2 + S3C_SZ_SPI2 - 1,
+		.start = S5PC1XX_PA_SPI2,
+		.end   = S5PC1XX_PA_SPI2 + 0x100 - 1,
 		.flags = IORESOURCE_MEM,
 	},
 	[1] = {
+		.start = DMACH_SPI2_TX,
+		.end   = DMACH_SPI2_TX,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.start = DMACH_SPI2_RX,
+		.end   = DMACH_SPI2_RX,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
 		.start = IRQ_SPI2,
 		.end   = IRQ_SPI2,
 		.flags = IORESOURCE_IRQ,
-	}
+	},
 };
 
-static struct s3c_spi_mstr_info sspi2_mstr_info = {
-	.pdev = NULL,
-	.clk = NULL,
-	.prnt_clk = NULL,
-	.num_slaves = 0,
-	.spiclck_get = smi_getclcks,
-	.spiclck_put = smi_putclcks,
-	.spiclck_en = smi_enclcks,
-	.spiclck_dis = smi_disclcks,
-	.spiclck_setrate = smi_setrate,
-	.spiclck_getrate = smi_getrate,
+static struct s3c64xx_spi_cntrlr_info s5pc1xx_spi2_pdata = {
+	.cfg_gpio = s5pc1xx_spi_cfg_gpio,
+	.fifo_lvl_mask = 0x7f,
+	.rx_lvl_offset = 13,
 };
 
-static u64 s3c_device_spi2_dmamask = 0xffffffffUL;
-
-struct platform_device s3c_device_spi2 = {
-	.name		= "s3c-spi",
-	.id		= 2,
-	.num_resources	= ARRAY_SIZE(s3c_spi2_resource),
-	.resource	= s3c_spi2_resource,
-	.dev		= {
-		.dma_mask = &s3c_device_spi2_dmamask,
-		.coherent_dma_mask = 0xffffffffUL,
-		.platform_data = &sspi2_mstr_info,
-	}
+struct platform_device s5pc1xx_device_spi2 = {
+	.name		  = "s3c64xx-spi",
+	.id		  = 2,
+	.num_resources	  = ARRAY_SIZE(s5pc1xx_spi2_resource),
+	.resource	  = s5pc1xx_spi2_resource,
+	.dev = {
+		.dma_mask		= &spi_dmamask,
+		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.platform_data = &s5pc1xx_spi2_pdata,
+	},
 };
-EXPORT_SYMBOL(s3c_device_spi2);
+EXPORT_SYMBOL(s5pc1xx_device_spi2);
 
-void __init s3cspi_set_slaves(unsigned id, int n, struct s3c_spi_pdata const *dat)
+void __init s3c64xx_spi_set_info(int cntrlr, int src_clk_nr, int num_cs)
 {
-	struct s3c_spi_mstr_info *pinfo;
+	/* Reject invalid configuration */
+	if (!num_cs || src_clk_nr < 0
+			|| src_clk_nr > S5PC1XX_SPI_SRCCLK_SCLK_SPI) {
+		printk(KERN_ERR "%s: Invalid SPI configuration\n", __func__);
+		return;
+	}
 
-	if(id == 0)
-	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi0.dev.platform_data;
-	else if(id == 1)
-	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi1.dev.platform_data;
-	else if(id == 2)
-	   pinfo = (struct s3c_spi_mstr_info *)s3c_device_spi2.dev.platform_data;
-	else
-	   return;
-
-	pinfo->spd = kmalloc(n * sizeof (*dat), GFP_KERNEL);
-	if(!pinfo->spd)
-	   return;
-	memcpy(pinfo->spd, dat, n * sizeof(*dat));
-
-	pinfo->num_slaves = n;
+	switch (cntrlr) {
+	case 0:
+		s5pc1xx_spi0_pdata.num_cs = num_cs;
+		s5pc1xx_spi0_pdata.src_clk_nr = src_clk_nr;
+		s5pc1xx_spi0_pdata.src_clk_name = spi_src_clks[src_clk_nr];
+		break;
+	case 1:
+		s5pc1xx_spi1_pdata.num_cs = num_cs;
+		s5pc1xx_spi1_pdata.src_clk_nr = src_clk_nr;
+		s5pc1xx_spi1_pdata.src_clk_name = spi_src_clks[src_clk_nr];
+		break;
+	case 2:
+		s5pc1xx_spi2_pdata.num_cs = num_cs;
+		s5pc1xx_spi2_pdata.src_clk_nr = src_clk_nr;
+		s5pc1xx_spi2_pdata.src_clk_name = spi_src_clks[src_clk_nr];
+		break;
+	default:
+		printk(KERN_ERR "%s: Invalid SPI controller(%d)\n",
+							__func__, cntrlr);
+		return;
+	}
 }
