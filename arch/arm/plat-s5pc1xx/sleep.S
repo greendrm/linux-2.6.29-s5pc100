@@ -60,21 +60,6 @@
 	*/
 
 ENTRY(s5pc100_cpu_save)
-#if 0
-	stmfd	sp!, { r4 - r12, lr }
-
-	@@ store co-processor registers
-
-	mrc	p15, 0, r4, c13, c0, 0	@ Read FCSE PID
-	mrc	p15, 0, r5, c3, c0, 0	@ Read Domain ID
-	mrc	p15, 0, r6, c2, c0, 0	@ Read translation table base address
-	mrc	p15, 0, r7, c1, c0, 0	@ Read control register
-
-	stmia	r0, { r4 - r13 }
-
-	mov	r0, #0
-	ldmfd	sp, { r4 - r12, pc }
-#else
 	stmfd	sp!, { r3 - r12, lr }
 
 	mrc	p15, 0, r4, c13, c0, 0	@ FCSE/PID
@@ -92,7 +77,7 @@ ENTRY(s5pc100_cpu_save)
 
 	mov	r0, #0
 	ldmfd	sp, { r3 - r12, pc }
-#endif
+	
 	@@ return to the caller, after having the MMU
 	@@ turned on, this restores the last bits from the
 	@@ stack
@@ -105,11 +90,7 @@ resume_with_mmu:
 	orr	r8, r8, r9
 	str	r12, [r8]
 
-#if 0
-	ldmfd	sp!, { r4 - r12, pc }
-#else
 	ldmfd	sp!, { r3 - r12, pc }
-#endif
 	.ltorg
 
 	@@ the next bits sit in the .data segment, even though they
@@ -154,40 +135,7 @@ ENTRY(s5pc100_cpu_resume)
 	mcr	p15, 0, r1, c7, c5, 0		@@ invalidate I Cache
 
 	ldr	r0, s5pc100_sleep_save_phys	@ address of restore block
-#if 0
 
-	ldmia	r0, { r4 - r13 }
-	mcr	p15, 0, r4, c13, c0, 0		@ PID
-	mcr	p15, 0, r5, c3, c0, 0		@ Domain ID
-	mcr	p15, 0, r6, c2, c0, 0		@ translation table base
-
-	/* calculate first section address into r8 */
-	mov	r8, r6
-	ldr	r10, =0x3fff
-	bic	r8, r8, r10
-	ldr	r11, =S5P_APM_INFORM0
-	ldr	r9, [r11, #0]
-	mov	r9, r9 ,LSR #18
-	bic	r9, r9, #0x3
-	orr	r8, r8, r9
-
-	/* calculate mmu list value into r9 */
-	mov 	r9, r9, LSL #18
-	ldr	r10, =0x40e
-	orr	r9, r9, r10
-
-	/* back up originally data */
-
-	ldr	r12, [r8]
-
-	/* Added list about mmu */
-	str	r9, [r8]
-
-	ldr	r2, =resume_with_mmu
-	mcr	p15, 0, r7, c1, c0, 0		@ turn on MMU, etc
-	nop					@ second-to-last before mmu
-	mov	pc, r2				@ go back to virtual address
-#else
 	ldmia	r0, { r3 - r13 }
 
 	mcr	p15, 0, r4, c13, c0, 0	@ FCSE/PID
@@ -242,5 +190,4 @@ ENTRY(s5pc100_cpu_resume)
 
 	mov	pc, r2				@ go back to virtual address
 	b	.
-#endif
 	.ltorg
