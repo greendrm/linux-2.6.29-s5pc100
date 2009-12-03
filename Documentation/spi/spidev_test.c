@@ -106,7 +106,6 @@ void print_usage(const char *prog)
 	     "  -l --loop         loopback\n"
 	     "  -H --cpha         clock phase\n"
 	     "  -O --cpol         clock polarity\n"
-	     "  -S --slave        Slave mode\n"
 	     "  -L --lsb          least significant bit first\n"
 	     "  -C --cs-high      chip select active high\n"
 	     "  -3 --3wire        SI/SO signals shared\n");
@@ -129,7 +128,6 @@ void parse_opts(int argc, char *argv[])
 			{ "loop",    0, 0, 'l' },
 			{ "cpha",    0, 0, 'H' },
 			{ "cpol",    0, 0, 'O' },
-			{ "slave",   0, 0, 'S' },
 			{ "lsb",     0, 0, 'L' },
 			{ "cs-high", 0, 0, 'C' },
 			{ "3wire",   0, 0, '3' },
@@ -137,7 +135,7 @@ void parse_opts(int argc, char *argv[])
 		};
 		int c;
 
-		c = getopt_long(argc, argv, "D:v:s:d:b:p:x:lHOSLC3", lopts, NULL);
+		c = getopt_long(argc, argv, "D:v:s:d:b:p:x:lHOLC3", lopts, NULL);
 
 		if (c == -1)
 			break;
@@ -172,9 +170,6 @@ void parse_opts(int argc, char *argv[])
 			break;
 		case 'O':
 			mode |= SPI_CPOL;
-			break;
-		case 'S':
-			mode |= SPI_SLAVE;
 			break;
 		case 'L':
 			mode |= SPI_LSB_FIRST;
