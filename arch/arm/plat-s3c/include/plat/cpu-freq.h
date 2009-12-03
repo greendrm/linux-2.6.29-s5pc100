@@ -17,7 +17,7 @@
 
 #define USE_FREQ_TABLE
 
-//#define USE_DVS
+#define USE_DVS
 
 #define KHZ_T		1000
 

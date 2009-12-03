@@ -334,26 +334,7 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 	freqs.cpu = 0;
 
 	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
-#ifdef USE_DVS
-	if(freqs.new < freqs.old){
-		/* frequency scaling */
-		ret = clk_set_rate(mpu_clk, target_freq * KHZ_T);
-		if(ret != 0)
-			printk("frequency scaling error\n");
-		/* voltage scaling */
-		set_power(index);
-	}else{
-		/* voltage scaling */
-		set_power(index);
 
-		/* frequency scaling */
-		ret = clk_set_rate(mpu_clk, target_freq * KHZ_T);
-		if(ret != 0)
-			printk("frequency scaling error\n");
-	}
-
-
-#else
 	if(freqs.new > freqs.old) {
 		
 		/* Frequency up */	
@@ -468,10 +449,8 @@ static int s5pc100_target(struct cpufreq_policy *policy,
 			udelay(100);
 		} else {
 		// Do nothing...
+		}
 	}
-	}
-
-#endif
 
 	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
 
