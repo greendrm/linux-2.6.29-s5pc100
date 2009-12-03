@@ -40,7 +40,6 @@
 #define SPI_LSB_FIRST		0x08
 #define SPI_3WIRE		0x10
 #define SPI_LOOP		0x20
-#define	SPI_SLAVE	0x40			/* SLAVE mode if this bit is set */
 
 #define SPIDEV_MAX_BUFFSIZE	16384
 
