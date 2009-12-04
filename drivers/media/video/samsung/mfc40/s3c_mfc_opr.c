@@ -469,7 +469,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	EncExeArg->out_encoded_size = READL(S3C_FIMV_ENC_UNIT_SIZE);
 	EncExeArg->out_header_size  = READL(S3C_FIMV_ENC_HEADER_SIZE);
 
-	mfc_debug("-- frame type(%d) encodedSize(%d)\r\n", \
+	mfc_debug("-- frame type(%d) encodedSize(%d)\r\n",
 		EncExeArg->out_frame_type, EncExeArg->out_encoded_size);
 
 	return MFCINST_RET_OK;

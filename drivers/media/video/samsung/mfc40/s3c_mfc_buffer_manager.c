@@ -374,7 +374,6 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *a
 	s3c_mfc_mem_alloc_arg_t *in_param;	
 	s3c_mfc_alloc_mem_t *p_allocMem;
 	
-
 	in_param = (s3c_mfc_mem_alloc_arg_t *)args;
 
 	/* if user request cachable area, allocate from reserved area */
@@ -408,8 +407,7 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *a
 		p_allocMem->v_addr = s3c_mfc_virt_data_buf + (p_allocMem->uncached_p_addr - s3c_mfc_phys_data_buf);
 		p_allocMem->u_addr = (unsigned char *)(in_param->non_cached_mapped_addr + 
 				(p_allocMem->uncached_p_addr - s3c_mfc_phys_data_buf));
-		mfc_debug("in_param->non_cached_mapped_addr = 0x%X, s3c_mfc_phys_data_buf = 0x%X, data buffer size = 0x%X\n", 
-				in_param->non_cached_mapped_addr, s3c_mfc_phys_data_buf, s3c_get_media_memsize(S3C_MDEV_MFC));
+
 		if (p_allocMem->v_addr == NULL) {
 			mfc_debug("Mapping Failed [PA:0x%08x]\n\r", p_allocMem->uncached_p_addr);
 			ret = MFCINST_MEMORY_MAPPING_FAIL;
