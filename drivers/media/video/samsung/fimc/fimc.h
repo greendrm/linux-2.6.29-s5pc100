@@ -475,10 +475,7 @@ extern int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelform
 extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
 extern int fimc_hw_wait_winoff(struct fimc_control *ctrl);
 extern int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl);
-
-#if defined(CONFIG_CPU_S5PC100)
-extern int fimc_hw_smdkc100_reset_camera(struct fimc_control *ctrl);
-#endif
+extern int fimc_hw_reset_camera(struct fimc_control *ctrl);
 
 /* IPC related file */
 extern void ipc_start(void);

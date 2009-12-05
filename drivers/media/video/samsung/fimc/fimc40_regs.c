@@ -1085,7 +1085,7 @@ int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_hw_smdkc100_reset_camera(struct fimc_control *ctrl)
+int fimc_hw_reset_camera(struct fimc_control *ctrl)
 {
 	u32 cfg;
 

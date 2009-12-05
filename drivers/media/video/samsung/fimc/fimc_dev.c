@@ -542,7 +542,7 @@ static int fimc_open(struct file *filp)
 		pdata->clk_on(to_platform_device(ctrl->dev), ctrl->clk);
 
 	if (pdata->hw_ver == 0x40)
-		fimc_hw_smdkc100_reset_camera(ctrl);
+		fimc_hw_reset_camera(ctrl);
 
 	/* Apply things to interface register */
 	fimc_hwset_reset(ctrl);
