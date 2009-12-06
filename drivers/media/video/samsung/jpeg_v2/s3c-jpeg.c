@@ -53,10 +53,6 @@
 #include "log_msg.h"
 #include "regs-jpeg.h"
 
-#ifdef CONFIG_CPU_S5PC100
-static struct clk		*jpeg_hclk;
-static struct clk		*jpeg_sclk;
-#endif
 static struct clk		*s3c_jpeg_clk;
 
 static struct resource		*s3c_jpeg_mem;
@@ -150,10 +146,7 @@ static int s3c_jpeg_open(struct inode *inode, struct file *file)
 {
 	sspc100_jpg_ctx *jpg_reg_ctx;
 	DWORD	ret;
-#ifdef CONFIG_CPU_S5PC100
-	clk_enable(jpeg_hclk);
-	clk_enable(jpeg_sclk);
-#endif
+
         /* clock enable */
 	clk_enable(s3c_jpeg_clk);
 
@@ -217,10 +210,6 @@ static int s3c_jpeg_release(struct inode *inode, struct file *file)
 	kfree(jpg_reg_ctx);
 
 	/* clock disable */
-#ifdef CONFIG_CPU_S5PC100
-	clk_disable(jpeg_hclk);
-	clk_disable(jpeg_sclk);
-#endif
 	clk_disable(s3c_jpeg_clk);
 	
 	log_msg(LOG_TRACE, "s3c_jpeg_release end ", "JPG_Close\n");
@@ -409,39 +398,17 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 	static int		size;
 	static int		ret;
 	HANDLE 			h_mutex;
-	printk("#### s3c_jpeg_probe ####\n");
-#ifdef CONFIG_CPU_S5PC100
-	// JPEG clock enable
-	jpeg_hclk = clk_get(NULL, "hclk_jpeg");
 
-	if (!jpeg_hclk) {
-		printk(KERN_ERR "failed to get jpeg hclk source\n");
-		return -ENOENT;
-	}
-
-	clk_enable(jpeg_hclk);
-
-	jpeg_sclk = clk_get(NULL, "sclk_jpeg");
-
-	if (!jpeg_sclk) {
-		printk(KERN_ERR "failed to get jpeg scllk source\n");
-		return -ENOENT;
-	}
-
-	clk_enable(jpeg_sclk);
-
-#else //CONFIG_CPU_S5PC110
-       /* clock enable */
+	/* clock enable */
 	s3c_jpeg_clk = clk_get(&pdev->dev, "jpeg");
 
-	if (s3c_jpeg_clk == NULL) {
-		printk(KERN_INFO "failed to find jpeg clock source\n");
+	if (IS_ERR(s3c_jpeg_clk)) {
+		jpg_err("failed to find jpeg clock source\n");
 		return -ENOENT;
 	}
 
 	clk_enable(s3c_jpeg_clk);
 
-#endif
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
 	if (res == NULL) {
@@ -478,18 +445,7 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 		jpg_err("failed to ioremap() region\n");
 		return -EINVAL;
 	}
-#ifdef CONFIG_CPU_S5PC100
-	// JPEG clock was set as 66 MHz
-	s3c_jpeg_clk = clk_get(&pdev->dev, "jpeg");
-
-	if (s3c_jpeg_clk == NULL) {
-		printk(KERN_INFO "failed to find jpeg clock source\n");
-		return -ENOENT;
-	}
-
-	clk_enable(s3c_jpeg_clk);
-#endif
-
+	
 	init_waitqueue_head(&wait_queue_jpeg);
 
 	jpg_dbg("JPG_Init\n");
@@ -515,11 +471,6 @@ static int s3c_jpeg_probe(struct platform_device *pdev)
 
 	ret = misc_register(&s3c_jpeg_miscdev);
 
-/* clock disable */
-#ifdef CONFIG_CPU_S5PC100
-	clk_disable(jpeg_hclk);
-	clk_disable(jpeg_sclk);
-#endif 
 	clk_disable(s3c_jpeg_clk);
 
 	return 0;
