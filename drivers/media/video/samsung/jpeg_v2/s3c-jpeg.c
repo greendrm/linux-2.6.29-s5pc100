@@ -489,7 +489,6 @@ static int s3c_jpeg_remove(struct platform_device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_CPU_S5PC110) || defined(CONFIG_CPU_S5P6442)
 static int s3c_jpeg_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	/* clock disable */
@@ -503,19 +502,13 @@ static int s3c_jpeg_resume(struct platform_device *pdev)
 	clk_enable(s3c_jpeg_clk);
 	return 0;
 }
-#endif
 
 static struct platform_driver s3c_jpeg_driver = {
 	.probe		= s3c_jpeg_probe,
 	.remove		= s3c_jpeg_remove,
 	.shutdown	= NULL,
-#ifdef CONFIG_CPU_S5PC100
-	.suspend	= NULL,
-	.resume		= NULL,
-#else //CONFIG_CPU_S5PC110
 	.suspend	= s3c_jpeg_suspend,
 	.resume		= s3c_jpeg_resume,
-#endif
 	.driver		= {
 			.owner	= THIS_MODULE,
 			.name	= "s3c-jpg",
