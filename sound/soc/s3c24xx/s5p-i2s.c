@@ -33,7 +33,7 @@
 #include <mach/map.h>
 #include <mach/dma.h>
 
-#include "s3c-audio.h"
+#include "s3c-dma.h"
 #include "s5p-i2s.h"
 
 static struct s3c2410_dma_client s5p_dma_client_out = {

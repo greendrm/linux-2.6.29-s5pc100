@@ -1,5 +1,5 @@
 /*
- * s3c-audio.c  --  ALSA Soc Audio Layer
+ * s3c-dma.c  --  ALSA Soc Audio Layer
  *
  * (c) 2006 Wolfson Microelectronics PLC.
  * Graeme Gregory graeme.gregory@wolfsonmicro.com or linux@wolfsonmicro.com
@@ -31,7 +31,7 @@
 #include <mach/dma.h>
 #include <mach/audio.h>
 
-#include "s3c-audio.h"
+#include "s3c-dma.h"
 
 static const struct snd_pcm_hardware s3c_dma_hardware = {
 	.info			= SNDRV_PCM_INFO_INTERLEAVED |

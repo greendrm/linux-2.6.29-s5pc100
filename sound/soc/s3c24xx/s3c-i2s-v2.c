@@ -38,7 +38,7 @@
 #include <mach/dma.h>
 
 #include "s3c-i2s-v2.h"
-#include "s3c-audio.h"
+#include "s3c-dma.h"
 
 #undef S3C_IIS_V2_SUPPORTED
 

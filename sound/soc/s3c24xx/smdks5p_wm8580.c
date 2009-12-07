@@ -19,7 +19,7 @@
 #include <sound/soc-dapm.h>
 
 #include "../codecs/wm8580.h"
-#include "s3c-audio.h"
+#include "s3c-dma.h"
 #include "s5p-i2s.h"
 
 #define I2S_V5 0

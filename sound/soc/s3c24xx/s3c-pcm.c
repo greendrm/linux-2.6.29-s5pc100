@@ -30,7 +30,7 @@
 
 #include <mach/dma.h>
 
-#include "s3c-audio.h"
+#include "s3c-dma.h"
 #include "s3c-pcm.h"
 
 static struct s3c2410_dma_client s3c_pcm_dma_client_out = {
