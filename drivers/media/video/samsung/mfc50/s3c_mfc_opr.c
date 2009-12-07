@@ -575,7 +575,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw()
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
 	dram1_start_addr = MFC_DRAM1_START;	
 
-	s3c_mfc_load_firmware();	// why is it runned again here ? 
+	s3c_mfc_load_firmware();	
 	
 	/*
 	 * 0. MFC reset
@@ -726,9 +726,9 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE 
 		return MFC_RET_CLOSE_FAIL;
 	}
 
-	mfc_debug("INSTANCE NO : %d, CODEC_TYPE : %d --\n", READL(S3C_FIMV_RISC2HOST_ARG1), codec_no);
+	mfc_debug("INSTANCE NO : %d, CODEC_TYPE : %d --\n", inst_no, codec_no);
 
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 
 }
 
@@ -778,13 +778,27 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 {
 	s3c_mfc_enc_init_mpeg4_arg_t *init_arg;
 	unsigned int		fw_phybuf;
-	//SSBSIP_MFC_ERROR_CODE 		ret_code = MFC_RET_OK;
+	//SSBSIP_MFC_ERROR_CODE 		ret_code = MFC_RET_OK ;
 	
 	init_arg = (s3c_mfc_enc_init_mpeg4_arg_t *)args;
 
 	mfc_debug("++ strm start addr : 0x%08x  \r\n", init_arg->out_p_addr.strm_ref_y);
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
+
+	// MFC fw 9/30, set the QP for P/B	
+	if (mfc_ctx->MfcCodecType == H263_ENC)
+		init_arg->in_vop_quant_b = 0;
+	writel((init_arg->in_vop_quant_p)|(init_arg->in_vop_quant_b<<6), shared_mem_vir_addr+0x70);
+
+	// MFC fw 11/10
+	if (mfc_ctx->MfcCodecType == H264_ENC) {
+		writel((mfc_ctx->vui_enable<<15)|(mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);
+		if (mfc_ctx->vui_enable)
+			writel((mfc_ctx->vui_info.aspect_ratio_idc&0xff), shared_mem_vir_addr+0x74);			
+	}
+	else
+		writel((mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);	
 
 	/* Set stream buffer addr */
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);
@@ -808,9 +822,9 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 
 	mfc_debug("-- encoded header size(%d)\r\n", init_arg->out_header_size);
 
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 
-}	
+}
 
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_enc_exe_arg *args)
 {
