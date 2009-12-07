@@ -287,13 +287,12 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c
 	mv_ref_yc = Align(mv_ref_yc, 64*BUF_L_UNIT);
 
 	for (i=0; i < 2; i++) {	
-		// Set refY0,Y1
+		// Set refY0,Y1			
 		WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF0_LUMA_ADR+(4*i));	
 		ref_y += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);		
-		// Set refY2,Y3
-		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF2_LUMA_ADR+(4*i));	
-		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);	
-
+		// Set refY2,Y3		
+		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF2_LUMA_ADR+(4*i));
+		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	}
 	 // MFC fw 10/30
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_LUMA_ADR);	
@@ -305,20 +304,15 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c
 		// Set refC0~C3
 		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF0_CHROMA_ADR+(4*i));	
 		mv_ref_yc += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT); // Align size should be checked	
-	}
+	}	
 	// for pixel cache	
 	WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);
+	mv_ref_yc += 64* BUF_L_UNIT;				
 	
-
-	// MFC fw 9/30, set the QP for P/B	
-	if (mfc_ctx->MfcCodecType == H263_ENC)
-		init_arg->in_vop_quant_b = 0;
-	writel((init_arg->in_vop_quant_p)|(init_arg->in_vop_quant_b<<6), shared_mem_vir_addr+0x70);			
-		
 	mfc_debug("ENC_REFY01_END_ADR : 0x%08x\n", ref_y);
-	mfc_debug("ENC_REFYC_MV_END_ADR : 0x%08\n", mv_ref_yc);
+	mfc_debug("ENC_REFYC_MV_END_ADR : 0x%08x\n", mv_ref_yc);
 
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 		
 }
 
@@ -332,13 +326,13 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no)
 	shared_mem_phy_addr = Align(shared_mem_phy_addr, 2*BUF_L_UNIT);
 	
 	shared_mem_vir_addr = phys_to_virt(shared_mem_phy_addr);
-	memset(shared_mem_vir_addr, 0, SHARED_MEM_SIZE); 
+	memset((void *)shared_mem_vir_addr, 0, SHARED_MEM_SIZE); 
 	WRITEL((shared_mem_phy_addr-fw_phybuf), S3C_FIMV_SI_CH1_HOST_WR_ADR);
 		
 	mfc_debug("inst_no : %d, shared_mem_phy_addr : 0x%08x, shared_mem_vir_addr : 0x%08x\r\n", 
-			inst_no, shared_mem_phy_addr, shared_mem_vir_addr);		
+			inst_no, shared_mem_phy_addr, (unsigned int)shared_mem_vir_addr);		
 	
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 
 }	
 
