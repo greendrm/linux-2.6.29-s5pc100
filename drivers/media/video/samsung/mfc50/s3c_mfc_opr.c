@@ -28,7 +28,7 @@
 extern void __iomem *s3c_mfc_sfr_virt_base;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
-extern int s3c_mfc_openhandle_count;
+static int s3c_mfc_init_count;
 
 static unsigned int shared_mem_phy_addr;
 static volatile unsigned char *shared_mem_vir_addr;
@@ -40,12 +40,12 @@ static void s3c_mfc_cmd_reset(void);
 //static void s3c_mfc_cmd_frame_start(void);
 //static void s3c_mfc_cmd_sleep(void);
 //static void s3c_mfc_cmd_wakeup(void);
-static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
-static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type);
-static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, unsigned int buf_size);
-static MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no);
-static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int inst_no);
-static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_dec_exe_arg_t *dec_arg, unsigned int *consumed_strm_size);
+static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type, unsigned int crc_enable);
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, unsigned int start_byte_num, unsigned int buf_size);
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no);
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec_type, int inst_no);
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_dec_exe_arg_t *dec_arg, int *consumed_strm_size);
 
 
 static void s3c_mfc_cmd_reset(void)  
@@ -68,7 +68,7 @@ static void s3c_mfc_cmd_reset(void)
 	
 }
 
-static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
+static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg1, int arg2)
 {
 	s3c_mfc_facade_cmd cur_cmd;
 	unsigned int fw_phybuf, context_base_addr;
@@ -78,25 +78,28 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 		cur_cmd = READL(S3C_FIMV_HOST2RISC_CMD);		
 	} while(cur_cmd != H2R_CMD_EMPTY);
 
-	WRITEL(arg, S3C_FIMV_HOST2RISC_ARG1);
-	/* pixel cache enable(0)/disable(3) */
-	//WRITEL(3, S3C_FIMV_HOST2RISC_ARG2);
-
+	WRITEL(arg1, S3C_FIMV_HOST2RISC_ARG1);	
+	
 	if (cmd == H2R_CMD_OPEN_INSTANCE) {			
 		fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
-		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_openhandle_count-1);
+		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_init_count);
+
+		/* pixel cache enable(0)/disable(3) 	
+		WRITEL(3, S3C_FIMV_HOST2RISC_ARG2); */
+		
+		/* Enable CRC data */
+		WRITEL(arg2<<31, S3C_FIMV_HOST2RISC_ARG2);
+		//WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
+		//WRITEL(0, S3C_FIMV_HOST2RISC_ARG4);
+		
 			
 		WRITEL((context_base_addr-fw_phybuf)>>11, S3C_FIMV_HOST2RISC_ARG3);
 		WRITEL(MFC_FW_BUF_SIZE, S3C_FIMV_HOST2RISC_ARG4);
 		
-		mfc_debug("s3c_mfc_openhandle_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
-			s3c_mfc_openhandle_count, fw_phybuf, context_base_addr);		
-	}
-	/* Enable CRC data
-	WRITEL(1, S3C_FIMV_HOST2RISC_ARG2);
-	WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
-	WRITEL(0, S3C_FIMV_HOST2RISC_ARG4);
-	*/
+		mfc_debug("s3c_mfc_init_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
+			s3c_mfc_init_count, fw_phybuf, context_base_addr);		
+	}	
+	
 	WRITEL(cmd, S3C_FIMV_HOST2RISC_CMD);
 	
 }
@@ -121,32 +124,37 @@ static void s3c_mfc_cmd_wakeup()
 }
 */
 
-static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, unsigned int buf_size)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, 
+						unsigned int start_byte_num, unsigned int buf_size)
 {
 	unsigned int fw_phybuf;	
-	unsigned int risc_phy_buf, aligned_risc_phy_buf;
+	unsigned int risc_phy_buf, aligned_risc_phy_buf;	
 
-	mfc_debug("inst_no : %d, buf_addr : 0x%08x, buf_size : 0x%08x\n", inst_no, buf_addr, buf_size);
+	mfc_debug("inst_no : %d, buf_addr : 0x%08x, start_byte_num : 0x%08x, buf_size : 0x%08x\n", 
+			inst_no, buf_addr, start_byte_num, buf_size);
 	
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
 	
 	risc_phy_buf = s3c_mfc_get_risc_buf_phys_addr(inst_no);
 	aligned_risc_phy_buf = Align(risc_phy_buf, 2*BUF_L_UNIT);
 	
-	WRITEL(((buf_addr & 0xfffffff8)-fw_phybuf)>>11, S3C_FIMV_SI_CH1_SB_ST_ADR);
+	
+	//WRITEL(((buf_addr & 0xfffffff8)-fw_phybuf)>>11, S3C_FIMV_SI_CH1_SB_ST_ADR);
+	WRITEL((buf_addr-fw_phybuf)>>11, S3C_FIMV_SI_CH1_SB_ST_ADR);
+	writel(start_byte_num, shared_mem_vir_addr+0x18);		
 	WRITEL(buf_size, S3C_FIMV_SI_CH1_SB_FRM_SIZE);	// Buf_size is '0' when last frame
 	WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_SI_CH1_DESC_ADR);
 	WRITEL(CPB_BUF_SIZE, S3C_FIMV_SI_CH1_CPB_SIZE);
 	WRITEL(DESC_BUF_SIZE, S3C_FIMV_SI_CH1_DESC_SIZE);
-
+	
 	mfc_debug("risc_phy_buf : 0x%08x, aligned_risc_phy_buf : 0x%08x\n", 
 			risc_phy_buf, aligned_risc_phy_buf);
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
-MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
 {
 	unsigned int width, height, frame_size;
 	unsigned int fw_phybuf, dram1_start_addr, i;
@@ -175,8 +183,8 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	
 	if ((init_arg->out_frame_buf_size.luma + init_arg->out_frame_buf_size.chroma) < 
 		frame_size*mfc_ctx->totalDPBCnt) {	
-		mfc_err("MFCINST_ERR_FRM_BUF_SIZE\n");
-		return MFCINST_ERR_FRM_BUF_SIZE;
+		mfc_err("MFC_RET_FRM_BUF_SIZE_FAIL\n");
+		return MFC_RET_FRM_BUF_SIZE_FAIL;
 	}
 
 	aligned_width = Align(mfc_ctx->img_width, 4*BUF_S_UNIT); 	// 128B align 
@@ -194,13 +202,13 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 8*BUF_L_UNIT);
 			/* set MV address */	
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_MV_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 8*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);						
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);						
 		}	
 
 	} else {
@@ -208,17 +216,16 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 8*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);			
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);			
 		}	
 
 	}
 	/* Set DPB number */
 	slice_en_display_en = READL(S3C_FIMV_SI_CH1_DPB_CONF_CTRL) & 0xffff0000;
-	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
-
+	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);	
 	// MFC fw 9/30
 	luma_size = Align(aligned_width*height, 64*BUF_L_UNIT);
 	writel(luma_size, shared_mem_vir_addr+0x64);		// set the luma DPB size
@@ -232,8 +239,8 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	// MFC fw 8/7
 	WRITEL((INIT_BUFFER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 	if (s3c_mfc_wait_for_done(R2H_CMD_INIT_BUFFERS_RET) == 0) {
-		mfc_err("MFCINST_ERR_DEC_INIT_BUFFER_FAIL\n");
-		return MFCINST_ERR_DEC_INIT_BUFFER_FAIL;
+		mfc_err("MFC_RET_DEC_INIT_BUF_FAIL\n");
+		return MFC_RET_DEC_INIT_BUF_FAIL;
 	}
 	
 	mfc_debug("img_width : %d img_height : %d\n", \
@@ -241,12 +248,12 @@ MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_
 	mfc_debug("DEC_LUMA_DPB_END_ADR : 0x%08x\n", dpb_buf_addr.luma);
 	mfc_debug("DEC_CHROMA_DPB_END_ADR : 0x%08x\n",dpb_buf_addr.chroma);
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
 
-MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
 
 {
 	s3c_mfc_enc_init_mpeg4_arg_t *init_arg;
@@ -285,13 +292,12 @@ MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 	mv_ref_yc = Align(mv_ref_yc, 64*BUF_L_UNIT);
 
 	for (i=0; i < 2; i++) {	
-		// Set refY0,Y1
+		// Set refY0,Y1			
 		WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF0_LUMA_ADR+(4*i));	
 		ref_y += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);		
-		// Set refY2,Y3
-		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF2_LUMA_ADR+(4*i));	
-		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);	
-
+		// Set refY2,Y3		
+		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF2_LUMA_ADR+(4*i));
+		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	}
 	 // MFC fw 10/30
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_LUMA_ADR);	
@@ -303,24 +309,19 @@ MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_ar
 		// Set refC0~C3
 		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF0_CHROMA_ADR+(4*i));	
 		mv_ref_yc += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT); // Align size should be checked	
-	}
+	}	
 	// for pixel cache	
 	WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_UP_INTRA_PRED_ADR);
+	mv_ref_yc += 64* BUF_L_UNIT;				
 	
-
-	// MFC fw 9/30, set the QP for P/B	
-	if (mfc_ctx->MfcCodecType == H263_ENC)
-		init_arg->in_vop_quant_b = 0;
-	writel((init_arg->in_vop_quant_p)|(init_arg->in_vop_quant_b<<6), shared_mem_vir_addr+0x70);			
-		
 	mfc_debug("ENC_REFY01_END_ADR : 0x%08x\n", ref_y);
-	mfc_debug("ENC_REFYC_MV_END_ADR : 0x%08\n", mv_ref_yc);
+	mfc_debug("ENC_REFYC_MV_END_ADR : 0x%08x\n", mv_ref_yc);
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 		
 }
 
-static MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no)
 {
 	unsigned int fw_phybuf;	
 	
@@ -330,19 +331,19 @@ static MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no)
 	shared_mem_phy_addr = Align(shared_mem_phy_addr, 2*BUF_L_UNIT);
 	
 	shared_mem_vir_addr = phys_to_virt(shared_mem_phy_addr);
-	memset(shared_mem_vir_addr, 0, SHARED_MEM_SIZE); 
+	memset((void *)shared_mem_vir_addr, 0, SHARED_MEM_SIZE); 
 	WRITEL((shared_mem_phy_addr-fw_phybuf), S3C_FIMV_SI_CH1_HOST_WR_ADR);
 		
 	mfc_debug("inst_no : %d, shared_mem_phy_addr : 0x%08x, shared_mem_vir_addr : 0x%08x\r\n", 
-			inst_no, shared_mem_phy_addr, shared_mem_vir_addr);		
+			inst_no, shared_mem_phy_addr, (unsigned int)shared_mem_vir_addr);		
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 
 }	
 
 
 // Set the desc, motion vector, overlap, bitplane0/1/2, etc
-static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int inst_no)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec_type, int inst_no)
 {
 	unsigned int fw_phybuf;	
 	
@@ -382,7 +383,7 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 		aligned_risc_phy_buf += 68*BUF_L_UNIT;			
 		break;
 		
-	case VC1AP_DEC:	
+	case VC1_DEC:	
 	case VC1RCV_DEC:		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_UP_NB_MV_ADR);	
 		aligned_risc_phy_buf += 68*BUF_L_UNIT;		
@@ -424,12 +425,12 @@ static MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int ins
 		
 	mfc_debug("inst_no : %d, risc_buf_end : 0x%08x\n", inst_no, aligned_risc_phy_buf);	
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK;
 }
 
 /* This function sets the MFC
  SFR values according to the input arguments. */
-static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args)
+static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args)
 {
 	unsigned int	ms_size;
 	s3c_mfc_enc_init_mpeg4_arg_t   *enc_init_mpeg4_arg;
@@ -484,8 +485,9 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	}
 	
 	/* Set circular intra refresh MB count */
-	WRITEL(enc_init_mpeg4_arg->in_mb_refresh, S3C_FIMV_ENC_CIR_CTRL);
+	WRITEL(enc_init_mpeg4_arg->in_mb_refresh, S3C_FIMV_ENC_CIR_CTRL);	
 	WRITEL(MEM_STRUCT_LINEAR, S3C_FIMV_ENC_MAP_FOR_CUR);	// linear mode
+	
 	/* Set padding control */
 	WRITEL((enc_init_mpeg4_arg->in_pad_ctrl_on<<31)|(enc_init_mpeg4_arg->in_cr_pad_val<<16)|
 		(enc_init_mpeg4_arg->in_cb_pad_val<<8)|(enc_init_mpeg4_arg->in_luma_pad_val<<0),
@@ -505,9 +507,10 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 
 	switch (mfc_codec_type) {
 	case H264_ENC:
-		/* if in_RC_mb_enable is '1' */
-		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_h264_arg->in_RC_mb_enable << 8),
-			S3C_FIMV_ENC_RC_CONFIG);
+		/* if in_RC_mb_enable is '1' */		
+		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_h264_arg->in_RC_mb_enable << 8)|
+			(enc_init_mpeg4_arg->in_vop_quant & 0x3F), S3C_FIMV_ENC_RC_CONFIG);
+		
 		if (READL(S3C_FIMV_ENC_RC_CONFIG) & 0x0100) {
 			WRITEL((enc_init_h264_arg->in_RC_mb_dark_disable<<3)|
 				(enc_init_h264_arg->in_RC_mb_smooth_disable<<2)| 
@@ -565,7 +568,7 @@ int s3c_mfc_load_firmware()
 	return 0;
 }
 
-MFC_ERROR_CODE s3c_mfc_init_hw()
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw()
 {
 	unsigned int fw_phybuf;
 	unsigned int dram1_start_addr;
@@ -577,7 +580,7 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
 	dram1_start_addr = MFC_DRAM1_START;	
 
-	s3c_mfc_load_firmware();	// why is it runned again here ? 
+	s3c_mfc_load_firmware();	
 	
 	/*
 	 * 0. MFC reset
@@ -607,8 +610,8 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	WRITEL(0x3ff, S3C_FIMV_SW_RESET);	
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_FW_STATUS_RET) == 0){
-		mfc_err("MFCINST_ERR_FW_LOAD_FAIL\n");
-		return MFCINST_ERR_FW_LOAD_FAIL;
+		mfc_err("MFC_RET_FW_LOAD_FAIL\n");
+		return MFC_RET_FW_LOAD_FAIL;
 	}
 
 	/*
@@ -617,11 +620,11 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	
 	// for MFC fw 9/30
 	fw_buf_size = MFC_FW_SYSTEM_SIZE;	
-	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size);
+	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size, 0);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_SYS_INIT_RET) == 0){
 		mfc_err("R2H_CMD_SYS_INIT_RET FAIL\n");
-		return MFCINST_ERR_FW_INIT_FAIL;
+		return MFC_RET_FW_INIT_FAIL;
 	}	
 	
 	fw_version = READL(S3C_FIMV_FW_VERSION);
@@ -632,10 +635,10 @@ MFC_ERROR_CODE s3c_mfc_init_hw()
 	mfc_debug("DRAM1_START_BUFFER : 0x%08x\n", READL(S3C_FIMV_MC_DRAMBASE_ADR_B));
 	mfc_debug("s3c_mfc_init_hw--\n");
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK;
 }
 
-static unsigned int s3c_mfc_get_codec_arg(MFC_CODEC_TYPE codec_type)
+static unsigned int s3c_mfc_get_codec_arg(SSBSIP_MFC_CODEC_TYPE codec_type)
 {
 	unsigned int codec_no=99;
 
@@ -643,7 +646,7 @@ static unsigned int s3c_mfc_get_codec_arg(MFC_CODEC_TYPE codec_type)
 	case H264_DEC:
 		codec_no = 0;
 		break;
-	case VC1AP_DEC:
+	case VC1_DEC:
 		codec_no = 1;
 		break;
 	case MPEG4_DEC:	
@@ -690,18 +693,18 @@ static unsigned int s3c_mfc_get_codec_arg(MFC_CODEC_TYPE codec_type)
 	
 }		
 
-static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type)
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type, unsigned int crc_enable)
 {
 	unsigned int codec_no;
 	int inst_no;
 
 	codec_no = (unsigned int)s3c_mfc_get_codec_arg(codec_type);
 
-	s3c_mfc_cmd_host2risc(H2R_CMD_OPEN_INSTANCE, codec_no);
+	s3c_mfc_cmd_host2risc(H2R_CMD_OPEN_INSTANCE, codec_no, crc_enable);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_OPEN_INSTANCE_RET) == 0){
 		mfc_err("R2H_CMD_OPEN_INSTANCE_RET FAIL\n"); 
-		return MFCINST_ERR_OPEN_FAIL;
+		return MFC_RET_OPEN_FAIL;
 	}
 
 	inst_no = READL(S3C_FIMV_RISC2HOST_ARG1);
@@ -715,26 +718,26 @@ static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type)
 	
 }
 
-MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type)
 {
 	unsigned int codec_no;
 
 	codec_no = (unsigned int)s3c_mfc_get_codec_arg(codec_type);
 
-	s3c_mfc_cmd_host2risc(H2R_CMD_CLOSE_INSTANCE, inst_no);
+	s3c_mfc_cmd_host2risc(H2R_CMD_CLOSE_INSTANCE, inst_no, 0);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_CLOSE_INSTANCE_RET) == 0) {
 		mfc_err("R2H_CMD_CLOSE_INSTANCE_RET FAIL\n"); 
-		return MFCINST_ERR_CLOSE_FAIL;
+		return MFC_RET_CLOSE_FAIL;
 	}
 
-	mfc_debug("INSTANCE NO : %d, CODEC_TYPE : %d --\n", READL(S3C_FIMV_RISC2HOST_ARG1), codec_no);
+	mfc_debug("INSTANCE NO : %d, CODEC_TYPE : %d --\n", inst_no, codec_no);
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 
 }
 
-MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	s3c_mfc_enc_init_mpeg4_arg_t   *enc_init_mpeg4_arg;	
 		
@@ -751,11 +754,12 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 	 * 	- get the instance no
 	 */
 	 
-	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType);
+	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT); 
+	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, 0);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
-		mfc_err("MFCINST_INST_NUM_EXCEEDED\n");
-		return MFCINST_INST_NUM_EXCEEDED;		
+		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
+		return MFC_RET_INST_NUM_EXCEEDED_FAIL;		
 	}
 	
 	/* INIT CODEC
@@ -772,20 +776,34 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 
 	mfc_debug("--\n");
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK;
 }
 
-MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	s3c_mfc_enc_init_mpeg4_arg_t *init_arg;
 	unsigned int		fw_phybuf;
-	//MFC_ERROR_CODE 		ret_code = MFCINST_RET_OK;
+	//SSBSIP_MFC_ERROR_CODE 		ret_code = MFC_RET_OK ;
 	
 	init_arg = (s3c_mfc_enc_init_mpeg4_arg_t *)args;
 
 	mfc_debug("++ strm start addr : 0x%08x  \r\n", init_arg->out_p_addr.strm_ref_y);
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);	
+
+	// MFC fw 9/30, set the QP for P/B	
+	if (mfc_ctx->MfcCodecType == H263_ENC)
+		init_arg->in_vop_quant_b = 0;
+	writel((init_arg->in_vop_quant_p)|(init_arg->in_vop_quant_b<<6), shared_mem_vir_addr+0x70);
+
+	// MFC fw 11/10
+	if (mfc_ctx->MfcCodecType == H264_ENC) {
+		writel((mfc_ctx->vui_enable<<15)|(mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);
+		if (mfc_ctx->vui_enable)
+			writel((mfc_ctx->vui_info.aspect_ratio_idc&0xff), shared_mem_vir_addr+0x74);			
+	}
+	else
+		writel((mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);	
 
 	/* Set stream buffer addr */
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);
@@ -801,19 +819,19 @@ MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 	WRITEL((SEQ_HEADER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 
 	if (s3c_mfc_wait_for_done(R2H_CMD_SEQ_DONE_RET) == 0) {
-		mfc_err("MFCINST_ERR_ENC_HEADER_DECODE_FAIL\n");
-		return MFCINST_ERR_ENC_HEADER_DECODE_FAIL;
+		mfc_err("MFC_RET_ENC_HEADER_FAIL\n");
+		return MFC_RET_ENC_HEADER_FAIL;
 	}
 
 	init_arg->out_header_size = READL(S3C_FIMV_ENC_SI_STRM_SIZE);	
 
 	mfc_debug("-- encoded header size(%d)\r\n", init_arg->out_header_size);
 
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 
-}	
+}
 
-static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_enc_exe_arg *args)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_enc_exe_arg *args)
 {
 	s3c_mfc_enc_exe_arg          *enc_arg;
 	unsigned int fw_phybuf, dram1_start_addr;
@@ -833,6 +851,13 @@ static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_
 	WRITEL((enc_arg->in_strm_st-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_L_ADR);
 	WRITEL(STREAM_BUF_SIZE, S3C_FIMV_ENC_SI_CH1_SB_SIZE);
 
+	/* force I frame or Not-coded frame */	
+	printk("mfc_ctx->forceSetFrameType = %d\n", mfc_ctx->forceSetFrameType);
+	if (mfc_ctx->forceSetFrameType == I_FRAME)
+		WRITEL(1, S3C_FIMV_ENC_SI_CH1_FRAME_INS);
+	else if (mfc_ctx->forceSetFrameType == NOT_CODED)
+		WRITEL(1<<1, S3C_FIMV_ENC_SI_CH1_FRAME_INS);		
+	
 	/* Set current frame buffer addr */	
 	WRITEL((enc_arg->in_Y_addr-dram1_start_addr)>>11, S3C_FIMV_ENC_SI_CH1_CUR_Y_ADR);
 	WRITEL((enc_arg->in_CbCr_addr-dram1_start_addr)>>11, S3C_FIMV_ENC_SI_CH1_CUR_C_ADR);
@@ -850,8 +875,8 @@ static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_
 	WRITEL((FRAME<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 	
 	if (s3c_mfc_wait_for_done(R2H_CMD_FRAME_DONE_RET) == 0) {
-		mfc_err("MFCINST_ERR_ENC_ENCODE_DONE_FAIL\n");
-		return MFCINST_ERR_ENC_ENCODE_DONE_FAIL;
+		mfc_err("MFC_RET_ENC_EXE_TIME_OUT\n");
+		return MFC_RET_ENC_EXE_TIME_OUT;
 	}	
 
 	enc_arg->out_frame_type = READL(S3C_FIMV_ENC_SI_SLICE_TYPE);
@@ -860,18 +885,21 @@ static MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_
 	// MFC fw 9/30
 	enc_arg->out_Y_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_Y_ADDR)<<11);
 	enc_arg->out_CbCr_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_C_ADDR)<<11);
+
+	WRITEL(0, S3C_FIMV_ENC_SI_CH1_FRAME_INS); 
+	mfc_ctx->forceSetFrameType = 0;
 	
 	
 	mfc_debug("-- frame type(%d) encoded frame size(%d) encoded Y_addr(0x%08x)/C_addr(0x%08x)\r\n", \
 		enc_arg->out_frame_type, enc_arg->out_encoded_size, enc_arg->out_Y_addr, enc_arg->out_CbCr_addr);
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 
 }
 
-MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
-	MFC_ERROR_CODE ret;
+	SSBSIP_MFC_ERROR_CODE ret;
 	s3c_mfc_enc_exe_arg          *enc_arg;
 
 	/* 
@@ -890,10 +918,11 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	
 }
 
-MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
-	//MFC_ERROR_CODE   ret;
+	//SSBSIP_MFC_ERROR_CODE   ret;
 	s3c_mfc_dec_init_arg_t *init_arg;
+	unsigned int start_byte_num = 0;
 	//s3c_mfc_dec_type dec_type = SEQ_HEADER;
 	//unsigned int FWPhyBuf;
 
@@ -909,16 +938,15 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 	 * 	- set open instance using codec_type
 	 * 	- get the instance no
 	 */
-	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType);
+	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT);
+	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, mfc_ctx->crcEnable);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
-		mfc_err("MFCINST_INST_NUM_EXCEEDED\n");
-		return MFCINST_INST_NUM_EXCEEDED;		
-	}
+		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
+		return MFC_RET_INST_NUM_EXCEEDED_FAIL;		
+	}	
 
-	/* Does it need to set for decoder ? */
-	//WRITEL(mfc_ctx->postEnable, S3C_FIMV_ENC_LF_CTRL);
-	//WRITEL(0, S3C_FIMV_ENC_PXL_CACHE_CTRL);		
+	s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
 
 	/* INIT CODEC
 	 * 	- set input stream buffer 
@@ -926,77 +954,98 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *ar
 	 * 	- set input risc buffer
 	 * 	- set NUM_EXTRA_DPB
 	 */	
-	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf, init_arg->in_strm_size); 
+	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf, start_byte_num, init_arg->in_strm_size); 
 
+	if (mfc_ctx->MfcCodecType == MPEG4_DEC)
+		WRITEL(mfc_ctx->postEnable, S3C_FIMV_ENC_LF_CTRL);	
+	
 	/* Set the slice interface(31th bit), display delay(30th bit + delay count) */	
 	if (mfc_ctx->displayDelay != 9999)
 		WRITEL((mfc_ctx->sliceEnable<<31)|(1<<30)|(mfc_ctx->displayDelay<<16), 
 					S3C_FIMV_SI_CH1_DPB_CONF_CTRL);	
 	else
 		WRITEL((mfc_ctx->sliceEnable<<31), S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
-
-	s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
+	
+	//s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
 		
 	WRITEL((SEQ_HEADER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 
 	if (s3c_mfc_wait_for_done(R2H_CMD_SEQ_DONE_RET) == 0) {
-		mfc_err("MFCINST_ERR_DEC_HEADER_DECODE_FAIL\n");
-		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
+		mfc_err("MFC_RET_DEC_HEADER_FAIL\n");
+		return MFC_RET_DEC_HEADER_FAIL;
 	}
 		
-	s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);	
+	s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);		
 
-	/* out param & context setting from header decoding result */
-	mfc_ctx->img_width = READL(S3C_FIMV_SI_HRESOL);
-	mfc_ctx->img_height = READL(S3C_FIMV_SI_VRESOL);	
-
-	init_arg->out_img_width = READL(S3C_FIMV_SI_HRESOL);
-	init_arg->out_img_height = READL(S3C_FIMV_SI_VRESOL);
-
-	/* In the tiled mode output of MFC, width will be the multiple of 128
-	 * height will be the mupltiple of 32
-	 * for 8/7 MFC fw 
-	 */
-	init_arg->out_buf_width = (READL(S3C_FIMV_SI_HRESOL)+127)/128*128;
-	init_arg->out_buf_height = (READL(S3C_FIMV_SI_VRESOL)+31)/32*32;
-
-	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {
+	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {		
+		WRITEL(mfc_ctx->divx311_info.width, S3C_FIMV_SI_DIVX311_HRESOL);
+		WRITEL(mfc_ctx->divx311_info.height, S3C_FIMV_SI_DIVX311_VRESOL);
+		
 		mfc_ctx->img_width = READL(S3C_FIMV_SI_DIVX311_HRESOL);
 		mfc_ctx->img_height = READL(S3C_FIMV_SI_DIVX311_VRESOL);	
+		
 		init_arg->out_img_width = READL(S3C_FIMV_SI_DIVX311_HRESOL);
 		init_arg->out_img_height = READL(S3C_FIMV_SI_DIVX311_VRESOL);	
+		
 		init_arg->out_buf_width = (READL(S3C_FIMV_SI_DIVX311_HRESOL)+127)/128*128;
-		init_arg->out_buf_height = (READL(S3C_FIMV_SI_DIVX311_VRESOL)+31)/32*32;		
-	}	
+		init_arg->out_buf_height = (READL(S3C_FIMV_SI_DIVX311_VRESOL)+31)/32*32;	
+	}
+	else {
+		/* out param & context setting from header decoding result */
+		mfc_ctx->img_width = READL(S3C_FIMV_SI_HRESOL);
+		mfc_ctx->img_height = READL(S3C_FIMV_SI_VRESOL);	
 
+		init_arg->out_img_width = READL(S3C_FIMV_SI_HRESOL);
+		init_arg->out_img_height = READL(S3C_FIMV_SI_VRESOL);
+
+		/* In the tiled mode output of MFC, width will be the multiple of 128
+		 * height will be the mupltiple of 32
+		 * for 8/7 MFC fw 
+		 */
+		init_arg->out_buf_width = (READL(S3C_FIMV_SI_HRESOL)+127)/128*128;
+		init_arg->out_buf_height = (READL(S3C_FIMV_SI_VRESOL)+31)/32*32;
+		
+	}	
+	
 	/* It should have extraDPB to protect tearing in the display
 	 */	
 	mfc_ctx->DPBCnt = READL(S3C_FIMV_SI_BUF_NUMBER);
-	mfc_ctx->totalDPBCnt = mfc_ctx->DPBCnt + mfc_ctx->extraDPB;
-	//mfc_ctx->displayDelay = 0;
+	mfc_ctx->totalDPBCnt = mfc_ctx->DPBCnt + mfc_ctx->extraDPB;	
 	init_arg->out_dpb_cnt = mfc_ctx->totalDPBCnt;
 
 	mfc_debug("buf_width : %d buf_height : %d out_dpb_cnt : %d mfc_ctx->DPBCnt : %d\n", \
 				init_arg->out_buf_width, init_arg->out_buf_height, init_arg->out_dpb_cnt, mfc_ctx->DPBCnt);
-	//mfc_debug("img_width : %d img_height : %d\n", \
+	//mfc_debug("img_width : %d img_height : %d\n", 
 	//			init_arg->out_img_width, init_arg->out_img_height);
 
 	mfc_debug("--\n");
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 
-static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_mfc_dec_exe_arg_t *dec_arg, 
-						unsigned int *consumed_strm_size)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_mfc_dec_exe_arg_t *dec_arg, 
+						int *consumed_strm_size)
 {
-	//int ret;
-	unsigned int frame_type;	
+	unsigned int frame_type;
+	int start_byte_num;
 	
 	mfc_debug("++ InstNo%d \r\n", mfc_ctx->InstNo);
 
 	WRITEL(0xffffffff, S3C_FIMV_SI_CH1_RELEASE_BUF); // MFC fw 8/7
 
-	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, dec_arg->in_strm_buf, dec_arg->in_strm_size);
+	if ((*consumed_strm_size)) {
+		#if 0
+		start_byte_num = (int)((*consumed_strm_size)-	
+				(Align(*consumed_strm_size, 4*BUF_L_UNIT) - 4*BUF_L_UNIT));		
+		#else
+		start_byte_num = (int)(*consumed_strm_size);						
+		#endif
+	}	
+	else
+		start_byte_num = 0;
+	
+	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, dec_arg->in_strm_buf, 
+				start_byte_num, dec_arg->in_strm_size);
 	
 	/* Set RISC buffer */
 	//s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);
@@ -1009,8 +1058,8 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 	}	
 
 	if (s3c_mfc_wait_for_done(R2H_CMD_FRAME_DONE_RET) == 0) {
-		mfc_err("MFCINST_ERR_DEC_DECODE_DONE_FAIL\n");
-		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
+		mfc_err("MFC_RET_DEC_EXE_TIME_OUT\n");
+		return MFC_RET_DEC_EXE_TIME_OUT;
 	}		
 
 	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_ONLY) {
@@ -1035,10 +1084,11 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 		dec_arg->out_display_status = 3; 
 	
 	frame_type = READL(S3C_FIMV_SI_FRAME_TYPE); 
-	mfc_ctx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x3);
+	mfc_ctx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x7);
 	
 	dec_arg->out_pic_time_top = (int)(readl(shared_mem_vir_addr+0x10));
 	dec_arg->out_pic_time_bottom = (int)(readl(shared_mem_vir_addr+0x14));
+	dec_arg->out_consumed_byte = (int)READL(S3C_FIMV_SI_FRM_COUNT); 
 
 	if (mfc_ctx->MfcCodecType == H264_DEC) {		
 		dec_arg->out_crop_right_offset = (int)(readl(shared_mem_vir_addr+0x20)>>16) & 0xffff;
@@ -1051,23 +1101,19 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_m
 		dec_arg->out_display_Y_addr , dec_arg->out_display_C_addr); 
 	
 	/* It will be supported in the MFC fw 10/30 */
-#if 0	
-	mfc_debug("(in_strmsize : 0x%08x  consumed byte : 0x%08x)\r\n", \
-			dec_arg->in_strm_size, READL(S3C_FIMV_RET_VALUE));      
-
-	*consumed_strm_size = READL(S3C_FIMV_RET_VALUE); // peter, find out related reg. for C110
-#endif
-	*consumed_strm_size = 0x0;	
+	*consumed_strm_size = READL(S3C_FIMV_SI_FRM_COUNT); 
+	mfc_debug("(in_strmsize : 0x%08x  consumed byte : 0x%08x)\r\n", 
+			dec_arg->in_strm_size, *consumed_strm_size);      		
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
-MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
-	MFC_ERROR_CODE ret;
+	SSBSIP_MFC_ERROR_CODE ret;
 	s3c_mfc_dec_exe_arg_t *dec_arg;
-	unsigned int consumed_strm_size;
+	int consumed_strm_size = 0;
 	
 	/* 6. Decode Frame */
 	mfc_debug("++\n");
@@ -1075,28 +1121,32 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	dec_arg = (s3c_mfc_dec_exe_arg_t *)args;
 	ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
 	
-	/* It will be supported in the MFC fw 10/30 */
-#if 0	
+	#if 0	// MFC fw 10/30 
 	if((mfc_ctx->IsPackedPB) && (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) \
 		&& (dec_arg->in_strm_size - consumed_strm_size > 4)) {
-		mfc_debug("Packed PB\n");
-		dec_arg->in_strm_buf += consumed_strm_size;
-		dec_arg->in_strm_size -= consumed_strm_size;
+	#else	// MFC fw 11/30 
+	if((mfc_ctx->MfcCodecType == H264_DEC) && 
+		(mfc_ctx->FrameType >=1) && (mfc_ctx->FrameType <= 3) && 
+		(dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE)) {
+	#endif
+		mfc_debug("In case that two fields exist in the one stream buffer of H264\n");
+		//dec_arg->in_strm_buf += Align(consumed_strm_size, 4*BUF_L_UNIT) - 4*BUF_L_UNIT;	
+		//dec_arg->in_strm_size -= consumed_strm_size;
 
 		ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
 	}
-#endif	
+
 	mfc_debug("--\n");
 
 	return ret; 
 }
 
-MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx  *mfc_ctx)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx  *mfc_ctx)
 {
-	return MFCINST_RET_OK;
+	return MFC_RET_OK;
 }
 
-MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	s3c_mfc_get_config_arg_t *get_cnf_arg;
 	get_cnf_arg = (s3c_mfc_get_config_arg_t *)args;
@@ -1105,7 +1155,7 @@ MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_GETCONF_CRC_DATA:
 		if (mfc_ctx->MfcState != MFCINST_STATE_DEC_EXE) {
 			mfc_err("MFC_DEC_GETCONF_CRC_DATA : state is invalid\n");
-			return MFC_DEC_GETCONF_CRC_DATA;
+			return MFC_RET_STATE_INVALID;
 		}
 		get_cnf_arg->out_config_value[0] = READL(S3C_FIMV_CRC_LUMA0);
 		get_cnf_arg->out_config_value[1] = READL(S3C_FIMV_CRC_CHROMA0);
@@ -1114,14 +1164,14 @@ MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 		
 	default:
 		mfc_err("invalid config param\n");
-		return MFCINST_ERR_GET_CONF; 
+		return MFC_RET_GET_CONF_FAIL; 
 	}
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
-MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	s3c_mfc_set_config_arg_t *set_cnf_arg;
 	set_cnf_arg = (s3c_mfc_set_config_arg_t *)args;
@@ -1130,7 +1180,7 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_SETCONF_POST_ENABLE:
 		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
 			mfc_err("MFC_DEC_SETCONF_POST_ENABLE : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+			return MFC_RET_STATE_INVALID;
 		}
 
 		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
@@ -1144,7 +1194,7 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_SETCONF_SLICE_ENABLE:
 		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
 			mfc_err("MFC_DEC_SETCONF_SLICE_ENABLE : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+			return MFC_RET_STATE_INVALID;
 		}
 
 		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
@@ -1158,7 +1208,7 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_SETCONF_EXTRA_BUFFER_NUM:
 		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
 			mfc_err("MFC_DEC_SETCONF_EXTRA_BUFFER_NUM : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+			return MFC_RET_STATE_INVALID;
 		}
 		if ((set_cnf_arg->in_config_value[0] >= 0) || (set_cnf_arg->in_config_value[0] <= MFC_MAX_EXTRA_DPB))
 			mfc_ctx->extraDPB = set_cnf_arg->in_config_value[0];
@@ -1171,13 +1221,13 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_SETCONF_DISPLAY_DELAY:
 		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
 			mfc_err("MFC_DEC_SETCONF_DISPLAY_DELAY : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+			return MFC_RET_STATE_INVALID;
 		}
 		if ((set_cnf_arg->in_config_value[0] >= 0) || (set_cnf_arg->in_config_value[0] < 16))
 			mfc_ctx->displayDelay = set_cnf_arg->in_config_value[0];
 		else {
 			mfc_warn("DISPLAY_DELAY should be between 0 and 16\n");
-			mfc_ctx->displayDelay = 99;
+			mfc_ctx->displayDelay = 15;
 		}
 		
 		break;
@@ -1185,7 +1235,7 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 	case MFC_DEC_SETCONF_IS_LAST_FRAME:
 		if (mfc_ctx->MfcState != MFCINST_STATE_DEC_EXE) {
 			mfc_err("MFC_DEC_SETCONF_IS_LAST_FRAME : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+			return MFC_RET_STATE_INVALID;
 		}
 
 		if ((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
@@ -1195,26 +1245,75 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *arg
 			mfc_ctx->endOfFrame = 0;
 		}
 		break;
-			
-	case MFC_ENC_SETCONF_FRAME_TYPE:
-		if ((mfc_ctx->MfcState < MFCINST_STATE_ENC_INITIALIZE) || (mfc_ctx->MfcState > MFCINST_STATE_ENC_EXE)) {
-			mfc_err("MFC_ENC_SETCONF_FRAME_TYPE : state is invalid\n");
-			return MFCINST_ERR_STATE_INVALID;
+
+	case MFC_DEC_SETCONF_CRC_ENABLE:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_DEC_SETCONF_CRC_ENABLE : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
 		}
 
-		if ((set_cnf_arg->in_config_value[0] < DONT_CARE) || (set_cnf_arg->in_config_value[0] > NOT_CODED))
+		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
+			mfc_ctx->crcEnable = set_cnf_arg->in_config_value[0];
+		else {
+			mfc_warn("CRC ENABLE should be 0 or 1\n");
+			mfc_ctx->crcEnable = 0;
+		}
+		break;	
+		
+	case MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		
+		mfc_ctx->divx311_info.width = set_cnf_arg->in_config_value[0];	
+		mfc_ctx->divx311_info.height = set_cnf_arg->in_config_value[1];			
+				
+		break;			
+			
+	case MFC_ENC_SETCONF_FRAME_TYPE:
+		if (mfc_ctx->MfcState < MFCINST_STATE_ENC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_FRAME_TYPE : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+
+		if ((set_cnf_arg->in_config_value[0] > DONT_CARE) && (set_cnf_arg->in_config_value[0] <= NOT_CODED))
 			mfc_ctx->forceSetFrameType = set_cnf_arg->in_config_value[0];
 		else {
-			mfc_warn("FRAME_TYPE should be between 0 and 2\n");
+			mfc_warn("FRAME_TYPE should be 1 and 2\n");
 			mfc_ctx->forceSetFrameType = DONT_CARE;
 		}
 		break;
 		
+	case MFC_ENC_SETCONF_ALLOW_FRAME_SKIP:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_ALLOW_FRAME_SKIP : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
+			mfc_ctx->frameSkipEnable = set_cnf_arg->in_config_value[0];
+		else {
+			mfc_warn("FRAME SKIP ENABLE should be 0 or 1\n");
+			mfc_ctx->frameSkipEnable = 0;
+		}
+		break;			
+		
+	case MFC_ENC_SETCONF_VUI_INFO:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_VUI_INFO : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		
+		mfc_ctx->vui_enable = 1;
+		mfc_ctx->vui_info.aspect_ratio_idc = set_cnf_arg->in_config_value[0];		
+		
+		break;
+		
 	default:
 		mfc_err("invalid config param\n");
-		return MFCINST_ERR_SET_CONF;
+		return MFC_RET_SET_CONF_FAIL;
 	}
 	
-	return MFCINST_RET_OK;
+	return MFC_RET_OK ;
 }
 

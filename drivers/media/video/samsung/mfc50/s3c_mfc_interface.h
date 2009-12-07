@@ -43,7 +43,7 @@ typedef enum
 	DIVX502_DEC,	/* DivX (Ver 5.00, 5.01, 5.02) */
 	DIVX503_DEC,	/* DivX (Ver 5.03 and upper) */
 	
-	VC1AP_DEC,	/* VC1 advaced Profile decoding  */	
+	VC1_DEC,	/* VC1 advaced Profile decoding  */	
 	VC1RCV_DEC,	/* VC1 simple/main profile decoding  */
 	
 	MPEG1_DEC,
@@ -52,31 +52,45 @@ typedef enum
 	MPEG4_ENC = 0x100,
 	H263_ENC,
 	H264_ENC	
-} MFC_CODEC_TYPE;
+} SSBSIP_MFC_CODEC_TYPE;
 
 typedef enum
 {
-	DONT_CARE = 0, 	/* (0<<1)|(0<<0) */
-	I_FRAME = 1, 	/* (0<<1)|(1<<0) */
-	NOT_CODED = 2 	/* (1<<1)|(0<<0) */
-} MFC_FORCE_SET_FRAME_TYPE;
+	DECODER = 0x0,
+	ENCODER = 0x1	
+} MFC_DEC_ENC_TYPE;
 
 typedef enum
 {
-	MFC_DEC_SETCONF_POST_ENABLE = 1,
-	MFC_DEC_SETCONF_SLICE_ENABLE,	
+    DONT_CARE = 0,
+    I_FRAME = 1,
+    NOT_CODED = 2    
+} SSBSIP_MFC_FORCE_SET_FRAME_TYPE;
+
+typedef enum
+{
+	MFC_DEC_SETCONF_POST_ENABLE = 1,	
 	MFC_DEC_SETCONF_EXTRA_BUFFER_NUM,
 	MFC_DEC_SETCONF_DISPLAY_DELAY,
 	MFC_DEC_SETCONF_IS_LAST_FRAME,
-	MFC_DEC_GETCONF_IMG_RESOLUTION,
-	MFC_DEC_GETCONF_PHYS_ADDR,
-	MFC_DEC_GETCONF_CRC_DATA	
+	MFC_DEC_SETCONF_SLICE_ENABLE,
+	MFC_DEC_SETCONF_CRC_ENABLE,
+	MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT,
+	MFC_DEC_SETCONF_FRAME_TAG,
+	MFC_DEC_GETCONF_CRC_DATA,
+	MFC_DEC_GETCONF_BUF_WIDTH_HEIGHT,	// MFC_DEC_GETCONF_IMG_RESOLUTION,
+	MFC_DEC_GETCONF_FRAME_TAG
 }SSBSIP_MFC_DEC_CONF;
 
 typedef enum
 {
-	MFC_ENC_SETCONF_FRAME_TYPE = 100,	
-	MFC_ENC_GETCONF_HEADER_SIZE	
+	MFC_ENC_SETCONF_FRAME_TYPE = 100,
+	MFC_ENC_SETCONF_CHANGE_FRAME_RATE,
+	MFC_ENC_SETCONF_CHANGE_BIT_RATE,
+	MFC_ENC_SETCONF_FRAME_TAG,
+	MFC_ENC_SETCONF_ALLOW_FRAME_SKIP,
+	MFC_ENC_SETCONF_VUI_INFO,
+	MFC_ENC_GETCONF_FRAME_TAG	
 }SSBSIP_MFC_ENC_CONF;
 
 typedef struct tag_strm_ref_buf_arg
@@ -94,7 +108,7 @@ typedef struct tag_frame_buf_arg
 /* but, due to lack of memory, MFC driver use 5 as maximum */
 
 typedef struct {
-	MFC_CODEC_TYPE in_codec_type;	/* [IN]  codec type */
+	SSBSIP_MFC_CODEC_TYPE in_codec_type;	/* [IN]  codec type */
 	int in_width;		/* [IN] width of YUV420 frame to be encoded */
 	int in_height;		/* [IN] height of YUV420 frame to be encoded */
 	int in_profile_level;	/* [IN]  profile & level */
@@ -141,7 +155,7 @@ typedef struct {
 typedef s3c_mfc_enc_init_mpeg4_arg_t s3c_mfc_enc_init_h263_arg_t;
 
 typedef struct {
-	MFC_CODEC_TYPE in_codec_type;	/* [IN] codec type */
+	SSBSIP_MFC_CODEC_TYPE in_codec_type;	/* [IN] codec type */
 	int in_width;		/* [IN] width  of YUV420 frame to be encoded */
 	int in_height;		/* [IN] height of YUV420 frame to be encoded */
 	int in_profile_level;	/* [IN] profile & level */
@@ -217,7 +231,7 @@ typedef struct {
 
 
 typedef struct {
-	MFC_CODEC_TYPE in_codec_type; /* [IN] codec type */
+	SSBSIP_MFC_CODEC_TYPE in_codec_type; /* [IN] codec type */
 	unsigned int in_Y_addr;   /*[IN]In-buffer addr of Y component */
 	unsigned int in_CbCr_addr;/*[IN]In-buffer addr of CbCr component */
 	unsigned int in_Y_addr_vir;   /*[IN]In-buffer addr of Y component */
@@ -231,7 +245,7 @@ typedef struct {
 } s3c_mfc_enc_exe_arg;
 
 typedef struct {
-	MFC_CODEC_TYPE in_codec_type; /* [IN] codec type */
+	SSBSIP_MFC_CODEC_TYPE in_codec_type; /* [IN] codec type */
 	int in_strm_buf;  /* [IN] the physical address of STRM_BUF */
 	int in_strm_size; /* [IN] size of video stream filled in STRM_BUF */
 	int in_packed_PB; /* [IN]  Is packed PB frame or not, 1: packedPB  0: unpacked */	
@@ -252,21 +266,17 @@ typedef struct {
 } s3c_mfc_dec_init_arg_t;
 
 typedef struct {
-	MFC_CODEC_TYPE in_codec_type;/* [IN]  codec type */
+	SSBSIP_MFC_CODEC_TYPE in_codec_type;/* [IN]  codec type */
 	int in_strm_buf;  /* [IN]  the physical address of STRM_BUF */
 	int in_strm_size; /* [IN]  Size of video stream filled in STRM_BUF */
 	s3c_mfc_frame_buf_arg_t in_frm_buf;   /* [IN] the address of dpb FRAME_BUF */
 	s3c_mfc_frame_buf_arg_t in_frm_size;  /* [IN] size of dpb FRAME_BUF */
 	int out_display_Y_addr; /* [OUT]  the physical address of display buf */
 	int out_display_C_addr; /* [OUT]  the physical address of display buf */
-	/* DECODING_ONLY = 0,
-	   DECODING_DISPLAY = 1,
-	   DISPLAY_ONLY = 2,
-	   DECODING_EMPTY = 3
-	 */
 	int out_display_status; 
 	int out_pic_time_top;
 	int out_pic_time_bottom;
+	int out_consumed_byte;
 	int out_crop_right_offset;
 	int out_crop_left_offset;
 	int out_crop_bottom_offset;
@@ -286,10 +296,7 @@ typedef struct {
 
 	/* [IN]  Values to be set for the configurable parameter. */
 	int in_config_value[2];
-	/* Maximum two integer values can be set. */
-
-	/* [OUT] Old values of the configurable parameters */
-	int out_config_value_old[2];
+	/* Maximum two integer values can be set. */	
 } s3c_mfc_set_config_arg_t;
 
 typedef struct tag_get_phys_addr_arg
@@ -300,7 +307,8 @@ typedef struct tag_get_phys_addr_arg
 
 typedef struct tag_mem_alloc_arg
 {
-	MFC_CODEC_TYPE codec_type;
+	//SSBSIP_MFC_CODEC_TYPE codec_type;
+	MFC_DEC_ENC_TYPE dec_enc_type;
 	int buff_size;
 	unsigned int mapped_addr;
 	unsigned int out_addr;
@@ -329,9 +337,20 @@ typedef union {
 } s3c_mfc_args;
 
 typedef struct tag_mfc_args{
-	MFC_ERROR_CODE ret_code; /* [OUT] error code */
+	SSBSIP_MFC_ERROR_CODE ret_code; /* [OUT] error code */
 	s3c_mfc_args args;
 } s3c_mfc_common_args;
+
+typedef struct
+{	
+	int aspect_ratio_idc;	
+} s3c_mfc_enc_vui_info;
+
+typedef struct
+{
+	int width;
+	int height;	
+} s3c_mfc_dec_divx311_info;
 
 #define ENC_PROFILE_LEVEL(profile, level)      ((profile) | ((level) << 8))
 

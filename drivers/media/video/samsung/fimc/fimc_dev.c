@@ -541,9 +541,8 @@ static int fimc_open(struct file *filp)
 	if (pdata->clk_on)
 		pdata->clk_on(to_platform_device(ctrl->dev), ctrl->clk);
 
-#if defined(CONFIG_CPU_S5PC100)
-	fimc_hw_smdkc100_reset_camera(ctrl);
-#endif
+	if (pdata->hw_ver == 0x40)
+		fimc_hw_reset_camera(ctrl);
 
 	/* Apply things to interface register */
 	fimc_hwset_reset(ctrl);

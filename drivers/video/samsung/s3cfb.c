@@ -345,7 +345,10 @@ static int s3cfb_set_par(struct fb_info *fb)
 
 	dev_dbg(fbdev->dev, "[fb%d] set_par\n", win->id);
 
-	if ((win->id != pdata->default_win) && !fb->fix.smem_start)
+	if ((win->id != pdata->default_win) && fb->fix.smem_start)
+		s3cfb_unmap_video_memory(fb);
+
+	if ((win->id != pdata->default_win))
 		s3cfb_map_video_memory(fb);
 
 	s3cfb_set_window_control(fbdev, win->id);

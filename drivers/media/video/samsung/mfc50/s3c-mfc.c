@@ -43,7 +43,7 @@
 
 struct s3c_mfc_ctrl s3c_mfc;
 
-int s3c_mfc_openhandle_count = 0;
+static int s3c_mfc_openhandle_count = 0;
 static struct resource	*s3c_mfc_mem;
 void __iomem		*s3c_mfc_sfr_virt_base;
 
@@ -80,7 +80,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	
 	mfc_ctx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
 	if (mfc_ctx == NULL) {
-		mfc_err("MFCINST_MEMORY_ALLOC_FAIL\n");
+		mfc_err("MFC_RET_MEM_ALLOC_FAIL\n");
 		ret = -ENOMEM;
 		goto out_open;
 	}
@@ -88,16 +88,16 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	memset(mfc_ctx, 0, sizeof(s3c_mfc_inst_ctx)); 	
 
 	/* get the inst no allocating some part of memory among reserved memory */
-	mfc_ctx->mem_inst_no = s3c_mfc_get_mem_inst_no();
+	mfc_ctx->mem_inst_no = s3c_mfc_get_mem_inst_no(MEMORY);
 	if (mfc_ctx->mem_inst_no < 0) {
 		kfree(mfc_ctx);
-		mfc_err("MFCINST_INST_NUM_EXCEEDED\n");
+		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
 		ret = -EPERM;
 		goto out_open;
 	}
 	
 	if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_OPENED) < 0) {
-		mfc_err("MFCINST_ERR_STATE_INVALID\n");
+		mfc_err("MFC_RET_STATE_INVALID\n");
 		kfree(mfc_ctx);
 		ret = -ENODEV;
 		goto out_open;
@@ -106,7 +106,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	/* Decoder only */
 	mfc_ctx->extraDPB = MFC_MAX_EXTRA_DPB;	
 	mfc_ctx->displayDelay = 9999;
-	mfc_ctx->sliceEnable = 0;
+	//mfc_ctx->sliceEnable = 0;
 	mfc_ctx->FrameType = MFC_RET_FRAME_NOT_SET;	
 
 	file->private_data = (s3c_mfc_inst_ctx *)mfc_ctx;
@@ -131,7 +131,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 
 	mfc_ctx = (s3c_mfc_inst_ctx *)file->private_data;
 	if (mfc_ctx == NULL) {
-		mfc_err("MFCINST_ERR_INVALID_PARAM\n");
+		mfc_err("MFC_RET_INVALID_PARAM_FAIL\n");
 		ret = -EIO;
 		goto out_release;
 	}			
@@ -151,11 +151,11 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	s3c_mfc_return_mem_inst_no(mfc_ctx->mem_inst_no);
 	s3c_mfc_return_inst_no(mfc_ctx->InstNo, mfc_ctx->MfcCodecType);
 
-	s3c_mfc_openhandle_count--;
+	s3c_mfc_openhandle_count--;	
 	kfree(mfc_ctx);
 
 	ret = 0;
-	/* peter check, In evt1, it should be tested */
+	/* In evt1, it should be tested */
 	#if 0	
 	if (s3c_mfc_openhandle_count == 0) {		
 		clk_disable(ctrl->clock);
@@ -185,7 +185,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	if (ret < 0) {
 		mfc_err("Inparm copy error\n");
 		ret = -EIO;
-		in_param.ret_code = MFCINST_ERR_INVALID_PARAM;
+		in_param.ret_code = MFC_RET_INVALID_PARAM_FAIL;
 		goto out_ioctl;
 	}
 
@@ -198,8 +198,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_ENC_INIT\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -245,25 +245,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
-		}
-		#if 0	// peter for debug
-		/* cache clean for Luma */
-		start = (unsigned char *)in_param.args.enc_exe.in_Y_addr_vir;
-		size = (int)(mfc_ctx->img_width * mfc_ctx->img_height);
-		printk("start addr = 0x%08x, size = 0x%08x in IOCTL_MFC_ENC_EXE\n",start, size);
-		dma_cache_maint(start, size, DMA_TO_DEVICE);
-
-		/* cache clean for Chroma */
-		start = (unsigned char *)in_param.args.enc_exe.in_CbCr_addr_vir;
-		size = (int)((mfc_ctx->img_width * mfc_ctx->img_height)>>1);
-		printk("start addr = 0x%08x, size = 0x%08x in IOCTL_MFC_ENC_EXE\n",start, size);
-		dma_cache_maint(start, size, DMA_TO_DEVICE);
-		#endif
+		}	
 
 		in_param.ret_code = s3c_mfc_exe_encode(mfc_ctx, &(in_param.args));
 		//mfc_debug("InParm->ret_code : %d\n", in_param.ret_code);
@@ -276,8 +263,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_INIT\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -325,8 +312,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -341,8 +328,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		if (mfc_ctx->MfcState < MFCINST_STATE_DEC_INITIALIZE) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -364,16 +351,13 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_GET_IN_BUF:
 	
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
-
 			break;
 		}		
 		/* allocate stream buf for decoder & current YC buf for encoder */
-		if ((in_param.args.mem_alloc.codec_type == H264_ENC) || 
-			(in_param.args.mem_alloc.codec_type == H263_ENC) ||
-			(in_param.args.mem_alloc.codec_type == MPEG4_ENC)) 
+		if (in_param.args.mem_alloc.dec_enc_type == ENCODER)			
 			mfc_ctx->port_no = 1;		
 		else 
 			mfc_ctx->port_no = 0;		
@@ -388,10 +372,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_FREE_BUF:
 
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
-
 			break;
 		}	
 
@@ -408,7 +391,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		}	
 		if (node == s3c_mfc_alloc_mem_tail[port_no]) {
 			mfc_err("invalid virtual address(0x%x)\r\n", in_param.args.mem_free.u_addr);
-			ret = MFCINST_MEMORY_INVAILD_ADDR;			
+			ret = MFC_RET_MEM_INVALID_ADDR_FAIL;			
 		}
 		mfc_ctx->port_no = port_no;
 		
@@ -420,8 +403,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_GET_PHYS_ADDR:
 
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 	
 			break;
@@ -435,7 +418,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	default:
 		
 		mfc_err("Requested ioctl command is not defined. (ioctl cmd=0x%08x)\n", cmd);
-		in_param.ret_code  = MFCINST_ERR_INVALID_PARAM;
+		in_param.ret_code  = MFC_RET_INVALID_PARAM_FAIL;
 		ret = -EINVAL;
 
 	}
@@ -460,8 +443,9 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	//unsigned long mem0_size, mem1_size;
 	unsigned long pageFrameNo = 0;
 
-	mfc_debug("vma->vm_start = 0x%08x, vma->vm_end = 0x%08x\n", vma->vm_start, vma->vm_end);
-	mfc_debug("vma->vm_end - vma->vm_start = %d\n", vir_size);
+	mfc_debug("vma->vm_start = 0x%08x, vma->vm_end = 0x%08x\n", 
+			(unsigned int)vma->vm_start, (unsigned int)vma->vm_end);
+	mfc_debug("vma->vm_end - vma->vm_start = %d\n", (int)vir_size);
 
 	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
 	offset = Align(offset, 4*BUF_L_UNIT);
@@ -474,7 +458,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	 */ 
 	if (vir_size > phy_size) {
 		mfc_err("virtual requested mem(%d) is bigger than physical mem(%d)\n", 
-			vir_size, phy_size);
+			(int)vir_size, (int)phy_size);
 		return -EINVAL; 
 	}
 	vir_mmap_size = vir_size;
@@ -503,7 +487,8 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -EAGAIN;
 	}	
 
-	mfc_debug("virtual requested mem = %d, physical reserved data mem = %d\n", vir_size, phy_size);
+	mfc_debug("virtual requested mem = %d, physical reserved data mem = %d\n", 
+			(int)vir_size, (int)phy_size);
 
 	return 0;
 
@@ -527,9 +512,13 @@ static struct miscdevice s3c_mfc_miscdev = {
 static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 {
 	unsigned int	intReason;
+	unsigned int 	error_reason;
 
 	intReason = readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD) & 0x1FFFF;
+	error_reason = readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_ARG2) & 0xFFFF;
 	mfc_debug("Interrupt !! : %d\n", intReason);
+	if (error_reason)
+		mfc_debug("error code : %d\n", error_reason);
 	
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
 		||((intReason & R2H_CMD_SLICE_DONE_RET) == R2H_CMD_SLICE_DONE_RET)
@@ -636,13 +625,13 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	printk("s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n", 
 		s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf);
 	printk("s3c_mfc_virt_buf = 0x%08x, s3c_mfc_virt_dpb_luma_buf = 0x%08x <<\n", 
-		s3c_mfc_virt_buf, s3c_mfc_virt_dpb_luma_buf);
+		(unsigned int)s3c_mfc_virt_buf, (unsigned int)s3c_mfc_virt_dpb_luma_buf);
 	
 	/*
 	 * MFC FW downloading
 	 */	
 	if (s3c_mfc_load_firmware() < 0) {
-		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n");
+		mfc_err("MFC_RET_FW_INIT_FAIL\n");
 		ret = -EPERM;
 		goto probe_out;
 	}	

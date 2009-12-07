@@ -212,7 +212,12 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	WRITEL(EncInitMpeg4Arg->in_gop_num, S3C_FIMV_I_PERIOD);
 	WRITEL(EncInitMpeg4Arg->in_vop_quant, S3C_FIMV_FRAME_QP_INIT);
 	WRITEL(0, S3C_FIMV_POST_ON);
+	
+#if (CONFIG_VIDEO_MFC_MAX_INSTANCE > 1)
+	WRITEL(0, S3C_FIMV_CIR_MB_NUM);
+#else
 	WRITEL(EncInitMpeg4Arg->in_mb_refresh, S3C_FIMV_CIR_MB_NUM);
+#endif
 
 	/* Rate Control options */
 	WRITEL((EncInitMpeg4Arg->in_RC_enable << 8) | (EncInitMpeg4Arg->in_vop_quant & 0x3F), S3C_FIMV_RC_CONFIG);
@@ -386,10 +391,10 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	 * 	- set Encoder Init SFR
 	 */
 
+	WRITEL(MfcCtx->InstNo, S3C_FIMV_CH_ID);
 	s3c_mfc_set_encode_init_param(MfcCtx->InstNo, MfcCtx->MfcCodecType, args);
 
 	WRITEL(s3c_mfc_get_codec_type(MfcCtx->MfcCodecType), S3C_FIMV_STANDARD_SEL);
-	WRITEL(MfcCtx->InstNo, S3C_FIMV_CH_ID);
 	WRITEL(MFC_INIT_CODEC, S3C_FIMV_COMMAND_TYPE);
 	WRITEL(1, S3C_FIMV_BITS_ENDIAN);
 	WRITEL(INT_LEVEL_BIT, S3C_FIMV_INT_MODE);
@@ -417,7 +422,6 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	/* 
 	 * 5. Encode Frame
 	 */
-
 	EncExeArg = (s3c_mfc_enc_exe_arg *) args;
 	mfc_debug("++ EncExeArg->in_strm_st : 0x%08x EncExeArg->in_strm_end :0x%08x \r\n", \
 								EncExeArg->in_strm_st, EncExeArg->in_strm_end);
@@ -428,7 +432,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 	s3c_mfc_set_vsp_buffer(MfcCtx->InstNo);
 
-	if ((MfcCtx->forceSetFrameType > DONT_CARE) && 		\
+	if ((MfcCtx->forceSetFrameType > DONT_CARE) &&
 		(MfcCtx->forceSetFrameType <= NOT_CODED)) {
 		WRITEL(MfcCtx->forceSetFrameType, S3C_FIMV_CODEC_COMMAND);
 		MfcCtx->forceSetFrameType = DONT_CARE;
@@ -441,6 +445,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	/*
 	 * Set Interrupt
 	 */
+	WRITEL(MfcCtx->InstNo, S3C_FIMV_CH_ID);
 
 	WRITEL(EncExeArg->in_Y_addr, S3C_FIMV_ENC_CUR_Y_ADR);
 	WRITEL(EncExeArg->in_CbCr_addr, S3C_FIMV_ENC_CUR_CBCR_ADR);
@@ -448,10 +453,8 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	WRITEL(EncExeArg->in_strm_end, S3C_FIMV_EXT_BUF_END_ADDR);
 	WRITEL(EncExeArg->in_strm_st, S3C_FIMV_HOST_PTR);
 
-	WRITEL(MFC_FRAME_RUN, S3C_FIMV_COMMAND_TYPE);
-	WRITEL(MfcCtx->InstNo, S3C_FIMV_CH_ID);
 	WRITEL(s3c_mfc_get_codec_type(MfcCtx->MfcCodecType), S3C_FIMV_STANDARD_SEL);
-
+	WRITEL(MFC_FRAME_RUN, S3C_FIMV_COMMAND_TYPE);
 	WRITEL(INT_LEVEL_BIT, S3C_FIMV_INT_MODE);
 	WRITEL(0, S3C_FIMV_INT_OFF);
 	WRITEL(1, S3C_FIMV_INT_DONE_CLEAR);
@@ -469,7 +472,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 	EncExeArg->out_encoded_size = READL(S3C_FIMV_ENC_UNIT_SIZE);
 	EncExeArg->out_header_size  = READL(S3C_FIMV_ENC_HEADER_SIZE);
 
-	mfc_debug("-- frame type(%d) encodedSize(%d)\r\n", \
+	mfc_debug("-- frame type(%d) encodedSize(%d)\r\n",
 		EncExeArg->out_frame_type, EncExeArg->out_encoded_size);
 
 	return MFCINST_RET_OK;
@@ -536,7 +539,7 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	WRITEL(s3c_mfc_get_codec_type(MfcCtx->MfcCodecType), S3C_FIMV_STANDARD_SEL);
 	WRITEL(MFC_INIT_CODEC, S3C_FIMV_COMMAND_TYPE);
 	WRITEL((MfcCtx->displayDelay<<16)|(0xFFFF & MfcCtx->extraDPB), S3C_FIMV_NUM_EXTRA_BUF);
-	
+
 	s3c_mfc_cmd_frame_start();
 
 	if(s3c_mfc_wait_for_done(MFC_POLLING_HEADER_DONE, MfcCtx) == 0){
@@ -576,8 +579,8 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 		InitArg->out_img_width = READL(S3C_FIMV_IMG_SIZE_X);
 		InitArg->out_img_height = READL(S3C_FIMV_IMG_SIZE_Y);
 
-		// in the case of VC1 interlace, height will be the multiple of 32
-		// otherwise, height and width is the mupltiple of 16
+		/* in the case of VC1 interlace, height will be the multiple of 32	*
+		 * otherwise, height and width is the mupltiple of 16 			*/
 		InitArg->out_buf_width = (InitArg->out_img_width + 15)/16*16;
 		InitArg->out_buf_height = (InitArg->out_img_height + 31)/32*32; 
 

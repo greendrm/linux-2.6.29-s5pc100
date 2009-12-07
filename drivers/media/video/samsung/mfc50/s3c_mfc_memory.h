@@ -26,7 +26,7 @@
 
 /* All buffer size have to be aligned to 64K */
 #define FIRMWARE_CODE_SIZE	(0x40000) 	/* 0x306c0(198,336 byte) ~ 0x40000(262,144) */
-#define MFC_FW_SYSTEM_SIZE	(0x300000)	/* 3MB : 3x1024x1024 */
+#define MFC_FW_SYSTEM_SIZE	(0x100000)	/* 1MB : 1x1024x1024 */
 #define MFC_FW_BUF_SIZE		(0x96000) 	/* 600KB : 600x1024 size per instance */
 #define MFC_FW_TOTAL_BUF_SIZE	(MFC_FW_SYSTEM_SIZE + MFC_MAX_INSTANCE_NUM * MFC_FW_BUF_SIZE) 
 

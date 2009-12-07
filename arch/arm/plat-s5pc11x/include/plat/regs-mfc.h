@@ -193,7 +193,6 @@
 #define S3C_FIMV_MC_STATUS		S3C_FIMVREG(0x0510)
 #define S3C_FIMV_MC_RS_IBASE		S3C_FIMVREG(0x0514)
 
-/***** In case of 2 master *****/
 /* Common register */
 #define S3C_FIMV_SYS_MEM_ADR		S3C_FIMVREG(0x0600) /* firmware buffer */
 #define S3C_FIMV_CPB_BUF_ADR		S3C_FIMVREG(0x0604) /* stream buffer */
@@ -219,8 +218,8 @@
 #define S3C_FIMV_ENC_COZERO_FLAG_ADR	S3C_FIMVREG(0x0610) /* direct cozero flag addr */
 #define S3C_FIMV_ENC_UP_INTRA_MD_ADR	S3C_FIMVREG(0x0608) /* upper intra MD addr */
 
-
 #define S3C_FIMV_ENC_UP_INTRA_PRED_ADR	S3C_FIMVREG(0x0740) /* upper intra PRED addr */
+
 
 #define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
 #define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
@@ -231,9 +230,9 @@
 #define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0700) /* ref0 Chroma addr */
 #define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0620) /* ref1 Luma addr */
 #define S3C_FIMV_ENC_REF1_CHROMA_ADR	S3C_FIMVREG(0x0704) /* ref1 Chroma addr */
-#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0710) /* ref2 Luma addr */
+#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0710) /* ref2 Luma addr */	
 #define S3C_FIMV_ENC_REF2_CHROMA_ADR	S3C_FIMVREG(0x0708) /* ref2 Chroma addr */
-#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */
+#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */	
 #define S3C_FIMV_ENC_REF3_CHROMA_ADR	S3C_FIMVREG(0x070c) /* ref3 Chroma addr */
 
 /* Codec common register */
@@ -279,8 +278,8 @@
 #define S3C_FIMV_SI_CH2_DESC_SIZE	S3C_FIMVREG(0x209c) /* max size of descriptor buf */
 #define S3C_FIMV_SI_CH2_RELEASE_BUF	S3C_FIMVREG(0x20a0) /* release buffer register */
 
-#define S3C_FIMV_SI_DIVX311_HRESOL	S3C_FIMVREG(0x2050) /* horizontal resolution */
-#define S3C_FIMV_SI_DIVX311_VRESOL	S3C_FIMVREG(0x2054) /* vertical resolution */
+#define S3C_FIMV_SI_DIVX311_VRESOL	S3C_FIMVREG(0x2050) /* vertical resolution */
+#define S3C_FIMV_SI_DIVX311_HRESOL	S3C_FIMVREG(0x2054) /* horizontal resolution */
 #define S3C_FIMV_CRC_LUMA0		S3C_FIMVREG(0x2030) /* luma crc data per frame(or top field) */
 #define S3C_FIMV_CRC_CHROMA0		S3C_FIMVREG(0x2034) /* chroma crc data per frame(or top field) */
 #define S3C_FIMV_CRC_LUMA1		S3C_FIMVREG(0x2038) /* luma crc data per bottom field */
@@ -299,7 +298,7 @@
 #define S3C_FIMV_ENC_SI_CH1_SB_SIZE	S3C_FIMVREG(0x204c) /* size of stream buf */
 #define S3C_FIMV_ENC_SI_CH1_CUR_Y_ADR	S3C_FIMVREG(0x2050) /* current Luma addr */
 #define S3C_FIMV_ENC_SI_CH1_CUR_C_ADR	S3C_FIMVREG(0x2054) /* current Chroma addr */
-#define S3C_FIMV_ENC_SI_CH1_FRAME_QP	S3C_FIMVREG(0x2058) /* frame QP */
+#define S3C_FIMV_ENC_SI_CH1_FRAME_INS	S3C_FIMVREG(0x2058) /* frame insertion control register */
 #define S3C_FIMV_ENC_SI_CH1_SLICE_ARG	S3C_FIMVREG(0x205c) /* slice argument */
 
 #define S3C_FIMV_ENC_SI_CH2_SB_U_ADR	S3C_FIMVREG(0x2084) /* addr of upper stream buf */

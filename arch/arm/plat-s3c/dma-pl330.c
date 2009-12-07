@@ -71,9 +71,9 @@ struct s3c2410_dma_chan 	s3c_dma_chans[S3C_DMA_CHANNELS];
 s3c_dma_controller_t 		s3c_dma_cntlrs[S3C_DMA_CONTROLLERS];
 
 #if defined(CONFIG_ARCH_S5PC11X)
-#define PDMA_BASE_STRIDE       0x100000
+#define PDMA_BASE_STRIDE	0x100000
 #else
-#define PDMA_BASE_STRIDE       0x200000
+#define PDMA_BASE_STRIDE	0x200000
 #endif
 
 #define SIZE_OF_MICRO_CODES		512

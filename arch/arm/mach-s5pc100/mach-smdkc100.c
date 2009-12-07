@@ -29,7 +29,7 @@
 #include <linux/pwm_backlight.h>
 #include <linux/spi/spi.h>
 #include <linux/videodev2.h>
-#include <media/s5k4ba_platform.h>
+#include <media/s5k3ba_platform.h>
 #include <media/s5k6aa_platform.h>
 
 #include <asm/mach/arch.h>
@@ -271,11 +271,11 @@ static struct spi_board_info s3c_spi_devs[] __initdata = {
 #endif
 
 /* External camera module setting */
-static struct s5k4ba_platform_data s5k4ba = {
-	.default_width = 800,
-	.default_height = 600,
-	.pixelformat = V4L2_PIX_FMT_YUYV,
-	.freq = 44000000,
+static struct s5k3ba_platform_data s5k3ba = {
+	.default_width = 640,
+	.default_height = 480,
+	.pixelformat = V4L2_PIX_FMT_VYUY,
+	.freq = 24000000,
 	.is_mipi = 0,
 };
 
@@ -289,8 +289,8 @@ static struct s5k6aa_platform_data s5k6aa = {
 
 static struct i2c_board_info  __initdata camera_info[] = {
 	{
-		I2C_BOARD_INFO("S5K4BA", 0x2d),
-		.platform_data = &s5k4ba,
+		I2C_BOARD_INFO("S5K3BA", 0x2d),
+		.platform_data = &s5k3ba,
 	},
 	{
 		I2C_BOARD_INFO("S5K6AA", 0x3c),
@@ -303,22 +303,22 @@ static struct s3c_platform_camera __initdata camera_a = {
 	.id		= CAMERA_PAR_A,		/* FIXME */
 	.type		= CAM_TYPE_ITU,		/* 2.0M ITU */
 	.fmt		= ITU_601_YCBCR422_8BIT,
-	.order422	= CAM_ORDER422_8BIT_CBYCRY,
+	.order422	= CAM_ORDER422_8BIT_CRYCBY,
 	.i2c_busnum	= 0,
 	.info		= &camera_info[0],
-	.pixelformat	= V4L2_PIX_FMT_UYVY,
+	.pixelformat	= V4L2_PIX_FMT_VYUY,
 	.srclk_name	= "dout_mpll",
 	.clk_name	= "sclk_cam",
-	.clk_rate	= 44000000,		/* 44MHz */
+	.clk_rate	= 24000000,		/* 44MHz */
 	.line_length	= 1280,			/* 1280*1024 */
 	/* default resol for preview kind of thing */
-	.width		= 800,
-	.height		= 600,
+	.width		= 640,
+	.height		= 480,
 	.window		= {
 		.left	= 0,
 		.top	= 0,
-		.width	= 800,
-		.height	= 600,
+		.width	= 640,
+		.height	= 480,
 	},
 
 	/* Polarity */
