@@ -480,8 +480,9 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 	}
 	
 	/* Set circular intra refresh MB count */
-	WRITEL(enc_init_mpeg4_arg->in_mb_refresh, S3C_FIMV_ENC_CIR_CTRL);
+	WRITEL(enc_init_mpeg4_arg->in_mb_refresh, S3C_FIMV_ENC_CIR_CTRL);	
 	WRITEL(MEM_STRUCT_LINEAR, S3C_FIMV_ENC_MAP_FOR_CUR);	// linear mode
+	
 	/* Set padding control */
 	WRITEL((enc_init_mpeg4_arg->in_pad_ctrl_on<<31)|(enc_init_mpeg4_arg->in_cr_pad_val<<16)|
 		(enc_init_mpeg4_arg->in_cb_pad_val<<8)|(enc_init_mpeg4_arg->in_luma_pad_val<<0),
@@ -501,9 +502,10 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 
 	switch (mfc_codec_type) {
 	case H264_ENC:
-		/* if in_RC_mb_enable is '1' */
-		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_h264_arg->in_RC_mb_enable << 8),
-			S3C_FIMV_ENC_RC_CONFIG);
+		/* if in_RC_mb_enable is '1' */		
+		WRITEL((enc_init_mpeg4_arg->in_RC_frm_enable << 9)|(enc_init_h264_arg->in_RC_mb_enable << 8)|
+			(enc_init_mpeg4_arg->in_vop_quant & 0x3F), S3C_FIMV_ENC_RC_CONFIG);
+		
 		if (READL(S3C_FIMV_ENC_RC_CONFIG) & 0x0100) {
 			WRITEL((enc_init_h264_arg->in_RC_mb_dark_disable<<3)|
 				(enc_init_h264_arg->in_RC_mb_smooth_disable<<2)| 
