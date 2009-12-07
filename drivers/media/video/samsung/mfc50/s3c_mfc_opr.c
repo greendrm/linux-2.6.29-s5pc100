@@ -197,13 +197,13 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 8*BUF_L_UNIT);
 			/* set MV address */	
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_MV_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*aligned_mv_height, 8*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);						
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);						
 		}	
 
 	} else {
@@ -211,17 +211,16 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {		
 			/* set Luma address */
 			WRITEL((dpb_buf_addr.luma-dram1_start_addr)>>11, S3C_FIMV_LUMA_ADR+(4*i));	
-			dpb_buf_addr.luma += Align(aligned_width*height, 4*BUF_L_UNIT);
+			dpb_buf_addr.luma += Align(aligned_width*height, 8*BUF_L_UNIT);
 			/* set Chroma address */	
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));	
-			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 4*BUF_L_UNIT);			
+			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);			
 		}	
 
 	}
 	/* Set DPB number */
 	slice_en_display_en = READL(S3C_FIMV_SI_CH1_DPB_CONF_CTRL) & 0xffff0000;
-	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
-
+	WRITEL(init_arg->out_dpb_cnt|slice_en_display_en, S3C_FIMV_SI_CH1_DPB_CONF_CTRL);	
 	// MFC fw 9/30
 	luma_size = Align(aligned_width*height, 64*BUF_L_UNIT);
 	writel(luma_size, shared_mem_vir_addr+0x64);		// set the luma DPB size
@@ -244,7 +243,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 	mfc_debug("DEC_LUMA_DPB_END_ADR : 0x%08x\n", dpb_buf_addr.luma);
 	mfc_debug("DEC_CHROMA_DPB_END_ADR : 0x%08x\n",dpb_buf_addr.chroma);
 
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
