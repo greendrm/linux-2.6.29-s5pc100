@@ -41,7 +41,7 @@ static void s3c_mfc_cmd_reset(void);
 //static void s3c_mfc_cmd_sleep(void);
 //static void s3c_mfc_cmd_wakeup(void);
 static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
-static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type);
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type, unsigned int crc_enable);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, unsigned int buf_size);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec_type, int inst_no);
@@ -690,7 +690,7 @@ static unsigned int s3c_mfc_get_codec_arg(SSBSIP_MFC_CODEC_TYPE codec_type)
 	
 }		
 
-static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type)
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type, unsigned int crc_enable)
 {
 	unsigned int codec_no;
 	int inst_no;
@@ -751,7 +751,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- get the instance no
 	 */
 	 
-	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType);
+	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, 0);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
 		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
@@ -909,7 +909,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- set open instance using codec_type
 	 * 	- get the instance no
 	 */
-	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType);
+	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, mfc_ctx->crcEnable);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
 		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
