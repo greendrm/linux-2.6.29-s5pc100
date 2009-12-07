@@ -56,6 +56,7 @@ dma_addr_t		s3c_mfc_phys_data_buf;
 unsigned char		*s3c_mfc_virt_data_buf;
 
 DECLARE_WAIT_QUEUE_HEAD(s3c_mfc_wait_queue);
+BOOL s3c_mfc_is_running(void);
 
 static int s3c_mfc_open(struct inode *inode, struct file *file)
 {
@@ -83,7 +84,9 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	}
 	memset(MfcCtx, 0, sizeof(s3c_mfc_inst_ctx));
 
-	s3c_mfc_init_hw();
+	if(!s3c_mfc_is_running()) {
+		s3c_mfc_init_hw();
+	}
 
 	MfcCtx->InstNo = s3c_mfc_get_inst_no();
 	if (MfcCtx->InstNo < 0) {
@@ -160,9 +163,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	s3c_mfc_common_args	InParm;
 	s3c_mfc_args		local_param;
 	
-
-	mutex_lock(&s3c_mfc_mutex);
-
 	ret = copy_from_user(&InParm, (s3c_mfc_common_args *)arg, sizeof(s3c_mfc_common_args));
 	if (ret < 0) {
 		mfc_err("Inparm copy error\n");
@@ -172,39 +172,40 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	}
 
 	MfcCtx = (s3c_mfc_inst_ctx *)file->private_data;
-	mutex_unlock(&s3c_mfc_mutex);
 	
 	switch (cmd) {
 	case IOCTL_MFC_ENC_INIT:
-		mutex_lock(&s3c_mfc_mutex);
+
 		if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_ENC_INITIALIZE)) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
-
+		
+		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_init_encode(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);
+		
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
 		ret = InParm.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
+		
 		break;
 
 	case IOCTL_MFC_ENC_EXE:
-		mutex_lock(&s3c_mfc_mutex);
+
 		if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_ENC_EXE)) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
+		mutex_lock(&s3c_mfc_mutex);		
 		InParm.ret_code = s3c_mfc_exe_encode(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);		
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
 		ret = InParm.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
 		break;
 
 	case IOCTL_MFC_DEC_INIT:
@@ -303,15 +304,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_unlock(&s3c_mfc_mutex);
 		
-		/*
-		 * !!! CAUTION !!!
-		 * Don't release mutex at the end of IOCTL_MFC_DEC_INIT. and, 
-		 * don't lock mutex at the begining of IOCTL_MFC_DEC_SEQ_START
-		 * because IOCTL_MFC_DEC_INIT and IOCTL_MFC_DEC_SEQ_START 
-		 * are atomic operation. 
-		 * other operation is not allowed between them.
-		 */
-
 		break;
 
 	case IOCTL_MFC_DEC_SEQ_START:
@@ -372,56 +364,55 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		break;
 
 	case IOCTL_MFC_GET_CONFIG:
-		mutex_lock(&s3c_mfc_mutex);
+		
 		if (MfcCtx->MfcState < MFCINST_STATE_DEC_SEQ_START) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
+		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_config(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
 		break;
 
 	case IOCTL_MFC_SET_CONFIG:
 		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_set_config(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
 		break;
 
 	case IOCTL_MFC_REQ_BUF:
-	
+
 		if (MfcCtx->MfcState < MFCINST_STATE_OPENED) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-
 			break;
 		}
 
 		InParm.args.mem_alloc.buff_size = (InParm.args.mem_alloc.buff_size + 63) / 64 * 64;
+		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_virt_addr(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);
 		ret = InParm.ret_code;
-
 		break;
 
 	case IOCTL_MFC_FREE_BUF:
-
-
+		
 		if (MfcCtx->MfcState < MFCINST_STATE_OPENED) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-
 			break;
 		}
+		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_release_alloc_mem(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);
 		ret = InParm.ret_code;
-
 		break;
 
 	case IOCTL_MFC_GET_PHYS_ADDR:
@@ -430,13 +421,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-	
 			break;
 		}
-
+		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_phys_addr(MfcCtx, &(InParm.args));
+		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
-
 		break;
 
 	default:
