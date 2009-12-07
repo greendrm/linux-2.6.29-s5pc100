@@ -23,6 +23,14 @@
 #define Align(x, alignbyte) (((x)+(alignbyte)-1)/(alignbyte)*(alignbyte))
 #define S3C_MFC_CLK_NAME 	"mfc"
 
+#if 1
+#define ASPECT_RATIO_VUI_ENABLE 	(1<<15)	// Aspect ratio VUI is enabled in H.264 encoding
+#define SEQ_HEADER_CONTROL		(1<<3)	// Sequence header is generated on both SEQ_START and the first FRAME_START
+#define FRAME_SKIP_ENABLE		(1<<1)	// Frame skip is enabled using maximum buffer size defined by level
+//#define  FRAME_SKIP_ENABLE		(1<<2)	// Frame skip is enabled using VBV_BUFFER_SIZE defined by HOST
+#define HEC_ENABLE			(1<<0)	// Header extension code (HEC) is enabled
+#endif
+
 typedef enum
 {
 	MFCINST_STATE_NULL = 0,
@@ -47,6 +55,12 @@ typedef enum
 	MEM_STRUCT_LINEAR = 0,
 	MEM_STRUCT_TILE_ENC  = 3  /* 64x32 */
 } s3c_mfc_mem_type;
+
+typedef enum
+{
+	MEMORY = 0,
+	CONTEXT  = 1  
+} s3c_mfc_inst_no_type;
 
 typedef enum
 {
@@ -98,7 +112,8 @@ typedef enum
 	MFC_RET_FRAME_NOT_SET = 0,
 	MFC_RET_FRAME_I_FRAME = 1,
 	MFC_RET_FRAME_P_FRAME = 2,
-	MFC_RET_FRAME_B_FRAME = 3	
+	MFC_RET_FRAME_B_FRAME = 3,
+	MFC_RET_FRAME_OTHERS = 7,
 } s3c_mfc_frame_type;
 
 typedef enum
@@ -116,6 +131,8 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int displayDelay;
 	unsigned int postEnable;
 	unsigned int sliceEnable;
+	unsigned int crcEnable;
+	unsigned int frameSkipEnable;
 	unsigned int endOfFrame;
 	unsigned int forceSetFrameType;
 	unsigned int img_width;
@@ -126,7 +143,10 @@ typedef struct tag_mfc_inst_ctx
 	int mem_inst_no;
 	int port_no;	
 	s3c_mfc_frame_type FrameType;
-	MFC_CODEC_TYPE MfcCodecType;
+	unsigned int vui_enable;
+	s3c_mfc_enc_vui_info vui_info;
+	s3c_mfc_dec_divx311_info divx311_info;
+	SSBSIP_MFC_CODEC_TYPE MfcCodecType;
 	s3c_mfc_inst_state MfcState;
 } s3c_mfc_inst_ctx;
 
@@ -139,10 +159,10 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 //int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
 void  s3c_mfc_init_mem_inst_no(void);
-int s3c_mfc_get_mem_inst_no(void);
+int s3c_mfc_get_mem_inst_no(s3c_mfc_inst_no_type type);
 void s3c_mfc_return_mem_inst_no(int inst_no);
 
 #endif /* _S3C_MFC_COMMON_H_ */

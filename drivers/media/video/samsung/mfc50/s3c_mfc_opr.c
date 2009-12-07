@@ -28,7 +28,7 @@
 extern void __iomem *s3c_mfc_sfr_virt_base;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
-extern int s3c_mfc_openhandle_count;
+static int s3c_mfc_init_count;
 
 static unsigned int shared_mem_phy_addr;
 static volatile unsigned char *shared_mem_vir_addr;
@@ -40,11 +40,11 @@ static void s3c_mfc_cmd_reset(void);
 //static void s3c_mfc_cmd_frame_start(void);
 //static void s3c_mfc_cmd_sleep(void);
 //static void s3c_mfc_cmd_wakeup(void);
-static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
-static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type);
+static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no, int buf_addr, unsigned int buf_size);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no);
-static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int inst_no);
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec_type, int inst_no);
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_dec_exe_arg_t *dec_arg, unsigned int *consumed_strm_size);
 
 
@@ -84,13 +84,13 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 
 	if (cmd == H2R_CMD_OPEN_INSTANCE) {			
 		fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
-		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_openhandle_count-1);
+		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_init_count);
 			
 		WRITEL((context_base_addr-fw_phybuf)>>11, S3C_FIMV_HOST2RISC_ARG3);
 		WRITEL(MFC_FW_BUF_SIZE, S3C_FIMV_HOST2RISC_ARG4);
 		
-		mfc_debug("s3c_mfc_openhandle_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
-			s3c_mfc_openhandle_count, fw_phybuf, context_base_addr);		
+		mfc_debug("s3c_mfc_init_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
+			s3c_mfc_init_count, fw_phybuf, context_base_addr);		
 	}
 	/* Enable CRC data
 	WRITEL(1, S3C_FIMV_HOST2RISC_ARG2);
@@ -342,7 +342,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_shared_mem_buffer(int inst_no)
 
 
 // Set the desc, motion vector, overlap, bitplane0/1/2, etc
-static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, int inst_no)
+static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec_type, int inst_no)
 {
 	unsigned int fw_phybuf;	
 	
@@ -429,7 +429,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(MFC_CODEC_TYPE codec_type, 
 
 /* This function sets the MFC
  SFR values according to the input arguments. */
-static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args)
+static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args)
 {
 	unsigned int	ms_size;
 	s3c_mfc_enc_init_mpeg4_arg_t   *enc_init_mpeg4_arg;
@@ -635,7 +635,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw()
 	return MFC_RET_OK;
 }
 
-static unsigned int s3c_mfc_get_codec_arg(MFC_CODEC_TYPE codec_type)
+static unsigned int s3c_mfc_get_codec_arg(SSBSIP_MFC_CODEC_TYPE codec_type)
 {
 	unsigned int codec_no=99;
 
@@ -690,7 +690,7 @@ static unsigned int s3c_mfc_get_codec_arg(MFC_CODEC_TYPE codec_type)
 	
 }		
 
-static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type)
+static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type)
 {
 	unsigned int codec_no;
 	int inst_no;
@@ -715,7 +715,7 @@ static int s3c_mfc_get_inst_no(MFC_CODEC_TYPE codec_type)
 	
 }
 
-SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, MFC_CODEC_TYPE codec_type)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type)
 {
 	unsigned int codec_no;
 
