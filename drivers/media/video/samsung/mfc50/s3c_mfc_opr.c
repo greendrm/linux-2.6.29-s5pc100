@@ -846,6 +846,13 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx
 	WRITEL((enc_arg->in_strm_st-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_L_ADR);
 	WRITEL(STREAM_BUF_SIZE, S3C_FIMV_ENC_SI_CH1_SB_SIZE);
 
+	/* force I frame or Not-coded frame */	
+	printk("mfc_ctx->forceSetFrameType = %d\n", mfc_ctx->forceSetFrameType);
+	if (mfc_ctx->forceSetFrameType == I_FRAME)
+		WRITEL(1, S3C_FIMV_ENC_SI_CH1_FRAME_INS);
+	else if (mfc_ctx->forceSetFrameType == NOT_CODED)
+		WRITEL(1<<1, S3C_FIMV_ENC_SI_CH1_FRAME_INS);		
+	
 	/* Set current frame buffer addr */	
 	WRITEL((enc_arg->in_Y_addr-dram1_start_addr)>>11, S3C_FIMV_ENC_SI_CH1_CUR_Y_ADR);
 	WRITEL((enc_arg->in_CbCr_addr-dram1_start_addr)>>11, S3C_FIMV_ENC_SI_CH1_CUR_C_ADR);
@@ -873,12 +880,15 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx  *mfc_ctx
 	// MFC fw 9/30
 	enc_arg->out_Y_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_Y_ADDR)<<11);
 	enc_arg->out_CbCr_addr = dram1_start_addr + (READL(S3C_FIMV_ENCODED_C_ADDR)<<11);
+
+	WRITEL(0, S3C_FIMV_ENC_SI_CH1_FRAME_INS); 
+	mfc_ctx->forceSetFrameType = 0;
 	
 	
 	mfc_debug("-- frame type(%d) encoded frame size(%d) encoded Y_addr(0x%08x)/C_addr(0x%08x)\r\n", \
 		enc_arg->out_frame_type, enc_arg->out_encoded_size, enc_arg->out_Y_addr, enc_arg->out_CbCr_addr);
 	
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 
 }
 
