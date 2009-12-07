@@ -753,6 +753,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- get the instance no
 	 */
 	 
+	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT); 
 	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, 0);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
@@ -911,6 +912,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- set open instance using codec_type
 	 * 	- get the instance no
 	 */
+	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT); 
 	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, mfc_ctx->crcEnable);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
