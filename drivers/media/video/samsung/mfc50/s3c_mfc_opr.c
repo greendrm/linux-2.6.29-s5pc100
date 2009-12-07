@@ -1119,7 +1119,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 	case MFC_DEC_GETCONF_CRC_DATA:
 		if (mfc_ctx->MfcState != MFCINST_STATE_DEC_EXE) {
 			mfc_err("MFC_DEC_GETCONF_CRC_DATA : state is invalid\n");
-			return MFC_DEC_GETCONF_CRC_DATA;
+			return MFC_RET_STATE_INVALID;
 		}
 		get_cnf_arg->out_config_value[0] = READL(S3C_FIMV_CRC_LUMA0);
 		get_cnf_arg->out_config_value[1] = READL(S3C_FIMV_CRC_CHROMA0);
@@ -1131,7 +1131,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		return MFC_RET_GET_CONF_FAIL; 
 	}
 	
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 }
 
 
@@ -1191,7 +1191,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 			mfc_ctx->displayDelay = set_cnf_arg->in_config_value[0];
 		else {
 			mfc_warn("DISPLAY_DELAY should be between 0 and 16\n");
-			mfc_ctx->displayDelay = 99;
+			mfc_ctx->displayDelay = 15;
 		}
 		
 		break;
@@ -1209,19 +1209,68 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 			mfc_ctx->endOfFrame = 0;
 		}
 		break;
+
+	case MFC_DEC_SETCONF_CRC_ENABLE:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_DEC_SETCONF_CRC_ENABLE : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+
+		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
+			mfc_ctx->crcEnable = set_cnf_arg->in_config_value[0];
+		else {
+			mfc_warn("CRC ENABLE should be 0 or 1\n");
+			mfc_ctx->crcEnable = 0;
+		}
+		break;	
+		
+	case MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		
+		mfc_ctx->divx311_info.width = set_cnf_arg->in_config_value[0];	
+		mfc_ctx->divx311_info.height = set_cnf_arg->in_config_value[1];			
+				
+		break;			
 			
 	case MFC_ENC_SETCONF_FRAME_TYPE:
-		if ((mfc_ctx->MfcState < MFCINST_STATE_ENC_INITIALIZE) || (mfc_ctx->MfcState > MFCINST_STATE_ENC_EXE)) {
+		if (mfc_ctx->MfcState < MFCINST_STATE_ENC_INITIALIZE) {
 			mfc_err("MFC_ENC_SETCONF_FRAME_TYPE : state is invalid\n");
 			return MFC_RET_STATE_INVALID;
 		}
 
-		if ((set_cnf_arg->in_config_value[0] < DONT_CARE) || (set_cnf_arg->in_config_value[0] > NOT_CODED))
+		if ((set_cnf_arg->in_config_value[0] > DONT_CARE) && (set_cnf_arg->in_config_value[0] <= NOT_CODED))
 			mfc_ctx->forceSetFrameType = set_cnf_arg->in_config_value[0];
 		else {
-			mfc_warn("FRAME_TYPE should be between 0 and 2\n");
+			mfc_warn("FRAME_TYPE should be 1 and 2\n");
 			mfc_ctx->forceSetFrameType = DONT_CARE;
 		}
+		break;
+		
+	case MFC_ENC_SETCONF_ALLOW_FRAME_SKIP:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_ALLOW_FRAME_SKIP : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		if((set_cnf_arg->in_config_value[0] == 0) || (set_cnf_arg->in_config_value[0] == 1))
+			mfc_ctx->frameSkipEnable = set_cnf_arg->in_config_value[0];
+		else {
+			mfc_warn("FRAME SKIP ENABLE should be 0 or 1\n");
+			mfc_ctx->frameSkipEnable = 0;
+		}
+		break;			
+		
+	case MFC_ENC_SETCONF_VUI_INFO:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_VUI_INFO : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+		
+		mfc_ctx->vui_enable = 1;
+		mfc_ctx->vui_info.aspect_ratio_idc = set_cnf_arg->in_config_value[0];		
+		
 		break;
 		
 	default:
@@ -1229,6 +1278,6 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		return MFC_RET_SET_CONF_FAIL;
 	}
 	
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 }
 
