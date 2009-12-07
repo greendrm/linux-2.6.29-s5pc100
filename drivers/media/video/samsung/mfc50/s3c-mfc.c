@@ -80,7 +80,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	
 	mfc_ctx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
 	if (mfc_ctx == NULL) {
-		mfc_err("MFCINST_MEMORY_ALLOC_FAIL\n");
+		mfc_err("MFC_RET_MEM_ALLOC_FAIL\n");
 		ret = -ENOMEM;
 		goto out_open;
 	}
@@ -91,13 +91,13 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	mfc_ctx->mem_inst_no = s3c_mfc_get_mem_inst_no();
 	if (mfc_ctx->mem_inst_no < 0) {
 		kfree(mfc_ctx);
-		mfc_err("MFCINST_INST_NUM_EXCEEDED\n");
+		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
 		ret = -EPERM;
 		goto out_open;
 	}
 	
 	if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_OPENED) < 0) {
-		mfc_err("MFCINST_ERR_STATE_INVALID\n");
+		mfc_err("MFC_RET_STATE_INVALID\n");
 		kfree(mfc_ctx);
 		ret = -ENODEV;
 		goto out_open;
@@ -131,7 +131,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 
 	mfc_ctx = (s3c_mfc_inst_ctx *)file->private_data;
 	if (mfc_ctx == NULL) {
-		mfc_err("MFCINST_ERR_INVALID_PARAM\n");
+		mfc_err("MFC_RET_INVALID_PARAM_FAIL\n");
 		ret = -EIO;
 		goto out_release;
 	}			
@@ -185,7 +185,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	if (ret < 0) {
 		mfc_err("Inparm copy error\n");
 		ret = -EIO;
-		in_param.ret_code = MFCINST_ERR_INVALID_PARAM;
+		in_param.ret_code = MFC_RET_INVALID_PARAM_FAIL;
 		goto out_ioctl;
 	}
 
@@ -198,8 +198,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_ENC_INIT\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -245,8 +245,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -276,8 +276,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_INIT\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -325,8 +325,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
 		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE) < 0) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -341,8 +341,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		
 		mutex_lock(&s3c_mfc_mutex);
 		if (mfc_ctx->MfcState < MFCINST_STATE_DEC_INITIALIZE) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 			mutex_unlock(&s3c_mfc_mutex);
 			break;
@@ -364,8 +364,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_GET_IN_BUF:
 	
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 
 			break;
@@ -388,8 +388,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_FREE_BUF:
 
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 
 			break;
@@ -408,7 +408,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		}	
 		if (node == s3c_mfc_alloc_mem_tail[port_no]) {
 			mfc_err("invalid virtual address(0x%x)\r\n", in_param.args.mem_free.u_addr);
-			ret = MFCINST_MEMORY_INVAILD_ADDR;			
+			ret = MFC_RET_MEM_INVALID_ADDR_FAIL;			
 		}
 		mfc_ctx->port_no = port_no;
 		
@@ -420,8 +420,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	case IOCTL_MFC_GET_PHYS_ADDR:
 
 		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFCINST_ERR_STATE_INVALID\n");
-			in_param.ret_code = MFCINST_ERR_STATE_INVALID;
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
 			ret = -EINVAL;
 	
 			break;
@@ -435,7 +435,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	default:
 		
 		mfc_err("Requested ioctl command is not defined. (ioctl cmd=0x%08x)\n", cmd);
-		in_param.ret_code  = MFCINST_ERR_INVALID_PARAM;
+		in_param.ret_code  = MFC_RET_INVALID_PARAM_FAIL;
 		ret = -EINVAL;
 
 	}
@@ -642,7 +642,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	 * MFC FW downloading
 	 */	
 	if (s3c_mfc_load_firmware() < 0) {
-		mfc_err("MFCINST_ERR_FW_INIT_FAIL\n");
+		mfc_err("MFC_RET_FW_INIT_FAIL\n");
 		ret = -EPERM;
 		goto probe_out;
 	}	

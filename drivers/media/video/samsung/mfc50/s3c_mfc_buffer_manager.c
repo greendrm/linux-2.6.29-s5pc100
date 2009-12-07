@@ -323,7 +323,7 @@ int s3c_mfc_init_buffer_manager(void)
 
 
 /* Releae memory */
-MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_alloc_mem_t *node)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_alloc_mem_t *node)
 {		
 	int ret;
 
@@ -339,12 +339,12 @@ MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_al
 	/* Delete from AllocMem list */
 	s3c_mfc_del_node_from_alloc_list(node, mfc_ctx->mem_inst_no, mfc_ctx->port_no);	
 
-	ret = MFCINST_RET_OK;
+	ret = MFC_RET_OK;
 
 	return ret;
 }
 	
-MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args)
 {
 	int ret;
 	s3c_mfc_alloc_mem_t *node;
@@ -360,21 +360,21 @@ MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *ar
 
 	if(node == s3c_mfc_alloc_mem_tail[port_no]){
 		mfc_err("invalid virtual address(0x%x)\r\n", codec_get_phy_addr_arg->u_addr);
-		ret = MFCINST_MEMORY_INVAILD_ADDR;
+		ret = MFC_RET_MEM_INVALID_ADDR_FAIL;
 		goto out_getphysaddr;
 	}
 
 	codec_get_phy_addr_arg->p_addr = node->p_addr;
 	
 
-	ret = MFCINST_RET_OK;
+	ret = MFC_RET_OK;
 
 out_getphysaddr:
 	return ret;
 
 }
 
-MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args)
 {
 	int ret;
 	int inst_no = mfc_ctx->mem_inst_no;
@@ -393,7 +393,7 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 	if (!p_startAddr) {
 		mfc_debug("There is no more memory\n\r");
 		in_param->out_addr = -1;
-		ret = MFCINST_MEMORY_ALLOC_FAIL;
+		ret = MFC_RET_MEM_ALLOC_FAIL;
 		goto out_getcodecviraddr;
 	}
 
@@ -415,7 +415,7 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 
 	if (p_allocMem->v_addr == NULL) {
 		mfc_debug("Mapping Failed [PA:0x%08x]\n\r", p_allocMem->p_addr);
-		ret = MFCINST_MEMORY_MAPPING_FAIL;
+		ret = MFC_RET_MEM_MAPPING_FAIL;
 		goto out_getcodecviraddr;
 	}	
 
@@ -428,7 +428,7 @@ MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *
 	p_allocMem->port_no = port_no;
 	
 	s3c_mfc_insert_node_to_alloc_list(p_allocMem, inst_no, port_no);
-	ret = MFCINST_RET_OK;
+	ret = MFC_RET_OK;
 
 out_getcodecviraddr:	
 	return ret;

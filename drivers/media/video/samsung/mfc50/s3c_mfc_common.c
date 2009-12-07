@@ -26,12 +26,12 @@
 static int s3c_mfc_mem_inst_no[MFC_MAX_INSTANCE_NUM];
 
 /* Allocate buffers for decoder */
-MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size)
 {
 	s3c_mfc_dec_init_arg_t *init_arg;
 	s3c_mfc_args		local_param;
 	unsigned int		luma_size, chroma_size;
-	MFC_ERROR_CODE 		ret_code = MFCINST_RET_OK;
+	SSBSIP_MFC_ERROR_CODE 		ret_code = MFC_RET_OK;
 	
 	init_arg = (s3c_mfc_dec_init_arg_t *)args;
 	luma_size = Align(buf_size.luma, 2*BUF_L_UNIT) * mfc_ctx->totalDPBCnt;
@@ -116,12 +116,12 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 }
 
 /* Allocate buffers for encoder */
-MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
+SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args)
 {
 	s3c_mfc_enc_init_mpeg4_arg_t *init_arg;
 	s3c_mfc_args		local_param;
 	unsigned int		buf_width, buf_height;
-	MFC_ERROR_CODE 		ret_code = MFCINST_RET_OK;
+	SSBSIP_MFC_ERROR_CODE 		ret_code = MFC_RET_OK;
 	
 	init_arg = (s3c_mfc_enc_init_mpeg4_arg_t *)args;	
 

@@ -44,19 +44,19 @@
 
 int s3c_mfc_load_firmware(void);
 
-MFC_ERROR_CODE s3c_mfc_init_hw(void);
-MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx *mfc_ctx);
-MFC_ERROR_CODE s3c_mfc_set_sleep(s3c_mfc_inst_ctx *mfc_ctx);
-MFC_ERROR_CODE s3c_mfc_set_wakeup(s3c_mfc_inst_ctx *mfc_ctx);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw(void);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx *mfc_ctx);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_sleep(s3c_mfc_inst_ctx *mfc_ctx);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(s3c_mfc_inst_ctx *mfc_ctx);
 
 #endif /* _S3C_MFC_OPR_H_ */
 

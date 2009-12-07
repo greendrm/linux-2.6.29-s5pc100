@@ -329,7 +329,7 @@ typedef union {
 } s3c_mfc_args;
 
 typedef struct tag_mfc_args{
-	MFC_ERROR_CODE ret_code; /* [OUT] error code */
+	SSBSIP_MFC_ERROR_CODE ret_code; /* [OUT] error code */
 	s3c_mfc_args args;
 } s3c_mfc_common_args;
 
