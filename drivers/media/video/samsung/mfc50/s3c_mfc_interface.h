@@ -43,7 +43,7 @@ typedef enum
 	DIVX502_DEC,	/* DivX (Ver 5.00, 5.01, 5.02) */
 	DIVX503_DEC,	/* DivX (Ver 5.03 and upper) */
 	
-	VC1AP_DEC,	/* VC1 advaced Profile decoding  */	
+	VC1_DEC,	/* VC1 advaced Profile decoding  */	
 	VC1RCV_DEC,	/* VC1 simple/main profile decoding  */
 	
 	MPEG1_DEC,
@@ -62,27 +62,35 @@ typedef enum
 
 typedef enum
 {
-	DONT_CARE = 0, 	/* (0<<1)|(0<<0) */
-	I_FRAME = 1, 	/* (0<<1)|(1<<0) */
-	NOT_CODED = 2 	/* (1<<1)|(0<<0) */
-} MFC_FORCE_SET_FRAME_TYPE;
+    DONT_CARE = 0,
+    I_FRAME = 1,
+    NOT_CODED = 2    
+} SSBSIP_MFC_FORCE_SET_FRAME_TYPE;
 
 typedef enum
 {
-	MFC_DEC_SETCONF_POST_ENABLE = 1,
-	MFC_DEC_SETCONF_SLICE_ENABLE,	
+	MFC_DEC_SETCONF_POST_ENABLE = 1,	
 	MFC_DEC_SETCONF_EXTRA_BUFFER_NUM,
 	MFC_DEC_SETCONF_DISPLAY_DELAY,
 	MFC_DEC_SETCONF_IS_LAST_FRAME,
-	MFC_DEC_GETCONF_IMG_RESOLUTION,
-	MFC_DEC_GETCONF_PHYS_ADDR,
-	MFC_DEC_GETCONF_CRC_DATA	
+	MFC_DEC_SETCONF_SLICE_ENABLE,
+	MFC_DEC_SETCONF_CRC_ENABLE,
+	MFC_DEC_SETCONF_DIVX311_WIDTH_HEIGHT,
+	MFC_DEC_SETCONF_FRAME_TAG,
+	MFC_DEC_GETCONF_CRC_DATA,
+	MFC_DEC_GETCONF_BUF_WIDTH_HEIGHT,	// MFC_DEC_GETCONF_IMG_RESOLUTION,
+	MFC_DEC_GETCONF_FRAME_TAG
 }SSBSIP_MFC_DEC_CONF;
 
 typedef enum
 {
-	MFC_ENC_SETCONF_FRAME_TYPE = 100,	
-	MFC_ENC_GETCONF_HEADER_SIZE	
+	MFC_ENC_SETCONF_FRAME_TYPE = 100,
+	MFC_ENC_SETCONF_CHANGE_FRAME_RATE,
+	MFC_ENC_SETCONF_CHANGE_BIT_RATE,
+	MFC_ENC_SETCONF_FRAME_TAG,
+	MFC_ENC_SETCONF_ALLOW_FRAME_SKIP,
+	MFC_ENC_SETCONF_VUI_INFO,
+	MFC_ENC_GETCONF_FRAME_TAG	
 }SSBSIP_MFC_ENC_CONF;
 
 typedef struct tag_strm_ref_buf_arg
@@ -265,14 +273,10 @@ typedef struct {
 	s3c_mfc_frame_buf_arg_t in_frm_size;  /* [IN] size of dpb FRAME_BUF */
 	int out_display_Y_addr; /* [OUT]  the physical address of display buf */
 	int out_display_C_addr; /* [OUT]  the physical address of display buf */
-	/* DECODING_ONLY = 0,
-	   DECODING_DISPLAY = 1,
-	   DISPLAY_ONLY = 2,
-	   DECODING_EMPTY = 3
-	 */
 	int out_display_status; 
 	int out_pic_time_top;
 	int out_pic_time_bottom;
+	int out_consumed_byte;
 	int out_crop_right_offset;
 	int out_crop_left_offset;
 	int out_crop_bottom_offset;
@@ -292,10 +296,7 @@ typedef struct {
 
 	/* [IN]  Values to be set for the configurable parameter. */
 	int in_config_value[2];
-	/* Maximum two integer values can be set. */
-
-	/* [OUT] Old values of the configurable parameters */
-	int out_config_value_old[2];
+	/* Maximum two integer values can be set. */	
 } s3c_mfc_set_config_arg_t;
 
 typedef struct tag_get_phys_addr_arg

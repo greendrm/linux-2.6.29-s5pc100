@@ -382,7 +382,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec
 		aligned_risc_phy_buf += 68*BUF_L_UNIT;			
 		break;
 		
-	case VC1AP_DEC:	
+	case VC1_DEC:	
 	case VC1RCV_DEC:		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_UP_NB_MV_ADR);	
 		aligned_risc_phy_buf += 68*BUF_L_UNIT;		
@@ -643,7 +643,7 @@ static unsigned int s3c_mfc_get_codec_arg(SSBSIP_MFC_CODEC_TYPE codec_type)
 	case H264_DEC:
 		codec_no = 0;
 		break;
-	case VC1AP_DEC:
+	case VC1_DEC:
 		codec_no = 1;
 		break;
 	case MPEG4_DEC:	

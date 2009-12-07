@@ -42,6 +42,8 @@
 #define		NUM_POST_DPB		(3)
 #define		NUM_VC1_DPB		(4)
 
+#define		STUFF_BYTE_SIZE		(8)
+
 int s3c_mfc_load_firmware(void);
 
 SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw(void);
