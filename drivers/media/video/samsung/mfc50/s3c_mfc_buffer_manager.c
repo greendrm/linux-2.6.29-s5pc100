@@ -237,7 +237,7 @@ static unsigned int s3c_mfc_get_mem_area(int allocSize, int inst_no, int port_no
 	unsigned int	allocAddr = 0;
 
 
-	mfc_debug("request Size : %ld\n", allocSize);
+	mfc_debug("request Size : %ld\n", (long int)allocSize);
 	//printk(">> peter port_no in s3c_mfc_get_mem_area = %d <<\n", port_no);		
 
 	if (s3c_mfc_free_mem_head[port_no]== s3c_mfc_free_mem_tail[port_no]) {
@@ -258,7 +258,7 @@ static unsigned int s3c_mfc_get_mem_area(int allocSize, int inst_no, int port_no
 
 	if (match_node != NULL) {
 		mfc_debug("match : startAddr(0x%08x) size(%ld)\n", 
-			match_node->start_addr, match_node->size);
+			match_node->start_addr, (long int)match_node->size);
 	}
 
 	/* rearange FreeMemArea */
@@ -339,7 +339,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c
 	/* Delete from AllocMem list */
 	s3c_mfc_del_node_from_alloc_list(node, mfc_ctx->mem_inst_no, mfc_ctx->port_no);	
 
-	ret = MFC_RET_OK;
+	ret = MFC_RET_OK ;
 
 	return ret;
 }
@@ -367,7 +367,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_a
 	codec_get_phy_addr_arg->p_addr = node->p_addr;
 	
 
-	ret = MFC_RET_OK;
+	ret = MFC_RET_OK ;
 
 out_getphysaddr:
 	return ret;
@@ -398,17 +398,17 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 	}
 
 	p_allocMem = (s3c_mfc_alloc_mem_t *)kmalloc(sizeof(s3c_mfc_alloc_mem_t), GFP_KERNEL);
-	memset(p_allocMem, 0x00, sizeof(s3c_mfc_alloc_mem_t));
+	memset((void *)p_allocMem, 0x00, sizeof(s3c_mfc_alloc_mem_t));
 
 	p_allocMem->p_addr = p_startAddr;
 	if (port_no) {	// port 1
-		p_allocMem->v_addr = s3c_mfc_get_dpb_luma_buf_virt_addr() + 
-				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr());
+		p_allocMem->v_addr = (unsigned char *)(s3c_mfc_get_dpb_luma_buf_virt_addr() + 
+				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));
 		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + vir_mmap_size/2 +
 				(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));		
 	} else {	// Check whether p_allocMem->v_addr is aligned 4KB
-		p_allocMem->v_addr = s3c_mfc_get_data_buf_virt_addr() + 
-				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr());
+		p_allocMem->v_addr = (unsigned char *)(s3c_mfc_get_data_buf_virt_addr() + 
+				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr()));
 		p_allocMem->u_addr = (unsigned char *)(in_param->mapped_addr + 
 				(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr()));		
 	}	
@@ -421,14 +421,14 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 
 	in_param->out_addr = (unsigned int)p_allocMem->u_addr;
 	mfc_debug("u_addr : 0x%x v_addr : 0x%x p_addr : 0x%x\n",
-		p_allocMem->u_addr, p_allocMem->v_addr, p_allocMem->p_addr);
+		(unsigned int)p_allocMem->u_addr, (unsigned int)p_allocMem->v_addr, (unsigned int)p_allocMem->p_addr);
 
 	p_allocMem->size = (int)in_param->buff_size;
 	p_allocMem->inst_no = inst_no;
 	p_allocMem->port_no = port_no;
 	
 	s3c_mfc_insert_node_to_alloc_list(p_allocMem, inst_no, port_no);
-	ret = MFC_RET_OK;
+	ret = MFC_RET_OK ;
 
 out_getcodecviraddr:	
 	return ret;
