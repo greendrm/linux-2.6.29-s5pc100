@@ -917,6 +917,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 {
 	//SSBSIP_MFC_ERROR_CODE   ret;
 	s3c_mfc_dec_init_arg_t *init_arg;
+	unsigned int start_byte_num = 0;
 	//s3c_mfc_dec_type dec_type = SEQ_HEADER;
 	//unsigned int FWPhyBuf;
 
@@ -932,17 +933,15 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- set open instance using codec_type
 	 * 	- get the instance no
 	 */
-	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT); 
+	s3c_mfc_init_count = s3c_mfc_get_mem_inst_no(CONTEXT);
 	mfc_ctx->InstNo = s3c_mfc_get_inst_no(mfc_ctx->MfcCodecType, mfc_ctx->crcEnable);
 	if (mfc_ctx->InstNo < 0) {
 		kfree(mfc_ctx);
 		mfc_err("MFC_RET_INST_NUM_EXCEEDED_FAIL\n");
 		return MFC_RET_INST_NUM_EXCEEDED_FAIL;		
-	}
+	}	
 
-	/* Does it need to set for decoder ? */
-	//WRITEL(mfc_ctx->postEnable, S3C_FIMV_ENC_LF_CTRL);
-	//WRITEL(0, S3C_FIMV_ENC_PXL_CACHE_CTRL);		
+	s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
 
 	/* INIT CODEC
 	 * 	- set input stream buffer 
@@ -950,16 +949,19 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 	 * 	- set input risc buffer
 	 * 	- set NUM_EXTRA_DPB
 	 */	
-	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf, init_arg->in_strm_size); 
+	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf, start_byte_num, init_arg->in_strm_size); 
 
+	if (mfc_ctx->MfcCodecType == MPEG4_DEC)
+		WRITEL(mfc_ctx->postEnable, S3C_FIMV_ENC_LF_CTRL);	
+	
 	/* Set the slice interface(31th bit), display delay(30th bit + delay count) */	
 	if (mfc_ctx->displayDelay != 9999)
 		WRITEL((mfc_ctx->sliceEnable<<31)|(1<<30)|(mfc_ctx->displayDelay<<16), 
 					S3C_FIMV_SI_CH1_DPB_CONF_CTRL);	
 	else
 		WRITEL((mfc_ctx->sliceEnable<<31), S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
-
-	s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
+	
+	//s3c_mfc_set_shared_mem_buffer(mfc_ctx->InstNo);
 		
 	WRITEL((SEQ_HEADER<<16 & 0x70000)|(mfc_ctx->InstNo), S3C_FIMV_SI_CH1_INST_ID);
 
@@ -968,46 +970,52 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_a
 		return MFC_RET_DEC_HEADER_FAIL;
 	}
 		
-	s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);	
+	s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);		
 
-	/* out param & context setting from header decoding result */
-	mfc_ctx->img_width = READL(S3C_FIMV_SI_HRESOL);
-	mfc_ctx->img_height = READL(S3C_FIMV_SI_VRESOL);	
-
-	init_arg->out_img_width = READL(S3C_FIMV_SI_HRESOL);
-	init_arg->out_img_height = READL(S3C_FIMV_SI_VRESOL);
-
-	/* In the tiled mode output of MFC, width will be the multiple of 128
-	 * height will be the mupltiple of 32
-	 * for 8/7 MFC fw 
-	 */
-	init_arg->out_buf_width = (READL(S3C_FIMV_SI_HRESOL)+127)/128*128;
-	init_arg->out_buf_height = (READL(S3C_FIMV_SI_VRESOL)+31)/32*32;
-
-	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {
+	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {		
+		WRITEL(mfc_ctx->divx311_info.width, S3C_FIMV_SI_DIVX311_HRESOL);
+		WRITEL(mfc_ctx->divx311_info.height, S3C_FIMV_SI_DIVX311_VRESOL);
+		
 		mfc_ctx->img_width = READL(S3C_FIMV_SI_DIVX311_HRESOL);
 		mfc_ctx->img_height = READL(S3C_FIMV_SI_DIVX311_VRESOL);	
+		
 		init_arg->out_img_width = READL(S3C_FIMV_SI_DIVX311_HRESOL);
 		init_arg->out_img_height = READL(S3C_FIMV_SI_DIVX311_VRESOL);	
+		
 		init_arg->out_buf_width = (READL(S3C_FIMV_SI_DIVX311_HRESOL)+127)/128*128;
-		init_arg->out_buf_height = (READL(S3C_FIMV_SI_DIVX311_VRESOL)+31)/32*32;		
-	}	
+		init_arg->out_buf_height = (READL(S3C_FIMV_SI_DIVX311_VRESOL)+31)/32*32;	
+	}
+	else {
+		/* out param & context setting from header decoding result */
+		mfc_ctx->img_width = READL(S3C_FIMV_SI_HRESOL);
+		mfc_ctx->img_height = READL(S3C_FIMV_SI_VRESOL);	
 
+		init_arg->out_img_width = READL(S3C_FIMV_SI_HRESOL);
+		init_arg->out_img_height = READL(S3C_FIMV_SI_VRESOL);
+
+		/* In the tiled mode output of MFC, width will be the multiple of 128
+		 * height will be the mupltiple of 32
+		 * for 8/7 MFC fw 
+		 */
+		init_arg->out_buf_width = (READL(S3C_FIMV_SI_HRESOL)+127)/128*128;
+		init_arg->out_buf_height = (READL(S3C_FIMV_SI_VRESOL)+31)/32*32;
+		
+	}	
+	
 	/* It should have extraDPB to protect tearing in the display
 	 */	
 	mfc_ctx->DPBCnt = READL(S3C_FIMV_SI_BUF_NUMBER);
-	mfc_ctx->totalDPBCnt = mfc_ctx->DPBCnt + mfc_ctx->extraDPB;
-	//mfc_ctx->displayDelay = 0;
+	mfc_ctx->totalDPBCnt = mfc_ctx->DPBCnt + mfc_ctx->extraDPB;	
 	init_arg->out_dpb_cnt = mfc_ctx->totalDPBCnt;
 
 	mfc_debug("buf_width : %d buf_height : %d out_dpb_cnt : %d mfc_ctx->DPBCnt : %d\n", \
 				init_arg->out_buf_width, init_arg->out_buf_height, init_arg->out_dpb_cnt, mfc_ctx->DPBCnt);
-	//mfc_debug("img_width : %d img_height : %d\n", \
+	//mfc_debug("img_width : %d img_height : %d\n", 
 	//			init_arg->out_img_width, init_arg->out_img_height);
 
 	mfc_debug("--\n");
 	
-	return MFC_RET_OK;
+	return MFC_RET_OK ;
 }
 
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,  s3c_mfc_dec_exe_arg_t *dec_arg, 
