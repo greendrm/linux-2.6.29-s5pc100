@@ -55,7 +55,7 @@ unsigned int s3c_mfc_get_vsp_buf_phys_addr(int instNo)
 {
 	unsigned int phyAddr;
 
-	phyAddr = s3c_mfc_get_fw_buf_phys_addr() + MFC_MAX_FW_NUM*FIRMWARE_CODE_SIZE + instNo * VSP_BUF_SIZE+DB_STT_SIZE;
+	phyAddr = s3c_mfc_get_fw_buf_phys_addr() + MFC_MAX_FW_NUM*FIRMWARE_CODE_SIZE + instNo * (VSP_BUF_SIZE+DB_STT_SIZE);
 	return phyAddr; 
 }
 
