@@ -68,7 +68,7 @@ static void s3c_mfc_cmd_reset(void)
 	
 }
 
-static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
+static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg1, int arg2)
 {
 	s3c_mfc_facade_cmd cur_cmd;
 	unsigned int fw_phybuf, context_base_addr;
@@ -78,25 +78,28 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg)
 		cur_cmd = READL(S3C_FIMV_HOST2RISC_CMD);		
 	} while(cur_cmd != H2R_CMD_EMPTY);
 
-	WRITEL(arg, S3C_FIMV_HOST2RISC_ARG1);
-	/* pixel cache enable(0)/disable(3) */
-	//WRITEL(3, S3C_FIMV_HOST2RISC_ARG2);
-
+	WRITEL(arg1, S3C_FIMV_HOST2RISC_ARG1);	
+	
 	if (cmd == H2R_CMD_OPEN_INSTANCE) {			
 		fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
 		context_base_addr = s3c_mfc_get_fw_context_phys_addr(s3c_mfc_init_count);
+
+		/* pixel cache enable(0)/disable(3) 	
+		WRITEL(3, S3C_FIMV_HOST2RISC_ARG2); */
+		
+		/* Enable CRC data */
+		WRITEL(arg2<<31, S3C_FIMV_HOST2RISC_ARG2);
+		//WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
+		//WRITEL(0, S3C_FIMV_HOST2RISC_ARG4);
+		
 			
 		WRITEL((context_base_addr-fw_phybuf)>>11, S3C_FIMV_HOST2RISC_ARG3);
 		WRITEL(MFC_FW_BUF_SIZE, S3C_FIMV_HOST2RISC_ARG4);
 		
 		mfc_debug("s3c_mfc_init_count : %d, fw_phybuf : 0x%08x, context_base_addr : 0x%08x\n", 
 			s3c_mfc_init_count, fw_phybuf, context_base_addr);		
-	}
-	/* Enable CRC data
-	WRITEL(1, S3C_FIMV_HOST2RISC_ARG2);
-	WRITEL(0, S3C_FIMV_HOST2RISC_ARG3);
-	WRITEL(0, S3C_FIMV_HOST2RISC_ARG4);
-	*/
+	}	
+	
 	WRITEL(cmd, S3C_FIMV_HOST2RISC_CMD);
 	
 }
@@ -617,7 +620,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw()
 	
 	// for MFC fw 9/30
 	fw_buf_size = MFC_FW_SYSTEM_SIZE;	
-	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size);
+	s3c_mfc_cmd_host2risc(H2R_CMD_SYS_INIT, fw_buf_size, 0);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_SYS_INIT_RET) == 0){
 		mfc_err("R2H_CMD_SYS_INIT_RET FAIL\n");
@@ -697,7 +700,7 @@ static int s3c_mfc_get_inst_no(SSBSIP_MFC_CODEC_TYPE codec_type, unsigned int cr
 
 	codec_no = (unsigned int)s3c_mfc_get_codec_arg(codec_type);
 
-	s3c_mfc_cmd_host2risc(H2R_CMD_OPEN_INSTANCE, codec_no);
+	s3c_mfc_cmd_host2risc(H2R_CMD_OPEN_INSTANCE, codec_no, crc_enable);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_OPEN_INSTANCE_RET) == 0){
 		mfc_err("R2H_CMD_OPEN_INSTANCE_RET FAIL\n"); 
@@ -721,7 +724,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE 
 
 	codec_no = (unsigned int)s3c_mfc_get_codec_arg(codec_type);
 
-	s3c_mfc_cmd_host2risc(H2R_CMD_CLOSE_INSTANCE, inst_no);
+	s3c_mfc_cmd_host2risc(H2R_CMD_CLOSE_INSTANCE, inst_no, 0);
 
 	if(s3c_mfc_wait_for_done(R2H_CMD_CLOSE_INSTANCE_RET) == 0) {
 		mfc_err("R2H_CMD_CLOSE_INSTANCE_RET FAIL\n"); 
