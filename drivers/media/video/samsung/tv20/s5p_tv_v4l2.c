@@ -377,6 +377,8 @@ static int s5p_tv_v4l2_g_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT: {
 
 		struct v4l2_pix_format_s5p_tvout vparam;
+		memset(&vparam, 0, sizeof(struct v4l2_window_s5p_tvout));
+		
 		vparam.base_y			= (void *)s5ptv_status.vl_basic_param.top_y_address;
 		vparam.base_c			= (void *)s5ptv_status.vl_basic_param.top_c_address;
 		vparam.pix_fmt.pixelformat	= s5ptv_status.src_color;		//VPROC_SRC_COLOR_NV12
@@ -411,6 +413,8 @@ static int s5p_tv_v4l2_g_fmt_vid_out_overlay(struct file *file, void *fh, struct
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY: {
 
 		struct v4l2_window_s5p_tvout vparam;
+
+		memset(&vparam, 0, sizeof(struct v4l2_window_s5p_tvout));
 
 		if (s5ptv_status.vl_basic_param.win_blending) {
 			vparam.flags 		= V4L2_FBUF_FLAG_CHROMAKEY;
@@ -1354,6 +1358,9 @@ static int s5p_tv_v4l2_g_parm_vo(struct file *file, void *fh, struct v4l2_stream
 	struct v4l2_streamparm *param = a;
 
 	struct v4l2_window_s5p_tvout vparam;
+
+	memset(&vparam, 0, sizeof(struct v4l2_window_s5p_tvout));
+	
 	s5p_tv_vo *layer = (s5p_tv_vo *)fh;
 
 	V4L2PRINTK("entered\n");
