@@ -56,11 +56,12 @@ void __init s3c_csis_set_platdata(struct s3c_platform_csis *pd)
 		pd = &default_csis_data;
 
 	npd = kmemdup(pd, sizeof(struct s3c_platform_csis), GFP_KERNEL);
-	if (!npd)
+	if (!npd) {
 		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
-
-	npd->cfg_gpio = s3c_csis_cfg_gpio;
-	npd->cfg_phy_global = s3c_csis_cfg_phy_global;
+	} else {
+		npd->cfg_gpio = s3c_csis_cfg_gpio;
+		npd->cfg_phy_global = s3c_csis_cfg_phy_global;
+	}
 
 	s3c_device_csis.dev.platform_data = npd;
 }

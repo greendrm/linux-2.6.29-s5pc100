@@ -53,14 +53,15 @@ void __init s3c_fimc2_set_platdata(struct s3c_platform_fimc *pd)
 		pd = &default_fimc2_data;
 
 	npd = kmemdup(pd, sizeof(struct s3c_platform_fimc), GFP_KERNEL);
-	if (!npd)
+	if (!npd) {
 		printk(KERN_ERR "%s: no memory for platform data\n", __func__);
+	} else {
+		if (!npd->cfg_gpio)
+			npd->cfg_gpio = s3c_fimc2_cfg_gpio;
 
-	if (!npd->cfg_gpio)
-		npd->cfg_gpio = s3c_fimc2_cfg_gpio;
-
-	if (!npd->clk_on)
-		npd->clk_on = s3c_fimc_clk_on;
+		if (!npd->clk_on)
+			npd->clk_on = s3c_fimc_clk_on;
+	}
 
 	s3c_device_fimc2.dev.platform_data = npd;
 }

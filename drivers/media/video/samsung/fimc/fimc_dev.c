@@ -910,7 +910,7 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 
 	ctrl = fimc_register_controller(pdev);
 	if (!ctrl) {
-		fimc_err("%s: cannot register fimc controller\n", __func__);
+		printk(KERN_ERR "%s: cannot register fimc\n", __func__);
 		goto err_fimc;
 	}
 
