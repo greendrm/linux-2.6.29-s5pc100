@@ -243,12 +243,12 @@ void __s5p_vp_set_poly_filter_coef_default(u32 h_ratio, u32 v_ratio)
 
 	/* Vertical Y 4tap */
 	//    if (v_ratio <=  0x100)            /* 720->720 or zoom in*/
-	if (v_ratio <= (0x1 << 16)) {          	/* 720->720 or zoom in*/
+	if (v_ratio <= (0x1 << 16))           	/* 720->720 or zoom in*/
 		e_v_filter = VPROC_PP_V_NORMAL;
-	} else if (v_ratio <= (0x3 << 15))	/*6->5*/
-		e_v_filter = VPROC_PP_V_5_6;
 	else if (v_ratio <= (0x5 << 14))	/* 4->3*/
 		e_v_filter = VPROC_PP_V_3_4;
+	else if (v_ratio <= (0x3 << 15))	/*6->5*/
+		e_v_filter = VPROC_PP_V_5_6;	
 	else if (v_ratio <= (0x1 << 17))	/* 2->1*/
 		e_v_filter = VPROC_PP_V_1_2;
 	else if (v_ratio <= (0x3 << 16))	/* 3->1*/
@@ -723,14 +723,13 @@ int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num)
 {
 	struct resource *res;
 	size_t	size;
-	int 	ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
-	if (res == NULL) {
+	if (!res) {
 		dev_err(&pdev->dev, 
 			"failed to get memory region resource\n");
-		ret = -ENOENT;
+		goto error;
 		
 	}
 
@@ -741,7 +740,7 @@ int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num)
 	if (vp_mem == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to get memory region\n");
-		ret = -ENOENT;
+		goto error;
 		
 	}
 
@@ -750,12 +749,14 @@ int __init __s5p_vp_probe(struct platform_device *pdev, u32 res_num)
 	if (vp_base == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to ioremap address region\n");
-		ret = -ENOENT;
+		goto error;
 		
 
 	}
 
-	return ret;
+	return 0;
+error:
+	return -ENOENT;
 
 }
 

@@ -97,6 +97,7 @@ static struct s3c_media_device s3c_mdevs[] = {
 static struct s3c_media_device *s3c_get_media_device(int dev_id)
 {
 	struct s3c_media_device *mdev = NULL;
+	u32 mdev_num = ARRAY_SIZE(s3c_mdevs);
 	int i, found;
 
 	if (dev_id < 0 || dev_id >= S3C_MDEV_MAX)
@@ -104,7 +105,7 @@ static struct s3c_media_device *s3c_get_media_device(int dev_id)
 
 	i = 0;
 	found = 0;
-	while (!found && (i < S3C_MDEV_MAX)) {
+	while (!found && (i < mdev_num)) {
 		mdev = &s3c_mdevs[i];
 		if (mdev->id == dev_id)
 			found = 1;

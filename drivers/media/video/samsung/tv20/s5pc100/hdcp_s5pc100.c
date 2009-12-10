@@ -667,8 +667,8 @@ static int check_repeater(void)
 	
 	u8 bcaps[BCAPS_SIZE] = {0};
 	u8 status[BSTATUS_SIZE] = {0,0};
-	u8 rx_v[SHA_1_HASH_SIZE];
-	u8 ksv_list[HDCP_MAX_DEVS*HDCP_KSV_SIZE];
+	u8 rx_v[SHA_1_HASH_SIZE] = {0};
+	u8 ksv_list[HDCP_MAX_DEVS*HDCP_KSV_SIZE] = {0};
 	
 	u32 hdcp_ctrl;
 	u32 dev_cnt;

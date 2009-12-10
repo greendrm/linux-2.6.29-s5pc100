@@ -100,7 +100,7 @@ struct s3c_platform_camera {
 /* For camera interface driver */
 struct s3c_platform_fimc {
 	enum fimc_cam_index		default_cam;		/* index of default cam */
-	struct s3c_platform_camera	*camera[4];		/* FIXME */
+	struct s3c_platform_camera	*camera[5];		/* FIXME */
 	int				hw_ver;
 
 	void				(*cfg_gpio)(struct platform_device *pdev);

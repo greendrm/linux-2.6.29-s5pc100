@@ -1225,14 +1225,14 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num)
 {
 	struct resource *res;
 	size_t	size;
-	int 	ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
-	if (res == NULL) {
+	if (!res) {
 		dev_err(&pdev->dev, 
 			"failed to get memory region resource\n");
-		ret = -ENOENT;
+		goto error;
+		
 	}
 
 	size = (res->end - res->start) + 1;
@@ -1242,7 +1242,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num)
 	if (hdmi_mem == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to get memory region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	hdmi_base = ioremap(res->start, size);
@@ -1250,11 +1250,12 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num)
 	if (hdmi_base == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to ioremap address region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
-	return ret;
-
+	return 0;
+error:
+	return -ENOENT;
 }
 
 int __init __s5p_hdmi_release(struct platform_device *pdev)

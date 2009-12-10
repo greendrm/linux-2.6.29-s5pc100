@@ -322,14 +322,13 @@ int __init __s5p_tvclk_probe(struct platform_device *pdev, u32 res_num)
 {
 	struct resource *res;
 	size_t	size;
-	int 	ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
-	if (res == NULL) {
+	if (!res) {
 		dev_err(&pdev->dev, 
 			"failed to get memory region resource\n");
-		ret = -ENOENT;
+		goto error;
 		
 	}
 
@@ -340,7 +339,7 @@ int __init __s5p_tvclk_probe(struct platform_device *pdev, u32 res_num)
 	if (tvclk_mem == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to get memory region\n");
-		ret = -ENOENT;
+		goto error;
 		
 	}
 
@@ -349,10 +348,13 @@ int __init __s5p_tvclk_probe(struct platform_device *pdev, u32 res_num)
 	if (tvclk_base == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to ioremap address region\n");
-		ret = -ENOENT;
+		goto error;
 		
 	}
-	return ret;
+	
+	return 0;
+error:
+	return -ENOENT;
 }
 
 int __init __s5p_tvclk_release(struct platform_device *pdev)

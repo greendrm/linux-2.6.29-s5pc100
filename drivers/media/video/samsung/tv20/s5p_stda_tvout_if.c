@@ -230,10 +230,6 @@ bool _s5p_tv_if_init_vm_reg(void)
 			return false;
 	}
 
-	if (merr != VMIXER_NO_ERROR) {
-		return false;
-	}
-
 	switch (out_mode) {
 
 	case TVOUT_OUTPUT_COMPOSITE:

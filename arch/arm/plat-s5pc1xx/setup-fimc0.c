@@ -118,10 +118,12 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 	return 0;
 
 err_clk3:
-	clk_put(parent);
+	if (parent != NULL)
+		clk_put(parent);
 
 err_clk2:
-	clk_put(sclk);
+	if (sclk != NULL)
+		clk_put(sclk);
 
 err_clk1:
 	return -EINVAL;
