@@ -497,7 +497,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 	WRITEL(0, S3C_FIMV_ENC_INT_MASK);	// mask interrupt	
 
 	/* Set Rate Control */
-	if (enc_init_mpeg4_arg->in_RC_framerate != 0)
+	if ((mfc_codec_type != MPEG4_ENC) && (enc_init_mpeg4_arg->in_RC_framerate != 0))
 		WRITEL(enc_init_mpeg4_arg->in_RC_framerate, S3C_FIMV_ENC_RC_FRAME_RATE);
 	if (enc_init_mpeg4_arg->in_RC_bitrate != 0)
 		WRITEL(enc_init_mpeg4_arg->in_RC_bitrate, S3C_FIMV_ENC_RC_BIT_RATE);
@@ -805,7 +805,12 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 			writel((mfc_ctx->vui_info.aspect_ratio_idc&0xff), shared_mem_vir_addr+0x74);			
 	}
 	else
-		writel((mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);	
+		writel((mfc_ctx->frameSkipEnable<<1), shared_mem_vir_addr+0x28);
+
+	// MFC fw 10/30, set vop_time_resolution, frame_delta	
+	if (mfc_ctx->MfcCodecType == MPEG4_ENC)
+		writel((1<<31)|(init_arg->in_TimeIncreamentRes<<16)|(init_arg->in_VopTimeIncreament), 
+				shared_mem_vir_addr+0x30);
 
 	/* Set stream buffer addr */
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);
