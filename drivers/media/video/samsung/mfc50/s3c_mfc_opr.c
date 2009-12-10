@@ -384,7 +384,9 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_risc_buffer(SSBSIP_MFC_CODEC_TYPE codec
 		break;
 		
 	case VC1_DEC:	
-	case VC1RCV_DEC:		
+	case VC1RCV_DEC:	
+		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_NB_DCAC_ADR); 		
+		aligned_risc_phy_buf += 16*BUF_L_UNIT;		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_UP_NB_MV_ADR);	
 		aligned_risc_phy_buf += 68*BUF_L_UNIT;		
 		WRITEL((aligned_risc_phy_buf-fw_phybuf)>>11, S3C_FIMV_SA_MV_ADR);	
