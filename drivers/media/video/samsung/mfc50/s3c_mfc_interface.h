@@ -148,7 +148,9 @@ typedef struct {
 
 	/* MPEG4 Only
 	 */
-	int in_qpelME_enable;	/* [IN] Quarter-pel MC enable (1:enabled, 0:disabled) */	
+	int in_qpelME_enable;	/* [IN] Quarter-pel MC enable (1:enabled, 0:disabled) */
+	int in_TimeIncreamentRes; /* [IN] VOP time resolution */
+	int in_VopTimeIncreament; /* [IN] Frame delta */
 
 } s3c_mfc_enc_init_mpeg4_arg_t;
 
@@ -353,23 +355,6 @@ typedef struct
 } s3c_mfc_dec_divx311_info;
 
 #define ENC_PROFILE_LEVEL(profile, level)      ((profile) | ((level) << 8))
-
-#define ENC_PROFILE_MPEG4_SP                   0
-#define ENC_PROFILE_MPEG4_ASP                  1
-#define ENC_PROFILE_H264_BP                    0
-#define ENC_PROFILE_H264_MAIN                  1
-#define ENC_PROFILE_H264_HIGH                  2
-
-
-#define ENC_RC_DISABLE                         0
-#define ENC_RC_ENABLE_MACROBLOCK               1
-#define ENC_RC_ENABLE_FRAME                    2
-
 #define ENC_RC_QBOUND(min_qp, max_qp)          ((min_qp) | ((max_qp) << 8))
-#define ENC_RC_MB_CTRL_DARK_DISABLE            (1 << 3)
-#define ENC_RC_MB_CTRL_SMOOTH_DISABLE          (1 << 2)
-#define ENC_RC_MB_CTRL_STATIC_DISABLE          (1 << 1)
-#define ENC_RC_MB_CTRL_ACTIVITY_DISABLE        (1 << 0)
-
 
 #endif /* _S3C_MFC_INTERFACE_H_ */

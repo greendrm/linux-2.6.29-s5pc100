@@ -51,6 +51,11 @@ config S5PC110_AC_TYPE
 	depends on PLAT_S5PC11X
 	help
 		Select AC-Type of S5PC110
+config S5PC110_B_TYPE
+	bool "select B-Type"
+	depends on PLAT_S5PC11X
+	help
+		Select B-Type of S5PC110
 endchoice
 
 	comment "MMC/SD slot setup"
