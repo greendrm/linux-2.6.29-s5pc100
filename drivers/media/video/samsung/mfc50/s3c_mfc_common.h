@@ -94,7 +94,7 @@ typedef enum
 	R2H_CMD_WAKEUP_RET = 11,
 	R2H_CMD_INIT_BUFFERS_RET = 15,
 	R2H_CMD_EDFU_INIT_RET = 16,	
-	R2H_CMD_DECODE_ERR_RET = 32	
+	R2H_CMD_ERR_RET = 32	
 } s3c_mfc_wait_done_type;
 
 

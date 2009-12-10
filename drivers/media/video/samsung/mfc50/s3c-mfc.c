@@ -526,7 +526,8 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 		||((intReason & R2H_CMD_INIT_BUFFERS_RET) == R2H_CMD_INIT_BUFFERS_RET)		
 		||((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)
 		||((intReason & R2H_CMD_OPEN_INSTANCE_RET) == R2H_CMD_OPEN_INSTANCE_RET)
-		||((intReason & R2H_CMD_CLOSE_INSTANCE_RET) == R2H_CMD_CLOSE_INSTANCE_RET)) {
+		||((intReason & R2H_CMD_CLOSE_INSTANCE_RET) == R2H_CMD_CLOSE_INSTANCE_RET)
+		||((intReason & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
 		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC_HOST_INT);
 		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
 		s3c_mfc_int_type = intReason;
@@ -537,7 +538,7 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 
 	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
 		||((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
-		||((intReason & R2H_CMD_DECODE_ERR_RET) == R2H_CMD_DECODE_ERR_RET)) {
+		||((intReason & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
 		
 		writel(0xffff, s3c_mfc_sfr_virt_base + S3C_FIMV_SI_RTN_CHID);
 		
