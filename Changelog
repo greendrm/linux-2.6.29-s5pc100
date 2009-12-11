@@ -2513,3 +2513,10 @@ v2.6.29.4-dev-1-6-9: Sooyoung Kang
 
 	Modified Files:
 		M       drivers/media/video/samsung/mfc10/prism_s_v13d.c
+v2.6.29.4-dev-1-6-10: Hyunwoong Kim
+	- Changed DM9000 default bus width 8 to 16 bit
+
+	Modified Files:
+		M	arch/arm/configs/smdkc110onenand_defconfig
+		M	arch/arm/configs/smdkc110ramdisk_defconfig
+		M	arch/arm/configs/smdkc110nfs_defconfig
