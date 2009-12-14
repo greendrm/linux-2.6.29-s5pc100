@@ -715,7 +715,7 @@ static struct s5k4ea_platform_data s5k4ea_plat = {
 	.default_width = 1920,
 	.default_height = 1080,
 	.pixelformat = V4L2_PIX_FMT_UYVY,
-	.freq = 24000000,
+	.freq = 48000000,
 	.is_mipi = 1,
 };
 
@@ -732,9 +732,9 @@ static struct s3c_platform_camera __initdata s5k4ea = {
 	.i2c_busnum	= 0,
 	.info		= &s5k4ea_i2c_info,
 	.pixelformat	= V4L2_PIX_FMT_UYVY,
-	.srclk_name	= "mout_epll",
+	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_cam0",
-	.clk_rate	= 24000000,
+	.clk_rate	= 48000000,
 	.line_length	= 1920,
 	.width		= 1920,
 	.height		= 1080,

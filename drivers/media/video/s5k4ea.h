@@ -598,8 +598,8 @@ unsigned char s5k4ea_init_reg1[][4] = {
 
 unsigned short s5k4ea_init_reg2[][2] = {
 	//clk Settings
-	{0x002A, S5K4EA_REG_TC_IPRM_InClockLSBs},	//input=24MHz
-	{0x0F12, 0x5DC0},
+	{0x002A, S5K4EA_REG_TC_IPRM_InClockLSBs},	//input=48MHz
+	{0x0F12, 0xBB80},
 	{0x002A, S5K4EA_REG_TC_IPRM_InClockMSBs},
 	{0x0F12, 0x0000},
 	{0x002A, S5K4EA_REG_TC_IPRM_UseNPviClocks},	//0 PVI configurations
