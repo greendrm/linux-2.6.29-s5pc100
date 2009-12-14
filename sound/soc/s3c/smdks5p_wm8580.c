@@ -58,9 +58,9 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	 * are possible for this AP-Codec combination.
 	 */
 	switch (params_format(params)) {
-	case SNDRV_PCM_FORMAT_U8:
-	case SNDRV_PCM_FORMAT_S8:
-		bfs = 16;
+	case SNDRV_PCM_FORMAT_U24_LE:
+	case SNDRV_PCM_FORMAT_S24_LE:
+		bfs = 48;
 		break;
 	case SNDRV_PCM_FORMAT_U16_LE:
 	case SNDRV_PCM_FORMAT_S16_LE:
