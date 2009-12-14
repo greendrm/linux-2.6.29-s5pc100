@@ -1026,6 +1026,12 @@ bool _s5p_tv_if_start(void)
 	return true;
 }
 
+/* 
+ * TV cut off sequence 
+ * VP stop -> Mixer stop -> HDMI stop -> HDMI TG stop
+ * Above sequence should be satisfied.
+ */
+ 
 bool _s5p_tv_if_stop(void)
 {
 	s5p_tv_status *st = &s5ptv_status;
@@ -1035,6 +1041,8 @@ bool _s5p_tv_if_stop(void)
 	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;	
 
 	TVOUTIFPRINTK("tvout sub sys. stopped!!\n");
+	
+	__s5p_vm_stop();
 
 	switch (out_mode) {
 
@@ -1055,8 +1063,8 @@ bool _s5p_tv_if_stop(void)
 	case TVOUT_OUTPUT_HDMI_RGB:
 	case TVOUT_OUTPUT_DVI:
 		if(st->tvout_output_enable) {
+			__s5p_hdmi_stop();			
 			__s5p_hdmi_video_init_tg_cmd(t_corr_en,sync_en,false);
-			__s5p_hdmi_stop();
 		}
 		break;
 
@@ -1065,9 +1073,6 @@ bool _s5p_tv_if_stop(void)
 		return false;
 		break;
 	}
-
-	__s5p_vm_stop();
-
 
 #ifdef CONFIG_CPU_S5PC100
 	if (__s5p_tv_power_get_power_status()) {
