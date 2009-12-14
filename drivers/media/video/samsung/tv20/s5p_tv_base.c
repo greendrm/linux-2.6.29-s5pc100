@@ -249,6 +249,8 @@ int tv_clk_gate(struct _s5p_tv_status *ctrl, bool on)
 		clk_enable(ctrl->mixer_clk);
 		clk_enable(ctrl->tvenc_clk);
 		clk_enable(ctrl->hdmi_clk);
+
+		__s5p_hdmi_phy_power(true);
 			
 	} else {
 		/* off */
@@ -258,6 +260,14 @@ int tv_clk_gate(struct _s5p_tv_status *ctrl, bool on)
 		clk_disable(ctrl->hdmi_clk);
 		
 		clk_disable(ctrl->i2c_phy_clk);
+
+		/* 
+		 * for preventing hdmi hang up when restart 
+		 * switch to internal clk - SCLK_DAC, SCLK_PIXEL 
+		 */
+		__s5p_tv_clk_change_internal();
+			
+		__s5p_hdmi_phy_power(false);
 	}
 
 	return 0;

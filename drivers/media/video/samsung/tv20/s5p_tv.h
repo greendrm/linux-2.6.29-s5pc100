@@ -477,6 +477,7 @@ typedef struct _s5p_tv_status {
 	struct clk *vp_clk;
 	struct clk *mixer_clk;
 	struct clk *hdmi_clk;
+	struct clk *i2c_phy_clk;
 	struct clk *sclk_tv;
 	struct clk *sclk_hdmi;
 	struct clk *sclk_mixer;
@@ -572,6 +573,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num);
 
 #ifdef CONFIG_CPU_S5PC110
 int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_num2);
+int __s5p_hdmi_phy_power(bool on);
 #endif
 
 int __init __s5p_sdout_probe(struct platform_device *pdev, u32 res_num);
@@ -791,6 +793,7 @@ void 	__s5p_tv_clk_init_hpll(u32 lock_time, u32 mdiv, u32 pdiv, u32 sdiv);
 
 #ifdef CONFIG_CPU_S5PC110
 void 	__s5p_tv_clk_init_hpll(u32 lock_time, bool vsel, u32 mdiv, u32 pdiv, u32 sdiv);
+int __s5p_tv_clk_change_internal(void);
 #endif
 
 void 	__s5p_tv_clk_hpll_onoff(bool en);

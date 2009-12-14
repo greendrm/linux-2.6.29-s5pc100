@@ -306,6 +306,74 @@ s32 i2c_hdmi_phy_write(u8 addr, u8 nbytes, u8 *buffer)
 	return ret;
 }
 
+int hdmi_phy_down(bool on, u8 addr, u8 offset, u8 *read_buffer) 
+{
+	u8 buff[2] = {0};
+
+	buff[0] = addr;
+	buff[1] = (on) ? ( read_buffer[addr] & (~(1<<offset))):
+			( read_buffer[addr] | (1<<offset));
+	
+	if (i2c_hdmi_phy_write(PHY_I2C_ADDRESS, 2, buff) != 0) {
+		return EINVAL;
+	}
+
+	return 0;
+}
+
+
+int __s5p_hdmi_phy_power(bool on)
+{
+	u32 size;
+	u8 *buffer;
+	u8 read_buffer[0x40]={0, };
+		
+	size = sizeof(phy_config[0][0]) 
+		/ sizeof(phy_config[0][0][0]);
+
+	buffer = (u8 *) phy_config[0][0];
+
+	/* write offset */
+	if (i2c_hdmi_phy_write(PHY_I2C_ADDRESS, 1, buffer) != 0) {
+		return EINVAL;
+	}
+
+	/* read data */
+	if (i2c_hdmi_phy_read(PHY_I2C_ADDRESS, size, read_buffer) != 0) {
+		HDMIPRINTK("i2c_hdmi_phy_read failed.\n");
+		return EINVAL;
+	}
+
+	/* i can't get the information about phy setting */
+	if (on) {
+		/* on */
+		/* biaspd */
+		hdmi_phy_down(true, 0x1, 0x5, read_buffer);
+		/* clockgenpd */
+		hdmi_phy_down(true, 0x1, 0x7, read_buffer);
+		/* pllpd */
+		hdmi_phy_down(true, 0x5, 0x5, read_buffer);
+		/* pcgpd */
+		hdmi_phy_down(true, 0x17, 0x0, read_buffer);
+		/* txpd */
+		hdmi_phy_down(true, 0x17, 0x1, read_buffer);
+	} else {
+		/* off */
+		/* biaspd */
+		hdmi_phy_down(false, 0x1, 0x5, read_buffer);
+		/* clockgenpd */
+		hdmi_phy_down(false, 0x1, 0x7, read_buffer);
+		/* pllpd */
+		hdmi_phy_down(false, 0x5, 0x5, read_buffer);
+		/* pcgpd */
+		hdmi_phy_down(false, 0x17, 0x0, read_buffer);
+		/* txpd */
+		hdmi_phy_down(false, 0x17, 0x1, read_buffer);
+	}
+		
+	return 0;
+}
+
 s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 {
 	s32 index;

@@ -79,6 +79,20 @@ s5p_tv_clk_err __s5p_tv_clk_init_href(s5p_tv_clk_hpll_ref hpll_ref)
 	return S5P_TV_CLK_ERR_NO_ERROR;
 }
 
+/* prevent hdmi hang-up when reboot */
+int __s5p_tv_clk_change_internal(void)
+{
+	u32 reg = readl(S5P_CLK_SRC1);
+	/* set to SCLK_DAC */
+	reg &= HDMI_SEL_MASK;
+	/* set to SCLK_PIXEL */
+	reg &= VMIXER_SEL_MASK;
+		
+	writel(reg, S5P_CLK_SRC1);
+	
+	return 0;
+}
+
 s5p_tv_clk_err __s5p_tv_clk_init_mout_hpll(s5p_tv_clk_mout_hpll mout_hpll)
 {
 	TVCLKPRINTK("(%d)\n\r", mout_hpll);
