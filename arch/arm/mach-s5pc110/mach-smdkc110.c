@@ -550,11 +550,23 @@ static int smdkc110_cam1_power(int onoff)
 
 static int smdkc110_mipi_cam_power(int onoff)
 {
+	int err;
+
 	gpio_request(S5PC11X_GPH0(3), "GPH0");
 	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
 	gpio_direction_output(S5PC11X_GPH0(3), 0);
 	gpio_direction_output(S5PC11X_GPH0(3), 1);
 	gpio_free(S5PC11X_GPH0(3));
+
+	err = gpio_request(S5PC11X_GPH1(2), "GPH1");
+	if (err) {
+	        printk("### failed to request GPH1 for CAM_2V8\n");
+	        return 0;
+	}
+
+	s3c_gpio_setpull(S5PC11X_GPH1(2), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5PC11X_GPH1(2), 1);
+	gpio_free(S5PC11X_GPH1(2));
 
 	return 0;
 }
