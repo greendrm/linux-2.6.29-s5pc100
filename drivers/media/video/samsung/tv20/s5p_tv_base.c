@@ -237,6 +237,78 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 }
 #endif
 
+
+#ifdef CONFIG_CPU_S5PC110
+int tv_clk_gate(struct _s5p_tv_status *ctrl, bool on)
+{
+	if (on) {
+		/* on */
+		clk_enable(ctrl->i2c_phy_clk);
+
+		clk_enable(ctrl->vp_clk);
+		clk_enable(ctrl->mixer_clk);
+		clk_enable(ctrl->tvenc_clk);
+		clk_enable(ctrl->hdmi_clk);
+			
+	} else {
+		/* off */
+		clk_disable(ctrl->vp_clk);
+		clk_disable(ctrl->mixer_clk);
+		clk_disable(ctrl->tvenc_clk);
+		clk_disable(ctrl->hdmi_clk);
+		
+		clk_disable(ctrl->i2c_phy_clk);
+	}
+
+	return 0;
+}
+
+static int __devinit tv_clk_get(struct platform_device *pdev, struct _s5p_tv_status *ctrl)
+{
+	/* tvenc clk */
+	ctrl->tvenc_clk = clk_get(&pdev->dev, "tvenc");
+
+	if(IS_ERR(ctrl->tvenc_clk)) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "tvenc");	
+		return -ENOENT;							
+	}								
+
+	/* vp clk */
+	ctrl->vp_clk = clk_get(&pdev->dev, "vp");
+
+	if(IS_ERR(ctrl->vp_clk)) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "vp");	
+		return -ENOENT;							
+	}								
+
+	/* mixer clk */
+	ctrl->mixer_clk = clk_get(&pdev->dev, "mixer");
+
+	if(IS_ERR(ctrl->mixer_clk)) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "mixer");	
+		return -ENOENT;							
+	}								
+
+	/* hdmi clk */
+	ctrl->hdmi_clk = clk_get(&pdev->dev, "hdmi");
+
+	if(IS_ERR(ctrl->hdmi_clk)) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "hdmi");	
+		return -ENOENT;							
+	}	
+
+	/* i2c-hdmiphy clk */
+	ctrl->i2c_phy_clk= clk_get(&pdev->dev, "i2c-hdmiphy");
+
+	if(IS_ERR(ctrl->i2c_phy_clk)) { 							
+		printk(KERN_ERR  "failed to find %s clock source\n", "i2c-hdmiphy");	
+		return -ENOENT;							
+	}	
+	
+	return 0;
+}
+#endif
+
 /*
  * ftn for irq 
  */
@@ -258,6 +330,8 @@ static int s5p_tv_v_open(struct file *file)
 		ret =  -EBUSY;
 		goto drv_used;
 	}
+
+	tv_clk_gate(&s5ptv_status, true);
 
 	_s5p_tv_if_init_param();
 
@@ -329,6 +403,8 @@ int s5p_tv_v_release(struct file *filp)
 
 	mutex_unlock(mutex_for_i2c);
 #endif
+	tv_clk_gate(&s5ptv_status, false);
+
 	return 0;
 }
 
@@ -493,12 +569,6 @@ struct video_device s5p_tvout[S5P_TVMAX_CTRLS] = {
 /*
  *  Probe
  */
- 
-/* temporary must be checked hdmi_phy power & clk */
-#ifdef CONFIG_CPU_S5PC110
-#include <linux/delay.h>
-#include <plat/regs-clock.h>
-#endif
 
 static int __devinit s5p_tv_probe(struct platform_device *pdev)
 {
@@ -520,32 +590,9 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 	__s5p_tvclk_probe(pdev, 4);
 #endif
 
-
 #ifdef CONFIG_CPU_S5PC110
-{
-	u32 reg;
-
-	/* i2c-hdmi_phy/i2c-1 */
-	reg = readl(S5P_CLKGATE_IP3);
-
-	reg |= (S5P_CLKGATE_IP3_I2C_HDMI_PHY);
-
-	writel(reg, S5P_CLKGATE_IP3);
-}
-	/* HDMP apb block is needed by hpd/cec - always on */
-//	__s5p_tv_clk_set_hdmi_hclk_onoff(true);
+	tv_clk_get(pdev, &s5ptv_status);
 #endif
-
-	/* clock */
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.tvenc_clk, "tv");
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.vp_clk, "vp");
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.mixer_clk, "mixer");
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.hdmi_clk, "hdmi");
-
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.sclk_tv, "sclk_tv_54");
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.sclk_hdmi, "sclk_hdmi");
-	TVOUT_CLK_INIT(&pdev->dev, s5ptv_status.sclk_mixer, "sclk_mixer");
-	
 
 #ifdef FIX_27M_UNSTABLE_ISSUE /* for smdkc100 pop */
 	writel(0x1, S5PC1XX_GPA0_BASE + 0x56c);

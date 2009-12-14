@@ -1743,17 +1743,8 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	size_t	size;
 	int 	ret;
 	u32	reg;
-	struct	clk 	*hdmi_clk;
 
 	spin_lock_init(&lock_hdmi);
-
-	hdmi_clk = clk_get(&pdev->dev, "hdmi");
-
-	if(hdmi_clk == NULL) { 							
-		printk(KERN_ERR  "failed to find %s clock source\n", "hdmi");	
-		return -ENOENT;							
-	}								
-	clk_enable(hdmi_clk);
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 

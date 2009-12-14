@@ -1074,16 +1074,6 @@ int __init __s5p_mixer_probe(struct platform_device *pdev, u32 res_num)
 	size_t	size;
 	int 	ret;
 
-	struct	clk *mixer_clk;
-
-	mixer_clk = clk_get(&pdev->dev, "mixer");
-
-	if(mixer_clk == NULL) { 							
-		printk(KERN_ERR  "failed to find %s clock source\n", "mixer");	
-		return -ENOENT;							
-	}								
-	clk_enable(mixer_clk);
-
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num);
 
 	if (res == NULL) {
