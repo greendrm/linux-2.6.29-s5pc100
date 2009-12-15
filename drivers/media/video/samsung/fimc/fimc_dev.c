@@ -993,25 +993,32 @@ int fimc_suspend(struct platform_device *pdev, pm_message_t state)
 	ctrl = get_fimc_ctrl(id);
 	pdata = to_fimc_plat(ctrl->dev);
 
-	if (ctrl->status == FIMC_STREAMON) {
-		if (ctrl->out->in_queue[0] != -1)
-			fimc_err("[%s : %d] in queue status isn't stable\n",
-				__func__, __LINE__);
+	if (ctrl->cap) {
+		if (ctrl->cam->id == CAMERA_WB && ctrl->status == FIMC_STREAMON)
+			fimc_streamoff_capture((void*)ctrl);
+		ctrl->status = FIMC_ON_SLEEP;
+	}
+	else {
+		if (ctrl->status == FIMC_STREAMON) {
+			if (ctrl->out->in_queue[0] != -1)
+				fimc_err("[%s : %d] in queue status isn't stable\n",
+					__func__, __LINE__);
 
-		if ((ctrl->out->idx.next != -1) || (ctrl->out->idx.prev != -1))
-			fimc_err("[%s : %d] FIMC status isn't stable\n",
-				__func__, __LINE__);
+			if ((ctrl->out->idx.next != -1) || (ctrl->out->idx.prev != -1))
+				fimc_err("[%s : %d] FIMC status isn't stable\n",
+					__func__, __LINE__);
 
-		fimc_outdev_stop_streaming(ctrl);
+			fimc_outdev_stop_streaming(ctrl);
 
-		if (ctrl->status == FIMC_STREAMON_IDLE)
+			if (ctrl->status == FIMC_STREAMON_IDLE)
+				ctrl->status = FIMC_ON_IDLE_SLEEP;
+			else
+				ctrl->status = FIMC_ON_SLEEP;
+		} else if (ctrl->status == FIMC_STREAMON_IDLE) {
 			ctrl->status = FIMC_ON_IDLE_SLEEP;
-		else
-			ctrl->status = FIMC_ON_SLEEP;
-	} else if (ctrl->status == FIMC_STREAMON_IDLE) {
-		ctrl->status = FIMC_ON_IDLE_SLEEP;
-	} else {
-		ctrl->status = FIMC_OFF_SLEEP;
+		} else {
+			ctrl->status = FIMC_OFF_SLEEP;
+		}
 	}
 
 	if (pdata->clk_off)
@@ -1035,24 +1042,29 @@ int fimc_resume(struct platform_device *pdev)
 		pdata->clk_on(pdev, ctrl->clk);
 
 	if (ctrl->status == FIMC_ON_SLEEP) {
-	        ctrl->status = FIMC_READY_ON;
-
-	        ret = fimc_outdev_set_param(ctrl);
-	        if (ret < 0)
-	                fimc_err("Fail: fimc_outdev_set_param\n");
+		if (ctrl->out) {
+	        	ctrl->status = FIMC_READY_ON;
+	        	ret = fimc_outdev_set_param(ctrl);
+	        	if (ret < 0)
+	        	        fimc_err("Fail: fimc_outdev_set_param\n");
 
 #if defined(CONFIG_VIDEO_IPC)
-                if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
-                        ipc_start();
+                	if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
+	                        ipc_start();
 #endif
-		index = ctrl->out->idx.active;
-                fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
+			index = ctrl->out->idx.active;
+	                fimc_outdev_set_src_addr(ctrl, ctrl->out->buf[index].base);
 
-                ret = fimc_start_fifo(ctrl);
-                if (ret < 0)
-                        fimc_err("Fail: fimc_start_fifo\n");
+	                ret = fimc_start_fifo(ctrl);
+	                if (ret < 0)
+	                        fimc_err("Fail: fimc_start_fifo\n");
 
-                ctrl->status = FIMC_STREAMON;
+	                ctrl->status = FIMC_STREAMON;
+		}
+		else {
+			if (ctrl->cam->id == CAMERA_WB)
+				fimc_streamon_capture((void*)ctrl);
+		}
 	} else if (ctrl->status == FIMC_ON_IDLE_SLEEP) {
 		ctrl->status = FIMC_STREAMON_IDLE;
 	} else if (ctrl->status == FIMC_OFF_SLEEP) {
