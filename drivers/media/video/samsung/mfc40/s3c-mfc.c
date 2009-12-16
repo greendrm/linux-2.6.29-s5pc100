@@ -41,8 +41,6 @@
 #include <plat/regs-clock.h>
 #include <mach/map.h>
 
-#undef MFC_PM
-
 int isMFCRunning = 0;
 
 static struct resource	*s3c_mfc_mem;
@@ -341,7 +339,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			}
 		    
 			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
-				mfc_err("MFC_IOControl", "MFCINST_ERR_STATE_INVALID\n");
+				mfc_err("MFCINST_ERR_STATE_INVALID\n");
 				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 				mutex_unlock(&s3c_mfc_mutex);
 		                break;
@@ -450,11 +448,8 @@ out_ioctl:
 
 static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	unsigned long offset	= vma->vm_pgoff << PAGE_SHIFT;
 	unsigned long size = 0;
 	unsigned long pageFrameNo = 0;
-
-	mfc_debug("vma->vm_end - vma->vm_start = %d\n", offset);
 
 	pageFrameNo = __phys_to_pfn(s3c_mfc_phys_data_buf);
 	vma->vm_flags |= VM_RESERVED | VM_IO;
@@ -623,15 +618,49 @@ static int s3c_mfc_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int s3c_mfc_suspend(struct platform_device *pdev, pm_message_t state)
+#ifdef CONFIG_PM
+static int s3c_mfc_suspend(struct platform_device *pdev, pm_message_t pm)
 {
+	int ret;
+	mfc_debug("s3c_mfc_suspend\n");
+
+	mutex_lock(&s3c_mfc_mutex);
+	if(!s3c_mfc_is_running()) {
+		mutex_unlock(&s3c_mfc_mutex);
+		return 0;
+	}
+	
+	ret = s3c_mfc_set_sleep();
+	if (ret != MFCINST_RET_OK)
+		return ret;
+	
+	mutex_unlock(&s3c_mfc_mutex);
 	return 0;
 }
 
+
 static int s3c_mfc_resume(struct platform_device *pdev)
 {
+	int ret;
+	mfc_debug("s3c_mfc_resume\n");
+
+	mutex_lock(&s3c_mfc_mutex);
+	if(!s3c_mfc_is_running()) {
+		mutex_unlock(&s3c_mfc_mutex);
+		return 0;
+	}
+
+	ret = s3c_mfc_set_wakeup();
+	if (ret != MFCINST_RET_OK)
+		return ret;
+
+	mutex_unlock(&s3c_mfc_mutex);
 	return 0;
 }
+#else
+#define s3c_mfc_suspend NULL
+#define s3c_mfc_resume NULL
+#endif
 
 static struct platform_driver s3c_mfc_driver = {
 	.probe		= s3c_mfc_probe,
