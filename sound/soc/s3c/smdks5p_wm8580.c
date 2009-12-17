@@ -58,9 +58,9 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	 * are possible for this AP-Codec combination.
 	 */
 	switch (params_format(params)) {
-	case SNDRV_PCM_FORMAT_U8:
-	case SNDRV_PCM_FORMAT_S8:
-		bfs = 16;
+	case SNDRV_PCM_FORMAT_U24_LE:
+	case SNDRV_PCM_FORMAT_S24_LE:
+		bfs = 48;
 		break;
 	case SNDRV_PCM_FORMAT_U16_LE:
 	case SNDRV_PCM_FORMAT_S16_LE:
@@ -97,6 +97,7 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	default:
 		return -EINVAL;
 	}
+
 	pll_out = params_rate(params) * rfs;
 
 #ifdef CONFIG_S5P_USE_CLKAUDIO
@@ -109,6 +110,19 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	/* Set the AP Prescalar */
 	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA, SMDK_WM8580_OSC_FREQ, pll_out);
 #else
+	/* Only 384fs and 768fs are allowed for bfs=48fs in SoC Master mode */
+	if (bfs == 48) {
+		switch (rfs) {
+		case 256:
+			rfs = 384;
+			break;
+		case 512:
+			rfs = 768;
+		default:
+			break;
+		}
+	}
+
 	psr = SRC_CLK / rfs / params_rate(params);
 	ret = SRC_CLK / rfs - psr * params_rate(params);
 	if(ret >= params_rate(params)/2)	// round off

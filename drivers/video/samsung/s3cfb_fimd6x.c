@@ -40,7 +40,7 @@ void s3cfb_check_line_count(struct s3cfb_global *ctrl)
 
 int s3cfb_set_output(struct s3cfb_global *ctrl)
 {
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg &= ~S3C_VIDCON0_VIDOUT_MASK;
@@ -99,7 +99,7 @@ int s3cfb_set_output(struct s3cfb_global *ctrl)
 
 int s3cfb_set_display_mode(struct s3cfb_global *ctrl)
 {
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg &= ~S3C_VIDCON0_PNRMODE_MASK;
@@ -111,7 +111,7 @@ int s3cfb_set_display_mode(struct s3cfb_global *ctrl)
 
 int s3cfb_display_on(struct s3cfb_global *ctrl)
 {
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg |= (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE);
@@ -124,7 +124,7 @@ int s3cfb_display_on(struct s3cfb_global *ctrl)
 
 int s3cfb_display_off(struct s3cfb_global *ctrl)
 {
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg &= ~S3C_VIDCON0_ENVID_ENABLE;
@@ -140,7 +140,7 @@ int s3cfb_display_off(struct s3cfb_global *ctrl)
 
 int s3cfb_frame_off(struct s3cfb_global *ctrl)
 {
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg &= ~S3C_VIDCON0_ENVID_F_ENABLE;
@@ -154,7 +154,7 @@ int s3cfb_frame_off(struct s3cfb_global *ctrl)
 int s3cfb_set_clock(struct s3cfb_global *ctrl)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
-	__u32 cfg, maxclk, src_clk, vclk, div;
+	u32 cfg, maxclk, src_clk, vclk, div;
 
 	maxclk = 86 * 1000000;
 	
@@ -201,7 +201,7 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 int s3cfb_set_polarity(struct s3cfb_global *ctrl)
 {
 	struct s3cfb_lcd_polarity *pol;
-	__u32 cfg;
+	u32 cfg;
 
 	pol = &ctrl->lcd->polarity;
 	cfg = 0;
@@ -226,7 +226,7 @@ int s3cfb_set_polarity(struct s3cfb_global *ctrl)
 int s3cfb_set_timing(struct s3cfb_global *ctrl)
 {
 	struct s3cfb_lcd_timing *time;
-	__u32 cfg;
+	u32 cfg;
 
 	time = &ctrl->lcd->timing;
 	cfg = 0;
@@ -252,7 +252,7 @@ int s3cfb_set_timing(struct s3cfb_global *ctrl)
 
 int s3cfb_set_lcd_size(struct s3cfb_global *ctrl)
 {
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg |= S3C_VIDTCON2_HOZVAL(ctrl->lcd->width - 1);
 	cfg |= S3C_VIDTCON2_LINEVAL(ctrl->lcd->height - 1);
@@ -264,7 +264,7 @@ int s3cfb_set_lcd_size(struct s3cfb_global *ctrl)
 
 int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable)
 {
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
 	cfg &= ~(S3C_VIDINTCON0_INTFRMEN_ENABLE | S3C_VIDINTCON0_INT_ENABLE);
@@ -286,7 +286,7 @@ int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable)
 
 int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable)
 {
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
 	cfg &= ~S3C_VIDINTCON0_FRAMESEL0_MASK;
@@ -307,7 +307,7 @@ int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable)
 #ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
 int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable)
 {
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
 
@@ -332,7 +332,7 @@ int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable)
 
 int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 {
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg = readl(ctrl->regs + S3C_VIDINTCON1);
 
@@ -350,11 +350,11 @@ int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
-	__u32 cfg;
+	u32 cfg;
 
 	if (pdata->hw_ver == 0x62) {
 		cfg = readl(ctrl->regs + S3C_WINSHMAP);
-		cfg |= (0x1 << (id+5));
+		cfg |= S3C_WINSHMAP_LOCAL_ENABLE(id);
 		writel(cfg, ctrl->regs + S3C_WINSHMAP);
 	}
 
@@ -366,11 +366,11 @@ int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
 int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
-	__u32 cfg;
+	u32 cfg;
 
 	if (pdata->hw_ver == 0x62) {
 		cfg = readl(ctrl->regs + S3C_WINSHMAP);
-		cfg &= ~(0x1 << (id+5));
+		cfg &= ~S3C_WINSHMAP_LOCAL_DISABLE(id);
 		writel(cfg, ctrl->regs + S3C_WINSHMAP);
 	}
 
@@ -382,7 +382,7 @@ int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
 int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 	cfg |= S3C_WINCON_ENWIN_ENABLE;
@@ -390,7 +390,7 @@ int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 
 	if (pdata->hw_ver == 0x62) {
 		cfg = readl(ctrl->regs + S3C_WINSHMAP);
-		cfg |= (0x1 << id);
+		cfg |= S3C_WINSHMAP_CH_ENABLE(id);
 		writel(cfg, ctrl->regs + S3C_WINSHMAP);
 	}
 
@@ -401,12 +401,19 @@ int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 
 int s3cfb_window_off(struct s3cfb_global *ctrl, int id)
 {
-	__u32 cfg;
+	struct s3c_platform_fb *pdata = to_fb_plat(ctrl->dev);
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 	cfg &= ~(S3C_WINCON_ENWIN_ENABLE | S3C_WINCON_DATAPATH_MASK);
 	cfg |= S3C_WINCON_DATAPATH_DMA;
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
+
+	if (pdata->hw_ver == 0x62) {
+		cfg = readl(ctrl->regs + S3C_WINSHMAP);
+		cfg &= ~S3C_WINSHMAP_CH_DISABLE(id);
+		writel(cfg, ctrl->regs + S3C_WINSHMAP);
+	}
 
 	dev_dbg(ctrl->dev, "[fb%d] turn off\n", id);
 
@@ -419,7 +426,7 @@ int s3cfb_set_window_control(struct s3cfb_global *ctrl, int id)
 	struct fb_info *fb = ctrl->fb[id];
 	struct fb_var_screeninfo *var = &fb->var;
 	struct s3cfb_window *win = fb->par;
-	__u32 cfg;
+	u32 cfg;
 
 	cfg = readl(ctrl->regs + S3C_WINCON(id));
 
@@ -538,7 +545,7 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 {
 	struct s3cfb_window *win = ctrl->fb[id]->par;
 	struct s3cfb_alpha *alpha = &win->alpha;
-	__u32 avalue = 0, cfg;
+	u32 avalue = 0, cfg;
 
 	if (id == 0) {
 		dev_err(ctrl->dev, "[fb%d] does not support alpha blending\n",
@@ -579,7 +586,7 @@ int s3cfb_set_window_position(struct s3cfb_global *ctrl, int id)
 {
 	struct fb_var_screeninfo *var = &ctrl->fb[id]->var;
 	struct s3cfb_window *win = ctrl->fb[id]->par;
-	__u32 cfg, shw;
+	u32 cfg, shw;
 
 	shw = readl(ctrl->regs + S3C_WINSHMAP);
 	shw |= S3C_WINSHMAP_PROTECT(id);
@@ -606,7 +613,7 @@ int s3cfb_set_window_position(struct s3cfb_global *ctrl, int id)
 int s3cfb_set_window_size(struct s3cfb_global *ctrl, int id)
 {
 	struct fb_var_screeninfo *var = &ctrl->fb[id]->var;
-	__u32 cfg;
+	u32 cfg;
 
 	if (id > 2)
 		return 0;
@@ -627,7 +634,7 @@ int s3cfb_set_window_size(struct s3cfb_global *ctrl, int id)
 int s3cfb_set_buffer_size(struct s3cfb_global *ctrl, int id)
 {
 	struct fb_fix_screeninfo *fix = &ctrl->fb[id]->fix;
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	cfg = S3C_VIDADDR_PAGEWIDTH(fix->line_length);
 	writel(cfg, ctrl->regs + S3C_VIDADDR_SIZE(id));
@@ -639,7 +646,7 @@ int s3cfb_set_chroma_key(struct s3cfb_global *ctrl, int id)
 {
 	struct s3cfb_window *win = ctrl->fb[id]->par;
 	struct s3cfb_chroma *chroma = &win->chroma;
-	__u32 cfg = 0;
+	u32 cfg = 0;
 
 	if (id == 0) {
 		dev_err(ctrl->dev, "[fb%d] does not support chroma key\n", id);

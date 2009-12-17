@@ -187,19 +187,24 @@ static int set_hwparams(struct audio_params *a_params)
 
 	a_params->bpf = snd_pcm_format_physical_width(a_params->fmt) * a_params->channels / 8;
 
-	rc = snd_pcm_hw_params_get_buffer_size_max(a_params->hwparams, &a_params->buffer_size);
+	if (!a_params->buffer_size)
+		rc = snd_pcm_hw_params_get_buffer_size_max(a_params->hwparams, &a_params->buffer_size);
+	else
+		rc = 0;
 	if(rc < 0){
 		fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		goto hwset_err;
 	}
 
-	val = 128;
-	a_params->period_size = 1024 / a_params->bpf; //1KB (least possible)
+	if (!a_params->period_size)
+		a_params->period_size = 1024 / a_params->bpf; //1KB (least possible)
 	rc = snd_pcm_hw_params_set_period_size_near(a_params->pcm, a_params->hwparams, &a_params->period_size, NULL);
 	if(rc < 0){
 		fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		goto hwset_err;
 	}
+
+	val = a_params->buffer_size / a_params->period_size;
 	rc = snd_pcm_hw_params_set_periods_near(a_params->pcm, a_params->hwparams, &val, NULL);
 	if(rc < 0){
 		fprintf(stderr, "%s:%d\n", __func__, __LINE__);
@@ -315,6 +320,8 @@ void print_usage(const char *prog)
 	puts("  -d --device       device to use\n"
 	     "  -r --rate         sampling rate\n"
 	     "  -o --offset       offset of pcm data in input file\n"
+	     "  -p --period-size  period size in frames\n"
+	     "  -b --buffer-size  buffer size in frames\n"
 	     "  -s --suspend      suspend instead of snd_pcm_wait\n"
 	     "  -v --verbose      debug execution\n"
 	     "  -l --loop         loop playback\n"
@@ -330,6 +337,8 @@ void parse_opts(struct audio_params *a_params, int argc, char *argv[])
 			{ "rate",   1, 0, 'r' },
 			{ "offset",   1, 0, 'o' },
 			{ "mono",   1, 0, 'm' },
+			{ "period-size",   1, 0, 'p' },
+			{ "buffer-size",   1, 0, 'b' },
 			{ "loop",   1, 0, 'l' },
 			{ "verbose",   1, 0, 'v' },
 			{ "suspend",   1, 0, 's' },
@@ -337,7 +346,7 @@ void parse_opts(struct audio_params *a_params, int argc, char *argv[])
 		};
 		int c;
 
-		c = getopt_long(argc, argv, "d:r:o:msvl", lopts, NULL);
+		c = getopt_long(argc, argv, "d:r:o:p:b:msvl", lopts, NULL);
 
 		if (c == -1)
 			break;
@@ -351,6 +360,12 @@ void parse_opts(struct audio_params *a_params, int argc, char *argv[])
 			break;
 		case 'o':
 			a_params->off = atoi(optarg);
+			break;
+		case 'p':
+			a_params->period_size = atoi(optarg);
+			break;
+		case 'b':
+			a_params->buffer_size = atoi(optarg);
 			break;
 		case 'v':
 			verbose = 1;
@@ -440,6 +455,8 @@ int main(int argc, char *argv[]) {
 	/* Defaults */
 	ap.acc = SND_PCM_ACCESS_RW_INTERLEAVED;
 	ap.fmt = SND_PCM_FORMAT_S16_LE;
+	ap.period_size = 0;
+	ap.buffer_size = 0;
 	ap.channels = 2;
 	ap.mono = 0;
 	ap.loop = 0;

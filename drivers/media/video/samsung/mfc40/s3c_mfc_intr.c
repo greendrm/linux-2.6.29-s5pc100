@@ -53,24 +53,24 @@ static int s3c_mfc_wait_polling(unsigned int PollingRegAddress)
 
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command, s3c_mfc_inst_ctx *MfcCtx)
 {
-	u32 retVal = 1;
+	u32 ret = 1;
 	u32 timeout_val = 1000;
 	
 	switch (command) {
 	case MFC_POLLING_DMA_DONE :
-		retVal = s3c_mfc_wait_polling(S3C_FIMV_DONE_M);
+		ret = s3c_mfc_wait_polling(S3C_FIMV_DONE_M);
 		break;
 
 	case MFC_POLLING_HEADER_DONE :
-		retVal = s3c_mfc_wait_polling(S3C_FIMV_HEADER_DONE);
+		ret = s3c_mfc_wait_polling(S3C_FIMV_HEADER_DONE);
 		break;
 
 	case MFC_POLLING_OPERATION_DONE :
-		retVal = s3c_mfc_wait_polling(S3C_FIMV_OPERATION_DONE);
+		ret = s3c_mfc_wait_polling(S3C_FIMV_OPERATION_DONE);
 		break;
 
 	case MFC_POLLING_FW_DONE :
-		retVal = s3c_mfc_wait_polling(S3C_FIMV_FW_DONE);
+		ret = s3c_mfc_wait_polling(S3C_FIMV_FW_DONE);
 		break;
 
 	case MFC_INTR_FRAME_DONE :
@@ -85,20 +85,20 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command, s3c_mfc_inst_ctx *MfcC
 	case MFC_INTR_DMA_DONE :
 	case MFC_INTR_FW_DONE :
 		if (interruptible_sleep_on_timeout(&s3c_mfc_wait_queue, timeout_val) == 0) {
-			retVal = 0;
+			ret = 0;
 			mfc_err("Interrupt Time Out(%d)\n", command);
 			break;
 		}
 
-		retVal = s3c_mfc_int_type;
+		ret = s3c_mfc_int_type;
 		s3c_mfc_int_type = 0;
 		break;		
 
 	default : 
 		mfc_err("undefined command\n");
-		retVal = 0;
+		ret = 0;
 	}
 
-	return retVal;
+	return ret;
 }
 

@@ -55,6 +55,12 @@
 
 #define FIMC_FHD_WIDTH		1920
 #define FIMC_FHD_HEIGHT		1080
+
+#if 1
+#define FIMC_OVERLAY_MODE	FIMC_OVERLAY_DMA
+#else
+#define FIMC_OVERLAY_MODE	FIMC_OVERLAY_FIFO
+#endif
 /*
  * E N U M E R A T I O N S
  *
@@ -92,9 +98,10 @@ enum fimc_input {
 	FIMC_SRC_MSDMA,
 };
 
-enum fimc_output {
-	FIMC_DST_DMA,
-	FIMC_DST_FIMD,
+enum fimc_overlay {
+	FIMC_OVERLAY_NONE	= 0x0,	/* Destructive Overlay with DMA */
+	FIMC_OVERLAY_DMA	= 0x1,	/* Non-destructive Overlay with DMA */
+	FIMC_OVERLAY_FIFO	= 0x2,	/* Non-destructive Overlay with FIFO */
 };
 
 enum fimc_autoload {
@@ -172,25 +179,15 @@ struct fimc_outinfo {
 	u32			buf_num;
 	u32			is_requested;
 	struct fimc_buf_idx	idx;
-	struct fimc_buf_set	buf[FIMC_OUTBUFS];
+	struct fimc_buf_set	src[FIMC_OUTBUFS];
+	struct fimc_buf_set	dst[FIMC_OUTBUFS];
 	u32			in_queue[FIMC_INQ_BUFS];
 	u32			out_queue[FIMC_OUTQ_BUFS];
 
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
 	u32			rotate;
-};
-
-/* To do : remove s3cfb_window, s3cfb_lcd structures ---------------------- */
-struct s3cfb_window {
-	int			id;
-	int			enabled;
-	atomic_t		in_use;
-	int			x;
-	int			y;
-	int			local_channel;
-	int			dma_burst;
-	unsigned int		pseudo_pal[16];
+	enum fimc_overlay	overlay;
 };
 
 struct s3cfb_user_window {
@@ -204,19 +201,31 @@ enum s3cfb_data_path_t {
 	DATA_PATH_IPC = 2,
 };
 
+enum s3cfb_mem_owner_t {
+	DMA_MEM_NONE	= 0,
+	DMA_MEM_FIMD	= 1,
+	DMA_MEM_OTHER	= 2,
+};
+
 #define S3CFB_WIN_OFF_ALL		_IO  ('F', 202)
 #define S3CFB_WIN_POSITION		_IOW ('F', 203, struct s3cfb_user_window)
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
 #define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
+#define S3CFB_SET_WIN_ON		_IOW ('F', 305, u32)
+#define S3CFB_SET_WIN_OFF		_IOW ('F', 306, u32)
+#define S3CFB_SET_WIN_PATH		_IOW ('F', 307, enum s3cfb_data_path_t) 
+#define S3CFB_SET_WIN_ADDR		_IOW ('F', 308, unsigned long)
+#define S3CFB_SET_WIN_MEM		_IOW ('F', 309, enum s3cfb_mem_owner_t) 
+ 
 /* ------------------------------------------------------------------------ */
 
 struct fimc_fbinfo {
 	struct fb_fix_screeninfo	*fix;
 	struct fb_var_screeninfo	*var;
-	struct s3cfb_window		*win;
 	int				lcd_hres;
 	int				lcd_vres;	
+	u32				is_enable;
 
 	/* lcd fifo control */
 	int (*open_fifo)(int id, int ch, int (*do_priv)(void *), void *param);
@@ -388,6 +397,7 @@ extern int fimc_outdev_set_param(struct fimc_control *ctrl);
 extern int fimc_start_fifo(struct fimc_control *ctrl);
 extern int fimc_fimd_rect(const struct fimc_control *ctrl, struct v4l2_rect *fimd_rect);
 extern int fimc_outdev_stop_streaming(struct fimc_control *ctrl);
+extern int fimc_outdev_resume_dma(struct fimc_control *ctrl);
 extern int fimc_outdev_start_camif(void *param);
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);

@@ -39,8 +39,6 @@ static void s3c_mfc_cmd_seq_start(void);
 static void s3c_mfc_cmd_frame_start(void);
 static void s3c_mfc_cmd_sleep(void);
 static void s3c_mfc_cmd_wakeup(void);
-static void s3c_mfc_backup_context(s3c_mfc_inst_ctx  *MfcCtx);
-static void s3c_mfc_restore_context(s3c_mfc_inst_ctx  *MfcCtx);
 static void s3c_mfc_set_codec_firmware(s3c_mfc_inst_ctx  *MfcCtx);
 static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_type, s3c_mfc_args *args);
 static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int buf_addr, unsigned int buf_size);
@@ -92,18 +90,6 @@ static void s3c_mfc_cmd_wakeup()
 	WRITEL(-1, S3C_FIMV_CH_ID);
 	WRITEL(MFC_WAKEUP, S3C_FIMV_COMMAND_TYPE);
 	mdelay(100);
-}
-
-static void s3c_mfc_backup_context(s3c_mfc_inst_ctx  *MfcCtx)
-{
-	memcpy(MfcCtx->MfcSfr, s3c_mfc_sfr_virt_base, S3C_FIMV_REG_SIZE);
-}
-
-static void s3c_mfc_restore_context(s3c_mfc_inst_ctx  *MfcCtx)
-{
-	/*
-	memcpy(s3c_mfc_sfr_virt_base, MfcCtx->MfcSfr, S3C_FIMV_REG_SIZE);
-	*/
 }
 
 static MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int buf_addr, unsigned int buf_size)
@@ -409,7 +395,6 @@ MFC_ERROR_CODE s3c_mfc_init_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 		return MFCINST_ERR_FW_LOAD_FAIL;
 	}
 
-	s3c_mfc_backup_context(MfcCtx);
 	mfc_debug("--\n");
 	return MFCINST_RET_OK;
 }
@@ -427,9 +412,6 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 								EncExeArg->in_strm_st, EncExeArg->in_strm_end);
 	mfc_debug("EncExeArg->in_Y_addr : 0x%08x EncExeArg->in_CbCr_addr :0x%08x \r\n",   \
 								EncExeArg->in_Y_addr, EncExeArg->in_CbCr_addr);
-
-	s3c_mfc_restore_context(MfcCtx);
-
 	s3c_mfc_set_vsp_buffer(MfcCtx->InstNo);
 
 	if ((MfcCtx->forceSetFrameType > DONT_CARE) &&
@@ -601,8 +583,6 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 			InitArg->out_img_height);
 	}
 
-	s3c_mfc_backup_context(MfcCtx);
-
 	mfc_debug("--\n");
 	return MFCINST_RET_OK;
 }
@@ -649,8 +629,6 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 	count++;
 	
 	mfc_debug("++ IntNo%d(%d)\r\n", MfcCtx->InstNo, count);
-
-	s3c_mfc_restore_context(MfcCtx);
 
 	if(MfcCtx->endOfFrame) {
 		WRITEL(1, S3C_FIMV_LAST_DEC);
@@ -709,8 +687,6 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 	frame_type = READL(S3C_FIMV_FRAME_TYPE);
 	MfcCtx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x3);
 
-	s3c_mfc_backup_context(MfcCtx);
-
 	mfc_debug("(Y_ADDR : 0x%08x  C_ADDR : 0x%08x)\r\n", \
 		DecArg->out_display_Y_addr , DecArg->out_display_C_addr);  
 	mfc_debug("(in_strmsize : 0x%08x  consumed byte : 0x%08x)\r\n", \
@@ -765,8 +741,6 @@ MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx  *MfcCtx)
 {
-	s3c_mfc_restore_context(MfcCtx);
-
 	return MFCINST_RET_OK;
 }
 
@@ -774,7 +748,6 @@ MFC_ERROR_CODE s3c_mfc_get_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 {
 	return MFCINST_RET_OK;
 }
-
 
 MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args)
 {
@@ -816,7 +789,7 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 		else {
 			mfc_warn("EXTRA_BUFFER_NUM should be between 0 and 5...It will be set 5 by default\n");
 			MfcCtx->extraDPB = MFC_MAX_EXTRA_DPB;
-		}
+	}
 		break;
 		
 	case MFC_DEC_SETCONF_DISPLAY_DELAY:
@@ -865,6 +838,51 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 		return MFCINST_ERR_SET_CONF;
 	}
 	
+	return MFCINST_RET_OK;
+}
+
+MFC_ERROR_CODE s3c_mfc_set_sleep(void)
+{
+	/* Set interrupt */
+	WRITEL(INT_LEVEL_BIT, S3C_FIMV_INT_MODE);
+	WRITEL(0, S3C_FIMV_INT_OFF);
+	WRITEL(1, S3C_FIMV_INT_DONE_CLEAR);
+	WRITEL(1, S3C_FIMV_BITS_ENDIAN);
+	WRITEL(INT_MFC_FRAME_DONE, S3C_FIMV_INT_MASK);
+
+	s3c_mfc_cmd_sleep();
+	s3c_mfc_cmd_frame_start();
+
+	if(s3c_mfc_wait_for_done(MFC_INTR_FW_DONE, NULL) == 0) {
+		mfc_err("MFC sleep failed\n");
+		return MFCINST_SLEEP_FAIL;
+	}
+
+	return MFCINST_RET_OK;
+}
+
+MFC_ERROR_CODE s3c_mfc_set_wakeup(void)
+{
+	int ret;
+
+	ret = s3c_mfc_init_hw();
+	if(ret != MFCINST_RET_OK)
+		return ret;
+	s3c_mfc_cmd_wakeup();
+
+	/* Set interrupt */
+	WRITEL(INT_LEVEL_BIT, S3C_FIMV_INT_MODE);
+	WRITEL(0, S3C_FIMV_INT_OFF);
+	WRITEL(1, S3C_FIMV_INT_DONE_CLEAR);
+	WRITEL(INT_MFC_FRAME_DONE, S3C_FIMV_INT_MASK);
+
+	s3c_mfc_cmd_frame_start();
+
+	if(s3c_mfc_wait_for_done(MFC_INTR_FW_DONE, NULL) == 0) {
+		mfc_err("MFC wakeup failed\n");
+		return MFCINST_WAKEUP_FAIL;
+	}
+
 	return MFCINST_RET_OK;
 }
 

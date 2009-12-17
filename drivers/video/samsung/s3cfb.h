@@ -67,6 +67,11 @@ enum s3cfb_rgb_mode_t {
 	MODE_BGR_S = 3,
 };
 
+enum s3cfb_mem_owner_t {
+	DMA_MEM_NONE	= 0,
+	DMA_MEM_FIMD	= 1,
+	DMA_MEM_OTHER	= 2,
+};
 
 /*
  * F I M D   S T R U C T U R E S
@@ -183,6 +188,7 @@ struct s3cfb_window {
 	int			x;
 	int			y;
 	enum 			s3cfb_data_path_t path;
+	enum 			s3cfb_mem_owner_t owner;
 	int			local_channel;
 	int			dma_burst;
 	unsigned int		pseudo_pal[16];
@@ -264,6 +270,11 @@ struct s3cfb_user_chroma {
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
 #define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
+#define S3CFB_SET_WIN_ON		_IOW ('F', 305, u32)
+#define S3CFB_SET_WIN_OFF		_IOW ('F', 306, u32)
+#define S3CFB_SET_WIN_PATH		_IOW ('F', 307, enum s3cfb_data_path_t) 
+#define S3CFB_SET_WIN_ADDR		_IOW ('F', 308, unsigned long)
+#define S3CFB_SET_WIN_MEM		_IOW ('F', 309, enum s3cfb_mem_owner_t) 
 
 /*
  * E X T E R N S

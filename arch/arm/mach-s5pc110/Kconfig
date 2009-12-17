@@ -35,6 +35,7 @@ config MACH_SMDKC110
 	help
 	  Machine support for the Samsung SMDKC110
 
+	comment "CPU type selection"
 choice
 	prompt "Setup CPU Type for S5PC110"
 	depends on PLAT_S5PC11X
@@ -51,11 +52,35 @@ config S5PC110_AC_TYPE
 	depends on PLAT_S5PC11X
 	help
 		Select AC-Type of S5PC110
+
 config S5PC110_B_TYPE
 	bool "select B-Type"
 	depends on PLAT_S5PC11X
 	help
 		Select B-Type of S5PC110
+
+config S5PC110_D_TYPE
+	bool "select D-Type"
+	depends on PLAT_S5PC11X
+	help
+		Select D-Type of S5PC110
+endchoice
+
+choice
+	prompt "CPU revision"
+	depends on CPU_S5PC110 && !S5P_DEEP_IDLE_TEST
+	default	CPU_S5PC110_EVT0_ERRATA
+	 
+config CPU_S5PC110_EVT0_ERRATA
+	bool "EVT0"
+	help
+	  Fixup known bug on s5pc110 evt0 version.
+
+config CPU_S5PC110_EVT1
+	bool "EVT1"
+	help
+	  Support EVT1(S5PC110)
+
 endchoice
 
 	comment "MMC/SD slot setup"

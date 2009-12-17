@@ -181,7 +181,7 @@ static int s3cfb_map_video_memory(struct fb_info *fb)
 	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct s3cfb_window *win = fb->par;
 
-	if (win->path != DATA_PATH_DMA)
+	if (win->owner == DMA_MEM_OTHER)
 		return 0;
 
 	fb->screen_base = dma_alloc_writecombine(fbdev->dev,
@@ -197,6 +197,7 @@ static int s3cfb_map_video_memory(struct fb_info *fb)
 			 (unsigned int)fb->screen_base, fix->smem_len);
 
 	memset(fb->screen_base, 0, fix->smem_len);
+	win->owner = DMA_MEM_FIMD;
 
 	return 0;
 }
@@ -289,8 +290,6 @@ static int s3cfb_set_alpha_info(struct fb_var_screeninfo *var,
 
 static int s3cfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
 {
-	struct s3c_platform_fb *pdata = to_fb_plat(fbdev->dev);
-	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct s3cfb_window *win = fb->par;
 	struct s3cfb_lcd *lcd = fbdev->lcd;
 
@@ -326,16 +325,24 @@ static int s3cfb_check_var(struct fb_var_screeninfo *var, struct fb_info *fb)
 	if (win->y + var->yres > lcd->height)
 		win->y = lcd->height - var->yres;
 
-	/* modify the fix info */
-	if (win->id != pdata->default_win) {
-		fix->line_length = var->xres_virtual * var->bits_per_pixel / 8;
-		fix->smem_len = fix->line_length * var->yres_virtual;
-	}
-
 	s3cfb_set_bitfield(var);
 	s3cfb_set_alpha_info(var, win);
 
 	return 0;
+}
+
+static void s3cfb_set_win_params(int id)
+{
+	s3cfb_set_window_control(fbdev, id);
+	s3cfb_set_window_position(fbdev, id);
+	s3cfb_set_window_size(fbdev, id);
+	s3cfb_set_buffer_address(fbdev, id);
+	s3cfb_set_buffer_size(fbdev, id);
+
+	if (id > 0) {
+		s3cfb_set_alpha_blending(fbdev, id);
+		s3cfb_set_chroma_key(fbdev, id);
+	}
 }
 
 static int s3cfb_set_par(struct fb_info *fb)
@@ -348,19 +355,16 @@ static int s3cfb_set_par(struct fb_info *fb)
 	if ((win->id != pdata->default_win) && fb->fix.smem_start)
 		s3cfb_unmap_video_memory(fb);
 
+	/* modify the fix info */
+	if (win->id != pdata->default_win) {
+		fb->fix.line_length = fb->var.xres_virtual * fb->var.bits_per_pixel / 8;
+		fb->fix.smem_len = fb->fix.line_length * fb->var.yres_virtual;
+	}
+
 	if ((win->id != pdata->default_win))
 		s3cfb_map_video_memory(fb);
 
-	s3cfb_set_window_control(fbdev, win->id);
-	s3cfb_set_window_position(fbdev, win->id);
-	s3cfb_set_window_size(fbdev, win->id);
-	s3cfb_set_buffer_address(fbdev, win->id);
-	s3cfb_set_buffer_size(fbdev, win->id);
-
-	if (win->id > 0) {
-		s3cfb_set_alpha_blending(fbdev, win->id);
-		s3cfb_set_chroma_key(fbdev, win->id);
-	}
+	s3cfb_set_win_params(win->id);
 
 	return 0;
 }
@@ -685,6 +689,7 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 {
 	struct fb_info *fb = fbdev->fb[id];
 	struct fb_var_screeninfo *var = &fb->var;
+	struct fb_fix_screeninfo *fix = &fb->fix;
 	struct s3cfb_window *win = fb->par;
 	struct s3cfb_lcd *lcd = fbdev->lcd;
 	struct s3cfb_user_window user_win;
@@ -692,10 +697,6 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 	int ret = 0;
 
 	switch (cmd) {
-	case FBIO_ALLOC:
-		win->path = (enum s3cfb_data_path_t)argp;
-		break;
-
 	case FBIOGET_FSCREENINFO:
 		ret = memcpy(argp, &fb->fix, sizeof(fb->fix)) ? 0 : -EFAULT;
 		break;
@@ -718,7 +719,7 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-		ret = s3cfb_set_par(fb);
+		s3cfb_set_win_params(id);
 		break;
 
 	case S3CFB_WIN_POSITION:
@@ -766,9 +767,6 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 
 		break;
 
-		/*
-		 * for FBIO_WAITFORVSYNC
-		 */
 	case S3CFB_SET_WRITEBACK:
 		if ((u32)argp == 1)
 			fbdev->output = OUTPUT_WB_RGB;
@@ -777,6 +775,27 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 
 		s3cfb_set_output(fbdev);
 
+		break;
+
+	case S3CFB_SET_WIN_ON:
+		s3cfb_enable_window(id);
+		break;
+
+	case S3CFB_SET_WIN_OFF:
+		s3cfb_disable_window(id);
+		break;
+
+	case S3CFB_SET_WIN_PATH :
+		win->path = (enum s3cfb_data_path_t)argp;
+		break;
+
+	case S3CFB_SET_WIN_ADDR:
+		fix->smem_start = (unsigned long)argp;
+		s3cfb_set_buffer_address(fbdev, id);
+		break;
+
+	case S3CFB_SET_WIN_MEM :
+		win->owner = (enum s3cfb_mem_owner_t)argp;
 		break;
 
 	default:
@@ -1218,8 +1237,8 @@ int s3cfb_resume(struct platform_device *pdev)
 	for (i = 0; i < pdata->nr_wins; i++) {
 		fb = fbdev->fb[i];
 		win = fb->par;
-		if ((win->path == DATA_PATH_DMA) && (win->enabled)) {
-			s3cfb_set_par(fb);
+		if ((win->owner == DMA_MEM_FIMD) && (win->enabled)) {
+			s3cfb_set_win_params(win->id);
 			s3cfb_enable_window(win->id);
 		}
 	}

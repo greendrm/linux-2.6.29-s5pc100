@@ -295,6 +295,10 @@
 
 /* WINSHMAP */
 #define S3C_WINSHMAP_PROTECT(x)			(((x) & 0x1f) << 10)
+#define S3C_WINSHMAP_CH_ENABLE(x)		(1 << (x))
+#define S3C_WINSHMAP_CH_DISABLE(x)		(1 << (x))
+#define S3C_WINSHMAP_LOCAL_ENABLE(x)		(0x20 << (x))
+#define S3C_WINSHMAP_LOCAL_DISABLE(x)		(0x20 << (x))
 
 /* VIDOSDxA, VIDOSDxB */
 #define S3C_VIDOSD_LEFT_X(x)			(((x) & 0x7ff) << 11)

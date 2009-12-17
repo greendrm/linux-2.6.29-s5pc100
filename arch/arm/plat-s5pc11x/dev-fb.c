@@ -56,7 +56,11 @@ struct platform_device s3c_device_fb = {
 };
 
 static struct s3c_platform_fb default_fb_data __initdata = {
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+	.hw_ver	= 0x62,
+#else
 	.hw_ver	= 0x60,
+#endif
 	.nr_wins = 5,
 	.default_win = CONFIG_FB_S3C_DEFAULT_WINDOW,
 	.swap = FB_SWAP_WORD | FB_SWAP_HWORD,

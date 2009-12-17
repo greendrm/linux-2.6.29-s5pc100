@@ -550,11 +550,23 @@ static int smdkc110_cam1_power(int onoff)
 
 static int smdkc110_mipi_cam_power(int onoff)
 {
+	int err;
+
 	gpio_request(S5PC11X_GPH0(3), "GPH0");
 	s3c_gpio_setpull(S5PC11X_GPH0(3), S3C_GPIO_PULL_NONE);
 	gpio_direction_output(S5PC11X_GPH0(3), 0);
 	gpio_direction_output(S5PC11X_GPH0(3), 1);
 	gpio_free(S5PC11X_GPH0(3));
+
+	err = gpio_request(S5PC11X_GPH1(2), "GPH1");
+	if (err) {
+	        printk("### failed to request GPH1 for CAM_2V8\n");
+	        return 0;
+	}
+
+	s3c_gpio_setpull(S5PC11X_GPH1(2), S3C_GPIO_PULL_NONE);
+	gpio_direction_output(S5PC11X_GPH1(2), 1);
+	gpio_free(S5PC11X_GPH1(2));
 
 	return 0;
 }
@@ -703,7 +715,7 @@ static struct s5k4ea_platform_data s5k4ea_plat = {
 	.default_width = 1920,
 	.default_height = 1080,
 	.pixelformat = V4L2_PIX_FMT_UYVY,
-	.freq = 24000000,
+	.freq = 48000000,
 	.is_mipi = 1,
 };
 
@@ -720,9 +732,9 @@ static struct s3c_platform_camera __initdata s5k4ea = {
 	.i2c_busnum	= 0,
 	.info		= &s5k4ea_i2c_info,
 	.pixelformat	= V4L2_PIX_FMT_UYVY,
-	.srclk_name	= "mout_epll",
+	.srclk_name	= "mout_mpll",
 	.clk_name	= "sclk_cam0",
-	.clk_rate	= 24000000,
+	.clk_rate	= 48000000,
 	.line_length	= 1920,
 	.width		= 1920,
 	.height		= 1080,
@@ -1007,7 +1019,8 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 128 * SZ_1M;
 	mi->bank[0].node = 0;
-#elif defined(CONFIG_S5PC110_AC_TYPE) || defined(CONFIG_S5PC110_B_TYPE)
+#elif defined(CONFIG_S5PC110_AC_TYPE) || defined(CONFIG_S5PC110_B_TYPE)\
+				|| defined(CONFIG_S5PC110_D_TYPE)
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 80 * SZ_1M;
 	mi->bank[0].node = 0;
@@ -1017,10 +1030,15 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 256 * SZ_1M;
 	mi->bank[1].node = 1;
+#elif defined(CONFIG_S5PC110_D_TYPE)
+	mi->bank[1].start = 0x40000000;
+	mi->bank[1].size = 384 * SZ_1M;
+	mi->bank[1].node = 1;
 #else
 	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 128 * SZ_1M;
 	mi->bank[1].node = 1;
+
 #endif
 
 	mi->nr_banks = 2;

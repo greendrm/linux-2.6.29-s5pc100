@@ -1310,6 +1310,12 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_set_parent(&clk_spi1.clk, &clk_mout_epll.clk);
 	clk_set_parent(&clk_spi2.clk, &clk_mout_epll.clk);
 
+	clk_set_parent(&clk_i2smain.clk, &clk_fout_epll);
+	clk_set_parent(&clk_i2sclk.clk, &clk_i2smain.clk);
+	clk_set_parent(&clk_audio0.clk, &clk_mout_epll.clk);
+	clk_set_parent(&clk_audio1.clk, &clk_mout_epll.clk);
+	clk_set_parent(&clk_audio2.clk, &clk_mout_epll.clk);
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 

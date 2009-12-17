@@ -25,12 +25,12 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	u32 is_rotate = 0;
 
-	fimc_info1("%s: called\n\
-			top(%d), left(%d), width(%d), height(%d)\n", \
+	fimc_info1("%s: called. " \
+			"top(%d), left(%d), width(%d), height(%d)\n", \
 			__func__, f->fmt.win.w.top, f->fmt.win.w.left, \
 			f->fmt.win.w.width, f->fmt.win.w.height);
 
-	if (ctrl->out->fbuf.base) /* OUTPUT path : memory */
+	if (ctrl->out->overlay == FIMC_OVERLAY_NONE)
 		return 0;
 
 	/* Check Overlay Size : Overlay size must be smaller than LCD size. */
@@ -193,7 +193,8 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 	u32 bpp = 1;
 	u32 format = fb->fmt.pixelformat;
 
-	fimc_info1("%s: called\n", __func__);
+	fimc_info1("%s: called. width(%d), height(%d)\n", 
+				__func__, fb->fmt.width, fb->fmt.height);
 
 	ctrl->out->fbuf.capability = V4L2_FBUF_CAP_EXTERNOVERLAY;
 	ctrl->out->fbuf.flags = 0;
@@ -215,6 +216,10 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 		ctrl->out->fbuf.fmt.sizeimage = fb->fmt.sizeimage;
 		ctrl->out->fbuf.fmt.colorspace = V4L2_COLORSPACE_SMPTE170M;
 		ctrl->out->fbuf.fmt.priv = 0;
+
+		ctrl->out->overlay = FIMC_OVERLAY_NONE;
+	} else {
+		ctrl->out->overlay = FIMC_OVERLAY_MODE;
 	}
 
 	return 0;
