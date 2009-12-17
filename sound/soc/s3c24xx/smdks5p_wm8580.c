@@ -10,25 +10,118 @@
  *  option) any later version.
  */
 
-#include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
+#include <linux/io.h>
+#include <linux/platform_device.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 
+#include <mach/map.h>
+#include <plat/regs-clock.h>
+
 #include "../codecs/wm8580.h"
 #include "s3c-dma.h"
 #include "s5p-i2s.h"
+#include "s3c-pcm.h"
 
-#define I2S_V5 0
-#define I2S_V3 1
+#define SMDK_WM8580_I2S_V5_PORT 	0
+#define SMDK_WM8580_I2S_V2_PORT 	1
+
+#define SMDK_WM8580_PCM_SECPORT 	1
+
+#undef dev_dbg
+
+#if defined(DEBUG)
+#define dev_dbg(msg ...)	printk(KERN_DBG msg);
+#else
+#define dev_dbg(msg ...)
+#endif
+
+#define wait_stable(utime_out)					\
+	do {							\
+		if (!utime_out)					\
+			utime_out = 1000;			\
+		utime_out = loops_per_jiffy / HZ * utime_out;	\
+		while (--utime_out) { 				\
+			cpu_relax();				\
+		}						\
+	} while (0);
+
+#if defined(DEBUG)
+static unsigned long get_epll_rate(void)
+{
+	struct clk *fout_epll;
+	unsigned long rate;
+
+	fout_epll = clk_get(NULL, "fout_epll");
+	if (IS_ERR(fout_epll)) {
+		printk(KERN_ERR "%s: failed to get fout_epll\n", __func__);
+		return -ENOENT;
+	}
+
+	rate = clk_get_rate(fout_epll);
+
+	clk_put(fout_epll);
+
+	return rate;
+}
+#endif
+
+static int set_epll_rate(unsigned long rate)
+{
+	struct clk *fout_epll;
+	unsigned int wait_utime = 100;
+
+	fout_epll = clk_get(NULL, "fout_epll");
+	if (IS_ERR(fout_epll)) {
+		printk(KERN_ERR "%s: failed to get fout_epll\n", __func__);
+		return -ENOENT;
+	}
+
+	if (rate == clk_get_rate(fout_epll))
+		goto out;
+
+	clk_disable(fout_epll);
+	wait_stable(wait_utime);
+
+	clk_set_rate(fout_epll, rate);
+	wait_stable(wait_utime);
+
+	clk_enable(fout_epll);
+
+out:
+	clk_put(fout_epll);
+
+	return 0;
+}
+
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+static int set_clk_out_div(unsigned int div)
+{
+	unsigned int reg;
+
+	reg = __raw_readl(S5P_CLK_OUT);
+	dev_dbg("%s: CLK_OUT reg = %x\n", __func__, reg);
+
+	reg &= ~(S5P_CLKOUT_DIV_MASK);
+	reg |= div << S5P_CLKOUT_DIV_SHIFT;
+	__raw_writel(reg, S5P_CLK_OUT);
+
+	reg = __raw_readl(S5P_CLK_OUT);
+	dev_dbg("%s: CLK_OUT reg = %x\n", __func__, reg);
+
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_SND_WM8580_MASTER
 
 /* SMDK has a 12MHZ crystal attached to WM8580 */
-#define SMDK_WM8580_FREQ 12000000
+#define SMDK_WM8580_FREQ	12000000
 
 static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
@@ -36,8 +129,8 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
-	unsigned int pll_out;
-	int bfs, rfs, ret;
+	unsigned int pll_out, epll_out_rate;
+	int rfs, ret;
 
 	/* The Fvco for WM8580 PLLs must fall within [90,100]MHz.
 	 * This criterion can't be met if we request PLL output
@@ -67,10 +160,34 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 		rfs = 512;
 		break;
 	default:
-		printk("%s:%d Sampling Rate %u not supported!\n", __func__, __LINE__, params_rate(params));
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
 		return -EINVAL;
 	}
 	pll_out = params_rate(params) * rfs;
+
+	switch (params_rate(params)) {
+	case 8000:
+	case 12000:
+	case 16000:
+	case 24000:
+	case 32000:
+	case 48000:
+	case 64000:
+	case 96000:
+		epll_out_rate = 49152000;
+		break;
+	case 11025:
+	case 22050:
+	case 44100:
+	case 88200:
+		epll_out_rate = 67738000;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
 
 	/* Set the Codec DAI configuration */
 	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S
@@ -97,6 +214,33 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	/* Deplicated using XTL(X1-12MHz) after C110 BaseBd. Rev-0.1*/
+	/* Set WM8580 to drive MCLK from it's PLLA */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	/* Explicitly set WM8580-DAC to source from MCLK */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	/* Set EPLL clock rate */
+	ret = set_epll_rate(epll_out_rate);
+	if (ret < 0)
+		return ret;
+
+	/* Set XCLK_OUT DIV */
+	if (epll_out_rate * 10 / params_rate(params) / rfs
+		>= epll_out_rate / params_rate(params) / rfs * 10 + 5) {
+		set_clk_out_div(epll_out_rate / params_rate(params) / rfs);
+	} else {
+		set_clk_out_div(epll_out_rate / params_rate(params) / rfs - 1);
+	}
+#else
 	/* Set WM8580 to drive MCLK from it's PLLA */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
 					WM8580_CLKSRC_PLLA);
@@ -109,12 +253,14 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLKRATIO, rfs);
-	if (ret < 0)
-		return ret;
-
 	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
 					SMDK_WM8580_FREQ, pll_out);
+	if (ret < 0)
+		return ret;
+#endif
+
+	/* Set MCLK Ratio to make BCLK */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLKRATIO, rfs);
 	if (ret < 0)
 		return ret;
 
@@ -132,15 +278,8 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
 	struct s3c_i2sv2_rate_calc div;
-	struct clk *clk;
-	unsigned int epll_out;
-	int bfs, ret;
-
-	clk = clk_get(NULL, "fout_epll");
-	if (IS_ERR(clk)) {
-		printk("failed to get fout_epll\n");
-		return -EBUSY;
-	}
+	unsigned int epll_out_rate;
+	int rfs, ret;
 
 	switch (params_rate(params)) {
 	case 8000:
@@ -151,23 +290,52 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 	case 48000:
 	case 64000:
 	case 96000:
-		epll_out = 49152000;
+		epll_out_rate = 49152000;
 		break;
 	case 11025:
 	case 22050:
 	case 44100:
 	case 88200:
-		epll_out = 67738000;
+		epll_out_rate = 67738000;
 		break;
 	default:
-		printk("%s:%d Sampling Rate %u not supported!\n", __func__, __LINE__, params_rate(params));
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
 		return -EINVAL;
 	}
 
-	if (clk_get_rate(clk) != epll_out)
-		clk_set_rate(clk, epll_out);
+	switch (params_rate(params)) {
+	case 22050:
+	case 22025:
+	case 32000:
+	case 44100:
+	case 48000:
+	case 88200:
+	case 96000:
+	case 24000:
+		rfs = 256;
+		break;
+	case 64000:
+		rfs = 384;
+		break;
+	case 11025:
+	case 12000:
+		rfs = 512;
+		break;
+	case 8000:
+	case 16000:
+		rfs = 1024;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
 
-	clk_put(clk);
+	/* Set EPLL clock rate */
+	ret = set_epll_rate(epll_out_rate);
+	if (ret < 0)
+		return ret;
 
 	/* Set the Codec DAI configuration */
 	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S
@@ -193,6 +361,17 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 					0, SND_SOC_CLOCK_IN);
 	if (ret < 0)
 		return ret;
+
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	rfs /= 2;
+	/* Set XCLK_OUT DIV */
+	if (epll_out_rate * 10 / params_rate(params) / rfs
+		>= epll_out_rate / params_rate(params) / rfs * 10 + 5) {
+		set_clk_out_div(epll_out_rate / params_rate(params) / rfs);
+	} else {
+		set_clk_out_div(epll_out_rate / params_rate(params) / rfs - 1);
+	}
+#endif
 
 	/* Set WM8580 to drive MCLK from MCLK Pin */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
@@ -222,16 +401,139 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 }
 #endif
 
+/* PCM works __ONLY__ in AP-Master mode */
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
+	struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
+	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
+	int rfs, ret;
+	unsigned long div, epll_out_rate;
+
+	switch (params_rate(params)) {
+	case 8000:
+	case 12000:
+	case 16000:
+	case 24000:
+	case 32000:
+	case 48000:
+	case 64000:
+	case 96000:
+		epll_out_rate = 49152000;
+		break;
+	case 11025:
+	case 22050:
+	case 44100:
+	case 88200:
+		epll_out_rate = 67738000;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
+
+	switch (params_rate(params)) {
+	case 22050:
+	case 22025:
+	case 32000:
+	case 44100:
+	case 48000:
+	case 88200:
+	case 96000:
+	case 24000:
+		rfs = 256;
+		break;
+	case 64000:
+		rfs = 384;
+		break;
+	case 11025:
+	case 12000:
+		rfs = 512;
+		break;
+	case 8000:
+	case 16000:
+		rfs = 1024;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
+
+	/* Set the Codec DAI configuration */
+	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_DSP_B
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set the AP DAI configuration */
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_DSP_B
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set MUX for PCM clock source to audio-bus */
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_PCM_CLKSRC_MUX,
+					epll_out_rate, SND_SOC_CLOCK_OUT);
+	if (ret < 0)
+		return ret;
+
+	/* Set EPLL clock rate */
+	ret = set_epll_rate(epll_out_rate);
+	if (ret < 0)
+		return ret;
+
+	/* Set SCLK_DIV for making bclk */
+	div = rfs / 2;
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_PCM_SCLK_PER_FS, div);
+	if (ret < 0)
+		return ret;
+
+	/* Set XCLK_OUT DIV */
+	if (epll_out_rate * 10 / params_rate(params) / div
+		>= epll_out_rate / params_rate(params) / div * 10 + 5) {
+		set_clk_out_div(epll_out_rate / params_rate(params) / div);
+	} else {
+		set_clk_out_div(epll_out_rate / params_rate(params) / div - 1);
+	}
+
+	/* Set WM8580 to drive MCLK from MCLK Pin */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	/* Explicitly set WM8580-DAC to source from MCLK */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+#endif
+
 /*
  * SMDK WM8580 DAI operations.
  */
-static struct snd_soc_ops smdk_ops = {
+static struct snd_soc_ops smdk_i2s_ops = {
 #ifdef CONFIG_SND_WM8580_MASTER
 	.hw_params = smdk_socslv_hw_params,
 #else
 	.hw_params = smdk_socmst_hw_params,
 #endif
 };
+
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+static struct snd_soc_ops smdk_pcm_ops = {
+	.hw_params = smdk_socpcm_hw_params,
+};
+#endif
 
 /* SMDK Playback widgets */
 static const struct snd_soc_dapm_widget wm8580_dapm_widgets_pbk[] = {
@@ -311,39 +613,45 @@ static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 }
 
 static struct snd_soc_dai_link smdk_dai[] = {
-#if 1
-	/* CFG7-XXXX */
-	/* CFG5-1000 */
-{ /* Primary Playback i/f */
+#if defined(CONFIG_SND_S5P_PRIMARY_I2S)
+{
 	.name = "WM8580 PAIF RX",
 	.stream_name = "Playback",
-	.cpu_dai = &s5p_i2s_dai[I2S_V5],
+	.cpu_dai = &s5p_i2s_dai[SMDK_WM8580_I2S_V5_PORT],
 	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
 	.init = smdk_wm8580_init_paifrx,
-	.ops = &smdk_ops,
+	.ops = &smdk_i2s_ops,
 },
-{ /* Primary Capture i/f */
+{
 	.name = "WM8580 PAIF TX",
 	.stream_name = "Capture",
-	.cpu_dai = &s5p_i2s_dai[I2S_V5],
+	.cpu_dai = &s5p_i2s_dai[SMDK_WM8580_I2S_V5_PORT],
 	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFTX],
 	.init = smdk_wm8580_init_paiftx,
-	.ops = &smdk_ops,
+	.ops = &smdk_i2s_ops,
 },
 #endif
-#if 1
-{ /* Secondary i/f */
-	/* CFG7-1100 */
-	/* CFG5-0100 -> SoC Master */
-	/* CFG5-0000 -> SoC Slave */
-	.name = "WM8580 SAIF",
+
+#if defined(CONFIG_SND_S5P_SECONDARY_I2S)
+{
+	.name = "WM8580 I2S SAIF",
 	.stream_name = "Tx/Rx",
-	.cpu_dai = &s5p_i2s_dai[I2S_V3],
+	.cpu_dai = &s5p_i2s_dai[SMDK_WM8580_I2S_V2_PORT],
 	.codec_dai = &wm8580_dai[WM8580_DAI_SAIF],
-	//.init = smdk_wm8580_init_saif,
-	.ops = &smdk_ops,
+	.ops = &smdk_i2s_ops,
 },
 #endif
+
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+{
+	.name = "WM8580 PCM SAIF",
+	.stream_name = "Tx/Rx",
+	.cpu_dai = &s3c_pcm_dai[SMDK_WM8580_PCM_SECPORT],
+	.codec_dai = &wm8580_dai[WM8580_DAI_SAIF],
+	.ops = &smdk_pcm_ops,
+},
+#endif
+
 };
 
 static struct snd_soc_card smdk = {
@@ -368,6 +676,17 @@ static struct platform_device *smdk_snd_device;
 static int __init smdk_audio_init(void)
 {
 	int ret;
+
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	unsigned int reg;
+
+	/* Set XCLK_OUT enable */
+	reg = __raw_readl(S5P_CLK_OUT);
+	reg &= ~S5P_CLKOUT_CLKSEL_MASK;
+	reg |= S5P_CLKOUT_CLKSEL_EPLL;
+
+	__raw_writel(reg, S5P_CLK_OUT);
+#endif
 
 	smdk_snd_device = platform_device_alloc("soc-audio", -1);
 	if (!smdk_snd_device)

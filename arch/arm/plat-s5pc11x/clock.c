@@ -519,6 +519,21 @@ static struct clk init_clocks[] = {
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S2, /* I2S2 is v3.2 */
 	},
 
+	/* PCM device */
+	{
+		.name		= "pcm",
+		.id		= 0,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_PCM0,
+	}, {
+		.name		= "pcm",
+		.id		= 1,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_PCM1,
+	},
+
 	/* SPDIF device */
 	{
 		.name		= "spdif",
