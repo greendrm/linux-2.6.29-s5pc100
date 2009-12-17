@@ -28,6 +28,8 @@
 #include <asm/assembler.h>
 #include <mach/hardware.h>
 #include <mach/map.h>
+#include <asm/memory.h>
+#include <asm/system.h>
 
 #include <plat/regs-gpio.h>
 #include <plat/regs-clock.h>
@@ -84,10 +86,9 @@ resume_with_mmu:
 	mov	r0, #1
 
 	/* delete added mmu table list */
-	ldr	r9 ,=0xC0000000
-	bic	r8, r8, #0xF0000000
-	orr	r8, r8, r9
-	str	r12, [r8]
+	ldr	r9 , =(PAGE_OFFSET - PHYS_OFFSET)
+	add	r4, r4, r9
+	str	r12, [r4]
 
 	ldmfd	sp!, { r3 - r12, pc }
 
