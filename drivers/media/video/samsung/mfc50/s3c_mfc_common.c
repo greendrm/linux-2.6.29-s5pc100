@@ -98,11 +98,11 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 
 	init_arg = (s3c_mfc_dec_init_arg_t *)args;
 
-	/* frameBufSize is sizes for LumaPlane, ChromaPlane & MvPlane */
+	/* frameBufSize is sizes for LumaPlane+MvPlane, ChromaPlane */
 	luma_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height, BUF_S_UNIT), \
 				8*BUF_L_UNIT);
 	chroma_plane_sz = Align(Align(init_arg->out_img_width, 4*BUF_S_UNIT)*Align(init_arg->out_img_height/2, BUF_S_UNIT), \
-				8*BUF_L_UNIT);;
+				8*BUF_L_UNIT);
 	buf_size.luma = luma_plane_sz;
 	buf_size.chroma = chroma_plane_sz;
 
@@ -127,7 +127,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx
 	init_arg = (s3c_mfc_enc_init_mpeg4_arg_t *)args;	
 
 	/* 
-	 * Allocate stream & ref Y0, Y2 buf 
+	 * Allocate stream & ref Y0, Y2 buf
 	 */
 	buf_width = (mfc_ctx->img_width+15)/16*16;
 	buf_height = (mfc_ctx->img_height+31)/32*32;	

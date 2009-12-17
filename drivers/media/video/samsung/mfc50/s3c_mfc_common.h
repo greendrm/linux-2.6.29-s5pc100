@@ -135,6 +135,8 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int frameSkipEnable;
 	unsigned int endOfFrame;
 	unsigned int forceSetFrameType;
+	unsigned int dynamic_framerate;
+	unsigned int dynamic_bitrate;
 	unsigned int img_width;
 	unsigned int img_height;
 	unsigned int dwAccess;  	// for Power Management.
@@ -147,7 +149,7 @@ typedef struct tag_mfc_inst_ctx
 	s3c_mfc_enc_vui_info vui_info;
 	s3c_mfc_dec_divx311_info divx311_info;
 	SSBSIP_MFC_CODEC_TYPE MfcCodecType;
-	s3c_mfc_inst_state MfcState;
+	s3c_mfc_inst_state MfcState;	
 } s3c_mfc_inst_ctx;
 
 struct s3c_mfc_ctrl {
