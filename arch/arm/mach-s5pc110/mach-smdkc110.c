@@ -1019,7 +1019,8 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 128 * SZ_1M;
 	mi->bank[0].node = 0;
-#elif defined(CONFIG_S5PC110_AC_TYPE) || defined(CONFIG_S5PC110_B_TYPE)
+#elif defined(CONFIG_S5PC110_AC_TYPE) || defined(CONFIG_S5PC110_B_TYPE)\
+				|| defined(CONFIG_S5PC110_D_TYPE)
 	mi->bank[0].start = 0x30000000;
 	mi->bank[0].size = 80 * SZ_1M;
 	mi->bank[0].node = 0;
@@ -1029,10 +1030,15 @@ static void __init smdkc110_fixup(struct machine_desc *desc,
 	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 256 * SZ_1M;
 	mi->bank[1].node = 1;
+#elif defined(CONFIG_S5PC110_D_TYPE)
+	mi->bank[1].start = 0x40000000;
+	mi->bank[1].size = 384 * SZ_1M;
+	mi->bank[1].node = 1;
 #else
 	mi->bank[1].start = 0x40000000;
 	mi->bank[1].size = 128 * SZ_1M;
 	mi->bank[1].node = 1;
+
 #endif
 
 	mi->nr_banks = 2;
