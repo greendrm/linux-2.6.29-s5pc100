@@ -26,9 +26,12 @@
 #include "../codecs/wm8580.h"
 #include "s3c-dma.h"
 #include "s5p-i2s.h"
+#include "s3c-pcm.h"
 
 #define SMDK_WM8580_I2S_V5_PORT 	0
 #define SMDK_WM8580_I2S_V2_PORT 	1
+
+#define SMDK_WM8580_PCM_SECPORT 	1
 
 #undef dev_dbg
 
@@ -398,6 +401,123 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 }
 #endif
 
+/* PCM works __ONLY__ in AP-Master mode */
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
+	struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
+	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
+	int rfs, ret;
+	unsigned long div, epll_out_rate;
+
+	switch (params_rate(params)) {
+	case 8000:
+	case 12000:
+	case 16000:
+	case 24000:
+	case 32000:
+	case 48000:
+	case 64000:
+	case 96000:
+		epll_out_rate = 49152000;
+		break;
+	case 11025:
+	case 22050:
+	case 44100:
+	case 88200:
+		epll_out_rate = 67738000;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
+
+	switch (params_rate(params)) {
+	case 22050:
+	case 22025:
+	case 32000:
+	case 44100:
+	case 48000:
+	case 88200:
+	case 96000:
+	case 24000:
+		rfs = 256;
+		break;
+	case 64000:
+		rfs = 384;
+		break;
+	case 11025:
+	case 12000:
+		rfs = 512;
+		break;
+	case 8000:
+	case 16000:
+		rfs = 1024;
+		break;
+	default:
+		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
+			__func__, __LINE__, params_rate(params));
+		return -EINVAL;
+	}
+
+	/* Set the Codec DAI configuration */
+	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_DSP_B
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set the AP DAI configuration */
+	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_DSP_B
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set MUX for PCM clock source to audio-bus */
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_PCM_CLKSRC_MUX,
+					epll_out_rate, SND_SOC_CLOCK_OUT);
+	if (ret < 0)
+		return ret;
+
+	/* Set EPLL clock rate */
+	ret = set_epll_rate(epll_out_rate);
+	if (ret < 0)
+		return ret;
+
+	/* Set SCLK_DIV for making bclk */
+	div = rfs / 2;
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_PCM_SCLK_PER_FS, div);
+	if (ret < 0)
+		return ret;
+
+	/* Set XCLK_OUT DIV */
+	if (epll_out_rate * 10 / params_rate(params) / div
+		>= epll_out_rate / params_rate(params) / div * 10 + 5) {
+		set_clk_out_div(epll_out_rate / params_rate(params) / div);
+	} else {
+		set_clk_out_div(epll_out_rate / params_rate(params) / div - 1);
+	}
+
+	/* Set WM8580 to drive MCLK from MCLK Pin */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	/* Explicitly set WM8580-DAC to source from MCLK */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+#endif
+
 /*
  * SMDK WM8580 DAI operations.
  */
@@ -408,6 +528,12 @@ static struct snd_soc_ops smdk_i2s_ops = {
 	.hw_params = smdk_socmst_hw_params,
 #endif
 };
+
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+static struct snd_soc_ops smdk_pcm_ops = {
+	.hw_params = smdk_socpcm_hw_params,
+};
+#endif
 
 /* SMDK Playback widgets */
 static const struct snd_soc_dapm_widget wm8580_dapm_widgets_pbk[] = {
@@ -487,6 +613,7 @@ static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 }
 
 static struct snd_soc_dai_link smdk_dai[] = {
+#if defined(CONFIG_SND_S5P_PRIMARY_I2S)
 {
 	.name = "WM8580 PAIF RX",
 	.stream_name = "Playback",
@@ -503,6 +630,9 @@ static struct snd_soc_dai_link smdk_dai[] = {
 	.init = smdk_wm8580_init_paiftx,
 	.ops = &smdk_i2s_ops,
 },
+#endif
+
+#if defined(CONFIG_SND_S5P_SECONDARY_I2S)
 {
 	.name = "WM8580 I2S SAIF",
 	.stream_name = "Tx/Rx",
@@ -510,6 +640,18 @@ static struct snd_soc_dai_link smdk_dai[] = {
 	.codec_dai = &wm8580_dai[WM8580_DAI_SAIF],
 	.ops = &smdk_i2s_ops,
 },
+#endif
+
+#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+{
+	.name = "WM8580 PCM SAIF",
+	.stream_name = "Tx/Rx",
+	.cpu_dai = &s3c_pcm_dai[SMDK_WM8580_PCM_SECPORT],
+	.codec_dai = &wm8580_dai[WM8580_DAI_SAIF],
+	.ops = &smdk_pcm_ops,
+},
+#endif
+
 };
 
 static struct snd_soc_card smdk = {
