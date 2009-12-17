@@ -15,6 +15,11 @@ config SND_S3C_I2SV2_SOC
 config SND_S3C2412_SOC_I2S
 	tristate
 
+config SND_S5P_USE_XCLK_OUT
+	bool
+	depends on MACH_SMDKC110
+	default y
+
 config SND_S5P_SOC_I2S
 	tristate
 	select SND_S3C_I2SV2_SOC
