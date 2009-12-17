@@ -16,6 +16,7 @@
 #include <linux/platform_device.h>
 #include <linux/clk.h>
 #include <linux/interrupt.h>
+#include <linux/delay.h>
 
 #include <plat/clock.h>
 #include <asm/io.h>
@@ -1794,11 +1795,22 @@ void __s5p_hdmi_stop(void)
 	       hdmi_base + S5P_HDMI_CON_0);
 	    
 */
+	/*
+	 * Before stopping hdmi, stop the hdcp first. However, 
+	 * if there's no delay between hdcp stop & hdmi stop,
+	 * re-opening would be failed.
+	 */
+	mdelay(100);
+
 	temp = readl(hdmi_base + S5P_HDMI_CON_0);
 	result = temp & HDMI_EN;
 	
 	if( result )
 		writel(temp &  ~(HDMI_EN | ASP_EN), hdmi_base + S5P_HDMI_CON_0);
+
+	do {
+		temp = readl(hdmi_base + S5P_HDMI_CON_0);
+	} while ( temp & HDMI_EN );
 
 	HDMIPRINTK("HPD 0x%08x,HDMI_CON_0 0x%08x\n\r",
 		   readl(hdmi_base + S5P_HPD),
