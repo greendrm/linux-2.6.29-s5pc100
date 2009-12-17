@@ -971,10 +971,15 @@ void __s5p_vm_start(void)
 
 void __s5p_vm_stop(void)
 {
-	VMPRINTK("()\n\r");
-	writel((readl(mixer_base + S5P_MXR_STATUS) & ~S5P_MXR_MIXER_START), 
-		mixer_base + S5P_MXR_STATUS);
-	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_STATUS));
+	u32 reg = readl(mixer_base + S5P_MXR_STATUS);
+
+	reg &= ~S5P_MXR_MIXER_START;
+	
+	writel(reg, mixer_base + S5P_MXR_STATUS);
+	
+	do {
+		reg = readl(mixer_base + S5P_MXR_STATUS);
+	} while ( reg & S5P_MXR_MIXER_START );
 }
 
 /*
