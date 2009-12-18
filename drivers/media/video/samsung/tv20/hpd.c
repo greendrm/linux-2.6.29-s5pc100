@@ -47,6 +47,8 @@ int s5p_hpd_open(struct inode *inode, struct file *file)
 {
 #ifdef USEEXTINT
 #else
+	s5p_tv_clk_gate(true);
+	
 	/* adjust the duration of HPD detection */
 	
 	s5p_hdmi_hpd_gen();
@@ -67,6 +69,8 @@ int s5p_hpd_release(struct inode *inode, struct file *file)
 	/* disable HPD interrupts */
 #ifdef USEEXTINT
 #else
+	s5p_tv_clk_gate(false);
+
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 #endif

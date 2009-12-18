@@ -836,6 +836,8 @@ extern u8 s5p_hdmi_get_hpd_status(void);
 extern void s5p_hdmi_swhpd_disable(void);
 extern void s5p_hdmi_hpd_gen(void);
 extern int __init __s5p_hdcp_init(void);
+
+extern int s5p_tv_clk_gate( bool on);
 #endif
 
 

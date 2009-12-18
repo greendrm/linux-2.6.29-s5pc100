@@ -239,26 +239,15 @@ static irqreturn_t __s5p_hpd_irq(int irq, void *dev_id)
 
 
 #ifdef CONFIG_CPU_S5PC110
-int tv_clk_gate(struct _s5p_tv_status *ctrl, bool on)
+int tv_phy_power( bool on )
 {
 	if (on) {
 		/* on */
-		clk_enable(ctrl->i2c_phy_clk);
-
-		clk_enable(ctrl->vp_clk);
-		clk_enable(ctrl->mixer_clk);
-		clk_enable(ctrl->tvenc_clk);
-		clk_enable(ctrl->hdmi_clk);
-
-		__s5p_hdmi_phy_power(true);
-			
-	} else {
-		/* off */
-		clk_disable(ctrl->vp_clk);
-		clk_disable(ctrl->mixer_clk);
-		clk_disable(ctrl->tvenc_clk);
-		clk_disable(ctrl->hdmi_clk);
+		clk_enable(s5ptv_status.i2c_phy_clk);
 		
+		__s5p_hdmi_phy_power(true);		
+		
+	} else {
 		/* 
 		 * for preventing hdmi hang up when restart 
 		 * switch to internal clk - SCLK_DAC, SCLK_PIXEL 
@@ -266,13 +255,36 @@ int tv_clk_gate(struct _s5p_tv_status *ctrl, bool on)
 		__s5p_tv_clk_change_internal();
 			
 		__s5p_hdmi_phy_power(false);
+		
+		clk_disable(s5ptv_status.i2c_phy_clk);
+	}
+	
+	return 0;
+}
 
-		clk_disable(ctrl->i2c_phy_clk);
+
+int s5p_tv_clk_gate( bool on )
+{
+	if (on) {
+		clk_enable(s5ptv_status.vp_clk);
+		clk_enable(s5ptv_status.mixer_clk);
+		clk_enable(s5ptv_status.tvenc_clk);
+		clk_enable(s5ptv_status.hdmi_clk);
+			
+	} else {
+	
+		/* off */
+		clk_disable(s5ptv_status.vp_clk);
+		clk_disable(s5ptv_status.mixer_clk);
+		clk_disable(s5ptv_status.tvenc_clk);
+		clk_disable(s5ptv_status.hdmi_clk);
 	}
 
 	return 0;
 }
 
+EXPORT_SYMBOL(s5p_tv_clk_gate);
+	
 static int __devinit tv_clk_get(struct platform_device *pdev, struct _s5p_tv_status *ctrl)
 {
 	/* tvenc clk */
@@ -317,6 +329,10 @@ static int __devinit tv_clk_get(struct platform_device *pdev, struct _s5p_tv_sta
 	
 	return 0;
 }
+#else
+#define s5p_tv_clk_gate NULL
+#define tv_phy_power NULL
+#define tv_clk_get NULL
 #endif
 
 /*
@@ -341,7 +357,8 @@ static int s5p_tv_v_open(struct file *file)
 		goto drv_used;
 	}
 
-	tv_clk_gate(&s5ptv_status, true);
+	s5p_tv_clk_gate( true );
+	tv_phy_power( true );
 
 	_s5p_tv_if_init_param();
 
@@ -413,7 +430,8 @@ int s5p_tv_v_release(struct file *filp)
 
 	mutex_unlock(mutex_for_i2c);
 #endif
-	tv_clk_gate(&s5ptv_status, false);
+	s5p_tv_clk_gate(false);
+	tv_phy_power( false );
 
 	return 0;
 }

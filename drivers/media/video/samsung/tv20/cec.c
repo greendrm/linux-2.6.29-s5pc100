@@ -27,6 +27,7 @@
 #include <plat/gpio-cfg.h>
 #include <plat/regs-gpio.h>
 
+#include "s5p_tv.h"
 #include "cec.h"
 
 #ifdef CECDEBUG
@@ -60,6 +61,8 @@ void __s5p_cec_set_rx_state(enum cec_state state)
 
 int s5p_cec_open(struct inode *inode, struct file *file)
 {		
+	s5p_tv_clk_gate(true);
+	
 	__s5p_cec_reset();
 
 	__s5p_cec_set_divider();
@@ -77,6 +80,8 @@ int s5p_cec_open(struct inode *inode, struct file *file)
 
 int s5p_cec_release(struct inode *inode, struct file *file)
 {
+	s5p_tv_clk_gate(false);
+	
 	__s5p_cec_mask_tx_interrupts();
 	__s5p_cec_mask_rx_interrupts();
 //	s5p_hdmi_disable_interrupts(HDMI_IRQ_CEC);
