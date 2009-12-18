@@ -641,10 +641,12 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 
 	s5ptv_status.hpd_status = gpio_get_value(S5PC1XX_GPH0(5)) 
 		? false:true;
-#endif
 
 	dev_info(&pdev->dev, "hpd status is cable %s\n", 
 		s5ptv_status.hpd_status ? "inserted":"removed");
+#endif
+
+	
 	
 	/* interrupt */
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 0, out, __s5p_mixer_irq, "mixer");
