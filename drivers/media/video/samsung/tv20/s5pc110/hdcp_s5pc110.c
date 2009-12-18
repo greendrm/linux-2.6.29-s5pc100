@@ -33,11 +33,11 @@
 #include <plat/regs-gpio.h>
 
 /* for Operation check */
-//#ifdef COFIG_TVOUT_RAW_DBG
+#ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDCP_DEBUG 1
 #define S5P_HDCP_I2C_DEBUG 1
 #define S5P_HDCP_AUTH_DEBUG 1
-//#endif
+#endif
 
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
