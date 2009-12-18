@@ -372,13 +372,15 @@ static int s3c_pcm_set_sysclk(struct snd_soc_dai *cpu_dai,
 		.channels_min	= 2,				\
 		.channels_max	= 2,				\
 		.rates		= S3C_PCM_RATES,		\
-		.formats	= SNDRV_PCM_FMTBIT_S16_LE,	\
+		.formats	= SNDRV_PCM_FMTBIT_S16_LE | 	\
+				  SNDRV_PCM_FMTBIT_U8,		\
 	},							\
 	.capture = {						\
 		.channels_min	= 2,				\
 		.channels_max	= 2,				\
 		.rates		= S3C_PCM_RATES,		\
-		.formats	= SNDRV_PCM_FMTBIT_S16_LE,	\
+		.formats	= SNDRV_PCM_FMTBIT_S16_LE | 	\
+				  SNDRV_PCM_FMTBIT_U8,		\
 	},							\
 }
 
