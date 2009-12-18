@@ -43,25 +43,25 @@ choice
 
 config S5PC110_H_TYPE
 	bool "Select H-Type"
-	depends on PLAT_S5PC11X
+	depends on PLAT_S5PC11X && VMSPLIT_3G
 	help
 		Select H-Type of S5PC110
 
 config S5PC110_AC_TYPE
 	bool "select AC-Type"
-	depends on PLAT_S5PC11X
+	depends on PLAT_S5PC11X && VMSPLIT_3G
 	help
 		Select AC-Type of S5PC110
 
 config S5PC110_B_TYPE
 	bool "select B-Type"
-	depends on PLAT_S5PC11X
+	depends on PLAT_S5PC11X && VMSPLIT_2G
 	help
 		Select B-Type of S5PC110
 
 config S5PC110_D_TYPE
 	bool "select D-Type"
-	depends on PLAT_S5PC11X
+	depends on PLAT_S5PC11X && VMSPLIT_2G
 	help
 		Select D-Type of S5PC110
 endchoice
