@@ -755,12 +755,42 @@ static int s5p_tv_remove(struct platform_device *pdev)
 	return 0;
 }
 
-
+#ifdef CONFIG_PM
 /*
  *  Suspend
  */
 int s5p_tv_suspend(struct platform_device *dev, pm_message_t state)
 {
+	/* video layer stop */
+	if ( s5ptv_status.vp_layer_enable ) {
+		_s5p_vlayer_stop();
+		s5ptv_status.vp_layer_enable = true;
+		
+	}
+
+	/* grp0 layer stop */
+	if ( s5ptv_status.grp_layer_enable[0] ) {
+		_s5p_grp_stop(VM_GPR0_LAYER);
+		s5ptv_status.grp_layer_enable[VM_GPR0_LAYER] = true;
+	}
+	
+	/* grp1 layer stop */
+	if ( s5ptv_status.grp_layer_enable[1] ) {
+		_s5p_grp_stop(VM_GPR1_LAYER);
+		s5ptv_status.grp_layer_enable[VM_GPR0_LAYER] = true;
+	}
+	
+	/* tv off */
+	if ( s5ptv_status.tvout_output_enable ) {
+		_s5p_tv_if_stop();
+		s5ptv_status.tvout_output_enable = true;
+		s5ptv_status.tvout_param_available = true;
+	}
+	
+	/* clk & power off */
+	s5p_tv_clk_gate( false );
+	tv_phy_power( false );
+	
 	return 0;
 }
 
@@ -769,8 +799,33 @@ int s5p_tv_suspend(struct platform_device *dev, pm_message_t state)
  */
 int s5p_tv_resume(struct platform_device *dev)
 {
+	/* clk & power on */
+	s5p_tv_clk_gate( true );
+	tv_phy_power( true );
+
+	/* tv on */
+	if ( s5ptv_status.tvout_output_enable )
+		_s5p_tv_if_start();
+	
+	/* video layer start */
+	if ( s5ptv_status.vp_layer_enable )
+		_s5p_vlayer_start();
+
+	/* grp0 layer start */
+	if ( s5ptv_status.grp_layer_enable[0] )
+		_s5p_grp_start(VM_GPR0_LAYER);
+	
+	/* grp1 layer start */
+	if ( s5ptv_status.grp_layer_enable[1] )
+		_s5p_grp_start(VM_GPR1_LAYER);
+	
+
 	return 0;
 }
+#else
+#define s5p_tv_suspend NULL
+#define s5p_tv_resume NULL
+#endif
 
 static struct platform_driver s5p_tv_driver = {
 	.probe		= s5p_tv_probe,
