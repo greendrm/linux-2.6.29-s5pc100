@@ -814,9 +814,6 @@ bool _s5p_tv_if_init_hd_reg(void)
 		}
 	}
 */
-	if (!_s5p_tv_if_init_hd_video_reg()) {
-		return false;
-	}
 
 	switch (st->hdmi_audio_type) {
 
@@ -843,6 +840,10 @@ bool _s5p_tv_if_init_hd_reg(void)
 	if (!__s5p_hdmi_start(st->hdmi_audio_type,
 			      (st->hdcp_en && st->hpd_status),
 			      st->hdcp_i2c_client)) {
+		return false;
+	}
+
+	if (!_s5p_tv_if_init_hd_video_reg()) {
 		return false;
 	}
 
