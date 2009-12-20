@@ -205,7 +205,7 @@ static struct regulator_init_data max8698_buck1_data = {
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
-			.uV		= 1200000,
+			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled 	= 0,
 		},
@@ -228,7 +228,7 @@ static struct regulator_init_data max8698_buck2_data = {
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
-			.uV		= 1200000,
+			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled 	= 0,
 		},
@@ -388,7 +388,15 @@ static struct max8698_platform_data max8698_platform_data = {
 	.set1		= S5PC11X_GPH1(6),
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
-	
+#if defined(CONFIG_CPU_S5PC110_EVT1)
+	.dvsarm1	= 0x7,	// 1.10V
+	.dvsarm2	= 0x6,	// 1.05V
+	.dvsarm3	= 0x5,	// 1.00
+	.dvsarm4	= 0x4,	// 0.95V
+
+	.dvsint1	= 0x7,	// 1.10V
+	.dvsint2	= 0x5,	// 1.00V
+#else
 	.dvsarm1	= 0xb,	// 1.3V
 	.dvsarm2	= 0x9,	// 1.2V
 	.dvsarm3	= 0x7,	// 1.1V
@@ -396,6 +404,8 @@ static struct max8698_platform_data max8698_platform_data = {
 
 	.dvsint1	= 0x9,	// 1.2V
 	.dvsint2	= 0x5,	// 1.0V
+
+#endif
 };
 
 /* I2C0 */
