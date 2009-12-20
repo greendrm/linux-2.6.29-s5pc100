@@ -89,6 +89,11 @@
 #define ULCON S3C2410_LCON_CS8 | S3C2410_LCON_PNONE | S3C2410_LCON_STOPB
 #define UFCON S3C2410_UFCON_RXTRIG8 | S3C2410_UFCON_FIFOMODE
 
+/* 0x9:1.2v, 0x8:1.15v, 0x7:1.1v, 0x6:1.05v, 0x5:1.00v */
+#define VDD_ARM_EVT1 0x7	
+#define VDD_INT_EVT1 0x7
+
+
 extern struct sys_timer s5pc11x_timer;
 extern void s5pc11x_reserve_bootmem(void);
 
@@ -388,13 +393,13 @@ static struct max8698_platform_data max8698_platform_data = {
 	.set1		= S5PC11X_GPH1(6),
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
-#if defined(CONFIG_CPU_S5PC110_EVT1)
-	.dvsarm1	= 0x7,	// 1.10V
+#if defined(CONFIG_CPU_S5PC110_EVT1) 
+	.dvsarm1	= VDD_ARM_EVT1,	// 1.10v
 	.dvsarm2	= 0x6,	// 1.05V
-	.dvsarm3	= 0x5,	// 1.00
+	.dvsarm3	= 0x5,	// 1.00V
 	.dvsarm4	= 0x4,	// 0.95V
-
-	.dvsint1	= 0x7,	// 1.10V
+	
+	.dvsint1	= VDD_INT_EVT1,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
 #else
 	.dvsarm1	= 0xb,	// 1.3V
