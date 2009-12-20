@@ -32,6 +32,8 @@ config MACH_SMDKC110
 	select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE
+	select REGULATOR
+	select REGULATOR_MAX8698
 	help
 	  Machine support for the Samsung SMDKC110
 
@@ -39,7 +41,7 @@ config MACH_SMDKC110
 choice
 	prompt "Setup CPU Type for S5PC110"
 	depends on PLAT_S5PC11X
-	default S5PC110_H_TYPE
+	default S5PC110_B_TYPE
 
 config S5PC110_H_TYPE
 	bool "Select H-Type"
@@ -106,4 +108,3 @@ config DM9000_16BIT
 	default n	
 	help
 		Some SMDKC110 board have 16bit data bus for DM9000 ethernet controller..
-
