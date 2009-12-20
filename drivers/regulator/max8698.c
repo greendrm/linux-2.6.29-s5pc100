@@ -27,6 +27,7 @@
 #include <linux/regulator/max8698.h>
 #include <linux/mutex.h>
 #include <linux/gpio.h>
+#include <linux/delay.h>
 
 /* Registers */
 enum {
@@ -664,6 +665,18 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 	}
 	rdev = max8698->rdev;
 	
+	if (pdata->dvsint1 && pdata->dvsint2 && gpio_is_valid(pdata->set3)) {
+		max8698_write_reg(max8698, MAX8698_REG_DVSINT12,
+			pdata->dvsint1 | (pdata->dvsint2 << 4));
+
+		ret = gpio_request(pdata->set3, "MAX8698 SET3");
+		if (ret)
+			goto out_set3;
+		gpio_direction_output(pdata->set3, 0);
+	}
+
+	mdelay(1);
+
 	if (pdata->dvsarm1 && pdata->dvsarm2 && pdata->dvsarm3 &&
 	    pdata->dvsarm4 &&
 	    gpio_is_valid(pdata->set1) && gpio_is_valid(pdata->set2)) {
@@ -681,7 +694,7 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 			goto out_set2;
 		gpio_direction_output(pdata->set2, 0);
 	}
-
+#if 0
 	if (pdata->dvsint1 && pdata->dvsint2 && gpio_is_valid(pdata->set3)) {
 		max8698_write_reg(max8698, MAX8698_REG_DVSINT12,
 			pdata->dvsint1 | (pdata->dvsint2 << 4));
@@ -691,7 +704,7 @@ static int __devinit max8698_pmic_probe(struct i2c_client *client,
 			goto out_set3;
 		gpio_direction_output(pdata->set3, 0);
 	}
-
+#endif
 	i2c_set_clientdata(client, max8698);
 
 	return 0;
