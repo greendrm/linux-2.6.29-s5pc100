@@ -69,7 +69,7 @@ endchoice
 choice
 	prompt "CPU revision"
 	depends on CPU_S5PC110 && !S5P_DEEP_IDLE_TEST
-	default	CPU_S5PC110_EVT0_ERRATA
+	default	CPU_S5PC110_EVT1
 	 
 config CPU_S5PC110_EVT0_ERRATA
 	bool "EVT0"
