@@ -1821,7 +1821,6 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 {
 	struct resource *res;
 	size_t	size;
-	int 	ret;
 	u32	reg;
 
 	spin_lock_init(&lock_hdmi);
@@ -1831,7 +1830,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (res == NULL) {
 		dev_err(&pdev->dev, 
 			"failed to get memory region resource\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	size = (res->end - res->start) + 1;
@@ -1841,7 +1840,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (hdmi_mem == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to get memory region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	hdmi_base = ioremap(res->start, size);
@@ -1849,7 +1848,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (hdmi_base == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to ioremap address region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, res_num2);
@@ -1857,7 +1856,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (res == NULL) {
 		dev_err(&pdev->dev, 
 			"failed to get memory region resource\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	size = (res->end - res->start) + 1;
@@ -1867,7 +1866,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (i2c_hdmi_phy_mem == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to get memory region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 
 	i2c_hdmi_phy_base = ioremap(res->start, size);
@@ -1875,7 +1874,7 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	if (i2c_hdmi_phy_base == NULL) {
 		dev_err(&pdev->dev,  
 			"failed to ioremap address region\n");
-		ret = -ENOENT;
+		goto error;
 	}
 	
 	/* PMU Block : HDMI PHY Enable */
@@ -1890,8 +1889,9 @@ int __init __s5p_hdmi_probe(struct platform_device *pdev, u32 res_num, u32 res_n
 	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
 	writeb(reg | (1<<HDMI_IRQ_GLOBAL), hdmi_base+S5P_HDMI_CTRL_INTC_CON);
 
-	return ret;
-
+	return 0;
+error:
+	return -ENOENT;
 }
 
 int __init __s5p_hdmi_release(struct platform_device *pdev)
