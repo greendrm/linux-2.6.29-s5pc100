@@ -102,7 +102,7 @@ static int fimc_s_ctrl(struct file *filp, void *fh, struct v4l2_control *c)
 	if (ctrl->cap != NULL) {
 		ret = fimc_s_ctrl_capture(fh, c);
 	} else if (ctrl->out != NULL) {
-		ret = fimc_s_ctrl_output(fh, c);
+		ret = fimc_s_ctrl_output(filp, fh, c);
 	} else {
 		fimc_err("%s: Invalid case\n", __func__);
 		return -EINVAL;

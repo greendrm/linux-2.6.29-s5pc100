@@ -155,22 +155,24 @@ static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 	if (ret < 0)
 		fimc_err("Failed: fimc_attach_out_queue\n");
 
-	ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ADDR, \
-			(unsigned long)ctrl->out->dst[idx].base[FIMC_ADDR_Y]);
-	if (ret < 0) {
-		fimc_err("direct_ioctl(S3CFB_SET_WIN_ADDR) fail\n");
-		return -EINVAL;
-	}
-
-	if(ctrl->fb.is_enable == 0) {
-		ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ON, \
-							(unsigned long)NULL);
+	if(ctrl->out->overlay.mode == FIMC_OVERLAY_DMA_AUTO) {
+		ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ADDR, \
+				(unsigned long)ctrl->out->dst[idx].base[FIMC_ADDR_Y]);
 		if (ret < 0) {
-			fimc_err("direct_ioctl(S3CFB_SET_WIN_ON) fail\n");
+			fimc_err("direct_ioctl(S3CFB_SET_WIN_ADDR) fail\n");
 			return -EINVAL;
 		}
 
-		ctrl->fb.is_enable = 1;
+		if(ctrl->fb.is_enable == 0) {
+			ret = s3cfb_direct_ioctl(ctrl->id, S3CFB_SET_WIN_ON, \
+								(unsigned long)NULL);
+			if (ret < 0) {
+				fimc_err("direct_ioctl(S3CFB_SET_WIN_ON) fail\n");
+				return -EINVAL;
+			}
+
+			ctrl->fb.is_enable = 1;
+		}
 	}
 
 	/* Detach buffer from incomming queue. */
@@ -241,11 +243,12 @@ static inline void fimc_irq_out(struct fimc_control *ctrl)
 	/* Interrupt pendding clear */
 	fimc_hwset_clear_irq(ctrl);
 
-	switch (ctrl->out->overlay) {
+	switch (ctrl->out->overlay.mode) {
 	case FIMC_OVERLAY_NONE:
 		wakeup = fimc_irq_out_none(ctrl);
 		break;
-	case FIMC_OVERLAY_DMA:
+	case FIMC_OVERLAY_DMA_AUTO:
+	case FIMC_OVERLAY_DMA_MANUAL:
 		wakeup = fimc_irq_out_dma(ctrl);
 		break;
 	case FIMC_OVERLAY_FIFO:
@@ -404,7 +407,7 @@ static struct vm_operations_struct fimc_mmap_ops = {
 	.close	= fimc_mmap_close,
 };
 
-static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
+static inline int fimc_mmap_out_src(struct file *filp, struct vm_area_struct *vma)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	u32 start_phy_addr = 0;
@@ -446,6 +449,39 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 	ctrl->out->src[idx].flags |= V4L2_BUF_FLAG_MAPPED;
 
 	return 0;
+}
+
+static inline int fimc_mmap_out_dst(struct file *filp, struct vm_area_struct *vma, u32 idx)
+{
+	struct fimc_control *ctrl = filp->private_data;
+	unsigned long pfn = 0, size;
+	int ret = 0;
+
+	size = vma->vm_end - vma->vm_start;
+
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	vma->vm_flags |= VM_RESERVED;
+
+	pfn = __phys_to_pfn(ctrl->out->dst[idx].base[0]);
+	ret = remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot);
+	if (ret != 0)
+		fimc_err("remap_pfn_range fail.\n");
+
+	return ret;
+}
+
+static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
+{
+	struct fimc_control *ctrl = filp->private_data;
+	int idx = ctrl->out->overlay.req_idx;
+	int ret = 0;
+
+	if (idx >= 0)
+		ret = fimc_mmap_out_dst(filp, vma, idx);
+	else
+		ret = fimc_mmap_out_src(filp, vma);
+
+	return ret;
 }
 
 static inline int fimc_mmap_cap(struct file *filp, struct vm_area_struct *vma)
@@ -647,6 +683,9 @@ static int fimc_release(struct file *filp)
 {
 	struct fimc_control *ctrl = filp->private_data;
 	struct s3c_platform_fimc *pdata;
+	struct fimc_overlay_buf *buf;
+	struct mm_struct *mm = current->mm;
+
 	int ret = 0, i;
 
 	ctrl->mem.curr = ctrl->mem.base;
@@ -685,6 +724,16 @@ static int fimc_release(struct file *filp)
 			if (ret < 0)
 				fimc_err("Fail: fimc_stop_streaming\n");
 			ctrl->status = FIMC_STREAMOFF;
+		}
+
+		buf = &ctrl->out->overlay.buf;
+
+		for (i = 0; i < FIMC_OUTBUFS; i++) {
+			if (buf->vir_addr[i]) {
+				ret = do_munmap(mm, buf->vir_addr[i], buf->size[i]);
+				if (ret < 0)
+					fimc_err("%s: do_munmap fail\n", __func__);
+			}
 		}
 
 		kfree(ctrl->out);
@@ -1059,10 +1108,10 @@ static int fimc_remove(struct platform_device *pdev)
 #ifdef CONFIG_PM
 static inline int fimc_suspend_out(struct fimc_control *ctrl)
 {
-	switch (ctrl->out->overlay) {
+	switch (ctrl->out->overlay.mode) {
 	case FIMC_OVERLAY_NONE:	/* fall through */
-	case FIMC_OVERLAY_DMA:
-
+	case FIMC_OVERLAY_DMA_AUTO:
+	case FIMC_OVERLAY_DMA_MANUAL:
 		if (ctrl->status == FIMC_STREAMON) {
 			if (ctrl->out->in_queue[0] != -1)
 				fimc_err("[%s : %d] in queue status isn't stable\n",
@@ -1150,7 +1199,7 @@ static inline int fimc_resume_out(struct fimc_control *ctrl)
 {
         int index = -1, ret = -1;
 
-	switch (ctrl->out->overlay) {
+	switch (ctrl->out->overlay.mode) {
 	case FIMC_OVERLAY_NONE:
 		if (ctrl->status == FIMC_ON_IDLE_SLEEP) {
 		        ret = fimc_outdev_set_param(ctrl);
@@ -1166,9 +1215,26 @@ static inline int fimc_resume_out(struct fimc_control *ctrl)
 		}
 		break;
 
-	case FIMC_OVERLAY_DMA:
+	case FIMC_OVERLAY_DMA_AUTO:
 		if (ctrl->status == FIMC_ON_IDLE_SLEEP) {
 			fimc_outdev_resume_dma(ctrl);
+		        ret = fimc_outdev_set_param(ctrl);
+		        if (ret < 0)
+		                fimc_err("Fail: fimc_outdev_set_param\n");
+
+			ctrl->status = FIMC_STREAMON_IDLE;
+
+		} else if (ctrl->status == FIMC_OFF_SLEEP) {
+			ctrl->status = FIMC_STREAMOFF;
+		} else {
+			fimc_err("%s: Undefined status : %d\n", 
+						__func__, ctrl->status);
+		}
+
+		break;
+
+	case FIMC_OVERLAY_DMA_MANUAL:
+		if (ctrl->status == FIMC_ON_IDLE_SLEEP) {
 		        ret = fimc_outdev_set_param(ctrl);
 		        if (ret < 0)
 		                fimc_err("Fail: fimc_outdev_set_param\n");

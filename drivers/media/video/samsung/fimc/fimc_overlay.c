@@ -30,7 +30,7 @@ int fimc_try_fmt_overlay(struct file *filp, void *fh, struct v4l2_format *f)
 			__func__, f->fmt.win.w.top, f->fmt.win.w.left, \
 			f->fmt.win.w.width, f->fmt.win.w.height);
 
-	if (ctrl->out->overlay == FIMC_OVERLAY_NONE)
+	if (ctrl->out->overlay.mode == FIMC_OVERLAY_NONE)
 		return 0;
 
 	/* Check Overlay Size : Overlay size must be smaller than LCD size. */
@@ -217,9 +217,9 @@ int fimc_s_fbuf(struct file *filp, void *fh, struct v4l2_framebuffer *fb)
 		ctrl->out->fbuf.fmt.colorspace = V4L2_COLORSPACE_SMPTE170M;
 		ctrl->out->fbuf.fmt.priv = 0;
 
-		ctrl->out->overlay = FIMC_OVERLAY_NONE;
+		ctrl->out->overlay.mode = FIMC_OVERLAY_NONE;
 	} else {
-		ctrl->out->overlay = FIMC_OVERLAY_MODE;
+		ctrl->out->overlay.mode = FIMC_OVERLAY_MODE;
 	}
 
 	return 0;

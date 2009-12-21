@@ -57,7 +57,7 @@
 #define FIMC_FHD_HEIGHT		1080
 
 #if 1
-#define FIMC_OVERLAY_MODE	FIMC_OVERLAY_DMA
+#define FIMC_OVERLAY_MODE	FIMC_OVERLAY_DMA_AUTO
 #else
 #define FIMC_OVERLAY_MODE	FIMC_OVERLAY_FIFO
 #endif
@@ -98,10 +98,11 @@ enum fimc_input {
 	FIMC_SRC_MSDMA,
 };
 
-enum fimc_overlay {
+enum fimc_overlay_mode {
 	FIMC_OVERLAY_NONE	= 0x0,	/* Destructive Overlay with DMA */
-	FIMC_OVERLAY_DMA	= 0x1,	/* Non-destructive Overlay with DMA */
-	FIMC_OVERLAY_FIFO	= 0x2,	/* Non-destructive Overlay with FIFO */
+	FIMC_OVERLAY_DMA_MANUAL	= 0x1,	/* Non-destructive Overlay with DMA */
+	FIMC_OVERLAY_DMA_AUTO	= 0x2,	/* Non-destructive Overlay with DMA */
+	FIMC_OVERLAY_FIFO	= 0x3,	/* Non-destructive Overlay with FIFO */
 };
 
 enum fimc_autoload {
@@ -132,6 +133,18 @@ struct fimc_meminfo {
 struct fimc_buf {
 	dma_addr_t	base[3];
  	size_t		length[3];
+};
+
+struct fimc_overlay_buf {
+	u32 vir_addr[3];
+	size_t size[3];
+	u32 phy_addr[3];
+};
+
+struct fimc_overlay {
+	enum fimc_overlay_mode	mode;
+	struct fimc_overlay_buf	buf;
+	s32 req_idx;
 };
 
 /* general buffer */
@@ -181,13 +194,14 @@ struct fimc_outinfo {
 	struct fimc_buf_idx	idx;
 	struct fimc_buf_set	src[FIMC_OUTBUFS];
 	struct fimc_buf_set	dst[FIMC_OUTBUFS];
-	u32			in_queue[FIMC_INQ_BUFS];
-	u32			out_queue[FIMC_OUTQ_BUFS];
+	s32			in_queue[FIMC_INQ_BUFS];
+	s32			out_queue[FIMC_OUTQ_BUFS];
 
 	/* flip: V4L2_CID_xFLIP, rotate: 90, 180, 270 */
 	u32			flip;
 	u32			rotate;
-	enum fimc_overlay	overlay;
+
+	struct fimc_overlay	overlay;
 };
 
 struct s3cfb_user_window {
@@ -402,7 +416,7 @@ extern int fimc_outdev_start_camif(void *param);
 extern int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_output(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_output(void *fh, struct v4l2_control *c);
-extern int fimc_s_ctrl_output(void *fh, struct v4l2_control *c);
+extern int fimc_s_ctrl_output(struct file *filp, void *fh, struct v4l2_control *c);
 extern int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a);
 extern int fimc_s_crop_output(void *fh, struct v4l2_crop *a);
 extern int fimc_streamon_output(void *fh);

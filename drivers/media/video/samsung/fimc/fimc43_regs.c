@@ -941,8 +941,8 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 				struct v4l2_rect *crop)
 {
 	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
-
 	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
+
 	if (!crop->left && !crop->top && (bounds->width == crop->width) &&
 		(bounds->height == crop->height))
 		return -EINVAL;
@@ -953,10 +953,10 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 	switch (pixelformat) {
 	/* 1 plane, 32 bits per pixel */
 	case V4L2_PIX_FMT_RGB32:
-	if(pdata->hw_ver == 0x50)
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-	else
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 4);
+		if(pdata->hw_ver == 0x50)
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
+		else
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 4);
 
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
 		break;
@@ -967,10 +967,10 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 	case V4L2_PIX_FMT_VYUY:	/* fall through */
 	case V4L2_PIX_FMT_YVYU:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:
-	if(pdata->hw_ver == 0x50)
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-	else
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 2);
+		if (pdata->hw_ver == 0x50)
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
+		else
+			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 2);
 
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
 		break;
@@ -980,14 +980,13 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 	case V4L2_PIX_FMT_NV61:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-	if(pdata->hw_ver == 0x50){
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-	}else{
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
-	}
-
+		if (pdata->hw_ver == 0x50) {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
+		} else {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
+		}
 		break;
 
 	/* 2 planes, 12 bits per pixel */
@@ -996,47 +995,47 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 	case V4L2_PIX_FMT_NV21:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-	if(pdata->hw_ver == 0x50){
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-	}else{
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
-	}
+		if (pdata->hw_ver == 0x50) {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
+		} else {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
+		}
 		break;
 
 	/* 3 planes, 16 bits per pixel */
 	case V4L2_PIX_FMT_YUV422P:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-	if(pdata->hw_ver == 0x50){
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-		cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
-		cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
-	}else{
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
-		cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 2);
-		cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 2);
-	}
+		if (pdata->hw_ver == 0x50) {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
+			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
+			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
+		} else {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
+			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 2);
+			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 2);
+		}
 		break;
 
 	/* 3 planes, 12 bits per pixel */
 	case V4L2_PIX_FMT_YUV420:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-	if(pdata->hw_ver == 0x50){
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-		cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
-		cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
-	}else{
-		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
-		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
-		cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 4);
-		cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 4);
-	}
+		if (pdata->hw_ver == 0x50) {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
+			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
+			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
+		} else {
+			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
+			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
+			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 4);
+			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 4);
+		}
 		break;
 
 	default:
@@ -1056,24 +1055,25 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 {
 	u32 cfg_y = 0, cfg_cb = 0;
 	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
+
 	if (crop->left || crop->top ||
 		(bounds->width != crop->width) ||
 		(bounds->height != crop->height)) {
 		switch (pixelformat) {
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
-	if(pdata->hw_ver == 0x50)
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
-	else
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 2);
+			if (pdata->hw_ver == 0x50)
+				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
+			else
+				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 2);
 
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			break;			
 		case V4L2_PIX_FMT_RGB32:
-	if(pdata->hw_ver == 0x50)
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
-	else
-			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
+			if (pdata->hw_ver == 0x50)
+				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
+			else
+				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
 
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			break;
@@ -1082,10 +1082,10 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop->left);
-	if(pdata->hw_ver == 0x50)
-			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
-	else
-			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
+			if (pdata->hw_ver == 0x50)
+				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
+			else
+				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
 
 			break;
 		default: 
