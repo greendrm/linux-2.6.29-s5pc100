@@ -131,9 +131,12 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx
 	 */
 	buf_width = (mfc_ctx->img_width+15)/16*16;
 	buf_height = (mfc_ctx->img_height+31)/32*32;	
-	// for MFC fw 10/30
+	#if 0 // MFC fw 10/30, EVT0
 	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*3 +
 						Align(buf_width*buf_height/2, 64*BUF_L_UNIT);	
+	#else
+	init_arg->out_buf_size.strm_ref_y = STREAM_BUF_SIZE + Align(buf_width*buf_height, 64*BUF_L_UNIT)*2;	
+	#endif
 		
 	memset(&local_param, 0, sizeof(local_param));
 	local_param.mem_alloc.buff_size = Align(init_arg->out_buf_size.strm_ref_y, 2*BUF_S_UNIT);

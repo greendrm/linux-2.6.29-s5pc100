@@ -312,11 +312,12 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c
 		WRITEL((mv_ref_yc-dram1_start_addr)>>11, S3C_FIMV_ENC_REF2_LUMA_ADR+(4*i));
 		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	}
-	 // MFC fw 10/30
+	#if 0 // MFC fw 10/30, EVT0
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_LUMA_ADR);	
 	ref_y += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_CHROMA_ADR);	
 	ref_y += Align(aligned_width*aligned_height/2, 64*BUF_L_UNIT); // Align size should be checked	
+	#endif
 	
 	for (i=0; i < 4; i++) {	
 		// Set refC0~C3
@@ -467,8 +468,9 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 	}
 
 	WRITEL(1, S3C_FIMV_ENC_BF_MODE_CTRL);	// stream buf frame mode
-	// MFC fw 10/30
+	#if 0 // MFC fw 10/30, EVT0
 	WRITEL(1, S3C_FIMV_ENC_B_RECON_WRITE_ON); 
+	#endif
 	
 	WRITEL(1, S3C_FIMV_ENC_SF_EPB_ON_CTRL);	// Auto EPB insertion on, only for h264	
 	WRITEL((1<<18)|(enc_init_mpeg4_arg->in_BframeNum<<16)|enc_init_mpeg4_arg->in_gop_num, 

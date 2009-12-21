@@ -223,7 +223,7 @@
 
 #define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
 #define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
-#if 1 // MFC fw 10/30 
+#if 1 // MFC fw 10/30, EVT0
 #define S3C_FIMV_ENC_REF_B_LUMA_ADR	S3C_FIMVREG(0x062c) /* ref B Luma addr */
 #define S3C_FIMV_ENC_REF_B_CHROMA_ADR	S3C_FIMVREG(0x0630) /* ref B Chroma addr */
 #endif
