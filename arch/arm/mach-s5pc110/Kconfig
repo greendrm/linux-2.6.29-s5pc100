@@ -41,7 +41,7 @@ config MACH_SMDKC110
 choice
 	prompt "Setup CPU Type for S5PC110"
 	depends on PLAT_S5PC11X
-	default S5PC110_B_TYPE
+	default S5PC110_D_TYPE
 
 config S5PC110_H_TYPE
 	bool "Select H-Type"
