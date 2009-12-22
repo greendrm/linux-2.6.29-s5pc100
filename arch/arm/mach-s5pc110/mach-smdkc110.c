@@ -386,7 +386,8 @@ static struct max8698_subdev_data smdkc110_regulators[] = {
 	{ MAX8698_BUCK3, &max8698_buck3_data },
 };
 
-static struct max8698_platform_data max8698_platform_data = {
+/* 800Mhz default voltage */
+static struct max8698_platform_data max8698_platform_data_0 = {
 	.num_regulators	= ARRAY_SIZE(smdkc110_regulators),
 	.regulators	= smdkc110_regulators,
 
@@ -394,12 +395,12 @@ static struct max8698_platform_data max8698_platform_data = {
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
 #if defined(CONFIG_CPU_S5PC110_EVT1) 
-	.dvsarm1	= VDD_ARM_EVT1,	// 1.10v
+	.dvsarm1	= 0x7,	// 1.10v
 	.dvsarm2	= 0x6,	// 1.05V
 	.dvsarm3	= 0x5,	// 1.00V
 	.dvsarm4	= 0x4,	// 0.95V
 	
-	.dvsint1	= VDD_INT_EVT1,	// 1.10v
+	.dvsint1	= 0x7,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
 #else
 	.dvsarm1	= 0xb,	// 1.3V
@@ -412,6 +413,36 @@ static struct max8698_platform_data max8698_platform_data = {
 
 #endif
 };
+
+/* 1Ghz default voltage */
+static struct max8698_platform_data max8698_platform_data_1 = {
+	.num_regulators	= ARRAY_SIZE(smdkc110_regulators),
+	.regulators	= smdkc110_regulators,
+
+	.set1		= S5PC11X_GPH1(6),
+	.set2		= S5PC11X_GPH1(7),
+	.set3		= S5PC11X_GPH0(4),
+#if defined(CONFIG_CPU_S5PC110_EVT1) 
+	.dvsarm1	= 0x9,	// 1.20v
+	.dvsarm2	= 0x6,	// 1.05V
+	.dvsarm3	= 0x5,	// 1.00V
+	.dvsarm4	= 0x4,	// 0.95V
+	
+	.dvsint1	= 0x9,	// 1.20v
+	.dvsint2	= 0x5,	// 1.00V
+#else
+	.dvsarm1	= 0xb,	// 1.3V
+	.dvsarm2	= 0x9,	// 1.2V
+	.dvsarm3	= 0x7,	// 1.1V
+	.dvsarm4	= 0x5,	// 1.0V
+
+	.dvsint1	= 0x9,	// 1.2V
+	.dvsint2	= 0x5,	// 1.0V
+
+#endif
+};
+
+struct max8698_platform_data max8698_platform_default_data;
 
 /* I2C0 */
 static struct i2c_board_info i2c_devs0[] __initdata = {
@@ -430,7 +461,7 @@ static struct i2c_board_info i2c_devs2[] __initdata = {
 	{
 		/* The address is 0xCC used since SRAD = 0 */
 		I2C_BOARD_INFO("max8698", (0xCC >> 1)),
-		.platform_data = &max8698_platform_data,
+		.platform_data = &max8698_platform_default_data,
 	},
 };
 
@@ -518,7 +549,6 @@ static void __init smdkc110_i2c_gpio_init(void)
 	s3c_gpio_setpull(S5PC11X_GPJ4(3), S3C_GPIO_PULL_NONE);
 }
 
- 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
 	.delay 			= 10000,
 	.presc 			= 49,
@@ -968,8 +998,43 @@ static void __init smdkc110_dm9000_set(void)
 
 }
 
+#define MHz	1000*1000
+
 static void __init smdkc110_machine_init(void)
 {
+	struct clk *arm_clk;
+
+	arm_clk = clk_get(NULL, "fclk");
+
+	if (arm_clk == NULL) {
+		memcpy(&max8698_platform_default_data, &max8698_platform_data_1,
+				sizeof(struct max8698_platform_data));
+		printk(KERN_ERR "get fclk clock failed\n");
+	} else {
+		
+		printk(KERN_INFO "arm_clk = %d\n", arm_clk->rate);
+		switch (arm_clk->rate) {
+		case 800*MHz:
+			memcpy(&max8698_platform_default_data,
+				&max8698_platform_data_0,
+				sizeof(struct max8698_platform_data));
+			break;
+		case 1000*MHz:
+			memcpy(&max8698_platform_default_data,
+				&max8698_platform_data_1,
+				sizeof(struct max8698_platform_data));
+			break;
+		default:
+			printk(KERN_ERR "Set to default voltage value\n");
+			memcpy(&max8698_platform_default_data,
+				&max8698_platform_data_1,
+				sizeof(struct max8698_platform_data));
+			break;	
+		}
+	}
+	
+	clk_put(arm_clk);
+
 	smdkc110_dm9000_set();
 
 	/* i2c */
