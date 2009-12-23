@@ -42,7 +42,7 @@ struct platform_device s3c_device_fimc1 = {
 
 static struct s3c_platform_fimc default_fimc1_data __initdata = {
 	.default_cam	= CAMERA_PAR_A,
-	.hw_ver		= 0x43,
+	.hw_ver		= 0x50,
 };
 
 void __init s3c_fimc1_set_platdata(struct s3c_platform_fimc *pd)
@@ -51,6 +51,8 @@ void __init s3c_fimc1_set_platdata(struct s3c_platform_fimc *pd)
 
 	if (!pd)
 		pd = &default_fimc1_data;
+	else
+		pd->hw_ver = 0x50;
 
 	npd = kmemdup(pd, sizeof(struct s3c_platform_fimc), GFP_KERNEL);
 	if (!npd)

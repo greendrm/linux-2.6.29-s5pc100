@@ -90,8 +90,8 @@
 #define UFCON S3C2410_UFCON_RXTRIG8 | S3C2410_UFCON_FIFOMODE
 
 /* 0x9:1.2v, 0x8:1.15v, 0x7:1.1v, 0x6:1.05v, 0x5:1.00v */
-#define VDD_ARM_EVT1 0x7	
-#define VDD_INT_EVT1 0x7
+#define VDD_ARM_EVT1 0x9	
+#define VDD_INT_EVT1 0x9
 
 
 extern struct sys_timer s5pc11x_timer;
