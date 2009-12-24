@@ -29,6 +29,11 @@ config SND_S3C2443_SOC_AC97
 	select AC97_BUS
 	select SND_SOC_AC97_BUS
 
+config SND_S5P_SOC_AC97
+	tristate
+	select AC97_BUS
+	select SND_SOC_AC97_BUS
+
 config SND_S3C_SOC_PCM
 	tristate
 
@@ -112,3 +117,14 @@ config SND_S3C24XX_SOC_S3C24XX_UDA134X
        	depends on SND_S3C24XX_SOC
        	select SND_S3C24XX_SOC_I2S
        	select SND_SOC_UDA134X
+
+config SND_S5P_SOC_SMDK_WM9713
+	tristate "SoC AC97 Audio support for SMDKS5P - WM9713"
+	depends on SND_S3C24XX_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
+	select SND_S5P_SOC_AC97
+	select SND_SOC_AC97_CODEC
+	select SND_SOC_WM9713
+	help
+	  Say Y if you want to add support for SoC audio on smdks5p
+	  with the WM9713.
+

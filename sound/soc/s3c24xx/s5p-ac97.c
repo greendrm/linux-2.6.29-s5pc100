@@ -39,8 +39,8 @@
 #include <mach/map.h>
 #include <asm/dma.h>
 
-#include "s3c-pcm.h"
-#include "s3c-ac97.h"
+#include "s3c-dma.h"
+#include "s5p-ac97.h"
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -224,7 +224,7 @@ static struct s3c2410_dma_client s3c_dma_client_out = {
 	.name = "AC97 PCM Stereo out"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_pcm_stereo_out = {
+static struct s3c_dma_params s3c_ac97_pcm_stereo_out = {
 	.client		= &s3c_dma_client_out,
 	.channel	= DMACH_AC97_PCM_OUT,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_PCM_DATA,
@@ -236,7 +236,7 @@ static struct s3c2410_dma_client s3c_dma_client_micin = {
 	.name = "AC97 Mic Mono in"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_mic_mono_in = {
+static struct s3c_dma_params s3c_ac97_mic_mono_in = {
 	.client		= &s3c_dma_client_micin,
 	.channel	= DMACH_AC97_MIC_IN,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_MIC_DATA,
@@ -247,7 +247,7 @@ static struct s3c2410_dma_client s3c_dma_client_in = {
 	.name = "AC97 PCM Stereo Line in"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_pcm_stereo_in = {
+static struct s3c_dma_params s3c_ac97_pcm_stereo_in = {
 	.client		= &s3c_dma_client_in,
 	.channel	= DMACH_AC97_PCM_IN,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_PCM_DATA,

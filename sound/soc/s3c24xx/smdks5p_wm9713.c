@@ -31,8 +31,8 @@
 #include <plat/gpio-bank-c.h>
 
 #include "../codecs/wm9713.h"
-#include "s3c-pcm.h"
-#include "s3c-ac97.h"
+#include "s3c-dma.h"
+#include "s5p-ac97.h"
 
 static struct snd_soc_card smdkc100;
 
