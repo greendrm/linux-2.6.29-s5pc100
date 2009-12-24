@@ -377,18 +377,31 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
-		if (fb->fix.smem_start)
+		if (fb->fix.smem_start) {
+			s3cfb_win_map_off(fbdev, win->id);
 			s3cfb_enable_window(win->id);
-		else
+		} else {
 			dev_info(fbdev->dev,
 				 "[fb%d] no allocated memory for unblank\n",
 				 win->id);
+		}
+
 		break;
 
+	case FB_BLANK_NORMAL:
+		s3cfb_win_map_on(fbdev, win->id, 0x0);
+		s3cfb_enable_window(win->id);
+
+		break;
+		
 	case FB_BLANK_POWERDOWN:
 		s3cfb_disable_window(win->id);
+		s3cfb_win_map_off(fbdev, win->id);
+
 		break;
 
+	case FB_BLANK_VSYNC_SUSPEND:	/* fall through */
+	case FB_BLANK_HSYNC_SUSPEND:	/* fall through */
 	default:
 		dev_dbg(fbdev->dev, "unsupported blank mode\n");
 		return -EINVAL;
