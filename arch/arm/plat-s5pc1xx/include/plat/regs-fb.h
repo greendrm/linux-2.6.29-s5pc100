@@ -26,6 +26,7 @@
 #define S3C_VIDADDR_SIZE(x)	S3C_LCDREG(0x0100 + (x * 0x04))
 #define S3C_KEYCON(x)		S3C_LCDREG(0x0140 + ((x - 1) * 0x08))
 #define S3C_KEYVAL(x)		S3C_LCDREG(0x0144 + ((x - 1) * 0x08))
+#define S3C_WINMAP(x)		S3C_LCDREG(0x0180 + (x * 0x04))
 
 /*
  * Register Map
@@ -282,6 +283,13 @@
 #define S3C_WINCON1_LOCALSEL_VP			(1 << 23)
 #define S3C_WINCON1_LOCALSEL_MASK		(1 << 23)
 
+/* WINSHMAP */
+#define S3C_WINSHMAP_PROTECT(x)			(((x) & 0x1f) << 10)
+#define S3C_WINSHMAP_CH_ENABLE(x)		(1 << (x))
+#define S3C_WINSHMAP_CH_DISABLE(x)		(1 << (x))
+#define S3C_WINSHMAP_LOCAL_ENABLE(x)		(0x20 << (x))
+#define S3C_WINSHMAP_LOCAL_DISABLE(x)		(0x20 << (x))
+
 /* VIDOSDxA, VIDOSDxB */
 #define S3C_VIDOSD_LEFT_X(x)			(((x) & 0x7ff) << 11)
 #define S3C_VIDOSD_TOP_Y(x)			(((x) & 0x7ff) << 0)
@@ -311,6 +319,9 @@
 /* Buffer Size */
 #define S3C_VIDADDR_OFFSIZE(x)  		(((x) & 0x1fff) << 13)
 #define S3C_VIDADDR_PAGEWIDTH(x)		(((x) & 0x1fff) << 0)
+
+/* WIN Color Map */
+#define S3C_WINMAP_COLOR(x)			((x) & 0xffffff)
 
 /* VIDINTCON0 */
 #define S3C_VIDINTCON0_SYSMAINCON_DISABLE	(0 << 19)
@@ -354,6 +365,9 @@
 #define S3C_VIDINTCON1_INTI80PEND		(1 << 2)
 #define S3C_VIDINTCON1_INTFRMPEND		(1 << 1)
 #define S3C_VIDINTCON1_INTFIFOPEND		(1 << 0)
+
+/* WINMAP */
+#define S3C_WINMAP_ENABLE			(1 << 24)
 
 /* WxKEYCON0 (1~4) */
 #define S3C_KEYCON0_KEYBLEN_DISABLE 		(0 << 26)
