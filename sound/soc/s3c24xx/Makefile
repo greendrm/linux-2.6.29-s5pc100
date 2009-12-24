@@ -24,6 +24,7 @@ snd-soc-ln2440sbc-alc650-objs := ln2440sbc_alc650.o
 snd-soc-s3c24xx-uda134x-objs := s3c24xx_uda134x.o
 snd-soc-smdks5p-wm8580-objs := smdks5p_wm8580.o
 snd-soc-smdks5p-wm9713-objs := smdks5p_wm9713.o
+snd-soc-universal-ak4671-objs := universal_ak4671.o
 
 obj-$(CONFIG_SND_S3C24XX_SOC_NEO1973_WM8753) += snd-soc-neo1973-wm8753.o
 obj-$(CONFIG_SND_S3C24XX_SOC_SMDK2443_WM9710) += snd-soc-smdk2443-wm9710.o
@@ -31,3 +32,4 @@ obj-$(CONFIG_SND_S3C24XX_SOC_LN2440SBC_ALC650) += snd-soc-ln2440sbc-alc650.o
 obj-$(CONFIG_SND_S3C24XX_SOC_S3C24XX_UDA134X) += snd-soc-s3c24xx-uda134x.o
 obj-$(CONFIG_SND_S5P_SOC_WM8580) += snd-soc-smdks5p-wm8580.o
 obj-$(CONFIG_SND_S5P_SOC_SMDK_WM9713) += snd-soc-smdks5p-wm9713.o
+obj-$(CONFIG_SND_S5PC100_SOC_UNIVERSAL_AK4671) += snd-soc-universal-ak4671.o

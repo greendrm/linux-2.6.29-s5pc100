@@ -34,16 +34,6 @@ config  SND_SMDKC100_S5M8751
 	select SND_S3C_I2S_V32
 	select SND_SOC_S5M8751
 
-config SND_S5PC100_SOC_UNIVERSAL_AK4671
-	tristate "SoC I2S Audio support for UNIVERSAL - AK4671"
-	depends on ARCH_S5PC1XX
-	select SND_S3C_I2S_V50
-	select SND_SOC_AK4671
-	select SND_SOC_MAX9877
-	help
-	  Say Y if you want to add support for SoC audio on universal
-	  with the AK4671.
-
 config  SND_SMDK6442_WM8580
 	tristate "WM8580-I2S on SMDK6442"
 	depends on ARCH_S5P64XX
