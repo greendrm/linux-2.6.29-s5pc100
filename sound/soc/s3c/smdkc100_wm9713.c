@@ -34,7 +34,7 @@
 #include "s3c-pcm.h"
 #include "s3c-ac97.h"
 
-static struct snd_soc_machine smdkc100;
+static struct snd_soc_card smdkc100;
 
 static struct snd_soc_dai_link smdkc100_dai[] = {
 {
@@ -45,15 +45,15 @@ static struct snd_soc_dai_link smdkc100_dai[] = {
 },
 };
 
-static struct snd_soc_machine smdkc100 = {
+static struct snd_soc_card smdkc100 = {
 	.name = "SMDKC100",
+	.platform = &s3c24xx_soc_platform,
 	.dai_link = smdkc100_dai,
 	.num_links = ARRAY_SIZE(smdkc100_dai),
 };
 
 static struct snd_soc_device smdkc100_snd_ac97_devdata = {
-	.machine = &smdkc100,
-	.platform = &s3c24xx_soc_platform,
+	.card = &smdkc100,
 	.codec_dev = &soc_codec_dev_wm9713,
 };
 
