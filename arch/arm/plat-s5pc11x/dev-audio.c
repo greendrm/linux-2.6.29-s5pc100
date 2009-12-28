@@ -131,11 +131,19 @@ static int s5pc110_pcm_cfg_gpio(struct platform_device *pdev)
 {
 	switch (pdev->id) {
 	case 0:
+#if defined(CONFIG_CPU_S5PC110_EVT1)
+		s3c_gpio_cfgpin(S5PC11X_GPI(0), S5PC11X_GPI0_PCM_0_SCLK);
+		s3c_gpio_cfgpin(S5PC11X_GPI(1), S5PC11X_GPI1_PCM_0_EXTCLK);
+		s3c_gpio_cfgpin(S5PC11X_GPI(2), S5PC11X_GPI2_PCM_0_FSYNC);
+		s3c_gpio_cfgpin(S5PC11X_GPI(3), S5PC11X_GPI3_PCM_0_SIN);
+		s3c_gpio_cfgpin(S5PC11X_GPI(4), S5PC11X_GPI4_PCM_0_SOUT);
+#else
 		s3c_gpio_cfgpin(S5PC11X_GPC1(0), S5PC11X_GPC1_0_PCM_0_SCLK);
 		s3c_gpio_cfgpin(S5PC11X_GPC1(1), S5PC11X_GPC1_1_PCM_0_EXTCLK);
 		s3c_gpio_cfgpin(S5PC11X_GPC1(2), S5PC11X_GPC1_2_PCM_0_FSYNC);
 		s3c_gpio_cfgpin(S5PC11X_GPC1(3), S5PC11X_GPC1_3_PCM_0_SIN);
 		s3c_gpio_cfgpin(S5PC11X_GPC1(4), S5PC11X_GPC1_4_PCM_0_SOUT);
+#endif
 		break;
 	case 1:
 		s3c_gpio_cfgpin(S5PC11X_GPC0(0), S5PC11X_GPC0_PCM_1_SCLK);
@@ -145,11 +153,19 @@ static int s5pc110_pcm_cfg_gpio(struct platform_device *pdev)
 		s3c_gpio_cfgpin(S5PC11X_GPC0(4), S5PC11X_GPC4_PCM_1_SOUT);
 		break;
 	case 2:
+#if defined(CONFIG_CPU_S5PC110_EVT1)
+		s3c_gpio_cfgpin(S5PC11X_GPC1(0), S5PC11X_GPC1_0_PCM_2_SCLK);
+		s3c_gpio_cfgpin(S5PC11X_GPC1(1), S5PC11X_GPC1_1_PCM_2_EXTCLK);
+		s3c_gpio_cfgpin(S5PC11X_GPC1(2), S5PC11X_GPC1_2_PCM_2_FSYNC);
+		s3c_gpio_cfgpin(S5PC11X_GPC1(3), S5PC11X_GPC1_3_PCM_2_SIN);
+		s3c_gpio_cfgpin(S5PC11X_GPC1(4), S5PC11X_GPC1_4_PCM_2_SOUT);
+#else
 		s3c_gpio_cfgpin(S5PC11X_GPI(0), S5PC11X_GPI0_PCM_2_SCLK);
 		s3c_gpio_cfgpin(S5PC11X_GPI(1), S5PC11X_GPI1_PCM_2_EXTCLK);
 		s3c_gpio_cfgpin(S5PC11X_GPI(2), S5PC11X_GPI2_PCM_2_FSYNC);
 		s3c_gpio_cfgpin(S5PC11X_GPI(3), S5PC11X_GPI3_PCM_2_SIN);
 		s3c_gpio_cfgpin(S5PC11X_GPI(4), S5PC11X_GPI4_PCM_2_SOUT);
+#endif
 		break;
 	default:
 		printk(KERN_DEBUG "Invalid PCM Controller number!");
