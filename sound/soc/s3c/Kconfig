@@ -1,6 +1,6 @@
 config SND_S5P_SOC
-	tristate "Samsung SoC Audio"
-	depends on ARCH_S5PC1XX || ARCH_S5PC11X || ARCH_S5P64XX
+	tristate "Samsung SoC LP-Audio Drivers"
+	depends on !SND_S3C24XX_SOC && (ARCH_S5PC1XX || ARCH_S5PC11X)
 	help
 	  Say Y or M if you want to add support for codecs attached to
 	  the S3C AC97, I2S or SSP interface. You will also need
@@ -24,12 +24,6 @@ config  SND_SMDKC100_WM8580
 	depends on ARCH_S5PC1XX
 	select SND_S3C_I2S_V50
 	select SND_SOC_WM8580
-
-config  SND_SMDKC100_S5M8751
-	tristate "S5M8751-I2S on SMDKC100"
-	depends on ARCH_S5PC1XX
-	select SND_S3C_I2S_V32
-	select SND_SOC_S5M8751
 
 config  SND_SMDK6442_WM8580
 	tristate "WM8580-I2S on SMDK6442"
