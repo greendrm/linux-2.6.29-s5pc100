@@ -402,7 +402,7 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 #endif
 
 /* PCM works __ONLY__ in AP-Master mode */
-#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+#if defined(CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM)
 static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
 {
@@ -529,7 +529,7 @@ static struct snd_soc_ops smdk_i2s_ops = {
 #endif
 };
 
-#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+#if defined(CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM)
 static struct snd_soc_ops smdk_pcm_ops = {
 	.hw_params = smdk_socpcm_hw_params,
 };
@@ -613,7 +613,6 @@ static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 }
 
 static struct snd_soc_dai_link smdk_dai[] = {
-#if defined(CONFIG_SND_S5P_PRIMARY_I2S)
 {
 	.name = "WM8580 PAIF RX",
 	.stream_name = "Playback",
@@ -630,9 +629,8 @@ static struct snd_soc_dai_link smdk_dai[] = {
 	.init = smdk_wm8580_init_paiftx,
 	.ops = &smdk_i2s_ops,
 },
-#endif
 
-#if defined(CONFIG_SND_S5P_SECONDARY_I2S)
+#if defined(CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S)
 {
 	.name = "WM8580 I2S SAIF",
 	.stream_name = "Tx/Rx",
@@ -642,7 +640,7 @@ static struct snd_soc_dai_link smdk_dai[] = {
 },
 #endif
 
-#if defined(CONFIG_SND_S5P_SECONDARY_PCM)
+#if defined(CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM)
 {
 	.name = "WM8580 PCM SAIF",
 	.stream_name = "Tx/Rx",

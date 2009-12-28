@@ -510,12 +510,12 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_timer[2],
 	&s3c_device_timer[3],
 #endif
-#ifdef CONFIG_SND_S5P_SOC_I2S
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S
 	&s5pc110_device_iis0,
 	&s5pc110_device_iis1,
 #endif
-#ifdef CONFIG_SND_S3C_SOC_PCM
-	&s5pc110_device_pcm0,
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM
+	&s5pc110_device_iis0,
 	&s5pc110_device_pcm1,
 #endif
 	&s3c_device_usb_ohci,
