@@ -16,17 +16,13 @@
 #include <mach/gpio.h>
 
 #include "s5p-spdif.h"
-#include "s3c-pcm-lp.h"
+#include "s3c-pcm.h"
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
 #else
 #define s3cdbg(x...)
 #endif
-
-extern struct s5p_pcm_pdata s3c_pcm_pdat;
-
-static int lowpower = 0;
 
 struct s5p_spdif_info s5p_spdif;
 
@@ -212,7 +208,7 @@ static struct snd_soc_dai_link smdks5p_dai[] = {
 
 static struct snd_soc_card smdks5p = {
 	.name = "smdks5p",	
-	.platform = &s3c_pcm_pdat.pcm_pltfm,
+	.platform = &s3c24xx_soc_platform,
 	.dai_link = smdks5p_dai,
 	.num_links = ARRAY_SIZE(smdks5p_dai),
 };
@@ -230,8 +226,7 @@ static int __init smdks5p_audio_init(void)
 	int ret;
 
 	snd_soc_register_dais(s5p_hdmi_spdif_dai, ARRAY_SIZE(s5p_hdmi_spdif_dai));
-	s3c_pcm_pdat.set_mode(lowpower, NULL);
-	
+
 	s3cdbg("Entered %s\n", __FUNCTION__);
 	smdks5p_snd_device = platform_device_alloc("soc-audio", 0);
 	if (!smdks5p_snd_device)
@@ -256,8 +251,6 @@ static void __exit smdks5p_audio_exit(void)
 
 module_init(smdks5p_audio_init);
 module_exit(smdks5p_audio_exit);
-
-module_param (lowpower, int, 0444);
 
 /* Module information */
 MODULE_DESCRIPTION("ALSA SoC SMDKS5P HDMI-SPDIF");

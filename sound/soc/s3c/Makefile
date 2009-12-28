@@ -7,7 +7,7 @@ obj-$(CONFIG_SND_S3C_I2S_V50)  += s3c-pcm-lp.o
 obj-$(CONFIG_SND_S3C_I2S_V50)  += s3c-i2s.o
 
 obj-$(CONFIG_SND_S5P_SPDIF)   += s5p-spdif.o
-obj-$(CONFIG_SND_S5P_SPDIF)   += s3c-pcm-lp.o
+obj-$(CONFIG_SND_S5P_SPDIF)   += s3c-pcm.o
 
 # S5PC100 has AC97 and I2S(v-3.2 and 5.0) controller.
 # SMDKC100 has WM8580 and WM9713 onboard and S5M8751 as a module.
