@@ -37,6 +37,9 @@ config SND_S5P_SOC_AC97
 config SND_S3C_SOC_PCM
 	tristate
 
+config SND_S5P_SPDIF
+	tristate
+	
 config SND_S5P_SOC_WM8580
 	tristate "SoC Audio support for WM8580 on SMDK-S5P"
 	depends on SND_S3C24XX_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
@@ -112,10 +115,15 @@ config SND_S5P_SOC_SMDK_WM9713
 
 config SND_S5PC100_SOC_UNIVERSAL_AK4671
 	tristate "SoC I2S Audio support for UNIVERSAL - AK4671"
-	depends on MACH_UNIVERSAL
+	depends on SND_S3C24XX_SOC && MACH_UNIVERSAL
 	select SND_S5P_SOC_I2S
 	select SND_SOC_AK4671
 	select SND_SOC_MAX9877
 	help
 	  Say Y if you want to add support for SoC audio on universal
 	  with the AK4671.
+
+config SND_SMDKS5P_HDMI_SPDIF
+	tristate "HDMI-SPDIF on SMDKS5P"
+	depends on SND_S3C24XX_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
+	select SND_S5P_SPDIF

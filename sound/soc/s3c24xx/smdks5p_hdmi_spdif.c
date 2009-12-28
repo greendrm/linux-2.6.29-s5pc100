@@ -16,7 +16,7 @@
 #include <mach/gpio.h>
 
 #include "s5p-spdif.h"
-#include "s3c-pcm.h"
+#include "s3c-dma.h"
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -116,13 +116,13 @@ static int smdks5p_spdif_hw_params(struct snd_pcm_substream *substream,
 	// configure gpio for spdif
 	s3cdbg("Entered %s: rate=%d\n", __FUNCTION__, params_rate(params));
 
-#ifdef CONFIG_SND_SMDKC100_HDMI_SPDIF
+#ifdef CONFIG_CPU_S5PC100
 	s3c_gpio_cfgpin(S5PC1XX_GPG3(5), S3C_GPIO_SFN(5));	//GPG3CON[5] spdif_0_out
 	s3c_gpio_setpull(S5PC1XX_GPG3(5), S3C_GPIO_PULL_UP);
 	s3c_gpio_cfgpin(S5PC1XX_GPG3(6), S3C_GPIO_SFN(5));	//GPG3CON[5] spdif_extcal
 	s3c_gpio_setpull(S5PC1XX_GPG3(6), S3C_GPIO_PULL_UP);	
 #else 
-#ifdef CONFIG_SND_SMDKC110_HDMI_SPDIF
+#ifdef CONFIG_CPU_S5PC110
 	s3c_gpio_cfgpin(S5PC11X_GPC1(0), S3C_GPIO_SFN(3));	//GPG3CON[5] spdif_0_out
 	s3c_gpio_setpull(S5PC11X_GPC1(0), S3C_GPIO_PULL_UP);
 	s3c_gpio_cfgpin(S5PC11X_GPC1(1), S3C_GPIO_SFN(3));	//GPG3CON[5] spdif_extcal
@@ -255,4 +255,3 @@ module_exit(smdks5p_audio_exit);
 /* Module information */
 MODULE_DESCRIPTION("ALSA SoC SMDKS5P HDMI-SPDIF");
 MODULE_LICENSE("GPL");
-

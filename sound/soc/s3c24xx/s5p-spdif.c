@@ -25,7 +25,7 @@
 #include <mach/dma.h>
 
 #include "s5p-spdif.h"
-#include "s3c-pcm.h"
+#include "s3c-dma.h"
  
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -39,7 +39,7 @@ static struct s3c2410_dma_client s5p_spdif_dma_client_out = {
 };
 
 
-static struct s3c24xx_pcm_dma_params s5p_spdif_pcm_stereo_out = {
+static struct s3c_dma_params s5p_spdif_pcm_stereo_out = {
 	.client	 = &s5p_spdif_dma_client_out,
 	.channel = DMACH_SPDIF_OUT,
 	.dma_addr = S5P_PA_SPDIF + S5P_SPDIF_SPDDAT,
@@ -294,7 +294,7 @@ static int s5p_spdif_probe(struct platform_device *pdev,
 	
 	clk_put(s5p_spdif.spdif_clk);
  
-#ifdef CONFIG_SND_SMDKC100_HDMI_SPDIF
+#ifdef CONFIG_CPU_S5PC100
 
 	s5p_spdif.spdif_sclk=clk_get(&pdev->dev, "sclk_spdif");
 	if (s5p_spdif.spdif_clk == NULL) {
@@ -305,7 +305,7 @@ static int s5p_spdif_probe(struct platform_device *pdev,
 	clk_enable(s5p_spdif.spdif_sclk);
 	
 #else 
-#ifdef CONFIG_SND_SMDKC110_HDMI_SPDIF
+#ifdef CONFIG_CPU_S5PC110
 
 	s5p_spdif.spdif_sclk = clk_get(NULL, "fout_epll");
 	if (IS_ERR(s5p_spdif.spdif_sclk)) {

@@ -9,9 +9,6 @@ config SND_S5P_SOC
 config SND_S3C_I2S_V50
 	tristate
 
-config SND_S5P_SPDIF
-	tristate
-	
 choice
 	prompt "Select the codec driver"
 	depends on SND_S5P_SOC
@@ -40,16 +37,6 @@ config  SND_SMDK6442_WM8580
 	select SND_S3C_I2S_V50
 	select SND_SOC_WM8580
 
-config SND_SMDKC110_HDMI_SPDIF
-	tristate "HDMI-SPDIF on SMDKC110"
-	depends on ARCH_S5PC11X
-	select SND_S5P_SPDIF
-	
-config SND_SMDKC100_HDMI_SPDIF
-	tristate "HDMI-SPDIF on SMDKC100"
-	depends on ARCH_S5PC1XX
-	select SND_S5P_SPDIF
-	
 endchoice
 
 config  SND_WM8580_MASTER
