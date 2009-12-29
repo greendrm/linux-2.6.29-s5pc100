@@ -186,45 +186,47 @@
 #ifdef CONFIG_SND_WM8580_MASTER /* ?? */
 #define EXTPRNT "i2s_cdclk0"
 #else
-#if defined(CONFIG_SND_SMDKC100_WM8580)
+#if defined(CONFIG_MACH_SMDKC100)
 #define EXTPRNT "fout_epll"
-#elif defined(CONFIG_SND_SMDKC110_WM8580)
+#elif defined(CONFIG_MACH_SMDKC110)
 #define EXTPRNT "i2smain_clk"
 #endif
 #endif
 
-#if defined(CONFIG_SND_SMDKC100_WM8580)
+#if defined(CONFIG_MACH_SMDKC100)
 #define RATESRCCLK 		EXTPRNT
 #else
 #define RATESRCCLK 		"fout_epll"
 #endif
 
-#define PLBK_CHAN		6
-#define S3C_DESC		"S3C AP I2S-V5.0 Interface"
+#ifdef CONFIG_SND_DEBUG
+#define s3cdbg(x...) printk(x)
+#else
+#define s3cdbg(x...)
+#endif
+
+/* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.
+ * Keep LP_DMA_PERIOD > MAX_LP_BUFF/2
+ * Also, this value must be aligned at KB bounday (multiple of 1024). */
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+#define MAX_LP_BUFF	(128 * 1024) /* 128KB in S5PC100 */
+#define LP_DMA_PERIOD (105 * 1024)
+#else
+#define MAX_LP_BUFF	(160 * 1024)
+#define LP_DMA_PERIOD (128 * 1024)
+#endif
+
+#define LP_TXBUFF_ADDR    (0xC0000000)
 
 /* dma_state */
-#define S3C_I2SDMA_START   1
-#define S3C_I2SDMA_STOP    2
-#define S3C_I2SDMA_FLUSH   3
-#define S3C_I2SDMA_SUSPEND 4
-#define S3C_I2SDMA_RESUME  5
+#define LPAM_DMA_STOP    0
+#define LPAM_DMA_START   1
 
-struct s5p_i2s_pdata {
-	int lp_mode;
-	u32 *p_rate;
-	unsigned  dma_prd;
-	void *dma_token;
-	dma_addr_t dma_saddr;
-	unsigned int dma_size;
-	int dma_state;
-	void (*dma_cb)(void *dt, int bytes_xfer);
-	void (*dma_setcallbk)(void (*dcb)(void *, int), unsigned chunksize);
-	void (*dma_getpos)(dma_addr_t *src, dma_addr_t *dst);
-	int (*dma_enqueue)(void *id);
-	void (*dma_ctrl)(int cmd);
-	struct snd_soc_dai i2s_dai;
-	void (*set_mode)(int lp_mode);
-	spinlock_t lock;
+struct s5p_i2s_lp_info {
+	void (*getpos)(dma_addr_t *src, dma_addr_t *dst);
+	int (*enqueue)(void *id);
+	void (*setcallbk)(void (*cb)(void *id, int result), unsigned prd);
+	void (*ctrl)(int op);
 };
 
 #endif /*S5P_I2S_H_*/
