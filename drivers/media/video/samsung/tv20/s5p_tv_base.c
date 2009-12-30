@@ -357,9 +357,10 @@ static int s5p_tv_v_open(struct file *file)
 		goto drv_used;
 	}
 
+#ifdef CONFIG_CPU_S5PC110
 	s5p_tv_clk_gate( true );
 	tv_phy_power( true );
-
+#endif
 	_s5p_tv_if_init_param();
 
 	s5p_tv_v4l2_init_param();
@@ -430,9 +431,11 @@ int s5p_tv_v_release(struct file *filp)
 
 	mutex_unlock(mutex_for_i2c);
 #endif
+
+#ifdef CONFIG_CPU_S5PC110
 	s5p_tv_clk_gate(false);
 	tv_phy_power( false );
-
+#endif
 	return 0;
 }
 
