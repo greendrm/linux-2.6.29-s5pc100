@@ -440,7 +440,6 @@ typedef struct _s5p_tv_status {
 
 	bool sdout_color_sub_carrier_phase_adj;
 	bool sdout_dac_on[3];
-	s5p_sd_macrovision_val sdout_macrovision;
 
 	bool sdout_y_pb_pr_comp;
 
@@ -691,7 +690,6 @@ s5p_tv_sd_err 	__s5p_sdout_init_offset_gain(s5p_sd_channel_sel channel, u32 offs
 void 	__s5p_sdout_init_delay(u32 delay_y, u32 offset_video_start, u32 offset_video_end);
 void 	__s5p_sdout_init_schlock(bool color_sucarrier_pha_adj);
 s5p_tv_sd_err 	__s5p_sdout_init_dac_power_onoff(s5p_sd_channel_sel channel, bool dac_on);
-s5p_tv_sd_err 	__s5p_sdout_init_macrovision(s5p_sd_macrovision_val macro, s5p_tv_disp_mode disp_mode);
 void 	__s5p_sdout_init_color_compensaton_onoff(bool bright_hue_saturation_adj, bool y_ppr_color_compensation, bool rgb_color_compensation, bool y_c_color_compensation, bool y_cvbs_color_compensation);
 void 	__s5p_sdout_init_brightness_hue_saturation(u32 gain_brightness, u32 offset_brightness, u32 gain0_cb_hue_saturation, u32 gain1_cb_hue_saturation, u32 gain0_cr_hue_saturation, u32 gain1_cr_hue_saturation, u32 offset_cb_hue_saturation, u32 offset_cr_hue_saturation);
 void 	__s5p_sdout_init_rgb_color_compensation(u32 max_rgb_cube, u32 min_rgb_cube);

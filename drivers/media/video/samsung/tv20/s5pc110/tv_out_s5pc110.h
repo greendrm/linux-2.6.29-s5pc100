@@ -409,16 +409,6 @@ typedef enum {
 }s5p_sd_channel_sel;
 
 typedef enum {
-	SDOUT_MV_OFF,
-	SDOUT_MV_NTSC_AGC_ONLY,
-	SDOUT_MV_NTSC_AGC_2L,
-	SDOUT_MV_NTSC_AGC_4L,
-	SDOUT_MV_PAL_AGC_ONLY,
-	SDOUT_MV_PAL_AGC_2L,
-	SDOUT_MV_PAL_AGC_4L
-}s5p_sd_macrovision_val;
-
-typedef enum {
 	SDOUT_VESA_RGB_SYNC_COMPOSITE,
 	SDOUT_VESA_RGB_SYNC_SEPARATE
 }s5p_sd_vesa_rgb_sync_type;
