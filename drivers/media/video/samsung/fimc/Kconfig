@@ -20,16 +20,17 @@ config VIDEO_FIMC_MIPI
 choice
 depends on VIDEO_FIMC
 prompt "Select Output Mode"
-default VIDEO_FIMC_FIFO 
+default VIDEO_FIMC_DMA_AUTO 
+config VIDEO_FIMC_DMA_AUTO
+        bool "DMA ATUO MODE"
+        depends on VIDEO_FIMC
+        ---help---
+          This enables support for FIMC1 DMA AUTO mode
+
 config VIDEO_FIMC_FIFO
         bool "FIFO MODE"
         depends on VIDEO_FIMC
         ---help---
-          This enables support for FIMC1 local path mode
+          This enables support for FIMC1 FIFO mode
 
-config VIDEO_FIMC_DMA_AUTO
-        bool "DMA AUTO MODE"
-        depends on VIDEO_FIMC
-        ---help---
-          This enables support for FIMC1 DMA auto mode
 endchoice
