@@ -1,4 +1,4 @@
-/* 
+/*
  * drivers/media/video/samsung/mfc50/s3c_mfc_opr.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
@@ -11,7 +11,7 @@
  * published by the Free Software Foundation.
  */
 
-#ifndef _S3C_MFC_OPR_H_ 
+#ifndef _S3C_MFC_OPR_H_
 #define _S3C_MFC_OPR_H_
 
 #include "s3c_mfc_errorno.h"
@@ -29,13 +29,13 @@
 #define     INT_PULSE_BIT		(1 << 0)
 
 /* Command Types */
-#define 	MFC_CHANNEL_SET		0
-#define 	MFC_CHANNEL_READ	1
-#define 	MFC_CHANNEL_END		2
-#define 	MFC_INIT_CODEC		3
-#define 	MFC_FRAME_RUN		4
-#define 	MFC_SLEEP		6
-#define 	MFC_WAKEUP		7
+#define		MFC_CHANNEL_SET		0
+#define		MFC_CHANNEL_READ	1
+#define		MFC_CHANNEL_END		2
+#define		MFC_INIT_CODEC		3
+#define		MFC_FRAME_RUN		4
+#define		MFC_SLEEP		6
+#define		MFC_WAKEUP		7
 
 /* DPB Count */
 #define		NUM_MPEG4_DPB		(2)
@@ -61,4 +61,3 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_sleep(s3c_mfc_inst_ctx *mfc_ctx);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(s3c_mfc_inst_ctx *mfc_ctx);
 
 #endif /* _S3C_MFC_OPR_H_ */
-

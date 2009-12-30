@@ -208,9 +208,9 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 		return MFC_RET_FRM_BUF_SIZE_FAIL;
 	}
 
-	aligned_width = Align(mfc_ctx->img_width, 4*BUF_S_UNIT); 	// 128B align 
-	aligned_ch_height = Align(mfc_ctx->img_height/2, BUF_S_UNIT); 	// 32B align
-	aligned_mv_height = Align(mfc_ctx->img_height/4, BUF_S_UNIT); 	// 32B align
+	aligned_width = Align(mfc_ctx->img_width, 4*BUF_S_UNIT);	/* 128B align */
+	aligned_ch_height = Align(mfc_ctx->img_height/2, BUF_S_UNIT);	/* 32B align */
+	aligned_mv_height = Align(mfc_ctx->img_height/4, BUF_S_UNIT);	/* 2B align */
 
 	dpb_buf_addr.luma = Align(init_arg->out_p_addr.luma, 2*BUF_S_UNIT);
 	dpb_buf_addr.chroma = Align(init_arg->out_p_addr.chroma, 2*BUF_S_UNIT);
@@ -219,7 +219,6 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 	mfc_debug("DEC_CHROMA_DPB_START_ADR : 0x%08x\n", dpb_buf_addr.chroma);
 
 	if (mfc_ctx->MfcCodecType == H264_DEC) {
-
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {
 
 			/* set Luma address */
@@ -234,9 +233,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));
 			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);
 		}
-
 	} else {
-
 		for (i=0; i < mfc_ctx->totalDPBCnt; i++) {
 
 			/* set Luma address */
@@ -247,7 +244,6 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s
 			WRITEL((dpb_buf_addr.chroma-fw_phybuf)>>11, S3C_FIMV_CHROMA_ADR+(4*i));
 			dpb_buf_addr.chroma += Align(aligned_width*aligned_ch_height, 8*BUF_L_UNIT);
 		}
-
 	}
 
 	/* Set DPB number */
@@ -330,7 +326,8 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_enc_ref_buffer(s3c_mfc_inst_ctx  *mfc_ctx, s3c
 		mv_ref_yc += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	}
 
-#if 0 // MFC fw 10/30, EVT0
+/* MFC fw 10/30, EVT0 */
+#if 0
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_LUMA_ADR);
 	ref_y += Align(aligned_width*aligned_height, 64*BUF_L_UNIT);
 	WRITEL((ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_REF_B_CHROMA_ADR);
@@ -530,7 +527,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 	WRITEL(enc_init_mpeg4_arg->in_RC_qbound, S3C_FIMV_ENC_RC_QBOUND);
 
 	/* if in_RC_frm_enable is '1' */
-	//if (READL(S3C_FIMV_ENC_RC_CONFIG) & 0x0200)
+	/* if (READL(S3C_FIMV_ENC_RC_CONFIG) & 0x0200) */
 	if (enc_init_mpeg4_arg->in_RC_frm_enable)
 		WRITEL(enc_init_mpeg4_arg->in_RC_rpara, S3C_FIMV_ENC_RC_RPARA);
 
@@ -1075,7 +1072,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *mfc_ctx,
 
 	mfc_debug("++ InstNo%d \r\n", mfc_ctx->InstNo);
 
-	WRITEL(0xffffffff, S3C_FIMV_SI_CH1_RELEASE_BUF); // MFC fw 8/7
+	WRITEL(0xffffffff, S3C_FIMV_SI_CH1_RELEASE_BUF); /* MFC fw 8/7 */
 
 	if ((*consumed_strm_size)) {
 		start_byte_num = (int)((*consumed_strm_size)-

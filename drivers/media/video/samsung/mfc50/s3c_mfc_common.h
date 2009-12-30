@@ -1,4 +1,4 @@
-/* 
+/*
  * drivers/media/video/samsung/mfc50/s3c_mfc_common.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
@@ -21,14 +21,22 @@
 #define BUF_L_UNIT (1024)
 #define BUF_S_UNIT (32)
 #define Align(x, alignbyte) (((x)+(alignbyte)-1)/(alignbyte)*(alignbyte))
-#define S3C_MFC_CLK_NAME 	"mfc"
+#define S3C_MFC_CLK_NAME	"mfc"
 
 #if 1
-#define ASPECT_RATIO_VUI_ENABLE 	(1<<15)	// Aspect ratio VUI is enabled in H.264 encoding
-#define SEQ_HEADER_CONTROL		(1<<3)	// Sequence header is generated on both SEQ_START and the first FRAME_START
-#define FRAME_SKIP_ENABLE		(1<<1)	// Frame skip is enabled using maximum buffer size defined by level
-//#define  FRAME_SKIP_ENABLE		(1<<2)	// Frame skip is enabled using VBV_BUFFER_SIZE defined by HOST
-#define HEC_ENABLE			(1<<0)	// Header extension code (HEC) is enabled
+/* Aspect ratio VUI is enabled in H.264 encoding */
+#define ASPECT_RATIO_VUI_ENABLE	(1<<15)
+/* Sequence header is generated on both SEQ_START and the first FRAME_START */
+#define SEQ_HEADER_CONTROL		(1<<3)
+
+/* Frame skip is enabled using maximum buffer size defined by level */
+#define FRAME_SKIP_ENABLE		(1<<1)
+
+/* Frame skip is enabled using VBV_BUFFER_SIZE defined by HOST */
+/* #define  FRAME_SKIP_ENABLE		(1<<2) */
+
+/* Header extension code (HEC) is enabled */
+#define HEC_ENABLE			(1<<0)
 #endif
 
 typedef enum
@@ -43,9 +51,9 @@ typedef enum
 
 	MFCINST_STATE_DEC_EXE = 30,
 	MFCINST_STATE_DEC_EXE_DONE,
-	
+
 	/* Instance is initialized for encoding */
-	MFCINST_STATE_ENC_INITIALIZE = 40, 
+	MFCINST_STATE_ENC_INITIALIZE = 40,
 	MFCINST_STATE_ENC_EXE,
 	MFCINST_STATE_ENC_EXE_DONE
 } s3c_mfc_inst_state;
@@ -59,7 +67,7 @@ typedef enum
 typedef enum
 {
 	MEMORY = 0,
-	CONTEXT  = 1  
+	CONTEXT  = 1
 } s3c_mfc_inst_no_type;
 
 typedef enum
@@ -82,19 +90,19 @@ typedef enum
 typedef enum
 {
 	R2H_CMD_EMPTY = 0,
-	R2H_CMD_OPEN_INSTANCE_RET = 1,	
+	R2H_CMD_OPEN_INSTANCE_RET = 1,
 	R2H_CMD_CLOSE_INSTANCE_RET = 2,
 	R2H_CMD_ERROR_RET = 3,
 	R2H_CMD_SEQ_DONE_RET = 4,
 	R2H_CMD_FRAME_DONE_RET = 5,
 	R2H_CMD_SLICE_DONE_RET = 6,
-	R2H_CMD_SYS_INIT_RET = 8,	
+	R2H_CMD_SYS_INIT_RET = 8,
 	R2H_CMD_FW_STATUS_RET = 9,
 	R2H_CMD_SLEEP_RET = 10,
 	R2H_CMD_WAKEUP_RET = 11,
 	R2H_CMD_INIT_BUFFERS_RET = 15,
-	R2H_CMD_EDFU_INIT_RET = 16,	
-	R2H_CMD_ERR_RET = 32	
+	R2H_CMD_EDFU_INIT_RET = 16,
+	R2H_CMD_ERR_RET = 32
 } s3c_mfc_wait_done_type;
 
 
@@ -119,7 +127,7 @@ typedef enum
 typedef enum
 {
 	PORTA = 0,
-	PORTB = 1	
+	PORTB = 1
 } s3c_mfc_port_type;
 
 typedef struct tag_mfc_inst_ctx
@@ -139,17 +147,17 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int dynamic_bitrate;
 	unsigned int img_width;
 	unsigned int img_height;
-	unsigned int dwAccess;  	// for Power Management.
+	unsigned int dwAccess;		/* for Power Management. */
 	unsigned int IsPackedPB;
 	unsigned int interlace_mode;
 	int mem_inst_no;
-	int port_no;	
+	int port_no;
 	s3c_mfc_frame_type FrameType;
 	unsigned int vui_enable;
 	s3c_mfc_enc_vui_info vui_info;
 	s3c_mfc_dec_divx311_info divx311_info;
 	SSBSIP_MFC_CODEC_TYPE MfcCodecType;
-	s3c_mfc_inst_state MfcState;	
+	s3c_mfc_inst_state MfcState;
 } s3c_mfc_inst_ctx;
 
 struct s3c_mfc_ctrl {
@@ -160,7 +168,6 @@ struct s3c_mfc_ctrl {
 s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
-//int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
 void  s3c_mfc_init_mem_inst_no(void);
@@ -168,4 +175,3 @@ int s3c_mfc_get_mem_inst_no(s3c_mfc_inst_no_type type);
 void s3c_mfc_return_mem_inst_no(int inst_no);
 
 #endif /* _S3C_MFC_COMMON_H_ */
-
