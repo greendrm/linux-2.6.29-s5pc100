@@ -548,13 +548,18 @@ int fimc_hwset_input_rot(struct fimc_control *ctrl, u32 rot, u32 flip)
 
 int fimc_hwset_scaler(struct fimc_control *ctrl)
 {
+	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
 	u32 cfg = readl(ctrl->regs + S3C_CISCCTRL);
+	u32 cfg_ext = readl(ctrl->regs + S3C_CIEXTEN);
 
 	cfg &= ~(S3C_CISCCTRL_SCALERBYPASS |
 		S3C_CISCCTRL_SCALEUP_H | S3C_CISCCTRL_SCALEUP_V |
 		S3C_CISCCTRL_MAIN_V_RATIO_MASK |
 		S3C_CISCCTRL_MAIN_H_RATIO_MASK);
 	cfg |= (S3C_CISCCTRL_CSCR2Y_WIDE | S3C_CISCCTRL_CSCY2R_WIDE);
+
+	cfg_ext &= ~S3C_CIEXTEN_MAINHORRATIO_EXT_MASK;
+	cfg_ext &= ~S3C_CIEXTEN_MAINVERRATIO_EXT_MASK;
 
 	if (ctrl->sc.bypass)
 		cfg |= S3C_CISCCTRL_SCALERBYPASS;
@@ -565,8 +570,18 @@ int fimc_hwset_scaler(struct fimc_control *ctrl)
 	if (ctrl->sc.scaleup_v)
 		cfg |= S3C_CISCCTRL_SCALEUP_V;
 
-	cfg |= S3C_CISCCTRL_MAINHORRATIO(ctrl->sc.main_hratio);
-	cfg |= S3C_CISCCTRL_MAINVERRATIO(ctrl->sc.main_vratio);
+	if (pdata->hw_ver == 0x50) {
+		cfg |= S3C_CISCCTRL_MAINHORRATIO((ctrl->sc.main_hratio >> 6));
+		cfg |= S3C_CISCCTRL_MAINVERRATIO((ctrl->sc.main_vratio >> 6));
+
+		cfg_ext |= S3C_CIEXTEN_MAINHORRATIO_EXT(ctrl->sc.main_vratio);
+		cfg_ext |= S3C_CIEXTEN_MAINVERRATIO_EXT(ctrl->sc.main_vratio);
+
+		writel(cfg_ext, ctrl->regs + S3C_CIEXTEN);
+	} else {
+		cfg |= S3C_CISCCTRL_MAINHORRATIO(ctrl->sc.main_hratio);
+		cfg |= S3C_CISCCTRL_MAINVERRATIO(ctrl->sc.main_vratio);
+	}
 
 	writel(cfg, ctrl->regs + S3C_CISCCTRL);
 

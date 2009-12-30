@@ -133,7 +133,8 @@
 
 #define S3C_CIEXTEN_TARGETH_EXT(x)		(((x) & 0x2000) << 26)
 #define S3C_CIEXTEN_TARGETV_EXT(x)		(((x) & 0x2000) << 24)
-
+#define S3C_CIEXTEN_MAINHORRATIO_EXT(x)		(((x) & 0x3F) << 10)
+#define S3C_CIEXTEN_MAINVERRATIO_EXT(x)		((x) & 0x3F)
 /*************************************************************************
  * Bit definition part
  ************************************************************************/
@@ -379,6 +380,8 @@
 /* Gathering Extension register */
 #define S3C_CIEXTEN_TARGETH_EXT_MASK		(1 << 26)
 #define S3C_CIEXTEN_TARGETV_EXT_MASK		(1 << 24)
+#define S3C_CIEXTEN_MAINHORRATIO_EXT_MASK	(0x3F << 10)
+#define S3C_CIEXTEN_MAINVERRATIO_EXT_MASK	(0x3F)
 #define S3C_CIEXTEN_YUV444_OUT			(1 << 22)
 
 #endif /* _REGS_FIMC_H */

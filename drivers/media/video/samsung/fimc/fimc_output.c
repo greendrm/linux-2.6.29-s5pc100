@@ -118,7 +118,7 @@ static int fimc_outdev_stop_fifo(struct fimc_control *ctrl)
 				(void *)ctrl);
 		if (ret < 0)
 			fimc_err("FIMD FIFO close fail\n");
-	} else if (pdata->hw_ver == 0x43) {	/* to support C110/6442 */
+	} else if ((pdata->hw_ver == 0x43) || (pdata->hw_ver == 0x50)) {	/* to support C110/6442 */
 		ret = ctrl->fb.close_fifo(ctrl->id, NULL, NULL);
 		if (ret < 0)
 			fimc_err("FIMD FIFO close fail\n");
@@ -129,7 +129,7 @@ static int fimc_outdev_stop_fifo(struct fimc_control *ctrl)
 		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
 			ipc_stop();
 #endif
-	}
+	} 
 
 	return 0;
 }
@@ -531,19 +531,39 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 				struct v4l2_rect *real, struct v4l2_rect *org)
 {
 	u32 rot = ctrl->out->rotate;
-
+	u32 pixelformat = ctrl->out->pix.pixelformat;
+	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
 	if ((ctrl->out->overlay.mode == FIMC_OVERLAY_FIFO) && ((rot == 90) || (rot == 270))) {
 		/* Input Rotator */
-		if (real->height % 16) {
-			fimc_err("SRC Real_H: multiple of 16 !\n");
-			return -EINVAL;
-		}
-
-		if (ctrl->sc.pre_hratio) {
-			if (real->height % (ctrl->sc.pre_hratio*4)) {
-				fimc_err("SRC Real_H: multiple of \
-							4*pre_hratio !\n");
+		if (pdata->hw_ver == 0x50) {
+			switch (pixelformat) {
+			case V4L2_PIX_FMT_YUV422P:	/* fall through */
+			case V4L2_PIX_FMT_YVU420:
+				if (real->height % 2) {		
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				}
+			}
+		} else {
+			if (real->height % 16) {
+				fimc_err("SRC Real_H: multiple of 16 !\n");
 				return -EINVAL;
+			}
+
+			if (ctrl->sc.pre_hratio) {
+				if (real->height % (ctrl->sc.pre_hratio*4)) {
+					fimc_err("SRC Real_H: multiple of \
+							4*pre_hratio !\n");
+					return -EINVAL;
+				}
+			}
+
+			if (ctrl->sc.pre_vratio) {
+				if (real->width % ctrl->sc.pre_vratio) {
+					fimc_err("SRC Real_W: multiple of \
+							pre_vratio!\n");
+					return -EINVAL;
+				}
 			}
 		}
 
@@ -551,23 +571,8 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 			fimc_err("SRC Real_H: Min 16\n");
 			return -EINVAL;
 		}
-
 		if (real->width < 8) {
 			fimc_err("SRC Real_W: Min 8\n");
-			return -EINVAL;
-		}
-
-		if (ctrl->sc.pre_vratio) {
-			if (real->width % ctrl->sc.pre_vratio) {
-				fimc_err("SRC Real_W: multiple of \
-						pre_vratio!\n");
-				return -EINVAL;
-			}
-		}
-
-		if (real->height > ctrl->limit->real_h_rot) {
-			fimc_err("SRC REAL_H: Real_H <= %d\n", \
-						ctrl->limit->real_h_rot);
 			return -EINVAL;
 		}
 	} else {
@@ -577,6 +582,68 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 			return -EINVAL;
 		}
 
+		if (real->width < 16) {
+			fimc_err("SRC Real_W: Min 16\n");
+			return -EINVAL;
+		}
+
+		if (real->width > ctrl->limit->real_w_no_rot) {
+			fimc_err("SRC REAL_W: Real_W <= %d\n", \
+					ctrl->limit->real_w_no_rot);
+			return -EINVAL;
+		}
+	}
+
+	if (org->height < real->height) {
+		fimc_err("SRC Org_H: larger than Real_H\n");
+		return -EINVAL;
+	}
+
+	if (org->width < real->width) {
+		fimc_err("SRC Org_W: Org_W >= Real_W\n");
+		return -EINVAL;
+	}
+	
+	if (pdata->hw_ver == 0x50) {
+		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB) {
+			switch (pixelformat) {
+			case V4L2_PIX_FMT_YUV444:	/* fall through */
+			case V4L2_PIX_FMT_RGB32:
+				if (real->height % 2) {		
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				}
+			case V4L2_PIX_FMT_YUV422P:
+				if (real->height % 2) {		
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				} else if (real->width % 2) {
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				}
+			case V4L2_PIX_FMT_YVU420:
+				if (real->height % 4) {		
+					fimc_err("SRC Real_H: multiple of 4\n");
+					return -EINVAL;
+				} else if (real->width % 2) {
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				}
+
+			}
+		} else if (ctrl->out->pix.field == V4L2_FIELD_NONE) {
+			switch (pixelformat) {
+			case V4L2_PIX_FMT_YUV422P:
+				if (real->height % 2) { 		
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				} else if(real->width % 2) {
+					fimc_err("SRC Real_H: multiple of 2\n");
+					return -EINVAL;
+				}
+			}
+		}	 
+	} else {
 		if (ctrl->sc.pre_vratio) {
 			if (real->height % ctrl->sc.pre_vratio) {
 				fimc_err("SRC Real_H: multiple of \
@@ -592,44 +659,23 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 
 		if (ctrl->sc.pre_hratio) {
 			if (real->width % (ctrl->sc.pre_hratio*4)) {
-				fimc_err(
-				"SRC Real_W: multiple of 4*pre_hratio!\n");
+				fimc_err("SRC Real_W: multiple of 4*pre_hratio!\n");
 				return -EINVAL;
 			}
 		}
 
-		if (real->width < 16) {
-			fimc_err("SRC Real_W: Min 16\n");
+		if (org->width % 16) {
+			fimc_err("SRC Org_W: multiple of 16\n");
+			return -EINVAL;
+		}
+		
+		if (org->height < 8) {
+			fimc_err("SRC Org_H: Min 8\n");
 			return -EINVAL;
 		}
 
-		if (real->width > ctrl->limit->real_w_no_rot) {
-			fimc_err("SRC REAL_W: Real_W <= %d\n", \
-						ctrl->limit->real_w_no_rot);
-			return -EINVAL;
-		}
 	}
-
-	if (org->height < 8) {
-		fimc_err("SRC Org_H: Min 8\n");
-		return -EINVAL;
-	}
-
-	if (org->height < real->height) {
-		fimc_err("SRC Org_H: larger than Real_H\n");
-		return -EINVAL;
-	}
-
-	if (org->width % 8) {
-		fimc_err("SRC Org_W: multiple of 8\n");
-		return -EINVAL;
-	}
-
-	if (org->width < real->width) {
-		fimc_err("SRC Org_W: Org_W >= Real_W\n");
-		return -EINVAL;
-	}
-
+	
 	return 0;
 }
 
@@ -1000,6 +1046,8 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 {
 	struct v4l2_rect src, dst;
 	int ret = 0;
+	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
+
 	memset(&src, 0, sizeof(src));
 	memset(&dst, 0, sizeof(dst));
 
@@ -1020,12 +1068,17 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 	}
 
 	ctrl->sc.pre_dst_width = src.width / ctrl->sc.pre_hratio;
-	ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
-
 	ctrl->sc.pre_dst_height = src.height / ctrl->sc.pre_vratio;
-	ctrl->sc.main_vratio = (src.height << 8) /
-		(dst.height<<ctrl->sc.vfactor);
 
+	if (pdata->hw_ver == 0x50) {
+		ctrl->sc.main_hratio = (src.width << 14) / (dst.width << ctrl->sc.hfactor);
+		ctrl->sc.main_vratio = (src.height << 14) / 
+			(dst.height << ctrl->sc.vfactor);
+	} else {
+		ctrl->sc.main_hratio = (src.width << 8) / (dst.width<<ctrl->sc.hfactor);
+		ctrl->sc.main_vratio = (src.height << 8) /
+			(dst.height<<ctrl->sc.vfactor);
+	}
 
 	fimc_dbg("pre_hratio(%d), hfactor(%d), \
 			pre_vratio(%d), vfactor(%d)\n", \
@@ -1046,9 +1099,11 @@ static int fimc_outdev_set_scaler(struct fimc_control *ctrl)
 
 	ctrl->sc.shfactor = 10 - (ctrl->sc.hfactor + ctrl->sc.vfactor);
 
-	ret = fimc_outdev_check_scaler(ctrl, &src, &dst);
-	if (ret < 0)
-		return ret;
+	if (pdata->hw_ver != 0x50) {
+		ret = fimc_outdev_check_scaler(ctrl, &src, &dst);
+		if (ret < 0)
+			return ret;
+	}
 
 	fimc_hwset_prescaler(ctrl);
 	fimc_hwset_scaler(ctrl);

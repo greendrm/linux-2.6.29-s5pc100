@@ -1,9 +1,9 @@
 #
 # Configuration for Multi Format Codecs (MFC)
 #
-#
+
 config VIDEO_MFC50
-	bool "Samsung MFC (Multi Format Codec - FIMV 5.0) Driver" 
+	bool "Samsung MFC (Multi Format Codec - FIMV 5.0) Driver"
 	depends on VIDEO_SAMSUNG && CPU_S5PC110
 	default n
 	---help---

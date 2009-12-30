@@ -90,8 +90,8 @@
 #define UFCON S3C2410_UFCON_RXTRIG8 | S3C2410_UFCON_FIFOMODE
 
 /* 0x9:1.2v, 0x8:1.15v, 0x7:1.1v, 0x6:1.05v, 0x5:1.00v */
-#define VDD_ARM_EVT1 0x7	
-#define VDD_INT_EVT1 0x7
+#define VDD_ARM_EVT1 0x9	
+#define VDD_INT_EVT1 0x9
 
 
 extern struct sys_timer s5pc11x_timer;
@@ -510,12 +510,12 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_timer[2],
 	&s3c_device_timer[3],
 #endif
-#ifdef CONFIG_SND_S5P_SOC_I2S
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S
 	&s5pc110_device_iis0,
 	&s5pc110_device_iis1,
 #endif
-#ifdef CONFIG_SND_S3C_SOC_PCM
-	&s5pc110_device_pcm0,
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM
+	&s5pc110_device_iis0,
 	&s5pc110_device_pcm1,
 #endif
 	&s3c_device_usb_ohci,

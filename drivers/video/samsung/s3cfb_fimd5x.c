@@ -313,6 +313,16 @@ int s3cfb_clear_interrupt(struct s3cfb_global *ctrl)
 	return 0;	
 }
 
+int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
+{
+	return 0;
+}
+
+int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
+{
+	return 0;
+}
+
 int s3cfb_window_on(struct s3cfb_global *ctrl, int id)
 {
 	unsigned int cfg;
@@ -339,13 +349,25 @@ int s3cfb_window_off(struct s3cfb_global *ctrl, int id)
 	return 0;
 }
 
-int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id)
+int s3cfb_win_map_on(struct s3cfb_global *ctrl, int id, int color)
 {
+	u32 cfg = 0;
+
+	cfg |= S3C_WINMAP_ENABLE;
+	cfg |= S3C_WINMAP_COLOR(color);
+	writel(cfg, ctrl->regs + S3C_WINMAP(id));
+
+	dev_dbg(ctrl->dev, "[fb%d] win map on : 0x%08x\n", id, color);
+
 	return 0;
 }
 
-int s3cfb_channel_localpath_off(struct s3cfb_global *ctrl, int id)
+int s3cfb_win_map_off(struct s3cfb_global *ctrl, int id)
 {
+	writel(0, ctrl->regs + S3C_WINMAP(id));
+
+	dev_dbg(ctrl->dev, "[fb%d] win map off\n", id);
+
 	return 0;
 }
 
