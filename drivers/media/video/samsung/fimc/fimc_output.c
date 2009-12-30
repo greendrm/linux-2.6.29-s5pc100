@@ -118,7 +118,7 @@ static int fimc_outdev_stop_fifo(struct fimc_control *ctrl)
 				(void *)ctrl);
 		if (ret < 0)
 			fimc_err("FIMD FIFO close fail\n");
-	} else if (pdata->hw_ver == 0x43) {	/* to support C110/6442 */
+	} else if ((pdata->hw_ver == 0x43) || (pdata->hw_ver == 0x50)) {	/* to support C110/6442 */
 		ret = ctrl->fb.close_fifo(ctrl->id, NULL, NULL);
 		if (ret < 0)
 			fimc_err("FIMD FIFO close fail\n");
@@ -129,7 +129,7 @@ static int fimc_outdev_stop_fifo(struct fimc_control *ctrl)
 		if (ctrl->out->pix.field == V4L2_FIELD_INTERLACED_TB)
 			ipc_stop();
 #endif
-	}
+	} 
 
 	return 0;
 }
