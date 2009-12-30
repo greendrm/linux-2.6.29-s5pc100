@@ -44,9 +44,9 @@ static volatile unsigned char *shared_mem_vir_addr;
  */
 #define WRITEL_SHARED_MEM(data, address) \
 	{ writel(data, address); \
-	dma_cache_maint(address, 4, DMA_TO_DEVICE); }
+	dma_cache_maint((void*)address, 4, DMA_TO_DEVICE); }
 #define READL_SHARED_MEM(address) \
-	{ dma_cache_maint(address, 4, DMA_FROM_DEVICE); \
+	{ dma_cache_maint((void*)address, 4, DMA_FROM_DEVICE); \
 	readl(address); }
 
 static void s3c_mfc_cmd_reset(void);
@@ -150,7 +150,6 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no,
 {
 	unsigned int fw_phybuf;
 	unsigned int risc_phy_buf, aligned_risc_phy_buf;
-	int tmp_start_byte_num;
 
 	mfc_debug("inst_no : %d, buf_addr : 0x%08x, start_byte_num : 0x%08x, buf_size : 0x%08x\n",
 		   inst_no, buf_addr, start_byte_num, buf_size);
