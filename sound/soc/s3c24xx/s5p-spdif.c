@@ -73,10 +73,16 @@ static int s5p_spdif_hw_params(struct snd_pcm_substream *substream,
 			       struct snd_soc_dai *dai )
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	int sampling_freq;
+	int sampling_freq, ret;
 
 	s3cdbg("Entered %s: rate=%d\n", __FUNCTION__, params_rate(params));
-	
+
+	ret = snd_soc_dai_set_sysclk(dai, 0, 
+		params_rate(params), SND_SOC_CLOCK_OUT);
+		
+	if (ret < 0) 
+		return ret;
+		
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		rtd->dai->cpu_dai->dma_data = &s5p_spdif_pcm_stereo_out;
 	} else {
@@ -211,6 +217,34 @@ static int s5p_spdif_set_sysclk(struct snd_soc_dai *cpu_dai,
 				    int clk_id, unsigned int freq, int dir)
 {
 	s3cdbg("Entered %s\n", __FUNCTION__);
+	
+	
+	clk_disable(s5p_spdif.spdif_sclk_src);
+	clk_disable(s5p_spdif.spdif_sclk_audio0);
+	
+	switch(freq) {
+	case 44100:
+		/* 45158000 is fixed value for epll */
+		clk_set_rate(s5p_spdif.spdif_sclk_src, 45158000);
+		break;
+	case 32000:
+	case 48000:
+	case 96000:
+	default:
+		/* 49152000 is fixed value for epll */
+		clk_set_rate(s5p_spdif.spdif_sclk_src, 49152000);
+		break;
+	}
+
+	/* SPDIF supports only freq*512 bit freq. */
+	clk_set_rate(s5p_spdif.spdif_sclk_audio0, freq * 512); 
+	
+	s3cdbg("spdif_sclk_audio0 is %ld\n", 
+		clk_get_rate(s5p_spdif.spdif_sclk_audio0));
+						      
+	clk_enable(s5p_spdif.spdif_sclk_src);
+	clk_enable(s5p_spdif.spdif_sclk_audio0);
+	
 	return 0;
 }
 
@@ -223,7 +257,7 @@ static int s5p_spdif_set_clkdiv(struct snd_soc_dai *cpu_dai, int div_id, int div
 
 u32 s5p_spdif_get_clockrate(void)
 {
-	return clk_get_rate(s5p_spdif.spdif_clk);
+	return clk_get_rate(s5p_spdif.spdif_sclk_audio0);
 }
 EXPORT_SYMBOL_GPL(s5p_spdif_get_clockrate);
 
@@ -271,76 +305,150 @@ static irqreturn_t s5p_spdif_irq(int irqno, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+static int s5p_spdif_clock_init(struct platform_device *pdev)
+{
+	struct clk *tmp_mout_epll;
+
+	s3cdbg("Entered %s\n", __FUNCTION__);
+
+	s5p_spdif.spdif_clk = clk_get(&pdev->dev, "spdif");
+	if (IS_ERR(s5p_spdif.spdif_clk)) {
+		printk("failed to get clock \"spdif\"\n");
+		goto err_on_spdif_clk;
+	}
+
+	s5p_spdif.spdif_sclk_src = clk_get(NULL, "fout_epll");
+	if (IS_ERR(s5p_spdif.spdif_sclk_src)) {
+		printk("failed to get clock \"fout_epll\"\n");
+		goto err_on_spdif_src_sclk;
+	}
+
+	tmp_mout_epll = clk_get(NULL, "mout_epll");
+	if (IS_ERR(tmp_mout_epll)) {
+		printk("failed to get clock \"mout_epll\"\n");
+		goto err_on_mout_epll;
+	}
+
+	s5p_spdif.spdif_sclk_audio0 = clk_get(NULL, "sclk_audio");
+	if (IS_ERR(s5p_spdif.spdif_sclk_audio0)) {
+		printk("failed to get clock \"sclk_audio\"\n");
+		goto err_on_spdif_sclk_audio0;
+	}
+
+#ifdef CONFIG_CPU_S5PC100
+	s5p_spdif.spdif_sclk = clk_get(&pdev->dev, "sclk_spdif");
+	if (IS_ERR(s5p_spdif.spdif_sclk)) {
+		printk("failed to get spdif_clock\n");
+		goto err_on_spdif_sclk;
+	}
+#endif
+
+	if (clk_set_parent(tmp_mout_epll, s5p_spdif.spdif_sclk_src)) {
+		printk("failed to set spdif_sclk_src"
+			"as parent of \"mout_epll\"\n");
+		goto err_on_set_parent;
+	}
+
+	if (clk_set_parent(s5p_spdif.spdif_sclk_audio0, tmp_mout_epll)) {
+		printk("failed to set \"mout_epll\""
+			"as parent of spdif_sclk_audio0\n");
+		goto err_on_set_parent;
+	}
+	
+	clk_put(tmp_mout_epll);
+
+	clk_enable(s5p_spdif.spdif_sclk_audio0);
+	clk_enable(s5p_spdif.spdif_sclk_src);
+	clk_enable(s5p_spdif.spdif_clk);
+
+#ifdef CONFIG_CPU_S5PC100
+	clk_enable(s5p_spdif.spdif_sclk);
+#endif
+	
+	return 0;
+
+err_on_set_parent:
+	
+#ifdef CONFIG_CPU_S5PC100	
+	clk_put(s5p_spdif.spdif_sclk);
+	
+err_on_spdif_sclk:
+#endif
+	clk_put(s5p_spdif.spdif_sclk_audio0);
+
+err_on_spdif_sclk_audio0:
+	clk_put(tmp_mout_epll);
+err_on_mout_epll:	
+	clk_put(s5p_spdif.spdif_sclk_src);
+err_on_spdif_src_sclk:
+	clk_put(s5p_spdif.spdif_clk);
+err_on_spdif_clk:
+	return -ENODEV;
+}
+
 static int s5p_spdif_probe(struct platform_device *pdev,
 			   struct snd_soc_dai *dai)
 {
-	int ret;
+	int err;
  
 	s3cdbg("Entered %s\n", __FUNCTION__);
  
 	s5p_spdif.regs = ioremap(S5P_PA_SPDIF, 0x40);
-	if (s5p_spdif.regs == NULL)
-		return -ENXIO;
-
-
-	s5p_spdif.spdif_clk = clk_get(&pdev->dev, "spdif");
-	
-	if (s5p_spdif.spdif_clk == NULL) {
-		s3cdbg("failed to get spdif_clock\n");
-		iounmap(s5p_spdif.regs);
-		return -ENODEV;
+	if (s5p_spdif.regs == NULL) {
+		err = -ENXIO;
+		goto err_on_ioremap;
 	}
-	clk_enable(s5p_spdif.spdif_clk);
-	
-	clk_put(s5p_spdif.spdif_clk);
- 
-#ifdef CONFIG_CPU_S5PC100
 
-	s5p_spdif.spdif_sclk=clk_get(&pdev->dev, "sclk_spdif");
-	if (s5p_spdif.spdif_clk == NULL) {
-		s3cdbg("failed to get spdif_clock\n");
-		iounmap(s5p_spdif.regs);
-		return -ENODEV;
+	err = s5p_spdif_clock_init(pdev);
+	if (err) {
+		printk("failed to initialize spdif clock, err=%d\n", err);
+		err = -ENODEV;
+		goto err_on_clock_init;
 	}
-	clk_enable(s5p_spdif.spdif_sclk);
-	
-#else 
-#ifdef CONFIG_CPU_S5PC110
 
-	s5p_spdif.spdif_sclk = clk_get(NULL, "fout_epll");
-	if (IS_ERR(s5p_spdif.spdif_sclk)) {
-		printk("failed to get FOUTepll\n");
-		return -EBUSY;
-	}
-	
-	clk_disable(s5p_spdif.spdif_sclk);
-
-	/* 
-	 * To Do: various sampling rate support: currently support 48KHZ only 
-	 *        this code is moved to s5p_spdif_hw_params for various sampling rate  
-	 */	
-	clk_set_rate(s5p_spdif.spdif_sclk, 49152000); 
-						      
-	clk_enable(s5p_spdif.spdif_sclk);
-
-	clk_put(s5p_spdif.spdif_sclk);
-#endif
-#endif
-
-	ret = request_irq(IRQ_SPDIF, s5p_spdif_irq, 0,
-		  "s5p_spdif", pdev);
-	if (ret < 0) {
-		s3cdbg("fail to claim i2s irq , ret = %d\n", ret);
-		return -ENODEV;
+	err = request_irq(IRQ_SPDIF, s5p_spdif_irq, 0, "s5p_spdif", pdev);
+	if (err) {
+		printk("failed to claim IRQ \"s5p_spdif\", err=%d\n", err);
+		err = -ENODEV;
+		goto err_on_request_irq;
 	}
 	
 	return 0;
+	
+err_on_request_irq:
+
+#ifdef CONFIG_CPU_S5PC100
+	clk_put(s5p_spdif.spdif_sclk);
+#endif
+	clk_put(s5p_spdif.spdif_sclk_audio0);
+	clk_put(s5p_spdif.spdif_sclk_src);
+	clk_put(s5p_spdif.spdif_clk);
+	
+err_on_clock_init:
+	iounmap(s5p_spdif.regs);
+err_on_ioremap:
+	return err;
 }
 
 static void s5p_spdif_remove(struct platform_device *pdev,
 			     struct snd_soc_dai *dai)
 {
 	s3cdbg("Entered %s\n", __FUNCTION__);
+
+	clk_disable(s5p_spdif.spdif_clk);
+	clk_put(s5p_spdif.spdif_clk);
+	
+#ifdef CONFIG_CPU_S5PC100
+	clk_disable(s5p_spdif.spdif_sclk);
+	clk_put(s5p_spdif.spdif_sclk);
+#endif	
+
+	clk_disable(s5p_spdif.spdif_sclk_audio0);
+	clk_put(s5p_spdif.spdif_sclk_audio0);
+
+	clk_disable(s5p_spdif.spdif_sclk_src);
+	clk_put(s5p_spdif.spdif_sclk_src);
+	
 	return;
 }
 

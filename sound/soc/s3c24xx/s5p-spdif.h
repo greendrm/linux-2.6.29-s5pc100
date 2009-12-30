@@ -24,7 +24,13 @@ extern struct snd_soc_dai s5p_spdif_dai;
 struct s5p_spdif_info {
 	void __iomem	*regs;
 	struct clk	*spdif_clk;
+	struct clk	*spdif_sclk_src;
+	struct clk	*spdif_sclk_audio0;
+	
+#ifdef CONFIG_CPU_S5PC100	
 	struct clk	*spdif_sclk;
+#endif	
+	
 	int 		master;
 };
 extern struct s5p_spdif_info s5p_spdif;
