@@ -1166,6 +1166,38 @@ static struct clksrc_clk clk_i2sclk = {
 	.reg_source	= S5P_CLKSRC_AUDSS,
 };
 
+/* g2d */
+static struct clk *clkset_g2d_list[] = {
+	NULL,
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
+};
+
+static struct clk_sources clkset_g2d = {
+	.sources	= clkset_g2d_list,
+	.nr_sources	= ARRAY_SIZE(clkset_g2d_list),
+};
+
+static struct clksrc_clk clk_g2d = {
+	.clk	= {
+		.name		= "sclk_g2d",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_IP0_G2D,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC2_G2D_SHIFT,
+	.mask		= S5P_CLKSRC2_G2D_MASK,
+	.sources	= &clkset_g2d,
+	.divider_shift	= S5P_CLKDIV2_G2D_SHIFT,
+	.reg_divider	= S5P_CLK_DIV2,
+	.reg_source	= S5P_CLK_SRC2,
+};
+
 /* Clock initialisation code */
 
 static struct clksrc_clk *init_parents[] = {
@@ -1193,6 +1225,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc0,
 	&clk_fimc1,
 	&clk_fimc2,
+	&clk_g2d,
 };
 
 static void __init_or_cpufreq s5pc11x_set_clksrc(struct clksrc_clk *clk)
@@ -1316,13 +1349,17 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_set_parent(&clk_audio1.clk, &clk_mout_epll.clk);
 	clk_set_parent(&clk_audio2.clk, &clk_mout_epll.clk);
 
+	clk_set_parent(&clk_g2d.clk, &clk_mout_mpll.clk);
+
 	for (ptr = 0; ptr < ARRAY_SIZE(init_parents); ptr++)
 		s5pc11x_set_clksrc(init_parents[ptr]);
 
 	clk_set_rate(&clk_mmc0.clk, 50*MHZ);	
 	clk_set_rate(&clk_mmc1.clk, 50*MHZ);
 	clk_set_rate(&clk_mmc2.clk, 50*MHZ);
-	clk_set_rate(&clk_mmc3.clk, 50*MHZ);	
+	clk_set_rate(&clk_mmc3.clk, 50*MHZ);
+
+	clk_set_rate(&clk_g2d.clk, 250*MHZ);
 }
 
 static struct clk *clks[] __initdata = {
@@ -1357,6 +1394,7 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
 	&clk_fimc2.clk,
+	&clk_g2d.clk,
 };
 
 void __init s5pc110_register_clocks(void)
