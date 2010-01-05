@@ -50,6 +50,9 @@ obj-$(CONFIG_S5PC11X_SETUP_FIMC0) += setup-fimc0.o
 obj-$(CONFIG_S5PC11X_SETUP_FIMC1) += setup-fimc1.o
 obj-$(CONFIG_S5PC11X_SETUP_FIMC2) += setup-fimc2.o
 
+# Device setup - MFC
+obj-y				  += dev-mfc.o
+
 # Device setup - FIMD
 obj-$(CONFIG_S5PC11X_DEV_FB)	  += dev-fb.o
 obj-$(CONFIG_S5PC11X_SETUP_FB)	  += setup-fb.o

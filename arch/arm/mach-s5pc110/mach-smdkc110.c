@@ -57,6 +57,7 @@
 #include <plat/csis.h>
 #include <plat/fb.h>
 #include <plat/spi.h>
+#include <plat/mfc.h>
 
 #include <plat/nand.h>
 #include <plat/partition.h>
