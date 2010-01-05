@@ -700,7 +700,9 @@ static struct platform_driver s3c_mfc_driver = {
 	},
 };
 
-static char banner[] __initdata = KERN_INFO "S5PC110 MFC Driver, (c) 2009 Samsung Electronics\n";
+static char banner[] __initdata
+	= KERN_INFO "S3C MFC (Multi Function Codec - FIMV5.0)"
+		    "Device Driver, (c) 2009 Samsung Electronics\n";
 
 static int __init s3c_mfc_init(void)
 {
@@ -717,7 +719,7 @@ static int __init s3c_mfc_init(void)
 static void __exit s3c_mfc_exit(void)
 {
 	platform_driver_unregister(&s3c_mfc_driver);
-	mfc_info("S5PC110 MFC Driver exit.\n");
+	mfc_info("S3C MFC (Multi Function Codec - FIMV5.0) Device Driver exit.\n");
 }
 
 module_init( s3c_mfc_init );
