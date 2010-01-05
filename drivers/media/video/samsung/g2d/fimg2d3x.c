@@ -28,15 +28,15 @@ struct g2d_info {
 };
 
 static struct g2d_info *g2d;
-
+#if 0
 irqreturn_t g2d_irq(int irq, void *dev_id)
 {
 	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_PEND_INTP_CMD_FIN)
 		writel(G2D_PEND_INTP_CMD_FIN, g2d->base + G2D_INTC_PEND_REG);
-	
+
 	return IRQ_HANDLED;
 }
-
+#endif
 static int g2d_open(struct inode *inode, struct file *file)
 {
 	return 0;
@@ -84,7 +84,7 @@ struct file_operations g2d_fops = {
 };
 
 static struct miscdevice g2d_dev = {
-	.minor		= G2D_MINOR, 
+	.minor		= G2D_MINOR,
 	.name		= "g2d",
 	.fops		= &g2d_fops,
 };
@@ -102,15 +102,6 @@ static int g2d_probe(struct platform_device *pdev)
 		goto err_no_mem;
 	}
 
-	/* irq */
-	g2d->irq = platform_get_irq(pdev, 0);
-	ret = request_irq(g2d->irq, g2d_irq, IRQF_DISABLED, pdev->name, g2d);
-	if(ret) {
-		dev_err(&pdev->dev, "failed to request irq\n");
-		ret = -EINVAL;
-		goto err_irq;
-	}
-	
 	/* memory region */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if(!res) {
@@ -118,7 +109,7 @@ static int g2d_probe(struct platform_device *pdev)
 		ret = -ENOENT;
 		goto err_res;
 	}
-	
+
 	g2d->mem = request_mem_region(res->start,
 			((res->end) - (res->start)) + 1, pdev->name);
 	if (!g2d->mem) {
@@ -162,11 +153,8 @@ static int g2d_probe(struct platform_device *pdev)
 
 	mutex_init(g2d->lock);
 
-	/* soft reset */
-	writel(G2D_SOFT_RESET, g2d->base + G2D_SOFT_RESET_REG);
-
 	dev_info(&pdev->dev, "g2d driver loaded successfully\n");
-	
+
 	return 0;
 
 err_lock:
@@ -185,10 +173,8 @@ err_map:
 err_res:
 	free_irq(g2d->irq, NULL);
 
-err_irq:
-	kfree(g2d);
-
 err_no_mem:
+	kfree(g2d);
 	return ret;
 }
 
@@ -210,13 +196,13 @@ static int g2d_remove(struct platform_device *pdev)
 static int g2d_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	clk_disable(g2d->clock);
-	
+
 	return 0;
 }
 static int g2d_resume(struct platform_device *pdev)
 {
 	clk_enable(g2d->clock);
-	
+
 	return 0;
 }
 
