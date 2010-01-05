@@ -104,8 +104,8 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 		}
 
 		if (lclk->set_rate) {
-			lclk->set_rate(lclk, 166000000);
-			dev_info(&pdev->dev, "set local clock rate to 166000000\n");
+			lclk->set_rate(lclk, 133000000);
+			dev_info(&pdev->dev, "set local clock rate to 133000000\n");
 		}
 
 		clk_put(lclk_parent);

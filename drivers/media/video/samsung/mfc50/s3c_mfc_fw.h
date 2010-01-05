@@ -1,4 +1,4 @@
-/* 
+/*
  * drivers/media/video/samsung/mfc50/s3c_mfc_fw.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
@@ -17,4 +17,3 @@
 extern unsigned char s3c_mfc_fw_code[250472];
 
 #endif /* _S3C_MFC_FW_H_ */
-

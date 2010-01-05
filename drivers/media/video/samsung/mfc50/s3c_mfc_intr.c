@@ -26,7 +26,7 @@
 #include "s3c_mfc_memory.h"
 
 extern wait_queue_head_t	s3c_mfc_wait_queue;
-extern unsigned int  		s3c_mfc_int_type;
+extern unsigned int		s3c_mfc_int_type;
 
 extern void __iomem		*s3c_mfc_sfr_virt_base;
 
@@ -55,38 +55,38 @@ static int s3c_mfc_wait_polling(unsigned int polling_reg_addr)
 
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 {
-	unsigned int ret_val = 1; 
+	unsigned int ret_val = 1;
 
 	switch(command) {
-	/*	
+	/*
 	case R2H_CMD_FW_STATUS_RET :
 		ret_val = s3c_mfc_wait_polling(S3C_FIMV_FW_STATUS);
-		break;	
-	*/	
-	case R2H_CMD_FW_STATUS_RET :
-	case R2H_CMD_OPEN_INSTANCE_RET :	
-	case R2H_CMD_SYS_INIT_RET :
-	case R2H_CMD_SEQ_DONE_RET :
-	case R2H_CMD_INIT_BUFFERS_RET :	
-	case R2H_CMD_FRAME_DONE_RET :
-	case R2H_CMD_SLICE_DONE_RET :	
-	case R2H_CMD_CLOSE_INSTANCE_RET :	
+		break;
+	*/
+	case R2H_CMD_FW_STATUS_RET:
+	case R2H_CMD_OPEN_INSTANCE_RET:
+	case R2H_CMD_SYS_INIT_RET:
+	case R2H_CMD_SEQ_DONE_RET:
+	case R2H_CMD_INIT_BUFFERS_RET:
+	case R2H_CMD_FRAME_DONE_RET:
+	case R2H_CMD_SLICE_DONE_RET:
+	case R2H_CMD_CLOSE_INSTANCE_RET:
 		if (interruptible_sleep_on_timeout(&s3c_mfc_wait_queue, 5000) == 0) {
 			ret_val = 0;
 			mfc_err("Interrupt Time Out(%d)\n", command);
 			break;
 		}
+
 		/* error handling should be inserted */
 
 		ret_val = s3c_mfc_int_type;
 		s3c_mfc_int_type = 0;
-		break;		
+		break;
 
-	default : 
+	default:
 		mfc_err("undefined command\n");
 		ret_val = 0;
 	}
 
 	return ret_val;
 }
-

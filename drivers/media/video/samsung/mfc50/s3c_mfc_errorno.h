@@ -1,4 +1,4 @@
-/* 
+/*
  * drivers/media/video/samsung/mfc50/s3c_mfc_errorno.h
  *
  * Header file for Samsung MFC (Multi Function Codec - FIMV) driver
@@ -56,4 +56,3 @@ typedef enum
 } SSBSIP_MFC_ERROR_CODE;
 
 #endif /* _S3C_MFC_ERRORNO_H_ */
-

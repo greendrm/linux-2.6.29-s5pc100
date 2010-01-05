@@ -32,14 +32,15 @@
 #include <sound/initval.h>
 #include <sound/soc.h>
 
+#include <mach/s3c-dma.h>
 #include <mach/hardware.h>
 #include <asm/io.h>
 #include <mach/audio.h>
 #include <mach/map.h>
 #include <asm/dma.h>
 
-#include "s3c-pcm.h"
-#include "s3c-ac97.h"
+#include "s3c-dma.h"
+#include "s5p-ac97.h"
 
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
@@ -223,7 +224,7 @@ static struct s3c2410_dma_client s3c_dma_client_out = {
 	.name = "AC97 PCM Stereo out"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_pcm_stereo_out = {
+static struct s3c_dma_params s3c_ac97_pcm_stereo_out = {
 	.client		= &s3c_dma_client_out,
 	.channel	= DMACH_AC97_PCM_OUT,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_PCM_DATA,
@@ -235,7 +236,7 @@ static struct s3c2410_dma_client s3c_dma_client_micin = {
 	.name = "AC97 Mic Mono in"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_mic_mono_in = {
+static struct s3c_dma_params s3c_ac97_mic_mono_in = {
 	.client		= &s3c_dma_client_micin,
 	.channel	= DMACH_AC97_MIC_IN,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_MIC_DATA,
@@ -246,7 +247,7 @@ static struct s3c2410_dma_client s3c_dma_client_in = {
 	.name = "AC97 PCM Stereo Line in"
 };
 
-static struct s3c24xx_pcm_dma_params s3c_ac97_pcm_stereo_in = {
+static struct s3c_dma_params s3c_ac97_pcm_stereo_in = {
 	.client		= &s3c_dma_client_in,
 	.channel	= DMACH_AC97_PCM_IN,
 	.dma_addr	= S3C_PA_AC97 + S3C_AC97_PCM_DATA,
@@ -295,7 +296,8 @@ static void s3c_ac97_remove(struct platform_device *pdev, struct snd_soc_dai *da
 }
 
 static int s3c_ac97_hw_params(struct snd_pcm_substream *substream,
-				struct snd_pcm_hw_params *params)
+				struct snd_pcm_hw_params *params,
+					  struct snd_soc_dai *dai)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	
@@ -313,7 +315,8 @@ static int s3c_ac97_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int s3c_ac97_hifi_prepare(struct snd_pcm_substream *substream)
+static int s3c_ac97_hifi_prepare(struct snd_pcm_substream *substream,
+						struct snd_soc_dai *dai)
 {
 	/*
 	 * To support full duplex  
@@ -349,7 +352,8 @@ static int s3c_ac97_hifi_prepare(struct snd_pcm_substream *substream)
 }
 
 
-static int s3c_ac97_trigger(struct snd_pcm_substream *substream, int cmd)
+static int s3c_ac97_trigger(struct snd_pcm_substream *substream,
+					int cmd, struct snd_soc_dai *dai)
 {
 	u32 ac_glbctrl;
 
@@ -427,7 +431,7 @@ struct snd_soc_dai s3c_ac97_dai[] = {
 {
 	.name = "s3c64xx-ac97",
 	.id = 0,
-	.type = SND_SOC_DAI_AC97,
+	.ac97_control = 1,
 	.probe = s3c_ac97_probe,
 	.remove = s3c_ac97_remove,
 	.playback = {
@@ -454,7 +458,7 @@ struct snd_soc_dai s3c_ac97_dai[] = {
 {
 	.name = "s3c-ac97-mic",
 	.id = 1,
-	.type = SND_SOC_DAI_AC97,
+	.ac97_control = 1,
 	.capture = {
 		.stream_name = "AC97 Mic Capture",
 		.channels_min = 1,

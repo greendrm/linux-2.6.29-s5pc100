@@ -86,7 +86,6 @@ bool _s5p_tv_if_init_param(void)
 	st->sdout_delay.offset_video_start = 0xfa;
 	st->sdout_delay.offset_video_end = 0x00;
 	st->sdout_color_sub_carrier_phase_adj = false;
-	st->sdout_macrovision = SDOUT_MV_OFF;
 	st->sdout_bri_hue_set.bright_hue_sat_adj = false;
 	st->sdout_bri_hue_set.gain_brightness = 0x80;
 	st->sdout_bri_hue_set.offset_brightness = 0x00;
@@ -405,7 +404,6 @@ bool _s5p_tv_if_init_sd_reg(void)
 	s5p_sd_closed_caption_type cap_rgb = st->sdout_vbi.caption_rgb;
 	s5p_sd_closed_caption_type cap_y_pb_pr = st->sdout_vbi.caption_y_pb_pr;
 	s5p_sd_sync_sig_pin sync_pin = st->sdout_sync_pin;
-	s5p_sd_macrovision_val m_vision = st->sdout_macrovision;
 	s5p_sd_vesa_rgb_sync_type sync_type=st->sdout_rgb_sync.sync_type;
 	s5p_tv_active_polarity vsync_active=st->sdout_rgb_sync.vsync_active;
 	s5p_tv_active_polarity hsync_active=st->sdout_rgb_sync.hsync_active;
@@ -471,8 +469,6 @@ bool _s5p_tv_if_init_sd_reg(void)
 	__s5p_sdout_init_delay(delay,off_v_start,off_v_end);
 
 	__s5p_sdout_init_schlock(phase_adj);
-
-	sderr = __s5p_sdout_init_macrovision(m_vision,disp_mode);
 
 	if (sderr != SDOUT_NO_ERROR)
 		return false;
