@@ -3,7 +3,7 @@
  * Register definition file for Samsung MFC V4.0 & V5.0 Interface (FIMV) driver
  *
  * Jaeryul Oh, Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ *	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -25,14 +25,14 @@
 #define S3C_FIMV_DMA_START		S3C_FIMVREG(0x000)
 #define S3C_FIMV_RESERVE1		/* 0x004 */
 #define S3C_FIMV_DMA_INTERNAL_ADDR	S3C_FIMVREG(0x008)
-#define S3C_FIMV_BOOTCODE_SIZE 		S3C_FIMVREG(0x00c)
+#define S3C_FIMV_BOOTCODE_SIZE		S3C_FIMVREG(0x00c)
 #define S3C_FIMV_RESERVE2		/* 0x010 */
 #define S3C_FIMV_DMA_EXTADDR		S3C_FIMVREG(0x014)
 #define S3C_FIMV_EXT_BUF_START_ADDR	S3C_FIMVREG(0x018) /* StreamBuf0 START */
 #define S3C_FIMV_EXT_BUF_END_ADDR	S3C_FIMVREG(0x01c) /* StreamBuf0 END  */
 #define S3C_FIMV_DMA_INTADDR		S3C_FIMVREG(0x020)
 #define S3C_FIMV_HOST_PTR		S3C_FIMVREG(0x024)
-#define S3C_FIMV_LAST_DEC		S3C_FIMVREG(0x028)	
+#define S3C_FIMV_LAST_DEC		S3C_FIMVREG(0x028)
 #define S3C_FIMV_DONE_M			S3C_FIMVREG(0x02c)
 #define S3C_FIMV_RESERVE3		/* 0x030 */
 #define	S3C_FIMV_CODEC_PTR		S3C_FIMVREG(0x034)
@@ -75,7 +75,7 @@
 #define S3C_FIMV_FW_STT_ADR_6		S3C_FIMVREG(0x218) /* H.263 decoder */
 #define S3C_FIMV_RESERVE9		/* [(0x230-0x218)/4-1] */
 #define S3C_FIMV_VSP_BUF_ADDR		S3C_FIMVREG(0x230)
-#define S3C_FIMV_DB_STT_ADDR		S3C_FIMVREG(0x234) 
+#define S3C_FIMV_DB_STT_ADDR		S3C_FIMVREG(0x234)
 #define S3C_FIMV_RESERVE10		/* [(0x300-0x234)/4-1] */
 
 /* Initencoder */
@@ -86,10 +86,10 @@
 #define S3C_FIMV_ENTROPY_CON		S3C_FIMVREG(0x310)
 #define S3C_FIMV_DEBLOCK_FILTER_OPTION	S3C_FIMVREG(0x314)
 #define S3C_FIMV_SHORT_HD_ON		S3C_FIMVREG(0x318)
-#define S3C_FIMV_MSLICE_ENA		S3C_FIMVREG(0x31c)	
+#define S3C_FIMV_MSLICE_ENA		S3C_FIMVREG(0x31c)
 #define S3C_FIMV_MSLICE_SEL		S3C_FIMVREG(0x320)
 #define S3C_FIMV_MSLICE_MB		S3C_FIMVREG(0x324)
-#define S3C_FIMV_MSLICE_BYTE		S3C_FIMVREG(0x328)	
+#define S3C_FIMV_MSLICE_BYTE		S3C_FIMVREG(0x328)
 #define S3C_FIMV_RESERVE11		/* [(0x400-0x328)/4-1] */
 
 /* Initdecoder */
@@ -169,7 +169,7 @@
 #define S3C_FIMV_START_ADDR		S3C_FIMVREG(0x0000)
 #define S3C_FIMV_END_ADDR		S3C_FIMVREG(0xe008)
 
-#define S3C_FIMV_SW_RESET		S3C_FIMVREG(0x0000)		
+#define S3C_FIMV_SW_RESET		S3C_FIMVREG(0x0000)
 #define S3C_FIMV_RISC_HOST_INT		S3C_FIMVREG(0x0008)
 /* Command from HOST to RISC */
 #define S3C_FIMV_HOST2RISC_CMD		S3C_FIMVREG(0x0030)
@@ -223,16 +223,19 @@
 
 #define S3C_FIMV_ENC_NB_DCAC_ADR	S3C_FIMVREG(0x0604) /* entropy engine's neighbor inform and AC/DC coeff. */
 #define S3C_FIMV_ENC_REF0_LUMA_ADR	S3C_FIMVREG(0x061c) /* ref0 Luma addr */
-#if 1 // MFC fw 10/30, EVT0
+
+/* MFC fw 10/30, EVT0 */
+#if defined(CONFIG_CPU_S5PC110_EVT0_ERRATA)
 #define S3C_FIMV_ENC_REF_B_LUMA_ADR	S3C_FIMVREG(0x062c) /* ref B Luma addr */
 #define S3C_FIMV_ENC_REF_B_CHROMA_ADR	S3C_FIMVREG(0x0630) /* ref B Chroma addr */
 #endif
+
 #define S3C_FIMV_ENC_REF0_CHROMA_ADR	S3C_FIMVREG(0x0700) /* ref0 Chroma addr */
 #define S3C_FIMV_ENC_REF1_LUMA_ADR	S3C_FIMVREG(0x0620) /* ref1 Luma addr */
 #define S3C_FIMV_ENC_REF1_CHROMA_ADR	S3C_FIMVREG(0x0704) /* ref1 Chroma addr */
-#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0710) /* ref2 Luma addr */	
+#define S3C_FIMV_ENC_REF2_LUMA_ADR	S3C_FIMVREG(0x0710) /* ref2 Luma addr */
 #define S3C_FIMV_ENC_REF2_CHROMA_ADR	S3C_FIMVREG(0x0708) /* ref2 Chroma addr */
-#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */	
+#define S3C_FIMV_ENC_REF3_LUMA_ADR	S3C_FIMVREG(0x0714) /* ref3 Luma addr */
 #define S3C_FIMV_ENC_REF3_CHROMA_ADR	S3C_FIMVREG(0x070c) /* ref3 Chroma addr */
 
 /* Codec common register */
@@ -260,7 +263,7 @@
 #define S3C_FIMV_SI_DISPLAY_C_ADR	S3C_FIMVREG(0x2014) /* chroma address of displayed pic */
 #define S3C_FIMV_SI_FRM_COUNT		S3C_FIMVREG(0x2018) /* the number of frames so far decoded */
 #define S3C_FIMV_SI_DISPLAY_STATUS	S3C_FIMVREG(0x201c) /* status of decoded picture */
-#define S3C_FIMV_SI_FRAME_TYPE		S3C_FIMVREG(0x2020) /* frame type such as skip/I/P/B */ 
+#define S3C_FIMV_SI_FRAME_TYPE		S3C_FIMVREG(0x2020) /* frame type such as skip/I/P/B */
 
 #define S3C_FIMV_SI_CH1_SB_ST_ADR	S3C_FIMVREG(0x2044) /* start addr of stream buf */
 #define S3C_FIMV_SI_CH1_SB_FRM_SIZE	S3C_FIMVREG(0x2048) /* size of stream buf */
@@ -269,7 +272,7 @@
 #define S3C_FIMV_SI_CH1_DESC_SIZE	S3C_FIMVREG(0x205c) /* max size of descriptor buf */
 #define S3C_FIMV_SI_CH1_RELEASE_BUF	S3C_FIMVREG(0x2060) /* release buffer register */
 #define S3C_FIMV_SI_CH1_HOST_WR_ADR	S3C_FIMVREG(0x2064) /* Shared memory address */
-#define S3C_FIMV_SI_CH1_DPB_CONF_CTRL 	S3C_FIMVREG(0x2068) /* DPB Configuration Control Register */
+#define S3C_FIMV_SI_CH1_DPB_CONF_CTRL	S3C_FIMVREG(0x2068) /* DPB Configuration Control Register */
 
 #define S3C_FIMV_SI_CH2_SB_ST_ADR	S3C_FIMVREG(0x2084) /* start addr of stream buf */
 #define S3C_FIMV_SI_CH2_SB_FRM_SIZE	S3C_FIMVREG(0x2088) /* size of stream buf */
@@ -309,16 +312,16 @@
 #define S3C_FIMV_ENC_SI_CH2_FRAME_QP	S3C_FIMVREG(0x2098) /* frame QP */
 #define S3C_FIMV_ENC_SI_CH2_SLICE_ARG	S3C_FIMVREG(0x209c) /* slice argument */
 
-#define S3C_FIMV_ENC_STR_BF_U_FULL	S3C_FIMVREG(0xc004) /* upper stream buf full status */	
-#define S3C_FIMV_ENC_STR_BF_U_EMPTY	S3C_FIMVREG(0xc008) /* upper stream buf empty status */	
-#define S3C_FIMV_ENC_STR_BF_L_FULL	S3C_FIMVREG(0xc00c) /* lower stream buf full status */	
-#define S3C_FIMV_ENC_STR_BF_L_EMPTY	S3C_FIMVREG(0xc010) /* lower stream buf empty status */	
-#define S3C_FIMV_ENC_STR_STATUS		S3C_FIMVREG(0xc018) /* stream buf interrupt status */	
-#define S3C_FIMV_ENC_SF_EPB_ON_CTRL	S3C_FIMVREG(0xc054) /* stream control */	
-#define S3C_FIMV_ENC_SF_BUF_CTRL	S3C_FIMVREG(0xc058) /* buffer control */	
-#define S3C_FIMV_ENC_BF_MODE_CTRL	S3C_FIMVREG(0xc05c) /* fifo level control */	
+#define S3C_FIMV_ENC_STR_BF_U_FULL	S3C_FIMVREG(0xc004) /* upper stream buf full status */
+#define S3C_FIMV_ENC_STR_BF_U_EMPTY	S3C_FIMVREG(0xc008) /* upper stream buf empty status */
+#define S3C_FIMV_ENC_STR_BF_L_FULL	S3C_FIMVREG(0xc00c) /* lower stream buf full status */
+#define S3C_FIMV_ENC_STR_BF_L_EMPTY	S3C_FIMVREG(0xc010) /* lower stream buf empty status */
+#define S3C_FIMV_ENC_STR_STATUS		S3C_FIMVREG(0xc018) /* stream buf interrupt status */
+#define S3C_FIMV_ENC_SF_EPB_ON_CTRL	S3C_FIMVREG(0xc054) /* stream control */
+#define S3C_FIMV_ENC_SF_BUF_CTRL	S3C_FIMVREG(0xc058) /* buffer control */
+#define S3C_FIMV_ENC_BF_MODE_CTRL	S3C_FIMVREG(0xc05c) /* fifo level control */
 
-#define S3C_FIMV_ENC_PIC_TYPE_CTRL	S3C_FIMVREG(0xc504) /* pic type level control */	
+#define S3C_FIMV_ENC_PIC_TYPE_CTRL	S3C_FIMVREG(0xc504) /* pic type level control */
 #define S3C_FIMV_ENC_B_RECON_WRITE_ON	S3C_FIMVREG(0xc508) /* B frame recon data write cotrl */
 #define S3C_FIMV_ENC_MSLICE_CTRL	S3C_FIMVREG(0xc50c) /* multi slice control */
 #define S3C_FIMV_ENC_MSLICE_MB		S3C_FIMVREG(0xc510) /* MB number in the one slice */
