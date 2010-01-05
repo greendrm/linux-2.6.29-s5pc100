@@ -1,6 +1,6 @@
 #################################################
-# Makefile for FIMG-2D 
-# 2009 (C) Samsung Electronics 
+# Makefile for FIMG-2D
+# 2009 (C) Samsung Electronics
 # Author : Jinhee Hyeon <jh0722.hyen@samsung.com>
 #################################################
 
