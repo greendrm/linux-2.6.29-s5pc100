@@ -17,8 +17,10 @@
 #include <linux/types.h>
 
 struct s3c_mfc_platdata {
-	dma_addr_t buf_phys_base[2];
-	size_t buf_phys_size[2];
+	dma_addr_t buf_phy_base[2];
+	size_t buf_size[2];
 };
-#endif
 
+extern void __init s3c_mfc_get_reserve_memory_info(void);
+extern void __init s3c_mfc_set_platdata(struct s3c_mfc_platdata *pd);
+#endif

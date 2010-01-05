@@ -52,6 +52,7 @@ obj-$(CONFIG_S5PC11X_SETUP_FIMC2) += setup-fimc2.o
 
 # Device setup - MFC
 obj-y				  += dev-mfc.o
+obj-y				  += setup-mfc.o
 
 # Device setup - FIMD
 obj-$(CONFIG_S5PC11X_DEV_FB)	  += dev-fb.o
