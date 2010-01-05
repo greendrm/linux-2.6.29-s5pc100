@@ -3,7 +3,15 @@
 #
 config VIDEO_G2D
 		bool "Samsung FIMG-2D Driver"
-		depends on VIDEO_SAMSUNG && (CPU_S5PC100)
+		depends on VIDEO_SAMSUNG && (CPU_S5PC110)
 		default n
 		---help---
-			This is a FIMG-2D(2D accelerator) driver for Samsung S5PC100.
+			This is a FIMG-2D(2D accelerator) driver for Samsung S5PC110.
+
+config VIDEO_G2D_DEBUG
+		bool "G2D Driver Debug Messages"
+		depends on VIDEO_G2D
+		default n
+		---help---
+			This enables G2D driver debug messages
+

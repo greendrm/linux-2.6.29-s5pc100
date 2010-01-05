@@ -288,7 +288,14 @@ static struct clk init_clocks[] = {
 		.enable         = s5pc11x_clk_ip0_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP0_G3D,
 		.pd		= &pd_g3d,
-	}, 
+	}, {
+		.name           = "g2d",
+		.id             = -1,
+		.parent         = &clk_h166,
+		.enable         = s5pc11x_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_G2D,
+		.pd		= &pd_lcd,
+	},
 
 	/* Connectivity and Multimedia */
 	{
@@ -352,7 +359,7 @@ static struct clk init_clocks[] = {
 		.enable         = s5pc11x_clk_ip1_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP1_FIMD,
 		.pd		= &pd_lcd,
-	},  {
+	}, {
                 .name           = "cfcon",
                 .id             = 0,
                 .parent         = &clk_h133,

@@ -533,6 +533,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_rotator,
 	&s5p_device_cec,
 	&s3c_device_test,
+	&s3c_device_g2d,
 };
 
 static void __init smdkc110_i2c_gpio_init(void)

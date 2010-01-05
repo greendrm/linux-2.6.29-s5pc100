@@ -29,7 +29,7 @@ endif
 
 if CPU_S5PC100 
 source "drivers/media/video/samsung/mfc40/Kconfig"
-source "drivers/media/video/samsung/g2d/Kconfig"
+#source "drivers/media/video/samsung/g2d/Kconfig"
 endif
 
 if CPU_S5P6442
@@ -44,6 +44,7 @@ endif
 
 if CPU_S5PC110
 source "drivers/media/video/samsung/mfc50/Kconfig"
+source "drivers/media/video/samsung/g2d/Kconfig"
 endif
 #
 #source "drivers/media/video/samsung/rotator/Kconfig"

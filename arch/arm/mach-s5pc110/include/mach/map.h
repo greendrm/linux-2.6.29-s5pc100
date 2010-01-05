@@ -109,7 +109,7 @@
 #define S5PC11X_SZ_LCD		SZ_1M
 
 /* G2D */
-#define S5PC11X_PA_G2D	   	(0xEE800000)
+#define S5PC11X_PA_G2D	   	(0xFA000000)
 #define S5PC11X_SZ_G2D		SZ_1M
 
 /* SYSTEM TIMER */
