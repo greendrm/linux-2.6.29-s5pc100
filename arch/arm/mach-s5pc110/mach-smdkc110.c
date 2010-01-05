@@ -91,9 +91,8 @@
 #define UFCON S3C2410_UFCON_RXTRIG8 | S3C2410_UFCON_FIFOMODE
 
 /* 0x9:1.2v, 0x8:1.15v, 0x7:1.1v, 0x6:1.05v, 0x5:1.00v */
-#define VDD_ARM_EVT1 0x9	
+#define VDD_ARM_EVT1 0x9
 #define VDD_INT_EVT1 0x9
-
 
 extern struct sys_timer s5pc11x_timer;
 extern void s5pc11x_reserve_bootmem(void);
@@ -162,11 +161,11 @@ static struct s3c2410_uartcfg smdkc110_uartcfgs[] __initdata = {
 
 #ifdef CONFIG_FB_S3C_TL2796
 
-#define LCD_BUS_NUM 	3
+#define LCD_BUS_NUM	3
 #define DISPLAY_CS	S5PC11X_GPB(5)
 static struct spi_board_info spi_board_info[] __initdata = {
-    	{
-	    	.modalias	= "tl2796",
+	{
+		.modalias	= "tl2796",
 		.platform_data	= NULL,
 		.max_speed_hz	= 1200000,
 		.bus_num	= LCD_BUS_NUM,
@@ -213,7 +212,7 @@ static struct regulator_init_data max8698_buck1_data = {
 		.state_mem	= {
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled 	= 0,
+			.enabled	= 0,
 		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(buck1_consumers),
@@ -236,7 +235,7 @@ static struct regulator_init_data max8698_buck2_data = {
 		.state_mem	= {
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled 	= 0,
+			.enabled	= 0,
 		},
 	},
 	.num_consumer_supplies	= ARRAY_SIZE(buck2_consumers),
@@ -252,7 +251,7 @@ static struct regulator_init_data max8698_buck3_data = {
 		.state_mem	= {
 			.uV		= 1800000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled 	= 1,
+			.enabled	= 1,
 		},
 	},
 };
@@ -267,7 +266,7 @@ static struct regulator_init_data max8698_ldo2_data = {
 		.state_mem	= {
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_STANDBY,
-			.enabled 	= 1,
+			.enabled	= 1,
 		},
 	},
 };
@@ -278,7 +277,7 @@ static struct regulator_init_data max8698_ldo3_data = {
 		.min_uV		= 1100000,
 		.max_uV		= 1100000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 0,	/* LDO3 should be OFF in sleep mode */
@@ -293,7 +292,7 @@ static struct regulator_init_data max8698_ldo4_data = {
 		.max_uV		= 1800000,
 		.apply_uV	= 1,
 		.boot_on	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 1800000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 0,	/* LDO4 should be OFF in sleep mode */
@@ -308,7 +307,7 @@ static struct regulator_init_data max8698_ldo5_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 2800000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 1,
@@ -322,7 +321,7 @@ static struct regulator_init_data max8698_ldo6_data = {
 		.min_uV		= 2600000,
 		.max_uV		= 2600000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 2600000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 1,
@@ -336,7 +335,7 @@ static struct regulator_init_data max8698_ldo7_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 2800000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 1,
@@ -351,7 +350,7 @@ static struct regulator_init_data max8698_ldo8_data = {
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 0,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 0,	/* LDO8 should be OFF in sleep mode */
@@ -365,7 +364,7 @@ static struct regulator_init_data max8698_ldo9_data = {
 		.min_uV		= 3000000,
 		.max_uV		= 3000000,
 		.apply_uV	= 1,
-		.state_mem 	={
+		.state_mem	={
 			.uV		= 3000000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 1,
@@ -395,12 +394,12 @@ static struct max8698_platform_data max8698_platform_data_0 = {
 	.set1		= S5PC11X_GPH1(6),
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
-#if defined(CONFIG_CPU_S5PC110_EVT1) 
+#if defined(CONFIG_CPU_S5PC110_EVT1)
 	.dvsarm1	= 0x7,	// 1.10v
 	.dvsarm2	= 0x6,	// 1.05V
 	.dvsarm3	= 0x5,	// 1.00V
 	.dvsarm4	= 0x4,	// 0.95V
-	
+
 	.dvsint1	= 0x7,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
 #else
@@ -411,7 +410,6 @@ static struct max8698_platform_data max8698_platform_data_0 = {
 
 	.dvsint1	= 0x9,	// 1.2V
 	.dvsint2	= 0x5,	// 1.0V
-
 #endif
 };
 
@@ -423,12 +421,12 @@ static struct max8698_platform_data max8698_platform_data_1 = {
 	.set1		= S5PC11X_GPH1(6),
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
-#if defined(CONFIG_CPU_S5PC110_EVT1) 
+#if defined(CONFIG_CPU_S5PC110_EVT1)
 	.dvsarm1	= 0x9,	// 1.20v
 	.dvsarm2	= 0x6,	// 1.05V
 	.dvsarm3	= 0x5,	// 1.00V
 	.dvsarm4	= 0x4,	// 0.95V
-	
+
 	.dvsint1	= 0x9,	// 1.20v
 	.dvsint2	= 0x5,	// 1.00V
 #else
@@ -439,7 +437,6 @@ static struct max8698_platform_data max8698_platform_data_1 = {
 
 	.dvsint1	= 0x9,	// 1.2V
 	.dvsint2	= 0x5,	// 1.0V
-
 #endif
 };
 
@@ -452,7 +449,7 @@ static struct i2c_board_info i2c_devs0[] __initdata = {
 
 /* I2C1 */
 static struct i2c_board_info i2c_devs1[] __initdata = {
-	{	
+	{
 		I2C_BOARD_INFO("s5p_ddc", (0x74>>1)),
 	},
 };
@@ -483,18 +480,18 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 
 #ifdef CONFIG_S3C_DEV_HSMMC
         &s3c_device_hsmmc0,
-#endif        
+#endif
 
 #ifdef CONFIG_S3C_DEV_HSMMC1
         &s3c_device_hsmmc1,
-#endif        
-        
+#endif
+
 #ifdef CONFIG_S3C_DEV_HSMMC2
         &s3c_device_hsmmc2,
-#endif        
-        
+#endif
+
 #ifdef CONFIG_S3C_DEV_HSMMC3
-        &s3c_device_hsmmc3,        
+        &s3c_device_hsmmc3,
 #endif
 
 #ifdef CONFIG_S3C2410_WATCHDOG
@@ -551,10 +548,10 @@ static void __init smdkc110_i2c_gpio_init(void)
 }
 
 static struct s3c_ts_mach_info s3c_ts_platform __initdata = {
-	.delay 			= 10000,
-	.presc 			= 49,
+	.delay			= 10000,
+	.presc			= 49,
 	.oversampling_shift	= 2,
-	.resol_bit 		= 12,
+	.resol_bit		= 12,
 	.s3c_adc_con		= ADC_TYPE_2,
 	.panel_resistance	= 1,	// For measuring pressure
 	.threshold		= 300,
@@ -631,7 +628,7 @@ static int smdkc110_mipi_cam_power(int onoff)
  * NOTE1: if the S5K4EA is enabled, all other cameras must be disabled
  * NOTE2: currently, only 1 MIPI camera must be enabled
  * NOTE3: it is possible to use both one ITU cam and one MIPI cam except for S5K4EA case
- * 
+ *
 */
 #undef CAM_ITU_CH_A
 #undef S5K3BA_ENABLED
@@ -688,11 +685,11 @@ static struct s3c_platform_camera __initdata s5k3ba = {
 
 	/* Polarity */
 	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
+	.inv_vsync	= 1,
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized 	= 0,
+	.initialized	= 0,
 #ifdef CAM_ITU_CH_A
 	.cam_power	= smdkc110_cam0_power,
 #else
@@ -746,11 +743,11 @@ static struct s3c_platform_camera __initdata s5k4ba = {
 
 	/* Polarity */
 	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
+	.inv_vsync	= 1,
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized 	= 0,
+	.initialized	= 0,
 #ifdef CAM_ITU_CH_A
 	.cam_power	= smdkc110_cam0_power,
 #else
@@ -801,11 +798,11 @@ static struct s3c_platform_camera __initdata s5k4ea = {
 
 	/* Polarity */
 	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
+	.inv_vsync	= 1,
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized 	= 0,
+	.initialized	= 0,
 	.cam_power	= smdkc110_mipi_cam_power,
 };
 #endif
@@ -852,11 +849,11 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 
 	/* Polarity */
 	.inv_pclk	= 0,
-	.inv_vsync 	= 1,
+	.inv_vsync	= 1,
 	.inv_href	= 0,
 	.inv_hsync	= 0,
 
-	.initialized 	= 0,
+	.initialized	= 0,
 	.cam_power	= smdkc110_mipi_cam_power,
 };
 #endif
@@ -884,9 +881,8 @@ static struct s3c_platform_camera __initdata writeback = {
 		.height	= 800,
 	},
 
-	.initialized 	= 0,
+	.initialized	= 0,
 };
-
 #endif
 
 /* Interface setting */
@@ -896,7 +892,7 @@ static struct s3c_platform_fimc __initdata fimc_plat = {
 #else
 
 #ifdef WRITEBACK_ENABLED
-	.default_cam 	= CAMERA_WB,
+	.default_cam	= CAMERA_WB,
 #elif CAM_ITU_CH_A
 	.default_cam	= CAMERA_PAR_A,
 #else
@@ -975,7 +971,6 @@ static void __init smdkc110_map_io(void)
 
 static void __init smdkc110_dm9000_set(void)
 {
-
 	unsigned int tmp;
 
 	//tmp = ((0<<28)|(1<<24)|(5<<16)|(1<<12)|(4<<8)|(6<<4)|(0<<0));
@@ -1012,7 +1007,6 @@ static void __init smdkc110_machine_init(void)
 				sizeof(struct max8698_platform_data));
 		printk(KERN_ERR "get fclk clock failed\n");
 	} else {
-		
 		printk(KERN_INFO "arm_clk = %d\n", arm_clk->rate);
 		switch (arm_clk->rate) {
 		case 800*MHz:
@@ -1030,10 +1024,10 @@ static void __init smdkc110_machine_init(void)
 			memcpy(&max8698_platform_default_data,
 				&max8698_platform_data_1,
 				sizeof(struct max8698_platform_data));
-			break;	
+			break;
 		}
 	}
-	
+
 	clk_put(arm_clk);
 
 	smdkc110_dm9000_set();
@@ -1142,7 +1136,6 @@ MACHINE_START(SMDKC110, "SMDKC110")
 	.init_machine	= smdkc110_machine_init,
 	.timer		= &s5pc11x_timer,
 MACHINE_END
-
 
 #ifdef CONFIG_USB_SUPPORT
 /* Initializes OTG Phy. */
@@ -1307,7 +1300,7 @@ void s3c_setup_keypad_cfg_gpio(int rows, int columns)
 {
 	unsigned int gpio;
 	unsigned int end;
-	
+
 	end = S5PC11X_GPH3(rows);
 
 	/* Set all the necessary GPH2 pins to special function (KP_ROWs) */
