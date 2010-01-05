@@ -44,6 +44,8 @@
 
 #include "s3c_mem.h"
 
+#undef USE_DMA_ALLOC
+
 /*----------------------------------------------------------------------*/
 /*                      M2M DMA client 					*/
 /*--------------------------------------------------------------------- */
@@ -68,9 +70,14 @@ static int flag = 0;
 
 static unsigned int physical_address;
 
+#ifdef USE_DMA_ALLOC
+static unsigned int virtual_address;
+#endif
+
 int s3c_mem_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-	unsigned long *virt_addr;
+	//unsigned long *virt_addr;
+	unsigned long virt_addr;
 	struct mm_struct *mm = current->mm;
 	struct s3c_mem_alloc param;
 	struct s3c_mem_dma_param dma_param;
@@ -92,6 +99,10 @@ int s3c_mem_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsi
 				return -EFAULT;
 			}
 			param.phy_addr = physical_address;
+#ifdef USE_DMA_ALLOC
+			param.kvir_addr = virtual_address;
+#endif
+
 			DEBUG("KERNEL MALLOC : param.phy_addr = 0x%X \t size = %d \t param.vir_addr = 0x%X, %d\n", param.phy_addr, param.size, param.vir_addr, __LINE__);
 
 			if(copy_to_user((struct s3c_mem_alloc *)arg, &param, sizeof(struct s3c_mem_alloc))){
@@ -204,9 +215,14 @@ int s3c_mem_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsi
 				mutex_unlock(&mem_free_lock);
 				return -EINVAL;
 			}
-			virt_addr = (unsigned long *)phys_to_virt(param.phy_addr);
 
+#ifdef USE_DMA_ALLOC
+			virt_addr = param.kvir_addr;
+			dma_free_writecombine(NULL, param.size, (unsigned int *) virt_addr, param.phy_addr);
+#else
+			virt_addr = (unsigned long *)phys_to_virt(param.phy_addr);
 			kfree(virt_addr);
+#endif
 			param.size = 0;
 			DEBUG("do_munmap() succeed !!\n");
 
@@ -347,23 +363,38 @@ int s3c_mem_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsi
 int s3c_mem_mmap(struct file* filp, struct vm_area_struct *vma)
 {
 	unsigned long pageFrameNo=0, size, phys_addr;
+
+#ifdef USE_DMA_ALLOC
+	unsigned long virt_addr;
+#else
 	unsigned long *virt_addr;
+#endif
 
 	size = vma->vm_end - vma->vm_start;
 
 	switch (flag) {
 	case MEM_ALLOC :
 	case MEM_ALLOC_CACHEABLE :
-		virt_addr = (unsigned long *)kmalloc(size, GFP_DMA|GFP_ATOMIC);
 
-		if (virt_addr == NULL) {
+#ifdef USE_DMA_ALLOC
+		virt_addr = (unsigned long)dma_alloc_writecombine(NULL, size, (unsigned int *) &phys_addr, GFP_KERNEL);
+#else
+		virt_addr = (unsigned long *)kmalloc(size, GFP_DMA|GFP_ATOMIC);
+#endif
+		if (!virt_addr) {
 			printk("kmalloc() failed !\n");
 			return -EINVAL;
 		}
 		DEBUG("MMAP_KMALLOC : virt addr = 0x%08x, size = %d, %d\n", virt_addr, size, __LINE__);
+
+#ifndef USE_DMA_ALLOC
 		phys_addr = virt_to_phys((unsigned long *)virt_addr);
+#endif
 		physical_address = (unsigned int)phys_addr;
 
+#ifdef USE_DMA_ALLOC
+		virtual_address = virt_addr;
+#endif
 		pageFrameNo = __phys_to_pfn(phys_addr);
 		break;
 

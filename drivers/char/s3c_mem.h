@@ -41,6 +41,7 @@ struct s3c_mem_alloc {
 	int		size;
 	unsigned int 	vir_addr;
 	unsigned int 	phy_addr;
+	unsigned int	kvir_addr;
 };
 
 struct s3c_mem_dma_param {
