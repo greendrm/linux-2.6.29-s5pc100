@@ -248,7 +248,31 @@ static int fimc_add_outqueue(struct fimc_control *ctrl, int i)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
 	struct fimc_buf_set *buf;
+#if defined(PINGPONG_2ADDR_MODE)
+	unsigned int mask = 0x2;
+	/* pair_buf_index stands for pair index of i. (0<->2) (1<->3) */
+	int pair_buf_index = (i^mask);
 
+	if (i < 0 || i >= FIMC_PHYBUFS) {
+		fimc_err("%s: invalid queue index : %d\n", __func__, i);
+		return -ENOENT;
+	}
+
+	if (list_empty(&cap->inq))
+		return -ENOENT;
+
+	buf = list_first_entry(&cap->inq, struct fimc_buf_set, list);
+
+	/* pair index buffer should be allocated first */
+	cap->outq[pair_buf_index] = buf->id;
+	fimc_hwset_output_address(ctrl, buf, pair_buf_index);
+
+	cap->outq[i] = buf->id;
+	fimc_hwset_output_address(ctrl, buf, i);
+
+	list_del(&buf->list);
+	//printk("%s: outq[%d] = %d, outq[%d] = %d\n", __func__, i, buf->id, pair_buf_index, buf->id);
+#else
 	if (cap->nr_bufs > FIMC_PHYBUFS) {
 		if (list_empty(&cap->inq))
 			return -ENOENT;
@@ -261,7 +285,7 @@ static int fimc_add_outqueue(struct fimc_control *ctrl, int i)
 	}
 
 	fimc_hwset_output_address(ctrl, buf, i);
-
+#endif
 	return 0;
 }
 
@@ -635,10 +659,17 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
+#if defined(PINGPONG_2ADDR_MODE)
+	if (b->count < 3) {
+		fimc_err("%s: invalid buffer count\n", __func__);
+		return -EINVAL;
+	}
+#else
 	if (b->count < 1 || b->count == 3) {
 		fimc_err("%s: invalid buffer count\n", __func__);
 		return -EINVAL;
 	}
+#endif
 
 	cap->nr_bufs = b->count;
 	fimc_dbg("%s: requested %d buffers\n", __func__, b->count);
@@ -941,8 +972,13 @@ int fimc_streamon_capture(void *fh)
 						cap->fmt.height);
 	}
 
+#if defined(PINGPONG_2ADDR_MODE)
+	for (i = 0; i < FIMC_PINGPONG; i++)
+		fimc_add_outqueue(ctrl, i);
+#else
 	for (i = 0; i < FIMC_PHYBUFS; i++)
 		fimc_add_outqueue(ctrl, i);
+#endif
 
 	fimc_start_capture(ctrl);
 
@@ -961,8 +997,13 @@ int fimc_streamoff_capture(void *fh)
 
 	ctrl->status = FIMC_READY_OFF;
 	fimc_stop_capture(ctrl);
+#if defined(PINGPONG_2ADDR_MODE)
+	for(i = 0; i < FIMC_PINGPONG; i++)
+		fimc_add_inqueue(ctrl, cap->outq[i]);
+#else
 	for(i = 0; i < FIMC_PHYBUFS; i++)
 		fimc_add_inqueue(ctrl, cap->outq[i]);
+#endif
 	ctrl->status = FIMC_STREAMOFF;
 
 	return 0;
@@ -977,11 +1018,18 @@ int fimc_qbuf_capture(void *fh, struct v4l2_buffer *b)
 		return -EINVAL;
 	}
 
+	fimc_info2("%s: buffer(%d)\n", __func__, b->index);
+#if defined(PINGPONG_2ADDR_MODE)
+	mutex_lock(&ctrl->v4l2_lock);
+	fimc_add_inqueue(ctrl, b->index);
+	mutex_unlock(&ctrl->v4l2_lock);
+#else
 	if (ctrl->cap->nr_bufs > FIMC_PHYBUFS) {
 		mutex_lock(&ctrl->v4l2_lock);
 		fimc_add_inqueue(ctrl, b->index);
 		mutex_unlock(&ctrl->v4l2_lock);
 	}
+#endif
 
 	return 0;
 }
@@ -1006,6 +1054,15 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)
 		pp &= ~0x1;
 
+#if defined(PINGPONG_2ADDR_MODE)
+	b->index = cap->outq[pp];
+	fimc_info2("%s: buffer(%d) outq[%d]\n", __func__, b->index, pp);
+	ret = fimc_add_outqueue(ctrl, pp);
+	if (ret) {
+		b->index = -1;
+		fimc_err("%s: no inqueue buffer\n", __func__);
+	}
+#else
 	if (cap->nr_bufs > FIMC_PHYBUFS) {
 		b->index = cap->outq[pp];
 		ret = fimc_add_outqueue(ctrl, pp);
@@ -1016,6 +1073,7 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 	} else {
 		b->index = pp;
 	}
+#endif
 
 	mutex_unlock(&ctrl->v4l2_lock);
 

@@ -61,6 +61,12 @@
 #elif defined(CONFIG_VIDEO_FIMC_DMA_AUTO)
 #define FIMC_OVERLAY_MODE	FIMC_OVERLAY_DMA_AUTO
 #endif
+
+#define PINGPONG_2ADDR_MODE
+#if defined(PINGPONG_2ADDR_MODE)
+#define FIMC_PINGPONG   2
+#endif
+
 /*
  * E N U M E R A T I O N S
  *
