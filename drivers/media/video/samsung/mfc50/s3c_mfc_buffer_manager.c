@@ -40,6 +40,8 @@ s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_tail[MFC_MAX_PORT_NUM];
 s3c_mfc_free_mem_t *s3c_mfc_free_mem_head[MFC_MAX_PORT_NUM];
 s3c_mfc_free_mem_t *s3c_mfc_free_mem_tail[MFC_MAX_PORT_NUM];
 
+extern unsigned int s3c_mfc_buf_size;
+extern unsigned int s3c_mfc_dpb_luma_buf_size;
 extern int vir_mmap_size;
 
 /* insert node ahead of s3c_mfc_alloc_mem_head */
@@ -298,8 +300,8 @@ int s3c_mfc_init_buffer_manager(void)
 	memset(free_node, 0x00, sizeof(s3c_mfc_free_mem_t));
 	free_node->start_addr = (port_no) ? s3c_mfc_get_dpb_luma_buf_phys_addr() :
 					   s3c_mfc_get_data_buf_phys_addr();
-	free_node->size = (port_no) ? s3c_get_media_memsize_node(S3C_MDEV_MFC, 1) :
-				      s3c_get_media_memsize(S3C_MDEV_MFC);
+	free_node->size = (port_no) ? s3c_mfc_dpb_luma_buf_size : s3c_mfc_buf_size;
+
 	// peter, it should be changed
 	s3c_mfc_insert_first_node_to_free_list(free_node, -1, port_no);
 	}
