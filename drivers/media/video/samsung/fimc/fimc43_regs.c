@@ -845,6 +845,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 
 	/* Color format setting */
 	switch (pixelformat) {
+	case V4L2_PIX_FMT_YUV420:	/*fall through */
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		cfg |= S3C_MSCTRL_INFORMAT_YCBCR420;
@@ -874,6 +875,9 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 						S3C_MSCTRL_ORDER422_YCBYCR);
 
 	switch (pixelformat) {
+	case V4L2_PIX_FMT_YUV420:
+		cfg |= S3C_MSCTRL_C_INT_IN_3PLANE;
+		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
 		cfg |= S3C_MSCTRL_ORDER422_YCBYCR;
 		break;
@@ -1076,6 +1080,7 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 		(bounds->height != crop->height)) {
 		switch (pixelformat) {
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
+		case V4L2_PIX_FMT_YUV420:	/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
 			if (pdata->hw_ver == 0x50)
 				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
