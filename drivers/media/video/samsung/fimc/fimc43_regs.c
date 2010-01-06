@@ -845,7 +845,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 
 	/* Color format setting */
 	switch (pixelformat) {
-	case V4L2_PIX_FMT_YUV420:	/*fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		cfg |= S3C_MSCTRL_INFORMAT_YCBCR420;

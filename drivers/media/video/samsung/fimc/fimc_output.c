@@ -289,7 +289,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	case V4L2_PIX_FMT_RGB32:
 		size = PAGE_ALIGN(width * height * 4);
 		break;
-	case V4L2_PIX_FMT_YUV420:	/*fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		size = PAGE_ALIGN(width * height * 2);
@@ -342,7 +342,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 		for (i = 0; i < FIMC_OUTBUFS; i++) {
 			ctrl->out->src[i].base[FIMC_ADDR_Y] = *curr;
 			ctrl->out->src[i].base[FIMC_ADDR_CB] = *curr + y_size;
-			ctrl->out->src[i].base[FIMC_ADDR_CR] = *curr + cb_size + cr_size;
+			ctrl->out->src[i].base[FIMC_ADDR_CR] = *curr + y_size + cb_size;
 			ctrl->out->src[i].length[FIMC_ADDR_Y] = y_size;
 			ctrl->out->src[i].length[FIMC_ADDR_CB] = cb_size;
 			ctrl->out->src[i].length[FIMC_ADDR_CR] = cr_size;
