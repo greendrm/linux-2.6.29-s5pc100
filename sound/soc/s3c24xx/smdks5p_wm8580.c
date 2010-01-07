@@ -28,6 +28,8 @@
 #include "s5p-i2s.h"
 #include "s3c-pcm.h"
 
+#define SMDK_WM8580_XTI_FREQ		12000000
+
 #define SMDK_WM8580_I2S_V5_PORT 	0
 #define SMDK_WM8580_I2S_V2_PORT 	1
 
@@ -99,29 +101,7 @@ out:
 	return 0;
 }
 
-#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
-static int set_clk_out_div(unsigned int div)
-{
-	unsigned int reg;
-
-	reg = __raw_readl(S5P_CLK_OUT);
-	dev_dbg("%s: CLK_OUT reg = %x\n", __func__, reg);
-
-	reg &= ~(S5P_CLKOUT_DIV_MASK);
-	reg |= div << S5P_CLKOUT_DIV_SHIFT;
-	__raw_writel(reg, S5P_CLK_OUT);
-
-	reg = __raw_readl(S5P_CLK_OUT);
-	dev_dbg("%s: CLK_OUT reg = %x\n", __func__, reg);
-
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_SND_WM8580_MASTER
-
-/* SMDK has a 12MHZ crystal attached to WM8580 */
-#define SMDK_WM8580_FREQ	12000000
 
 static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
@@ -214,33 +194,6 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
-	/* Deplicated using XTL(X1-12MHz) after C110 BaseBd. Rev-0.1*/
-	/* Set WM8580 to drive MCLK from it's PLLA */
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
-					WM8580_CLKSRC_MCLK);
-	if (ret < 0)
-		return ret;
-
-	/* Explicitly set WM8580-DAC to source from MCLK */
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
-					WM8580_CLKSRC_MCLK);
-	if (ret < 0)
-		return ret;
-
-	/* Set EPLL clock rate */
-	ret = set_epll_rate(epll_out_rate);
-	if (ret < 0)
-		return ret;
-
-	/* Set XCLK_OUT DIV */
-	if (epll_out_rate * 10 / params_rate(params) / rfs
-		>= epll_out_rate / params_rate(params) / rfs * 10 + 5) {
-		set_clk_out_div(epll_out_rate / params_rate(params) / rfs);
-	} else {
-		set_clk_out_div(epll_out_rate / params_rate(params) / rfs - 1);
-	}
-#else
 	/* Set WM8580 to drive MCLK from it's PLLA */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
 					WM8580_CLKSRC_PLLA);
@@ -254,10 +207,9 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 
 	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
-					SMDK_WM8580_FREQ, pll_out);
+					SMDK_WM8580_XTI_FREQ, pll_out);
 	if (ret < 0)
 		return ret;
-#endif
 
 	/* Set MCLK Ratio to make BCLK */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLKRATIO, rfs);
@@ -363,21 +315,18 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 
 #if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
-	rfs /= 2;
-	/* Set XCLK_OUT DIV */
-	if (epll_out_rate * 10 / params_rate(params) / rfs
-		>= epll_out_rate / params_rate(params) / rfs * 10 + 5) {
-		set_clk_out_div(epll_out_rate / params_rate(params) / rfs);
-	} else {
-		set_clk_out_div(epll_out_rate / params_rate(params) / rfs - 1);
-	}
-#endif
-
+	/* Set WM8580 to drive MCLK from PLLA */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
+					WM8580_CLKSRC_PLLA);
+	if (ret < 0)
+		return ret;
+#else
 	/* Set WM8580 to drive MCLK from MCLK Pin */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
 					WM8580_CLKSRC_MCLK);
 	if (ret < 0)
 		return ret;
+#endif
 
 	/* Explicitly set WM8580-DAC to source from MCLK */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
@@ -397,6 +346,14 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
+					SMDK_WM8580_XTI_FREQ,
+					params_rate(params) * rfs);
+	if (ret < 0)
+		return ret;
+#endif
+
 	return 0;
 }
 #endif
@@ -410,7 +367,7 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
 	int rfs, ret;
-	unsigned long div, epll_out_rate;
+	unsigned long epll_out_rate;
 
 	switch (params_rate(params)) {
 	case 8000:
@@ -489,30 +446,37 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 
 	/* Set SCLK_DIV for making bclk */
-	div = rfs / 2;
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_PCM_SCLK_PER_FS, div);
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_PCM_SCLK_PER_FS, rfs);
 	if (ret < 0)
 		return ret;
 
-	/* Set XCLK_OUT DIV */
-	if (epll_out_rate * 10 / params_rate(params) / div
-		>= epll_out_rate / params_rate(params) / div * 10 + 5) {
-		set_clk_out_div(epll_out_rate / params_rate(params) / div);
-	} else {
-		set_clk_out_div(epll_out_rate / params_rate(params) / div - 1);
-	}
-
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	/* Set WM8580 to drive MCLK from PLLA */
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
+					WM8580_CLKSRC_PLLA);
+	if (ret < 0)
+		return ret;
+#else
 	/* Set WM8580 to drive MCLK from MCLK Pin */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK,
 					WM8580_CLKSRC_MCLK);
 	if (ret < 0)
 		return ret;
+#endif
 
 	/* Explicitly set WM8580-DAC to source from MCLK */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
 					WM8580_CLKSRC_MCLK);
 	if (ret < 0)
 		return ret;
+
+#if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
+					SMDK_WM8580_XTI_FREQ,
+					params_rate(params) * rfs);
+	if (ret < 0)
+		return ret;
+#endif
 
 	return 0;
 }
@@ -676,13 +640,20 @@ static int __init smdk_audio_init(void)
 	int ret;
 
 #if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
-	unsigned int reg;
+	unsigned int reg = 0x0;
+	/* Clear XCLK_OUT Reg. */
+	__raw_writel(reg, S5P_CLK_OUT);
 
 	/* Set XCLK_OUT enable */
 	reg = __raw_readl(S5P_CLK_OUT);
 	reg &= ~S5P_CLKOUT_CLKSEL_MASK;
-	reg |= S5P_CLKOUT_CLKSEL_EPLL;
+	reg |= S5P_CLKOUT_CLKSEL_XUSBXTI;
+	__raw_writel(reg, S5P_CLK_OUT);
 
+	/* Set XCLK_OUT to 12MHz */
+	reg = __raw_readl(S5P_CLK_OUT);
+	reg &= ~S5P_CLKOUT_DIV_MASK;
+	reg |= 1 << S5P_CLKOUT_DIV_SHIFT;
 	__raw_writel(reg, S5P_CLK_OUT);
 #endif
 
