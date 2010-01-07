@@ -465,14 +465,14 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 
 	/* Set the Codec DAI configuration */
 	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_DSP_B
-					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_IB_NF
 					 | SND_SOC_DAIFMT_CBS_CFS);
 	if (ret < 0)
 		return ret;
 
 	/* Set the AP DAI configuration */
 	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_DSP_B
-					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_IB_NF
 					 | SND_SOC_DAIFMT_CBS_CFS);
 	if (ret < 0)
 		return ret;
