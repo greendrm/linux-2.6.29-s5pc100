@@ -198,11 +198,17 @@ static int fout_set_rate(struct clk *clk, unsigned long rate)
 {
 	unsigned int epll_con;
 
+#if defined(CONFIG_CPU_S5PC110_EVT1)
+	unsigned int epll_con1;
+#endif
+
 	epll_con = __raw_readl(S5P_EPLL_CON);
 
 	epll_con &= ~S5P_EPLLVAL(0x1, 0x1ff, 0x3f, 0x7); /* Clear V, M, P & S */
 
 #if defined(CONFIG_CPU_S5PC110_EVT1)
+	epll_con1 = __raw_readl(S5P_EPLL_CON1);
+
 	switch (rate) {
 	case 48000000:
 		epll_con |= S5P_EPLLVAL(0, 48, 3, 3);
@@ -222,22 +228,27 @@ static int fout_set_rate(struct clk *clk, unsigned long rate)
 	case 32750000:
 	case 32768000:
 		epll_con |= S5P_EPLLVAL(1, 65, 3, 4);
+		epll_con1 = S5P_EPLL_CON1_MASK & 35127;
 		break;
 	case 45000000:
 	case 45158000:
 		epll_con |= S5P_EPLLVAL(0, 45, 3, 3);
+		epll_con1 = S5P_EPLL_CON1_MASK & 10355;
 		break;
 	case 49125000:
 	case 49152000:
 		epll_con |= S5P_EPLLVAL(0, 49, 3, 3);
+		epll_con1 = S5P_EPLL_CON1_MASK & 9961;
 		break;
 	case 67737600:
 	case 67738000:
 		epll_con |= S5P_EPLLVAL(1, 67, 3, 3);
+		epll_con1 = S5P_EPLL_CON1_MASK & 48366;
 		break;
 	case 73800000:
 	case 73728000:
 		epll_con |= S5P_EPLLVAL(1, 73, 3, 3);
+		epll_con1 = S5P_EPLL_CON1_MASK & 47710;
 		break;
 	case 36000000:
 		epll_con |= S5P_EPLLVAL(1, 72, 3, 4);
@@ -261,6 +272,8 @@ static int fout_set_rate(struct clk *clk, unsigned long rate)
 		printk(KERN_ERR "Invalid Clock Freq!\n");
 		return -EINVAL;
 	}
+
+	__raw_writel(epll_con1, S5P_EPLL_CON1);
 #else
 	switch (rate) {
 	case 48000000:
