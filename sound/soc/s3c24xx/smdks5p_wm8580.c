@@ -200,11 +200,22 @@ static int smdk_socslv_hw_params(struct snd_pcm_substream *substream,
 	if (ret < 0)
 		return ret;
 
-	/* Explicitly set WM8580-DAC to source from MCLK */
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
-					WM8580_CLKSRC_MCLK);
-	if (ret < 0)
-		return ret;
+	if (codec_dai->id == WM8580_DAI_PAIFRX
+		|| codec_dai->id == WM8580_DAI_SAIF) {
+		/* Explicitly set WM8580-DAC to source from MCLK */
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+						WM8580_CLKSRC_MCLK);
+		if (ret < 0)
+			return ret;
+	}
+
+	if (codec_dai->id == WM8580_DAI_PAIFTX
+		|| codec_dai->id == WM8580_DAI_SAIF) {
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL,
+						WM8580_CLKSRC_MCLK);
+		if (ret < 0)
+			return ret;
+	}
 
 	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
 					SMDK_WM8580_XTI_FREQ, pll_out);
@@ -300,11 +311,22 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 #endif
 
-	/* Explicitly set WM8580-DAC to source from MCLK */
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
-					WM8580_CLKSRC_MCLK);
-	if (ret < 0)
-		return ret;
+	if (codec_dai->id == WM8580_DAI_PAIFRX
+		|| codec_dai->id == WM8580_DAI_SAIF) {
+		/* Explicitly set WM8580-DAC to source from MCLK */
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+						WM8580_CLKSRC_MCLK);
+		if (ret < 0)
+			return ret;
+	}
+
+	if (codec_dai->id == WM8580_DAI_PAIFTX
+		|| codec_dai->id == WM8580_DAI_SAIF) {
+		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL,
+						WM8580_CLKSRC_MCLK);
+		if (ret < 0)
+			return ret;
+	}
 
 	s3c_i2sv2_iis_calc_rate(&div, NULL, params_rate(params),
 				s5p_i2s_get_clock(cpu_dai));
@@ -445,6 +467,11 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 
 	/* Explicitly set WM8580-DAC to source from MCLK */
 	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_ADC_CLKSEL,
 					WM8580_CLKSRC_MCLK);
 	if (ret < 0)
 		return ret;
