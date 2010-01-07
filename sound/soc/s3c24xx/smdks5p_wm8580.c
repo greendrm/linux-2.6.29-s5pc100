@@ -256,34 +256,6 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-	switch (params_rate(params)) {
-	case 22050:
-	case 22025:
-	case 32000:
-	case 44100:
-	case 48000:
-	case 88200:
-	case 96000:
-	case 24000:
-		rfs = 256;
-		break;
-	case 64000:
-		rfs = 384;
-		break;
-	case 11025:
-	case 12000:
-		rfs = 512;
-		break;
-	case 8000:
-	case 16000:
-		rfs = 1024;
-		break;
-	default:
-		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
-			__func__, __LINE__, params_rate(params));
-		return -EINVAL;
-	}
-
 	/* Set EPLL clock rate */
 	ret = set_epll_rate(epll_out_rate);
 	if (ret < 0)
@@ -347,6 +319,13 @@ static int smdk_socmst_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 
 #if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
+	if (params_rate(params) == 8000)
+		rfs = 512;
+	else if (params_rate(params) == 11025)
+		rfs = 512;
+	else
+		rfs = div.fs_div;
+
 	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
 					SMDK_WM8580_XTI_FREQ,
 					params_rate(params) * rfs);
@@ -393,12 +372,12 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 	}
 
 	switch (params_rate(params)) {
+	case 16000:
 	case 22050:
 	case 22025:
 	case 32000:
 	case 44100:
 	case 48000:
-	case 88200:
 	case 96000:
 	case 24000:
 		rfs = 256;
@@ -406,13 +385,13 @@ static int smdk_socpcm_hw_params(struct snd_pcm_substream *substream,
 	case 64000:
 		rfs = 384;
 		break;
+	case 8000:
 	case 11025:
 	case 12000:
 		rfs = 512;
 		break;
-	case 8000:
-	case 16000:
-		rfs = 1024;
+	case 88200:
+		rfs = 128;
 		break;
 	default:
 		printk(KERN_ERR "%s:%d Sampling Rate %u not supported!\n",
