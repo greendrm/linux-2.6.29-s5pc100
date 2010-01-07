@@ -32,6 +32,7 @@
 
 #include <plat/media.h>
 #include <plat/clock.h>
+#include <plat/mfc.h>
 
 #include "s3c_mfc_interface.h"
 #include "s3c_mfc_common.h"
@@ -52,6 +53,7 @@ unsigned int		s3c_mfc_int_type = 0;
 static struct mutex	s3c_mfc_mutex;
 
 unsigned int		s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
+unsigned int		s3c_mfc_buf_size, s3c_mfc_dpb_luma_buf_size;
 volatile unsigned char	*s3c_mfc_virt_buf, *s3c_mfc_virt_dpb_luma_buf;
 int vir_mmap_size;
 
@@ -448,8 +450,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
 	offset = Align(offset, 4*BUF_L_UNIT);
 
-	phy_size = (unsigned long)(s3c_get_media_memsize(S3C_MDEV_MFC) - offset
-					+ s3c_get_media_memsize_node(S3C_MDEV_MFC, 1));
+	phy_size = (unsigned long)(s3c_mfc_buf_size + s3c_mfc_dpb_luma_buf_size - offset);
 
 	/*
 	 * if memory size required from appl. mmap() is bigger than max data memory
@@ -549,6 +550,7 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 
 static int s3c_mfc_probe(struct platform_device *pdev)
 {
+	struct s3c_mfc_platdata *pdata = pdev->dev.platform_data;
 	struct resource *res;
 	size_t		size;
 	int		ret;
@@ -604,7 +606,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	/*
 	 * buffer memory secure
 	 */
-	s3c_mfc_phys_buf = s3c_get_media_memory(S3C_MDEV_MFC);
+	s3c_mfc_phys_buf = pdata->buf_phy_base[0];
 	s3c_mfc_phys_buf = Align(s3c_mfc_phys_buf, 128*BUF_L_UNIT);
 	s3c_mfc_virt_buf = phys_to_virt(s3c_mfc_phys_buf);
 	if (s3c_mfc_virt_buf == NULL) {
@@ -612,8 +614,9 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 		ret = -EPERM;
 		goto probe_out;
 	}
+	s3c_mfc_buf_size = pdata->buf_size[0];
 
-	s3c_mfc_phys_dpb_luma_buf = s3c_get_media_memory_node(S3C_MDEV_MFC, 1);
+	s3c_mfc_phys_dpb_luma_buf = pdata->buf_phy_base[1];
 	s3c_mfc_phys_dpb_luma_buf = Align(s3c_mfc_phys_dpb_luma_buf, 128*BUF_L_UNIT);
 	s3c_mfc_virt_dpb_luma_buf = phys_to_virt(s3c_mfc_phys_dpb_luma_buf);
 	if (s3c_mfc_virt_dpb_luma_buf == NULL) {
@@ -621,6 +624,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 		ret = -EPERM;
 		goto probe_out;
 	}
+	s3c_mfc_dpb_luma_buf_size = pdata->buf_size[1];
 
 	printk("s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n",
 		s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf);
@@ -696,7 +700,9 @@ static struct platform_driver s3c_mfc_driver = {
 	},
 };
 
-static char banner[] __initdata = KERN_INFO "S5PC110 MFC Driver, (c) 2009 Samsung Electronics\n";
+static char banner[] __initdata
+	= KERN_INFO "S3C MFC (Multi Function Codec - FIMV5.0)"
+		    "Device Driver, (c) 2009 Samsung Electronics\n";
 
 static int __init s3c_mfc_init(void)
 {
@@ -713,7 +719,7 @@ static int __init s3c_mfc_init(void)
 static void __exit s3c_mfc_exit(void)
 {
 	platform_driver_unregister(&s3c_mfc_driver);
-	mfc_info("S5PC110 MFC Driver exit.\n");
+	mfc_info("S3C MFC (Multi Function Codec - FIMV5.0) Device Driver exit.\n");
 }
 
 module_init( s3c_mfc_init );

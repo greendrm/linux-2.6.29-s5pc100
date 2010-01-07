@@ -280,6 +280,8 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	u32 format = ctrl->out->pix.pixelformat;
 	u32 y_size = width * height;
 	u32 c_size = (width * height >> 1);
+	u32 cb_size = (width * height >> 2);
+	u32 cr_size = (width * height >> 2);
 	u32 i, size;
 	dma_addr_t *curr = &ctrl->mem.curr;
 
@@ -287,6 +289,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	case V4L2_PIX_FMT_RGB32:
 		size = PAGE_ALIGN(width * height * 4);
 		break;
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		size = PAGE_ALIGN(width * height * 2);
@@ -331,6 +334,18 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 			ctrl->out->src[i].length[FIMC_ADDR_CB] = c_size;
 			ctrl->out->src[i].base[FIMC_ADDR_CR] = 0;
 			ctrl->out->src[i].length[FIMC_ADDR_CR] = 0;
+			*curr += size;
+		}
+
+		break;
+	case V4L2_PIX_FMT_YUV420:
+		for (i = 0; i < FIMC_OUTBUFS; i++) {
+			ctrl->out->src[i].base[FIMC_ADDR_Y] = *curr;
+			ctrl->out->src[i].base[FIMC_ADDR_CB] = *curr + y_size;
+			ctrl->out->src[i].base[FIMC_ADDR_CR] = *curr + y_size + cb_size;
+			ctrl->out->src[i].length[FIMC_ADDR_Y] = y_size;
+			ctrl->out->src[i].length[FIMC_ADDR_CB] = cb_size;
+			ctrl->out->src[i].length[FIMC_ADDR_CR] = cr_size;
 			*curr += size;
 		}
 
@@ -1535,6 +1550,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 		max_w = FIMC_SRC_MAX_W;
 		max_h = FIMC_SRC_MAX_H;		
 	case V4L2_PIX_FMT_RGB32:	/* fall through */
@@ -2069,6 +2085,7 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_RGB32:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		break;
@@ -2087,6 +2104,7 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 		f->fmt.pix.bytesperline	= f->fmt.pix.width<<2;
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		f->fmt.pix.bytesperline	= f->fmt.pix.width<<1;		
 		break;

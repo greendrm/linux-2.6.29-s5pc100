@@ -51,8 +51,6 @@ void __init s3c_fimc1_set_platdata(struct s3c_platform_fimc *pd)
 
 	if (!pd)
 		pd = &default_fimc1_data;
-	else
-		pd->hw_ver = 0x50;
 
 	npd = kmemdup(pd, sizeof(struct s3c_platform_fimc), GFP_KERNEL);
 	if (!npd)
@@ -64,6 +62,7 @@ void __init s3c_fimc1_set_platdata(struct s3c_platform_fimc *pd)
 		if (!npd->clk_on)
 			npd->clk_on = s3c_fimc_clk_on;
 
+		npd->hw_ver = 0x50;
 		s3c_device_fimc1.dev.platform_data = npd;
 	}
 }

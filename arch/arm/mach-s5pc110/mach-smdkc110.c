@@ -1076,6 +1076,8 @@ static void __init smdkc110_machine_init(void)
 	smdkc110_cam1_power(1);
 	smdkc110_mipi_cam_power(1);
 
+	s3c_mfc_get_reserve_memory_info();
+
 	platform_add_devices(smdkc110_devices, ARRAY_SIZE(smdkc110_devices));
 
 #if defined(CONFIG_PM)
