@@ -193,9 +193,13 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s3c_device_g3d,
 	&s3c_device_g2d,
-#ifdef CONFIG_SND_S5P_SOC_I2S
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S
 	&s5pc100_device_iis0,
 	&s5pc100_device_iis1,
+#endif
+#ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_PCM
+	&s5pc100_device_iis0,
+	&s5pc100_device_pcm1,
 #endif
 	&s3c_device_rotator,
 	&s3c_device_csis,
