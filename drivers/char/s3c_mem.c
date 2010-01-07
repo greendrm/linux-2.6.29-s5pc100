@@ -44,8 +44,6 @@
 
 #include "s3c_mem.h"
 
-#undef USE_DMA_ALLOC
-
 /*----------------------------------------------------------------------*/
 /*                      M2M DMA client 					*/
 /*--------------------------------------------------------------------- */
@@ -76,8 +74,12 @@ static unsigned int virtual_address;
 
 int s3c_mem_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-	//unsigned long *virt_addr;
+#ifdef USE_DMA_ALLOC
 	unsigned long virt_addr;
+#else
+	unsigned long *virt_addr;
+#endif
+
 	struct mm_struct *mm = current->mm;
 	struct s3c_mem_alloc param;
 	struct s3c_mem_dma_param dma_param;

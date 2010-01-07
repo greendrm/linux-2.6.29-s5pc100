@@ -27,6 +27,7 @@
 #define MEM_ALLOC_CACHEABLE_SHARE	4
 
 #define S3C_MEM_MINOR  			13
+#undef USE_DMA_ALLOC
 
 static DEFINE_MUTEX(mem_alloc_lock);
 static DEFINE_MUTEX(mem_free_lock);
@@ -41,7 +42,10 @@ struct s3c_mem_alloc {
 	int		size;
 	unsigned int 	vir_addr;
 	unsigned int 	phy_addr;
+
+#ifdef USE_DMA_ALLOC
 	unsigned int	kvir_addr;
+#endif
 };
 
 struct s3c_mem_dma_param {
