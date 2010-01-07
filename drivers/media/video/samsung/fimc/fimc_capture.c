@@ -621,15 +621,19 @@ static int fimc_alloc_buffers(struct fimc_control *ctrl,
 				int plane, int size, int align)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
-	int i;
+	int i, j;
+
+	if (plane < 1 || plane > 3)
+		return -ENOMEM;
 
 	for (i = 0; i < cap->nr_bufs; i++) {
-		cap->bufs[i].length[plane] = PAGE_ALIGN(size);
-		fimc_dma_alloc(ctrl, &cap->bufs[i], plane, align);
+		for (j = 0; j < plane; j++) {
+			cap->bufs[i].length[j] = PAGE_ALIGN(size/(j+1));
+			fimc_dma_alloc(ctrl, &cap->bufs[i], j, align);
 
-		if (!cap->bufs[i].base[plane])
-			goto err_alloc;
-
+			if (!cap->bufs[i].base[j])
+				goto err_alloc;
+		}
 		cap->bufs[i].state = VIDEOBUF_PREPARED;
 	}
 
@@ -637,9 +641,10 @@ static int fimc_alloc_buffers(struct fimc_control *ctrl,
 
 err_alloc:
 	for (i = 0; i < cap->nr_bufs; i++) {
-		if (cap->bufs[i].base[plane])
-			fimc_dma_free(ctrl, &cap->bufs[i], plane);
-
+		for (j = 0; j < plane; j++) {
+			if (cap->bufs[i].base[j])
+				fimc_dma_free(ctrl, &cap->bufs[i], j);
+		}
 		memset(&cap->bufs[i], 0, sizeof(cap->bufs[i]));
 	}
 
@@ -697,15 +702,13 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	case V4L2_PIX_FMT_YUV422P:	/* fall through */
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_NV21:
-		ret = fimc_alloc_buffers(ctrl, 0, cap->fmt.sizeimage, 0);
+		ret = fimc_alloc_buffers(ctrl, 1, cap->fmt.sizeimage, 0);
 		break;
 
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
-		ret = fimc_alloc_buffers(ctrl, 0,
+		ret = fimc_alloc_buffers(ctrl, 2,
 			cap->fmt.width * cap->fmt.height, SZ_64K);
-		ret = fimc_alloc_buffers(ctrl, 1,
-			cap->fmt.width * cap->fmt.height / 2, SZ_64K);
 		break;
 
 	default:
