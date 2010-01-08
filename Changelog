@@ -2520,3 +2520,10 @@ v2.6.29.4-dev-1-6-10: Hyunwoong Kim
 		M	arch/arm/configs/smdkc110onenand_defconfig
 		M	arch/arm/configs/smdkc110ramdisk_defconfig
 		M	arch/arm/configs/smdkc110nfs_defconfig
+
+v2.6.29.4-dev-1-6-11: Hyuk Lee
+	- Changed for supporting SMDK6442 EVT1
+
+	Modified Files:
+		M       arch/arm/mach-s5p6442/Kconfig
+		M       arch/arm/plat-s5p64xx/setup-fb.c

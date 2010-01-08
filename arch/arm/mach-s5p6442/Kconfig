@@ -50,3 +50,20 @@ config SMDK6442_BUTTON
         default n
         help
           This function is only used for wake up source(EINT) setting.
+choice
+	prompt "CPU revision"
+	depends on CPU_S5P6442
+	default	CPU_S5PC6442_EVT1
+	 
+config CPU_S5P6442_EVT0
+	bool "EVT0"
+	help
+	  Support EVT0(S5P6442)
+
+config CPU_S5P6442_EVT1
+	bool "EVT1"
+	help
+	  Support EVT1(S5P6442)
+
+endchoice
+
