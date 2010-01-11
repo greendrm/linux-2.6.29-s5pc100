@@ -25,18 +25,24 @@ struct g2d_info {
 	struct resource *mem;
 	void __iomem *base;
 	struct mutex *lock;
+	wait_queue_head_t waitq_g2d;
 };
 
 static struct g2d_info *g2d;
-#if 0
+
+static u32 g2d_poll_flag = 0;
+
 irqreturn_t g2d_irq(int irq, void *dev_id)
 {
-	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_PEND_INTP_CMD_FIN)
-		writel(G2D_PEND_INTP_CMD_FIN, g2d->base + G2D_INTC_PEND_REG);
+	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_INTP_CMD_FIN) {
+		writel(G2D_INTP_CMD_FIN, g2d->base + G2D_INTC_PEND_REG);
+		g2d_poll_flag = 1;
+		wake_up(&g2d->waitq_g2d);
+	}
 
 	return IRQ_HANDLED;
 }
-#endif
+
 static int g2d_open(struct inode *inode, struct file *file)
 {
 	return 0;
@@ -75,12 +81,27 @@ static int g2d_mmap(struct file *file, struct vm_area_struct *vma)
 
 	return 0;
 }
+static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
+{
+#if 1
+	u32 mask = 0;
 
+	if (g2d_poll_flag == 1) {
+		mask = POLLOUT | POLLWRNORM;
+		g2d_poll_flag = 0;
+	} else {
+		poll_wait(file, &(g2d->waitq_g2d), wait);
+	}
+
+	return mask;
+#endif
+}
 struct file_operations g2d_fops = {
 	.owner		= THIS_MODULE,
 	.open		= g2d_open,
 	.release	= g2d_release,
 	.mmap		= g2d_mmap,
+	.poll		= g2d_poll,
 };
 
 static struct miscdevice g2d_dev = {
@@ -126,6 +147,21 @@ static int g2d_probe(struct platform_device *pdev)
 		goto err_map;
 	}
 
+	/* irq */
+	g2d->irq = platform_get_irq(pdev, 0);
+	if (!g2d->irq) {
+		dev_err(&pdev->dev, "failed to get irq resource\n");
+		ret = -ENOENT;
+		goto err_map;
+	}
+
+	ret = request_irq(g2d->irq, g2d_irq, IRQF_DISABLED, pdev->name, NULL);
+	if (ret) {
+		dev_err(&pdev->dev, "failed to request_irq(g2d)\n");
+		ret = -ENOENT;
+		goto err_res;
+	}
+
 	/* clock */
 	g2d->clock = clk_get(&pdev->dev, "g2d");
 	if(IS_ERR(g2d->clock)) {
@@ -135,6 +171,9 @@ static int g2d_probe(struct platform_device *pdev)
 	}
 
 	clk_enable(g2d->clock);
+
+	/* blocking I/O */
+	init_waitqueue_head(&(g2d->waitq_g2d));
 
 	/* misc register */
 	ret = misc_register(&g2d_dev);
