@@ -54,8 +54,10 @@ void s3cfb_cfg_gpio(struct platform_device *pdev)
 		s3c_gpio_setpull(S5P64XX_GPF3(i), S3C_GPIO_PULL_NONE);
 	}
 
-	writel(0x10, S5P_MDNIE_SEL);
+#if defined(CONFIG_CPU_S5P6442_EVT1)
+	writel(0x0, S5P_MDNIE_SEL);
 	udelay(200);
+#endif
 
 	s3c_gpio_cfgpin(S5P64XX_GPH3(5), S3C_GPIO_SFN(1));	/* LCD RESET */
 	s3c_gpio_cfgpin(S5P64XX_GPF3(5), S3C_GPIO_SFN(1));	/* SPI CS */
