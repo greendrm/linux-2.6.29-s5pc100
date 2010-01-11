@@ -106,7 +106,7 @@ const signed char g_s_vp8tap_coef_y_h[] = {
 /* Horizontal C 4tap */
 const signed char g_s_vp4tap_coef_c_h[] = {
 	/* VP_PP_H_NORMAL */
-	0,    0,    127,    0,
+	0,    0,    128,    0,
 	0,    5,    126,    -3,
 	-1,    11,    124,    -6,
 	-1,    19,    118,    -8,
