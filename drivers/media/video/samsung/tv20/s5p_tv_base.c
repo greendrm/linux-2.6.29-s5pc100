@@ -788,12 +788,12 @@ int s5p_tv_suspend(struct platform_device *dev, pm_message_t state)
 		_s5p_tv_if_stop();
 		s5ptv_status.tvout_output_enable = true;
 		s5ptv_status.tvout_param_available = true;
+
+		/* clk & power off */
+		s5p_tv_clk_gate( false );
+		tv_phy_power( false );
 	}
-	
-	/* clk & power off */
-	s5p_tv_clk_gate( false );
-	tv_phy_power( false );
-	
+
 	return 0;
 }
 
@@ -802,13 +802,14 @@ int s5p_tv_suspend(struct platform_device *dev, pm_message_t state)
  */
 int s5p_tv_resume(struct platform_device *dev)
 {
-	/* clk & power on */
-	s5p_tv_clk_gate( true );
-	tv_phy_power( true );
-
 	/* tv on */
-	if ( s5ptv_status.tvout_output_enable )
+	if ( s5ptv_status.tvout_output_enable ) {
+		/* clk & power on */
+		s5p_tv_clk_gate( true );
+		tv_phy_power( true );
+	
 		_s5p_tv_if_start();
+	}
 	
 	/* video layer start */
 	if ( s5ptv_status.vp_layer_enable )
