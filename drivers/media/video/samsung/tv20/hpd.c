@@ -43,12 +43,15 @@
 static struct hpd_struct hpd_struct;
 static int last_hpd_state;
 
+static bool hdmi_on = false;
+
 int s5p_hpd_open(struct inode *inode, struct file *file)
 {
 #ifdef USEEXTINT
 #else
 	s5p_tv_clk_gate(true);
-	
+	hdmi_on = true;
+
 	/* adjust the duration of HPD detection */
 	
 	s5p_hdmi_hpd_gen();
@@ -70,7 +73,8 @@ int s5p_hpd_release(struct inode *inode, struct file *file)
 #ifdef USEEXTINT
 #else
 	s5p_tv_clk_gate(false);
-
+	hdmi_on = false;
+	
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 #endif
@@ -212,12 +216,11 @@ out:
 	return IRQ_HANDLED;
 }
 
-int __init s5p_hpd_init(void)
-{
-	printk(KERN_INFO "S5PC11X HPD Driver, (c) 2009 Samsung Electronics\n");
 
+static int __init s5p_hpd_probe(struct platform_device *pdev)
+{
 	if (misc_register(&hpd_misc_device)) {
-		printk(KERN_WARNING "HPD: Couldn't register device 10, %d.\n", HPD_MINOR);
+		printk(KERN_WARNING " Couldn't register device 10, %d.\n", HPD_MINOR);
 		return -EBUSY;
 	}
 
@@ -228,10 +231,10 @@ int __init s5p_hpd_init(void)
 	atomic_set(&hpd_struct.state, -1);
 
 #ifdef USEEXTINT
-	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+	s3c_gpio_cfgpin(S5PV2XX_GPH1(5), S5PV2XX_GPH1_5_EXT_INT31_5);
+	s3c_gpio_setpull(S5PV2XX_GPH1(5), S3C_GPIO_PULL_UP);
 
-	if (gpio_get_value(S5PC11X_GPH1(5)))
+	if (gpio_get_value(S5PV2XX_GPH1(5)))
 		atomic_set(&hpd_struct.state, HPD_HI);
 	else
 		atomic_set(&hpd_struct.state, HPD_LO);
@@ -247,6 +250,71 @@ int __init s5p_hpd_init(void)
 	s5p_hdmi_register_isr(s5p_hpd_irq_handler, (u8)HDMI_IRQ_HPD_PLUG);
 	s5p_hdmi_register_isr(s5p_hpd_irq_handler, (u8)HDMI_IRQ_HPD_UNPLUG);	
 #endif
+
+	return 0;
+}
+
+/*
+ *  Remove
+ */
+static int s5p_hpd_remove(struct platform_device *pdev)
+{
+	return 0;
+}
+
+
+#ifdef CONFIG_PM
+/*
+ *  Suspend
+ */
+int s5p_hpd_suspend(struct platform_device *dev, pm_message_t state)
+{
+	if ( hdmi_on )
+		s5p_tv_clk_gate(false);
+		
+	return 0;
+}
+
+/*
+ *  Resume
+ */
+int s5p_hpd_resume(struct platform_device *dev)
+{
+	if ( hdmi_on )
+		s5p_tv_clk_gate(true);
+	
+	return 0;
+}
+#else
+#define s5p_hpd_suspend NULL
+#define s5p_hpd_resume NULL
+#endif
+
+static struct platform_driver s5p_hpd_driver = {
+	.probe		= s5p_hpd_probe,
+	.remove		= s5p_hpd_remove,
+	.suspend	= s5p_hpd_suspend,
+	.resume		= s5p_hpd_resume,
+	.driver		= {
+		.name	= "s5p-hpd",
+		.owner	= THIS_MODULE,
+	},
+};
+
+static char banner[] __initdata =  "S5PC11X HPD Driver, (c) 2009 Samsung Electronics\n";
+
+int __init s5p_hpd_init(void)
+{
+	int ret;
+
+	printk(banner);
+
+	ret = platform_driver_register(&s5p_hpd_driver);
+
+	if (ret) {
+		printk(KERN_ERR "Platform Device Register Failed %d\n", ret);
+		return -1;
+	}
 
 	return 0;
 }

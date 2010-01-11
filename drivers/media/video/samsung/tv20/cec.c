@@ -40,6 +40,8 @@
 static struct cec_rx_struct cec_rx_struct;
 static struct cec_tx_struct cec_tx_struct;
 
+static bool hdmi_on = false;
+
 /**
  * Change CEC Tx state to state
  * @param state [in] new CEC Tx state.
@@ -62,6 +64,8 @@ void __s5p_cec_set_rx_state(enum cec_state state)
 int s5p_cec_open(struct inode *inode, struct file *file)
 {		
 	s5p_tv_clk_gate(true);
+
+	hdmi_on = true;
 	
 	__s5p_cec_reset();
 
@@ -81,6 +85,8 @@ int s5p_cec_open(struct inode *inode, struct file *file)
 int s5p_cec_release(struct inode *inode, struct file *file)
 {
 	s5p_tv_clk_gate(false);
+
+	hdmi_on = false;
 	
 	__s5p_cec_mask_tx_interrupts();
 	__s5p_cec_mask_rx_interrupts();
@@ -341,19 +347,29 @@ static int s5p_cec_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
 /*
  *  Suspend
  */
 int s5p_cec_suspend(struct platform_device *dev, pm_message_t state)
 {
+	if ( hdmi_on )
+		s5p_tv_clk_gate(false);
+	
 	return 0;
 }
+#else
+#define s5p_cec_suspend NULL
+#define s5p_cec_resume NULL
+#endif
 
 /*
  *  Resume
  */
 int s5p_cec_resume(struct platform_device *dev)
 {
+	if ( hdmi_on )
+		s5p_tv_clk_gate(true);
 	return 0;
 }
 
