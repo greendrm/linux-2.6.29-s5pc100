@@ -532,6 +532,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_jpeg,
 	&s3c_device_rotator,
 	&s5p_device_cec,
+	&s5p_device_hpd,
 	&s3c_device_test,
 	&s3c_device_g2d,
 };
