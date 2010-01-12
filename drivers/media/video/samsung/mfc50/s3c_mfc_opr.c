@@ -590,7 +590,7 @@ int s3c_mfc_load_firmware()
 	mfc_debug("s3c_mfc_load_firmware++\n");
 
 	fw_virbuf = (unsigned char *)Align((unsigned int)s3c_mfc_get_fw_buf_virt_addr(), 128*BUF_L_UNIT);
-	memcpy((void *)fw_virbuf, s3c_mfc_fw_code, sizeof(s3c_mfc_fw_code));
+	memcpy((void *)fw_virbuf, s3c_mfc_fw_code, s3c_mfc_fw_code_len);
 
 	mfc_debug("s3c_mfc_load_firmware--\n");
 
