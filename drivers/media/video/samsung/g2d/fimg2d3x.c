@@ -25,7 +25,7 @@ struct g2d_info {
 	struct resource *mem;
 	void __iomem *base;
 	struct mutex *lock;
-	wait_queue_head_t waitq_g2d;
+	wait_queue_head_t wq;
 };
 
 static struct g2d_info *g2d;
@@ -37,7 +37,7 @@ irqreturn_t g2d_irq(int irq, void *dev_id)
 	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_INTP_CMD_FIN) {
 		writel(G2D_INTP_CMD_FIN, g2d->base + G2D_INTC_PEND_REG);
 		g2d_poll_flag = 1;
-		wake_up(&g2d->waitq_g2d);
+		wake_up(&g2d->wq);
 	}
 
 	return IRQ_HANDLED;
@@ -83,18 +83,16 @@ static int g2d_mmap(struct file *file, struct vm_area_struct *vma)
 }
 static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 {
-#if 1
 	u32 mask = 0;
 
 	if (g2d_poll_flag == 1) {
 		mask = POLLOUT | POLLWRNORM;
 		g2d_poll_flag = 0;
 	} else {
-		poll_wait(file, &(g2d->waitq_g2d), wait);
+		poll_wait(file, &g2d->wq, wait);
 	}
 
 	return mask;
-#endif
 }
 struct file_operations g2d_fops = {
 	.owner		= THIS_MODULE,
@@ -173,7 +171,7 @@ static int g2d_probe(struct platform_device *pdev)
 	clk_enable(g2d->clock);
 
 	/* blocking I/O */
-	init_waitqueue_head(&(g2d->waitq_g2d));
+	init_waitqueue_head(&g2d->wq);
 
 	/* misc register */
 	ret = misc_register(&g2d_dev);
