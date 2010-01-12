@@ -569,6 +569,13 @@ struct platform_device s5p_device_cec = {
 };
 EXPORT_SYMBOL(s5p_device_cec);
 
+/* HPD */
+struct platform_device s5p_device_hpd = {
+	.name           = "s5p-hpd",
+	.id             = -1,
+};
+EXPORT_SYMBOL(s5p_device_hpd);
+
 /* CFCON */
 static struct resource s3c_cfcon_resource[] = {
         [0] = {

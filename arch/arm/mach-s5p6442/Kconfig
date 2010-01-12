@@ -53,7 +53,7 @@ config SMDK6442_BUTTON
 choice
 	prompt "CPU revision"
 	depends on CPU_S5P6442
-	default	CPU_S5PC6442_EVT1
+	default	CPU_S5P6442_EVT1
 	 
 config CPU_S5P6442_EVT0
 	bool "EVT0"
