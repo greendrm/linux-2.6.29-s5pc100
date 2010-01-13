@@ -10,6 +10,7 @@
 #include <linux/irq.h>
 #include <linux/mm.h>
 #include <linux/interrupt.h>
+#include <linux/dma-mapping.h>
 
 #include <asm/io.h>
 #include <mach/map.h>
@@ -19,6 +20,9 @@
 #define G2D_MMAP_SIZE	0x1000
 #define G2D_MINOR	240
 
+#define G2D_IOCTL_MAGIC	'G'
+#define G2D_DMA_SYNC	_IO(G2D_IOCTL_MAGIC, 0)
+
 struct g2d_info {
 	struct clk *clock;
 	int irq;
@@ -26,10 +30,15 @@ struct g2d_info {
 	void __iomem *base;
 	struct mutex *lock;
 	wait_queue_head_t wq;
+	struct device *dev;
+};
+
+struct g2d_dma_info {
+	dma_addr_t addr;
+	size_t size;
 };
 
 static struct g2d_info *g2d;
-
 static u32 g2d_poll_flag = 0;
 
 irqreturn_t g2d_irq(int irq, void *dev_id)
@@ -94,12 +103,35 @@ static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 
 	return mask;
 }
+
+static int g2d_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct g2d_dma_info dma_info;
+
+	if (copy_from_user(&dma_info, (struct g2d_dma_info *)arg, sizeof(dma_info)))
+		return -EFAULT;
+
+	switch(cmd) {
+	case G2D_DMA_SYNC:
+#if 0 /* re-implement need */
+		dma_sync_single_for_cpu(g2d->dev, dma_info.addr, dma_info.size, DMA_BIDIRECTIONAL);
+#endif
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 struct file_operations g2d_fops = {
 	.owner		= THIS_MODULE,
 	.open		= g2d_open,
 	.release	= g2d_release,
 	.mmap		= g2d_mmap,
 	.poll		= g2d_poll,
+	.ioctl		= g2d_ioctl,
 };
 
 static struct miscdevice g2d_dev = {
@@ -189,6 +221,9 @@ static int g2d_probe(struct platform_device *pdev)
 	}
 
 	mutex_init(g2d->lock);
+
+	/* device */
+	g2d->dev = &pdev->dev;
 
 	dev_info(&pdev->dev, "g2d driver loaded successfully\n");
 
