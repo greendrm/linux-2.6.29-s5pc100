@@ -22,7 +22,7 @@ depends on VIDEO_FIMC
 prompt "Select Output Mode"
 default VIDEO_FIMC_DMA_AUTO 
 config VIDEO_FIMC_DMA_AUTO
-        bool "DMA ATUO MODE"
+        bool "DMA AUTO MODE"
         depends on VIDEO_FIMC
         ---help---
           This enables support for FIMC1 DMA AUTO mode
