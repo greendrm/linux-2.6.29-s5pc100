@@ -837,6 +837,10 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 		WRITEL_SHARED_MEM((1<<31)|(init_arg->in_TimeIncreamentRes<<16)|(init_arg->in_VopTimeIncreament),
 				shared_mem_vir_addr+0x30);
 
+	if ((mfc_ctx->MfcCodecType == H264_ENC) && (mfc_ctx->h264_i_period_enable)) {
+		WRITEL_SHARED_MEM((1<<16)|(mfc_ctx->h264_i_period), shared_mem_vir_addr + 0x9c);
+	}
+
 	/* Set stream buffer addr */
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_L_ADR);
@@ -1345,7 +1349,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		break;
 
 	case MFC_ENC_SETCONF_ALLOW_FRAME_SKIP:
-		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
 			mfc_err("MFC_ENC_SETCONF_ALLOW_FRAME_SKIP : state is invalid\n");
 			return MFC_RET_STATE_INVALID;
 		}
@@ -1358,13 +1362,24 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		break;
 
 	case MFC_ENC_SETCONF_VUI_INFO:
-		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
 			mfc_err("MFC_ENC_SETCONF_VUI_INFO : state is invalid\n");
 			return MFC_RET_STATE_INVALID;
 		}
 
 		mfc_ctx->vui_enable = 1;
 		mfc_ctx->vui_info.aspect_ratio_idc = set_cnf_arg->in_config_value[0];
+
+		break;
+
+	case MFC_ENC_SETCONF_I_PERIOD:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_I_PERIOD : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+
+		mfc_ctx->h264_i_period_enable = 1;
+		mfc_ctx->h264_i_period = set_cnf_arg->in_config_value[0];
 
 		break;
 

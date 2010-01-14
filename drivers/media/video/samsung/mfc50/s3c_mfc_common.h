@@ -150,6 +150,8 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int dwAccess;		/* for Power Management. */
 	unsigned int IsPackedPB;
 	unsigned int interlace_mode;
+	unsigned int h264_i_period_enable;
+	unsigned int h264_i_period;
 	int mem_inst_no;
 	int port_no;
 	s3c_mfc_frame_type FrameType;
