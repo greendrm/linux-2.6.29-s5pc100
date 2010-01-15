@@ -358,10 +358,6 @@ int s5p_cec_suspend(struct platform_device *dev, pm_message_t state)
 	
 	return 0;
 }
-#else
-#define s5p_cec_suspend NULL
-#define s5p_cec_resume NULL
-#endif
 
 /*
  *  Resume
@@ -372,7 +368,10 @@ int s5p_cec_resume(struct platform_device *dev)
 		s5p_tv_clk_gate(true);
 	return 0;
 }
-
+#else
+#define s5p_cec_suspend NULL
+#define s5p_cec_resume NULL
+#endif
 
 static struct platform_driver s5p_cec_driver = {
 	.probe		= s5p_cec_probe,
