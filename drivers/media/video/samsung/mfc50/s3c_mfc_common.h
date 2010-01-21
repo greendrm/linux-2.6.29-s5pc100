@@ -17,6 +17,7 @@
 #include <plat/regs-mfc.h>
 
 #include "s3c_mfc_interface.h"
+#include "s3c_mfc_types.h"
 
 #define BUF_L_UNIT (1024)
 #define BUF_S_UNIT (32)
@@ -83,7 +84,9 @@ typedef enum
 	H2R_CMD_EMPTY = 0,
 	H2R_CMD_OPEN_INSTANCE = 1,
 	H2R_CMD_CLOSE_INSTANCE = 2,
-	H2R_CMD_SYS_INIT = 3
+	H2R_CMD_SYS_INIT = 3,
+	H2R_CMD_SLEEP = 5,
+	H2R_CMD_WAKEUP = 6
 } s3c_mfc_facade_cmd;
 
 
@@ -171,6 +174,7 @@ s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type);
+BOOL s3c_mfc_is_running(void);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
 void  s3c_mfc_init_mem_inst_no(void);
 int s3c_mfc_get_mem_inst_no(s3c_mfc_inst_no_type type);

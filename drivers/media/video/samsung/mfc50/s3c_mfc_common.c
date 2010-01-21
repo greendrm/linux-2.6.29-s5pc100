@@ -226,19 +226,20 @@ void s3c_mfc_return_mem_inst_no(int inst_no)
 	}
 }
 
-/*
+
 BOOL s3c_mfc_is_running(void)
 {
 	unsigned int    i;
 	BOOL ret = FALSE;
 
-	for(i = 1; i < MFC_MAX_INSTANCE_NUM; i++)
+	for(i = 0; i < MFC_MAX_INSTANCE_NUM; i++) {
 		if(s3c_mfc_mem_inst_no[i] == 1)
 			ret = TRUE;
-
+	}
+	
 	return ret;
 }
-*/
+
 
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state)
 {
