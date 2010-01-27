@@ -146,3 +146,11 @@ config SND_SMDKS5P_HDMI_SPDIF
 	depends on SND_SAMSUNG_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
 	select SND_S3C24XX_SOC
 	select SND_S5P_SPDIF
+
+config SND_SOC_SMDK_WM9713
+	tristate "SoC AC97 Audio support for SMDK with WM9713"
+	depends on SND_S3C24XX_SOC && MACH_SMDK6410
+	select SND_SOC_WM9713
+	select SND_S3C_SOC_AC97
+	help
+	  Sat Y if you want to add support for SoC audio on the SMDK.

@@ -32,6 +32,7 @@ snd-soc-smdks5p-wm8580-objs := smdks5p_wm8580.o
 snd-soc-smdks5plp-wm8580-objs := smdks5plp_wm8580.o
 snd-soc-universal-ak4671-objs := universal_ak4671.o
 snd-soc-smdks5p-spdif-objs := smdks5p_hdmi_spdif.o
+snd-soc-smdk-wm9713-objs := smdk_wm9713.o
 
 obj-$(CONFIG_SND_S3C24XX_SOC_NEO1973_WM8753) += snd-soc-neo1973-wm8753.o
 obj-$(CONFIG_SND_S3C24XX_SOC_SMDK2443_WM9710) += snd-soc-smdk2443-wm9710.o
@@ -41,3 +42,4 @@ obj-$(CONFIG_SND_S5P_SOC_WM8580) += snd-soc-smdks5p-wm8580.o
 obj-$(CONFIG_SND_S5P_SOC_WM8580_LP) += snd-soc-smdks5plp-wm8580.o
 obj-$(CONFIG_SND_S5PC100_SOC_UNIVERSAL_AK4671) += snd-soc-universal-ak4671.o
 obj-$(CONFIG_SND_SMDKS5P_HDMI_SPDIF) += snd-soc-smdks5p-spdif.o
+obj-$(CONFIG_SND_SOC_SMDK_WM9713) += snd-soc-smdk-wm9713.o
