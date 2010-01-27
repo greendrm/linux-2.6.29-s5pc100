@@ -28,11 +28,6 @@ config SND_S5P_SOC_I2S
 config SND_S5P_SOC_I2S_LP
 	tristate
 
-config SND_S3C2443_SOC_AC97
-	tristate
-	select AC97_BUS
-	select SND_SOC_AC97_BUS
-
 config SND_S3C_SOC_PCM
 	tristate
 
