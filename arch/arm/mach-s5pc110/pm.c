@@ -66,13 +66,7 @@ void s5pc110_cpu_suspend(void)
 	
 	while(1);
 #else
-	asm("b 1f\n\t"
-	    ".align 5\n\t"
-	    "1:\n\t"
-	    "mcr p15, 0, %0, c7, c10, 5\n\t"
-	    "mcr p15, 0, %0, c7, c10, 4\n\t"
-	    ".word 0xe320f003" :: "r" (tmp));
-
+	cpu_do_idle();
 	/* we should never get past here */
 
 	panic("sleep resumed to originator?");
