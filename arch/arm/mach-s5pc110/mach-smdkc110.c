@@ -55,7 +55,11 @@
 #include <plat/iic.h>
 #include <plat/fimc.h>
 #include <plat/csis.h>
+
+#if defined (CONFIG_FB_S3C)
 #include <plat/fb.h>
+#endif
+
 #include <plat/spi.h>
 #include <plat/mfc.h>
 
@@ -395,10 +399,10 @@ static struct max8698_platform_data max8698_platform_data_0 = {
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
 #if defined(CONFIG_CPU_S5PC110_EVT1)
-	.dvsarm1	= 0x7,	// 1.10v
+	.dvsarm1	= 0x8,	// 1.15v
 	.dvsarm2	= 0x6,	// 1.05V
 	.dvsarm3	= 0x5,	// 1.00V
-	.dvsarm4	= 0x4,	// 0.95V
+	.dvsarm4	= 0x5,	// 1.00V
 
 	.dvsint1	= 0x7,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
@@ -423,11 +427,11 @@ static struct max8698_platform_data max8698_platform_data_1 = {
 	.set3		= S5PC11X_GPH0(4),
 #if defined(CONFIG_CPU_S5PC110_EVT1)
 	.dvsarm1	= 0x9,	// 1.20v
-	.dvsarm2	= 0x6,	// 1.05V
-	.dvsarm3	= 0x5,	// 1.00V
-	.dvsarm4	= 0x4,	// 0.95V
+	.dvsarm2	= 0x8,	// 1.15V
+	.dvsarm3	= 0x6,	// 1.05V
+	.dvsarm4	= 0x5,	// 1.00V
 
-	.dvsint1	= 0x9,	// 1.20v
+	.dvsint1	= 0x7,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
 #else
 	.dvsarm1	= 0xb,	// 1.3V
