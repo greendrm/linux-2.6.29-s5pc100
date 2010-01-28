@@ -197,7 +197,6 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 #endif
 #ifdef CONFIG_SND_S3C24XX_SOC
 	&s5p6442_device_iis0,
-	&s5p6442_device_iis1,
 #endif
 	&s3c_device_fimc0,
 	&s3c_device_fimc1,
