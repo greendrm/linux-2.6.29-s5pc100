@@ -118,7 +118,15 @@ static struct map_desc s3c_iodesc[] __initdata = {
 		.pfn		= __phys_to_pfn(S3C_PA_WDT),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
+	}, 
+#if defined(CONFIG_HRT_RTC)	
+	{
+		.virtual	= (unsigned long)S3C_VA_RTC,
+		.pfn		= __phys_to_pfn(S3C_PA_RTC),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
 	},      
+#endif
 };
 
 /* Hook for arm_pm_restart to ensure we execute the reset code
