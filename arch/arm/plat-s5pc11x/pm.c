@@ -589,7 +589,7 @@ void (*pm_cpu_sleep)(void);
 */
 static int s5pc11x_pm_enter(suspend_state_t state)
 {
-	unsigned long regs_save[16];
+	unsigned long regs_save[64];
 	unsigned int tmp;
 
 #ifdef DEBUG_S5P_PM
@@ -607,6 +607,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	/* store the physical address of the register recovery block */
 	s5pc110_sleep_save_phys = virt_to_phys(regs_save);
 
+	s5pc110_power_mode = SLEEP_MODE;
 	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc110_sleep_save_phys);
 
 	s5pc11x_pm_do_save(gpio_save, ARRAY_SIZE(gpio_save));
@@ -664,6 +665,9 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp &= ~((1 << 13) | (1 << 1));
 	__raw_writel(tmp , S5P_WAKEUP_MASK);
 #endif
+	tmp = __raw_readl(S5P_WAKEUP_MASK);
+	tmp &= ~(1 << 1);
+	__raw_writel(tmp, S5P_WAKEUP_MASK);
 
 	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));

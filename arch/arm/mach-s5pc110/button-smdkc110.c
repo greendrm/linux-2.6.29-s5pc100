@@ -10,6 +10,7 @@
 #include <linux/serial_core.h>
 #include <linux/io.h>
 #include <linux/platform_device.h>
+#include <linux/workqueue.h>
 
 #include <asm/cacheflush.h>
 #include <mach/hardware.h>
@@ -23,12 +24,40 @@
 #include <mach/regs-mem.h>
 #include <mach/regs-irq.h>
 #include <asm/gpio.h>
+#include <mach/cpuidle.h>
+
+static int previous_idle_mode;
+static int irq_fix;
+
+#if !defined(CONFIG_CPU_IDLE)
+#define s5pc110_setup_lpaudio(x)	NULL 
+#endif
+static void change_idle_mode(struct work_struct *dummy)
+{
+	int ret = 0;
+
+	if (previous_idle_mode == NORMAL_MODE) {
+		ret = s5pc110_setup_lpaudio(LPAUDIO_MODE);
+		previous_idle_mode = LPAUDIO_MODE;
+	} else {
+		ret = s5pc110_setup_lpaudio(NORMAL_MODE);
+		previous_idle_mode = NORMAL_MODE;
+	}
+	if (ret)
+		printk(KERN_ERR "Error changing cpuidle device\n");
+}
+
+static DECLARE_WORK(idlemode, change_idle_mode);
 
 static irqreturn_t
 s3c_button_interrupt(int irq, void *dev_id)
 {
 	printk("Button Interrupt occure\n");
 	
+	irq_fix ++;
+	
+	if (irq_fix > 1)
+		schedule_work(&idlemode);
 	return IRQ_HANDLED;
 }
 
@@ -65,7 +94,9 @@ static void __init s3c_button_init(void)
 {
 
 	printk("SMDKC110 Button init function \n");
-
+	
+	previous_idle_mode = NORMAL_MODE;
+	irq_fix = 0;
 	if (s3c_button_gpio_init()) {
 		printk(KERN_ERR "%s failed\n", __FUNCTION__);
 		return;
@@ -79,4 +110,4 @@ static void __init s3c_button_init(void)
 	setup_irq(IRQ_EINT(31), &s3c_button_irq);	
 }
 
-device_initcall(s3c_button_init);
+late_initcall(s3c_button_init);

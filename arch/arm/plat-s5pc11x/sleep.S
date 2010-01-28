@@ -53,7 +53,6 @@
 	 *
 	 * entry:
 	 *	r0 = pointer to save block
-	 *
 	 * exit:
 	 *	r0 = 0 => we stored everything
 	 *	     1 => resumed from sleep
@@ -62,7 +61,7 @@
 ENTRY(s5pc110_cpu_save)
 
 	stmfd	sp!, { r3 - r12, lr }
-
+	
 	mrc	p15, 0, r4, c13, c0, 0	@ FCSE/PID
 	mrc	p15, 0, r5, c3, c0, 0	@ Domain ID
 	mrc	p15, 0, r6, c2, c0, 0	@ Translation Table BASE0
@@ -74,11 +73,63 @@ ENTRY(s5pc110_cpu_save)
 	mrc	p15, 0, r12, c10, c2, 0	@ Read PRRR
 	mrc	p15, 0, r3, c10, c2, 1	@ READ NMRR	
 
+	ldr	r2, =s5pc110_power_mode
+	ldr	r1, [r2]
+	cmp	r1, #0x0
+	bne	deepidle_save
+	
 	stmia	r0, { r3 - r13 }
 
 	mov	r0, #0
 	ldmfd	sp, { r3 - r12, pc }
+	
+deepidle_save:	
+	/* Save CP15 registers */
+	stmia	r0!, { r3 - r12}
+	
+	/* Save SVC status register */
+	mrs	r2, spsr
+	str	r2, [r0], #4
 
+	/* Save FIQ mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | FIQ_MODE
+	msr	cpsr_c, r1
+	mrs	r2, spsr
+	stmia	r0!, {r2, r8 - r12, sp, lr }
+
+	/* Save ABT mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	msr	cpsr_c, r1
+	mrs	r2, spsr
+	stmia	r0!, {r2, sp, lr }
+
+ 	/* Save IRQ mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	msr	cpsr_c, r1
+	mrs	r2, spsr
+	stmia	r0!, {r2, sp, lr }
+
+	/* Save UND mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | UND_MODE
+	msr	cpsr_c, r1
+	mrs	r2, spsr
+	stmia	r0!, {r2, sp, lr }
+#if 0
+	/* Save SYS mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | SYSTEM_MODE
+	msr	cpsr_c, r1
+	stmia	r0!, {sp, lr }
+#endif
+	/* Return to SVC mode */ 
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | SVC_MODE
+	msr	cpsr_c, r1
+
+	/* Save SVC mode stack pointer register (R13) */
+	str	r13, [r0]
+	
+	mov 	r0, #0
+	ldmfd	sp, { r3 - r12, pc }
+	
 	@@ return to the caller, after having the MMU
 	@@ turned on, this restores the last bits from the
 	@@ stack
@@ -106,14 +157,20 @@ resume_with_mmu:
 	.global	s5pc110_sleep_save_phys
 s5pc110_sleep_save_phys:
 	.word	0
-
-
+	
 	/* sleep magic, to allow the bootloader to check for an valid
 	 * image to resume to. Must be the first word before the
 	 * s5pc110_cpu_resume entry.
 	*/
-
 	.word	0x2bedf00d
+
+	/* This has current power mode
+	 * 0: sleep mode
+	 * 1: deepidle mode
+	 */
+	.global	s5pc110_power_mode
+s5pc110_power_mode:
+	.word	0
 
 	/* s5pc110_cpu_resume
 	 *
@@ -136,8 +193,18 @@ ENTRY(s5pc110_cpu_resume)
 	mcr	p15, 0, r1, c7, c5, 0		@@ invalidate I Cache
 
 	ldr	r0, s5pc110_sleep_save_phys	@ address of restore block
-	ldmia	r0, { r3 - r13 }
+	ldr	r1, s5pc110_power_mode
+	cmp 	r1, #0x0
+	bne	deepidle_restore_1
 
+	ldmia	r0, { r3 - r13 }
+	b	common_restore_1
+	
+deepidle_restore_1:	
+	/* Restore CP15 registers */
+	ldmia	r0!, { r3 - r12 }
+	
+common_restore_1:
 	mcr	p15, 0, r4, c13, c0, 0	@ FCSE/PID
 	mcr	p15, 0, r5, c3, c0, 0	@ Domain ID
 	
@@ -147,16 +214,65 @@ ENTRY(s5pc110_cpu_resume)
 
 	mcr	p15, 0, r10, c1, c0, 1	@ Auxiliary control register
 
-	mov	r0, #0
-	mcr	p15, 0, r0, c8, c7, 0	@ Invalidate I & D TLB
+	mov	r1, #0
+	mcr	p15, 0, r1, c8, c7, 0	@ Invalidate I & D TLB
 
-	mov	r0, #0			@ restore copro access controls
+	mov	r1, #0			@ restore copro access controls
 	mcr	p15, 0, r11, c1, c0, 2	@ Co-processor access controls
-	mcr 	p15, 0, r0, c7, c5, 4	
+	mcr 	p15, 0, r1, c7, c5, 4	
 
 	mcr	p15, 0, r12, c10, c2, 0	@ write PRRR
 	mcr	p15, 0, r3, c10, c2, 1	@ write NMRR
+	
+	ldr	r1, s5pc110_power_mode
+	cmp 	r1, #0x0
+	beq	common_restore_2
+	
+	/* Restore SVC status register */
+	ldr	r2, [r0], #4
+	msr	spsr, r2
 
+	/* Restore FIQ mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | FIQ_MODE
+	msr	cpsr_c, r1
+	ldr	r2, [r0], #4
+	msr	spsr, r2
+	ldmia	r0!, { r8 - r12, sp, lr }
+
+	/* Restore ABT mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	msr	cpsr_c, r1
+	ldr	r2, [r0], #4
+	msr	spsr, r2
+	ldmia	r0!, { sp, lr }
+
+ 	/* Restore IRQ mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	msr	cpsr_c, r1
+	ldr	r2, [r0], #4
+	msr	spsr, r2
+	ldmia	r0!, { sp, lr }
+
+	/* Restore UND mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | UND_MODE
+	msr	cpsr_c, r1
+	ldr	r2, [r0], #4
+	msr	spsr, r2
+	ldmia	r0!, { sp, lr }
+#if 0
+	/* Restore SYS mode register */
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | SYSTEM_MODE
+	msr	cpsr_c, r1
+	ldmia	r0!, {sp, lr }
+#endif
+	/* Return to SVC mode */ 
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | SVC_MODE
+	msr	cpsr_c, r1
+
+	/* Restore SVC mode stack pointer register (R13) */
+	ldr	r13, [r0]
+	
+common_restore_2:	
 	/* calculate first section address into r8 */
 	mov	r4, r6
 	ldr	r5, =0x3fff
@@ -173,7 +289,6 @@ ENTRY(s5pc110_cpu_resume)
 	orr	r10, r10, r5
 
 	/* back up originally data */
-
 	ldr	r12, [r4]
 
 	/* Added list about mmu */
