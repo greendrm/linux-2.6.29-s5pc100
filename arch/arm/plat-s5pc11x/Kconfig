@@ -180,4 +180,18 @@ config S5PC11X_HIGH_RES_TIMERS
 	help
 	  Support for HRtimer and Dynamic Tick system.
 
+choice
+	prompt "Select HRT source timer"
+	depends on S5PC11X_HIGH_RES_TIMERS
+	default HRT_PWM
+
+config HRT_PWM
+	bool "PWM timers(2/4)"
+	help
+		PWM timers are used as HRT
+config HRT_RTC
+	bool "RTC/SYSTEM TIMER"
+	help
+		RTC and System timer are used as HRT
+endchoice
 endif

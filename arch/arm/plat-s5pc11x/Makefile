@@ -17,7 +17,11 @@ obj-y				+= cpu.o
 ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 obj-y				+= s5pc11x-time.o
 else
+ifdef CONFIG_HRT_RTC
+obj-y				+= hr-time-rtc.o
+else
 obj-y				+= hr-time.o
+endif
 endif
 obj-y				+= irq.o
 obj-y				+= irq-eint.o
