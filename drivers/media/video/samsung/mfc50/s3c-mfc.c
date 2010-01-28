@@ -43,6 +43,7 @@
 #include "s3c_mfc_buffer_manager.h"
 
 struct s3c_mfc_ctrl s3c_mfc;
+struct s3c_mfc_ctrl *ctrl = &s3c_mfc;
 
 static int s3c_mfc_openhandle_count = 0;
 static struct resource	*s3c_mfc_mem;
@@ -66,7 +67,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 {
 	s3c_mfc_inst_ctx *mfc_ctx;
 	int ret;
-	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
+	//struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 
 	mutex_lock(&s3c_mfc_mutex);
 
@@ -157,8 +158,8 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	kfree(mfc_ctx);
 
 	ret = 0;
-	/* In evt1, it should be tested */
-	#if 0
+	/* In EVT1, it should be tested */
+	#if 1
 	if (s3c_mfc_openhandle_count == 0) {
 		clk_disable(ctrl->clock);
 	}
@@ -527,6 +528,8 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 		||((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)
 		||((intReason & R2H_CMD_OPEN_INSTANCE_RET) == R2H_CMD_OPEN_INSTANCE_RET)
 		||((intReason & R2H_CMD_CLOSE_INSTANCE_RET) == R2H_CMD_CLOSE_INSTANCE_RET)
+		||((intReason & R2H_CMD_SLEEP_RET) == R2H_CMD_SLEEP_RET)
+		||((intReason & R2H_CMD_WAKEUP_RET) == R2H_CMD_WAKEUP_RET)
 		||((intReason & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
 		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC_HOST_INT);
 		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
@@ -554,7 +557,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	struct resource *res;
 	size_t		size;
 	int		ret;
-	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
+	//struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 
 	/* mfc clock enable should be here */
 	sprintf(ctrl->clk_name, "%s", S3C_MFC_CLK_NAME);
@@ -633,13 +636,13 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 
 	/*
 	 * MFC FW downloading
-	 */
+	 */	
 	if (s3c_mfc_load_firmware() < 0) {
 		mfc_err("MFC_RET_FW_INIT_FAIL\n");
 		ret = -EPERM;
 		goto probe_out;
 	}
-
+	
 	s3c_mfc_init_mem_inst_no();
 
 	s3c_mfc_init_buffer_manager();
@@ -655,7 +658,7 @@ probe_out:
 
 static int s3c_mfc_remove(struct platform_device *pdev)
 {
-	struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
+	//struct s3c_mfc_ctrl	*ctrl = &s3c_mfc;
 	clk_disable(ctrl->clock);
 
 	iounmap(s3c_mfc_sfr_virt_base);
@@ -679,11 +682,49 @@ static int s3c_mfc_remove(struct platform_device *pdev)
 
 static int s3c_mfc_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	int ret;
+	
+	mfc_debug("s3c_mfc_suspend\n");
+
+	mutex_lock(&s3c_mfc_mutex);
+	
+	if (!s3c_mfc_is_running()) {
+		mutex_unlock(&s3c_mfc_mutex);
+		return 0;
+	}
+
+	ret = s3c_mfc_set_sleep();
+	if (ret != MFC_RET_OK)
+		return ret;
+
+	//clk_disable(ctrl->clock);
+
+	mutex_unlock(&s3c_mfc_mutex);	
+	
 	return 0;
 }
 
 static int s3c_mfc_resume(struct platform_device *pdev)
 {
+	int ret;
+	
+	mfc_debug("s3c_mfc_resume\n");
+
+	mutex_lock(&s3c_mfc_mutex);
+
+	//clk_enable(ctrl->clock);
+	
+	if(!s3c_mfc_is_running()) {
+		mutex_unlock(&s3c_mfc_mutex);
+		return 0;
+	}
+
+	ret = s3c_mfc_set_wakeup();
+	if (ret != MFC_RET_OK)
+		return ret;
+
+	mutex_unlock(&s3c_mfc_mutex);
+	
 	return 0;
 }
 

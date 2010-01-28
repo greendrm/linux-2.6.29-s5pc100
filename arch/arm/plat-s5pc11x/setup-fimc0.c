@@ -104,9 +104,14 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 		}
 
 		if (lclk->set_rate) {
+#if defined (CONFIG_VIDEO_FIMC_FIFO)
 			lclk->set_rate(lclk, 133000000);
 			dev_info(&pdev->dev, "set local clock rate to 133000000\n");
-		}
+#else
+			lclk->set_rate(lclk, 166000000);
+			dev_info(&pdev->dev, "set local clock rate to 166000000\n");
+#endif
+	}
 
 		clk_put(lclk_parent);
 	}

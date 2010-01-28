@@ -279,7 +279,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	u32 height = ctrl->out->pix.height;
 	u32 format = ctrl->out->pix.pixelformat;
 	u32 y_size = width * height;
-	u32 c_size = (width * height >> 1);
+	u32 c_size = (width * height >> 1) + (width * height >> 4);
 	u32 cb_size = (width * height >> 2);
 	u32 cr_size = (width * height >> 2);
 	u32 i, size;
@@ -368,7 +368,6 @@ int fimc_outdev_set_dst_buf(struct fimc_control *ctrl)
 	u32 width = ctrl->fb.lcd_hres; 
 	u32 height = ctrl->fb.lcd_vres; 
 	u32 i, size;
-
 	end = ctrl->mem.base + ctrl->mem.size;
 	size = PAGE_ALIGN(width * height * 4);
 
@@ -1314,7 +1313,6 @@ int fimc_outdev_overlay_buf(struct file *filp, struct fimc_control *ctrl)
 	int ret = 0, i;
 	struct fimc_overlay_buf * buf;
 	buf = &ctrl->out->overlay.buf;
-
 	for (i = 0; i < FIMC_OUTBUFS; i++) {
 		ctrl->out->overlay.req_idx = i;
 		buf->size[i] = ctrl->out->dst[i].length[0];
@@ -1329,8 +1327,6 @@ int fimc_outdev_overlay_buf(struct file *filp, struct fimc_control *ctrl)
 				"vir_addr(0x%08x)\n", i, buf->size[i], 
 				buf->phy_addr[i], buf->vir_addr[i]);
 	}
-	
-	ctrl->out->overlay.req_idx = -1;
 
 	return ret;
 }
@@ -1378,17 +1374,20 @@ int fimc_reqbufs_output(void *fh, struct v4l2_requestbuffers *b)
 		/* initialize source buffers */
 		if (b->memory == V4L2_MEMORY_MMAP) {
 			ret = fimc_outdev_set_src_buf(ctrl);
+				ctrl->out->overlay.req_idx = FIMC_MMAP_IDX;
 			if (ret)
 				return ret;
+		} else if (b->memory == V4L2_MEMORY_USERPTR) {
+			if (mode == FIMC_OVERLAY_DMA_AUTO) {
+				ctrl->out->overlay.req_idx = FIMC_USERPTR_IDX;
+			}
 		}
-
 		/* initialize destination buffers */
 		if ((mode == FIMC_OVERLAY_DMA_MANUAL) || (mode == FIMC_OVERLAY_DMA_AUTO)) {
 			ret = fimc_outdev_set_dst_buf(ctrl);
 			if (ret)
 				return ret;
 		}
-
 		ctrl->out->is_requested = 1;
 	}
 
@@ -1654,7 +1653,6 @@ int fimc_streamon_output(void *fh)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	int ret = -1;
-
 	fimc_info1("%s: called\n", __func__);
 
 	ret = fimc_outdev_check_param(ctrl);
@@ -1908,7 +1906,6 @@ static int fimc_qbuf_output_fifo(struct fimc_control *ctrl)
 #endif
 
 		fimc_outdev_set_src_addr(ctrl, ctrl->out->src[index].base);
-
 		ret = fimc_start_fifo(ctrl);
 		if (ret < 0) {
 			fimc_err("Fail: fimc_start_fifo\n");

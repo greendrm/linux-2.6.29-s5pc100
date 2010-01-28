@@ -434,7 +434,6 @@ static inline int fimc_mmap_out_src(struct file *filp, struct vm_area_struct *vm
 		fimc_err("writable mapping must be shared\n");
 		return -EINVAL;
 	}
-
 	start_phy_addr = ctrl->out->src[idx].base[FIMC_ADDR_Y];
 	pfn = __phys_to_pfn(start_phy_addr);
 
@@ -442,7 +441,7 @@ static inline int fimc_mmap_out_src(struct file *filp, struct vm_area_struct *vm
 						vma->vm_page_prot)) {
 		fimc_err("mmap fail\n");
 		return -EINVAL;
-	}
+	}	
 
 	vma->vm_ops->open(vma);
 
@@ -476,10 +475,11 @@ static inline int fimc_mmap_out(struct file *filp, struct vm_area_struct *vma)
 	int idx = ctrl->out->overlay.req_idx;
 	int ret = 0;
 
-	if (idx >= 0)
+	if (idx >= 0) {
 		ret = fimc_mmap_out_dst(filp, vma, idx);
-	else
+	} else if (idx == FIMC_MMAP_IDX) {
 		ret = fimc_mmap_out_src(filp, vma);
+	}
 
 	return ret;
 }

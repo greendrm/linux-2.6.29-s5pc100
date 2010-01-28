@@ -206,6 +206,10 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 #endif
 
 	/* Rate Control options */
+	if ((EncInitMpeg4Arg->in_RC_enable >= 1) && (EncInitMpeg4Arg->in_RC_enable <= 3))
+		EncInitMpeg4Arg->in_RC_enable = 3;  /* [9:8] Frame Lvl & MB Lvl enable */
+	else
+		EncInitMpeg4Arg->in_RC_enable = 0;
 	WRITEL((EncInitMpeg4Arg->in_RC_enable << 8) | (EncInitMpeg4Arg->in_vop_quant & 0x3F), S3C_FIMV_RC_CONFIG);
 
 	if (READL(S3C_FIMV_RC_CONFIG) & 0x0300) {
@@ -237,6 +241,10 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 		WRITEL(0, S3C_FIMV_ENTROPY_CON);
 		WRITEL(0, S3C_FIMV_DEBLOCK_FILTER_OPTION);
 		WRITEL(0, S3C_FIMV_SHORT_HD_ON);
+		if (EncInitMpeg4Arg->in_RC_framerate == 0)
+			WRITEL((30<<16|1), S3C_FIMV_FRAME_RATE);
+		else
+			WRITEL((EncInitMpeg4Arg->in_RC_framerate<<16|1), S3C_FIMV_FRAME_RATE);				
 		break;
 
 	case H263_ENC:

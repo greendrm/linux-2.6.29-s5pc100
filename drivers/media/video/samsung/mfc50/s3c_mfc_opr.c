@@ -609,7 +609,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw()
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
 	dram1_start_addr = MFC_DRAM1_START;
 
-	s3c_mfc_load_firmware();
+	//s3c_mfc_load_firmware();
 
 	/*
 	 * 0. MFC reset
@@ -836,6 +836,10 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_header(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc
 	if (mfc_ctx->MfcCodecType == MPEG4_ENC)
 		WRITEL_SHARED_MEM((1<<31)|(init_arg->in_TimeIncreamentRes<<16)|(init_arg->in_VopTimeIncreament),
 				shared_mem_vir_addr+0x30);
+
+	if ((mfc_ctx->MfcCodecType == H264_ENC) && (mfc_ctx->h264_i_period_enable)) {
+		WRITEL_SHARED_MEM((1<<16)|(mfc_ctx->h264_i_period), shared_mem_vir_addr + 0x9c);
+	}
 
 	/* Set stream buffer addr */
 	WRITEL((init_arg->out_p_addr.strm_ref_y-fw_phybuf)>>11, S3C_FIMV_ENC_SI_CH1_SB_U_ADR);
@@ -1345,7 +1349,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		break;
 
 	case MFC_ENC_SETCONF_ALLOW_FRAME_SKIP:
-		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
 			mfc_err("MFC_ENC_SETCONF_ALLOW_FRAME_SKIP : state is invalid\n");
 			return MFC_RET_STATE_INVALID;
 		}
@@ -1358,7 +1362,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 		break;
 
 	case MFC_ENC_SETCONF_VUI_INFO:
-		if (mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) {
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
 			mfc_err("MFC_ENC_SETCONF_VUI_INFO : state is invalid\n");
 			return MFC_RET_STATE_INVALID;
 		}
@@ -1368,10 +1372,68 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 
 		break;
 
+	case MFC_ENC_SETCONF_I_PERIOD:
+		if (mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE) {
+			mfc_err("MFC_ENC_SETCONF_I_PERIOD : state is invalid\n");
+			return MFC_RET_STATE_INVALID;
+		}
+
+		mfc_ctx->h264_i_period_enable = 1;
+		mfc_ctx->h264_i_period = set_cnf_arg->in_config_value[0];
+
+		break;
+
 	default:
 		mfc_err("invalid config param\n");
 		return MFC_RET_SET_CONF_FAIL;
 	}
 
 	return MFC_RET_OK ;
+}
+
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_sleep(void)
+{
+	
+	s3c_mfc_cmd_host2risc(H2R_CMD_SLEEP, 0, 0);
+
+	if(s3c_mfc_wait_for_done(R2H_CMD_SLEEP_RET) == 0) {
+		mfc_err("R2H_CMD_SLEEP_RET FAIL\n"); 
+		return MFC_RET_FAIL;
+	}	
+
+	return MFC_RET_OK ;
+
+}
+
+SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(void)
+{
+	unsigned int fw_phybuf, dram1_start_addr;	
+
+	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128*BUF_L_UNIT);
+	dram1_start_addr = MFC_DRAM1_START;
+
+	s3c_mfc_cmd_reset();
+
+	/*
+	 * 1. Set DRAM base Addr
+	 */
+	WRITEL(fw_phybuf, S3C_FIMV_MC_DRAMBASE_ADR_A);		/* channelA, port0 */
+	WRITEL(dram1_start_addr, S3C_FIMV_MC_DRAMBASE_ADR_B);	/* channelB, port1 */
+	WRITEL(0, S3C_FIMV_MC_RS_IBASE);			/* FW location sel : 0->A, 1->B */
+	WRITEL(1, S3C_FIMV_NUM_MASTER);				/* 0->1master, 1->2master */	
+	
+	s3c_mfc_cmd_host2risc(H2R_CMD_WAKEUP, 0, 0);
+
+	/*
+	 * 2. Release reset signal to the RISC.
+	 */
+	WRITEL(0x3ff, S3C_FIMV_SW_RESET);
+
+	if(s3c_mfc_wait_for_done(R2H_CMD_WAKEUP_RET) == 0) {
+		mfc_err("R2H_CMD_WAKEUP_RET FAIL\n"); 
+		return MFC_RET_FAIL;
+	}
+	
+	return MFC_RET_OK ;
+
 }

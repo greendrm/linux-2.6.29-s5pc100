@@ -71,6 +71,8 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 	case R2H_CMD_FRAME_DONE_RET:
 	case R2H_CMD_SLICE_DONE_RET:
 	case R2H_CMD_CLOSE_INSTANCE_RET:
+	case R2H_CMD_SLEEP_RET :
+	case R2H_CMD_WAKEUP_RET :		
 		if (interruptible_sleep_on_timeout(&s3c_mfc_wait_queue, 5000) == 0) {
 			ret_val = 0;
 			mfc_err("Interrupt Time Out(%d)\n", command);

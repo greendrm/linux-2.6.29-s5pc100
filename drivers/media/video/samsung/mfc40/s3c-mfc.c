@@ -160,6 +160,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 	s3c_mfc_inst_ctx	*MfcCtx = NULL;
 	s3c_mfc_common_args	InParm;
 	s3c_mfc_args		local_param;
+
+
+	mutex_lock(&s3c_mfc_mutex);
 	
 	ret = copy_from_user(&InParm, (s3c_mfc_common_args *)arg, sizeof(s3c_mfc_common_args));
 	if (ret < 0) {
@@ -181,9 +184,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 		
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_init_encode(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);
 		
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
 		ret = InParm.ret_code;
@@ -199,21 +200,16 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 
-		mutex_lock(&s3c_mfc_mutex);		
 		InParm.ret_code = s3c_mfc_exe_encode(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);		
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
-		ret = InParm.ret_code;
 		break;
 
 	case IOCTL_MFC_DEC_INIT:
-		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_INIT\n");
 		if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_DEC_INITIALIZE)) {
 			mfc_err("MFCINST_ERR_STATE_INVALID\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -228,7 +224,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.ret_code = s3c_mfc_init_decode(MfcCtx, &local_param);
 		if (InParm.ret_code < 0) {
 			ret = InParm.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -239,7 +234,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.args.dec_super_init.out_dpb_cnt = local_param.dec_init.out_dpb_cnt;
 		if (local_param.dec_init.out_dpb_cnt <=0 ) {
 			mfc_err("MFC out_dpb_cnt error\n");
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -258,7 +252,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.ret_code = s3c_mfc_get_virt_addr(MfcCtx, &local_param);
 		if (InParm.ret_code < 0) {
 			ret = InParm.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -271,7 +264,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.ret_code = s3c_mfc_get_phys_addr(MfcCtx, &local_param);
 		if (InParm.ret_code < 0) {
 			ret = InParm.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -281,7 +273,6 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mfc_err("MFCINST_STATE_DEC_SEQ_START\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
@@ -296,11 +287,9 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.ret_code = s3c_mfc_start_decode_seq(MfcCtx, &local_param);
 		if (InParm.ret_code < 0) {
 			ret = InParm.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 		
-		mutex_unlock(&s3c_mfc_mutex);
 		
 		break;
 
@@ -310,16 +299,13 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			mfc_err("MFCINST_STATE_DEC_SEQ_START\n");
 			InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
 			break;
 		}
 
 		InParm.ret_code = s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);
 		break;	
 
 	case IOCTL_MFC_DEC_EXE:
-		mutex_lock(&s3c_mfc_mutex);
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
 		
 	        if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
@@ -327,21 +313,18 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			if((InParm.ret_code
 			= s3c_mfc_init_decode(MfcCtx, &(InParm.args)))
 			!= MFCINST_RET_OK) {
-				mutex_unlock(&s3c_mfc_mutex);			
 			    	break;
 			}
 
 			if((InParm.ret_code
 			= s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args)))
 			!= MFCINST_RET_OK) {
-				mutex_unlock(&s3c_mfc_mutex);			
 				break;
 			}
 		    
 			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
 				mfc_err("MFCINST_ERR_STATE_INVALID\n");
 				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
-				mutex_unlock(&s3c_mfc_mutex);
 		                break;
 			}
 	        }
@@ -351,14 +334,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 				mfc_err("MFCINST_ERR_STATE_INVALID\n");
 				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
 				ret = -EINVAL;
-				mutex_unlock(&s3c_mfc_mutex);
 				break;
 			}
 		}
 
 		InParm.ret_code = s3c_mfc_exe_decode(MfcCtx, &(InParm.args));
 		ret = InParm.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
 		break;
 
 	case IOCTL_MFC_GET_CONFIG:
@@ -370,16 +351,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_config(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
 		break;
 
 	case IOCTL_MFC_SET_CONFIG:
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_set_config(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
 		break;
 
@@ -393,9 +370,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		}
 
 		InParm.args.mem_alloc.buff_size = (InParm.args.mem_alloc.buff_size + 63) / 64 * 64;
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_virt_addr(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);
 		ret = InParm.ret_code;
 		break;
 
@@ -407,9 +382,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			ret = -EINVAL;
 			break;
 		}
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_release_alloc_mem(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);
 		ret = InParm.ret_code;
 		break;
 
@@ -421,9 +394,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			ret = -EINVAL;
 			break;
 		}
-		mutex_lock(&s3c_mfc_mutex);
 		InParm.ret_code = s3c_mfc_get_phys_addr(MfcCtx, &(InParm.args));
-		mutex_unlock(&s3c_mfc_mutex);		
 		ret = InParm.ret_code;
 		break;
 
@@ -443,6 +414,8 @@ out_ioctl:
 	}
 
 	mfc_debug("---------------IOCTL return--------------------------%d\n", ret);
+	mutex_unlock(&s3c_mfc_mutex);		
+
 	return ret;
 }
 
