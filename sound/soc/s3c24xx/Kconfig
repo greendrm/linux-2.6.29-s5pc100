@@ -46,9 +46,10 @@ config SND_S5P_SPDIF
 	
 config SND_S5P_SOC_WM8580
 	tristate "SoC Audio support for WM8580 on SMDK-S5P"
-	depends on SND_SAMSUNG_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
+	depends on SND_SAMSUNG_SOC && (MACH_SMDKC110 || MACH_SMDKC100 || MACH_SMDK6442)
 	select SND_S3C24XX_SOC
 	select SND_SOC_WM8580
+	select SND_S5P_SOC_I2S
 	help
 	  Sat Y if you want to add support for SoC audio on the SMDKS5P.
 
@@ -58,12 +59,10 @@ choice
 
 config	SND_S5P_SMDK_WM8580_I2S_I2S
 	bool "Primary : I2S, Secondary : I2S"
-	select SND_S5P_SOC_I2S
 	select SND_S3C_I2SV2_SOC
 
 config	SND_S5P_SMDK_WM8580_I2S_PCM
 	bool "Primary : I2S, Secondary : PCM"
-	select SND_S5P_SOC_I2S
 	select SND_S3C_SOC_PCM
 
 endchoice
