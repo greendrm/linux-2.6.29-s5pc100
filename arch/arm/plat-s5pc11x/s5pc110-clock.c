@@ -53,6 +53,18 @@ struct clk clk_ext_xtal_mux = {
 	.id		= -1,
 };
 
+struct clk clk_ext_xtal_usb = {
+	.name		= "XusbXTI",
+	.id		= -1,
+	.rate		= 24000000,
+};
+
+struct clk clk_ext_xtal_rtc = {
+	.name		= "XrtcXTI",
+	.id		= -1,
+	.rate		= 32768,
+};
+
 #define clk_fin_apll	clk_ext_xtal_mux
 #define clk_fin_mpll	clk_ext_xtal_mux
 #define clk_fin_epll	clk_ext_xtal_mux
@@ -1438,6 +1450,8 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 
 static struct clk *clks[] __initdata = {
 	&clk_ext_xtal_mux,
+	&clk_ext_xtal_usb,
+	&clk_ext_xtal_rtc,
 	&clk_mout_epll.clk,
 	&clk_fout_epll,
 	&clk_mout_mpll.clk,

@@ -256,4 +256,5 @@
 #define S5P_PA_DMC1		(0xF1400000)
 #define S5P_VA_DMC1		S3C_ADDR(0x00b00000)
 
+#define S3C_VA_RTC		S3C_ADDR(0x00c00000)
 #endif /* __ASM_ARCH_6400_MAP_H */
