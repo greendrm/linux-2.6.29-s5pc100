@@ -549,6 +549,8 @@ static int s5p64xx_setparent_clksrc(struct clk *clk, struct clk *parent)
 		}
 
 	if (src_nr >= 0) {
+		clk->parent = parent;
+
 		clksrc &= ~sclk->mask;
 		clksrc |= src_nr << sclk->shift;
 
@@ -601,7 +603,7 @@ static struct clk_sources clkset_clk_out = {
 
 static struct clksrc_clk clk_clk_out = {
 	.clk	= {
-		.name		= "sclk_audio0",
+		.name		= "i2smain_clk",
 		.id		= -1,
 		.ctrlbit        = S5P_CLKGATE_SCLK0_AUDIO0,
 		.enable		= s5p64xx_clk_ip3_ctrl,

@@ -123,7 +123,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	struct fimc_global *fimc = get_fimc_dev();
 	struct s3c_platform_fimc *pdata;
 	struct s3c_platform_camera *cam;
-	int ret;
+	int ret = -1;
 
 	pdata = to_fimc_plat(ctrl->dev);
 	if (pdata->default_cam >= FIMC_MAXCAMS) {
@@ -154,8 +154,16 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	 * but it needs to set source width, height depend on LCD resolution.
 	*/
 	if (cam->id == CAMERA_WB) {
-		s3cfb_direct_ioctl(0, S3CFB_GET_LCD_WIDTH, (unsigned long)&cam->width);	
-		s3cfb_direct_ioctl(0, S3CFB_GET_LCD_HEIGHT, (unsigned long)&cam->height);
+		ret = s3cfb_direct_ioctl(0, S3CFB_GET_LCD_WIDTH, (unsigned long)&cam->width);	
+		if (ret < 0) {
+			fimc_err("direct_ioctl(S3CFB_GET_LCD_WIDTH) fail\n");
+			return -EINVAL;
+		}
+		ret = s3cfb_direct_ioctl(0, S3CFB_GET_LCD_HEIGHT, (unsigned long)&cam->height);
+		if (ret < 0) {
+			fimc_err("direct_ioctl(S3CFB_GET_LCD_HEIGHT) fail\n");
+			return -EINVAL;
+		}
 		cam->window.width = cam->width;
 		cam->window.height = cam->height;
 		cam->initialized = 1;
@@ -928,7 +936,7 @@ int fimc_streamon_capture(void *fh)
 {
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
-	int rot, i;
+	int rot, i, ret = -1;
 
 	fimc_dbg("%s\n", __func__);
 
@@ -941,9 +949,13 @@ int fimc_streamon_capture(void *fh)
 		fimc_init_camera(ctrl);
 
 	/* Set FIMD to write back */
-	if (ctrl->cam->id == CAMERA_WB)
-		s3cfb_direct_ioctl(0, S3CFB_SET_WRITEBACK, 1);
-	
+	if (ctrl->cam->id == CAMERA_WB) {
+		ret = s3cfb_direct_ioctl(0, S3CFB_SET_WRITEBACK, 1);
+		if (ret < 0) {
+			fimc_err("direct_ioctl(S3CFB_SET_WRITEBACK) fail\n");
+			return -EINVAL;
+		}
+	}	
 	fimc_hwset_camera_source(ctrl);
 	fimc_hwset_camera_offset(ctrl);
 	fimc_hwset_camera_type(ctrl);

@@ -641,6 +641,78 @@ static struct snd_soc_device smdk_snd_devdata = {
 
 static struct platform_device *smdk_snd_device;
 
+#ifdef CONFIG_MACH_SMDK6442
+
+#ifdef CONFIG_SND_WM8580_MASTER
+#define SMDK_ACLKSEL_I2SCLK		"i2s_cdclk0"
+#else
+#define SMDK_ACLKSEL_I2SCLK		"sclk_audio0"
+#define SMDK_ACLKSEL_SCLK_AUDIO0	"fout_epll"
+#endif
+
+static int smdk_audio_clk_init(struct device *dev)
+{
+	int ret = 0;
+	struct clk *sclk, *cm;
+
+#ifdef SMDK_ACLKSEL_SCLK_AUDIO0
+	struct clk *cf;
+#endif
+
+	sclk = clk_get(dev, "audio-bus");
+	if (IS_ERR(sclk)) {
+		dev_err(dev, "failed to get audio-bus\n");
+		ret = PTR_ERR(sclk);
+		goto err;
+	}
+	clk_enable(sclk);
+
+	cm = clk_get(NULL, SMDK_ACLKSEL_I2SCLK);
+	if (IS_ERR(cm)) {
+		dev_err(dev, "failed to get %s\n", SMDK_ACLKSEL_I2SCLK);
+		ret = PTR_ERR(cm);
+		goto err1;
+	}
+	clk_enable(cm);
+
+	ret = clk_set_parent(sclk, cm);
+	if (ret) {
+		dev_err(dev, "failed to set %s as parent\n",
+			SMDK_ACLKSEL_I2SCLK);
+		goto err2;
+	}
+
+#ifdef SMDK_ACLKSEL_SCLK_AUDIO0
+	cf = clk_get(NULL, "fout_epll");
+	if (IS_ERR(cf)) {
+		dev_err(dev, "failed to get %s\n",
+			SMDK_ACLKSEL_SCLK_AUDIO0);
+		ret = PTR_ERR(cf);
+		goto err2;
+	}
+	clk_enable(cf);
+
+	ret = clk_set_parent(cm, cf);
+	if (ret) {
+		dev_err(dev, "failed to set %s as parent\n",
+			SMDK_ACLKSEL_SCLK_AUDIO0);
+		goto err3;
+	}
+
+err3:
+	clk_put(cf);
+	goto err2;
+#endif
+
+err2:
+	clk_put(cm);
+err1:
+	clk_put(sclk);
+err:
+	return ret;
+}
+#endif
+
 static int __init smdk_audio_init(void)
 {
 	int ret;
@@ -673,6 +745,13 @@ static int __init smdk_audio_init(void)
 	ret = platform_device_add(smdk_snd_device);
 	if (ret)
 		platform_device_put(smdk_snd_device);
+
+#ifdef CONFIG_MACH_SMDK6442
+	/* Set clock path for primary audio port */
+	ret = smdk_audio_clk_init(smdk_dai[0].cpu_dai->dev);
+	if (ret)
+		platform_device_put(smdk_snd_device);
+#endif
 
 	return ret;
 }
