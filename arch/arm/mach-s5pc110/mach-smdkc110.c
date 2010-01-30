@@ -1032,9 +1032,10 @@ static void __init smdkc110_machine_init(void)
 				sizeof(struct max8698_platform_data));
 			break;
 		}
+	
+		clk_put(arm_clk);
+	
 	}
-
-	clk_put(arm_clk);
 
 	smdkc110_dm9000_set();
 
