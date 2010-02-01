@@ -470,9 +470,6 @@ bool _s5p_tv_if_init_sd_reg(void)
 
 	__s5p_sdout_init_schlock(phase_adj);
 
-	if (sderr != SDOUT_NO_ERROR)
-		return false;
-
 	__s5p_sdout_init_color_compensaton_onoff(br_hue_sat_adj,ypbpr_comp,
 					rgb_compen,y_compen,cvbs_compen);
 

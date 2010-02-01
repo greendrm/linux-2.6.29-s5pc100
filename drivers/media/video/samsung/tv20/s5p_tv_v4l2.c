@@ -377,7 +377,7 @@ static int s5p_tv_v4l2_g_fmt_vid_out(struct file *file, void *fh, struct v4l2_fo
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT: {
 
 		struct v4l2_pix_format_s5p_tvout vparam;
-		memset(&vparam, 0, sizeof(struct v4l2_window_s5p_tvout));
+		memset(&vparam, 0, sizeof(struct v4l2_pix_format_s5p_tvout));
 		
 		vparam.base_y			= (void *)s5ptv_status.vl_basic_param.top_y_address;
 		vparam.base_c			= (void *)s5ptv_status.vl_basic_param.top_c_address;
