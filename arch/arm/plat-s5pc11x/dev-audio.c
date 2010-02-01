@@ -13,10 +13,12 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 #include <linux/io.h>
+#include <linux/dma-mapping.h>
 
 #include <mach/map.h>
 #include <mach/s3c-dma.h>
 
+#include <plat/irqs.h>
 #include <plat/devs.h>
 #include <plat/audio.h>
 #include <plat/gpio-bank-i.h>
@@ -265,3 +267,63 @@ struct platform_device s5pc110_device_pcm2 = {
 	},
 };
 EXPORT_SYMBOL(s5pc110_device_pcm2);
+
+/* AC97 Controller platform devices */
+
+static int s5pc11x_ac97_cfg_gpio(struct platform_device *pdev)
+{
+	s3c_gpio_cfgpin(S5PC11X_GPC0(0), S5PC11X_GPC0_AC97_BITCLK);
+	s3c_gpio_cfgpin(S5PC11X_GPC0(1), S5PC11X_GPC1_AC97_RESETn);
+	s3c_gpio_cfgpin(S5PC11X_GPC0(2), S5PC11X_GPC2_AC97_SYNC);
+	s3c_gpio_cfgpin(S5PC11X_GPC0(3), S5PC11X_GPC3_AC97_SDI);
+	s3c_gpio_cfgpin(S5PC11X_GPC0(4), S5PC11X_GPC4_AC97_SDO);
+
+	return 0;
+}
+
+static struct resource s5pc11x_ac97_resource[] = {
+	[0] = {
+		.start = S5PC11X_PA_AC97,
+		.end   = S5PC11X_PA_AC97 + 0x100 - 1,
+		.flags = IORESOURCE_MEM,
+	},
+	[1] = {
+		.start = DMACH_AC97_PCMOUT,
+		.end   = DMACH_AC97_PCMOUT,
+		.flags = IORESOURCE_DMA,
+	},
+	[2] = {
+		.start = DMACH_AC97_PCMIN,
+		.end   = DMACH_AC97_PCMIN,
+		.flags = IORESOURCE_DMA,
+	},
+	[3] = {
+		.start = DMACH_AC97_MICIN,
+		.end   = DMACH_AC97_MICIN,
+		.flags = IORESOURCE_DMA,
+	},
+	[4] = {
+		.start = IRQ_AC97,
+		.end   = IRQ_AC97,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+static struct s3c_audio_pdata s3c_ac97_pdata = {
+	.cfg_gpio = s5pc11x_ac97_cfg_gpio,
+};
+
+static u64 s5pc11x_ac97_dmamask = DMA_BIT_MASK(32);
+
+struct platform_device s5pc110_device_ac97 = {
+	.name		  = "s3c-ac97",
+	.id		  = -1,
+	.num_resources	  = ARRAY_SIZE(s5pc11x_ac97_resource),
+	.resource	  = s5pc11x_ac97_resource,
+	.dev = {
+		.platform_data = &s3c_ac97_pdata,
+		.dma_mask = &s5pc11x_ac97_dmamask,
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+	},
+};
+EXPORT_SYMBOL(s5pc110_device_ac97);
