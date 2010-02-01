@@ -91,6 +91,8 @@ extern struct platform_device s5pc100_device_iis2;
 extern struct platform_device s5pc100_device_pcm0;
 extern struct platform_device s5pc100_device_pcm1;
 
+extern struct platform_device s5pc100_device_ac97;
+
 extern struct platform_device s5pc110_device_iis0;
 extern struct platform_device s5pc110_device_iis1;
 extern struct platform_device s5pc110_device_iis2;
