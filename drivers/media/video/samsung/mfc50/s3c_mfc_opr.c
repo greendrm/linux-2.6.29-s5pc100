@@ -1164,8 +1164,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_ar
 	mfc_debug("++\n");
 
 	dec_arg = (s3c_mfc_dec_exe_arg_t *)args;
-	ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
-
+	ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);	
 	#if 0	// MFC fw 10/30
 	if((mfc_ctx->IsPackedPB) && (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME)
 		&& (dec_arg->in_strm_size - consumed_strm_size > 4)) {
