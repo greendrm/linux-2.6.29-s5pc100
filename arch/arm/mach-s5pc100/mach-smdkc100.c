@@ -200,6 +200,9 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 	&s5pc100_device_iis0,
 	&s5pc100_device_pcm1,
 #endif
+#ifdef CONFIG_SND_SOC_SMDK_WM9713
+	&s5pc100_device_ac97,
+#endif
 	&s3c_device_rotator,
 	&s3c_device_csis,
 #if defined(CONFIG_HAVE_PWM)
