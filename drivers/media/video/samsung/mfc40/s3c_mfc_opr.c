@@ -455,6 +455,9 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 	if (s3c_mfc_wait_for_done(MFC_INTR_FRAME_DONE, MfcCtx) == 0) {
 		mfc_err("MFCINST_ERR_ENC_ENCODE_DONE_FAIL\n");
+		s3c_mfc_init_hw();
+		MfcCtx->MfcState = MFCINST_STATE_RESET;
+		s3c_mfc_set_reset_state();		
 		return MFCINST_ERR_ENC_ENCODE_DONE_FAIL;
 	}
 
@@ -669,6 +672,7 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 		mfc_warn("MFCDecodeOneFrame : TIMEOUT & RESET !!! (%d) Times \n", ++timeout);
 		s3c_mfc_init_hw();
 		MfcCtx->MfcState = MFCINST_STATE_RESET;
+		s3c_mfc_set_reset_state();
 		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
 	}
 
@@ -676,6 +680,7 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 		mfc_warn("MFCDecodeOneFrame : ERROR_STATUS 256 & RESET !!! (%d)times \n", ++err_status_256);	
 		s3c_mfc_init_hw();
 		MfcCtx->MfcState = MFCINST_STATE_RESET;
+		s3c_mfc_set_reset_state();
 		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
 	}
 
@@ -892,6 +897,19 @@ MFC_ERROR_CODE s3c_mfc_set_wakeup(void)
 	}
 
 	return MFCINST_RET_OK;
+}
+
+
+static s3c_mfc_args s3c_mfc_saved_args[MFC_MAX_INSTANCE_NUM];
+
+void s3c_mfc_backup_init_param(int inst_no, s3c_mfc_args *args)
+{
+	memcpy((void*)&s3c_mfc_saved_args[inst_no],(void*)args, sizeof(s3c_mfc_args));	
+}
+
+void s3c_mfc_restore_init_param(int inst_no, s3c_mfc_args *args)
+{
+	memcpy((void*)args,(void*)&s3c_mfc_saved_args[inst_no], sizeof(s3c_mfc_args));
 }
 
 static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *pre_start_pos, u32* slice_type)

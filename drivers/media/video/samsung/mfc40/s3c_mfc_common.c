@@ -21,6 +21,7 @@
 #include "s3c_mfc_fw.h"
 
 static int s3c_mfc_inst_no[MFC_MAX_INSTANCE_NUM];
+static int s3c_mfc_inst_reset_state[MFC_MAX_INSTANCE_NUM];
 
 unsigned int s3c_mfc_get_codec_type(MFC_CODEC_TYPE codec_type)
 {
@@ -164,6 +165,7 @@ int s3c_mfc_get_fw_buf_size(MFC_CODEC_TYPE codecType)
 void  s3c_mfc_init_inst_no(void)
 {
 	memset(&s3c_mfc_inst_no, 0x00, sizeof(s3c_mfc_inst_no));
+	memset(&s3c_mfc_inst_reset_state, 0x00, sizeof(s3c_mfc_inst_reset_state));
 }
 
 int s3c_mfc_get_inst_no(void)
@@ -208,5 +210,23 @@ int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state)
 
 	ctx->MfcState = state;
 	return  1;
+}
+
+void s3c_mfc_set_reset_state(void)
+{
+	unsigned int	i;
+	BOOL ret = FALSE;
+
+	for(i = 0; i < MFC_MAX_INSTANCE_NUM; i++)
+		if(s3c_mfc_inst_no[i] == 1)
+			s3c_mfc_inst_reset_state[i] = MFCINST_STATE_RESET;
+}
+void s3c_mfc_clear_reset_state(int inst_no)
+{
+	s3c_mfc_inst_reset_state[inst_no] = MFCINST_STATE_NULL;
+}
+s3c_mfc_inst_state s3c_mfc_get_reset_state(int inst_no)
+{
+	return s3c_mfc_inst_reset_state[inst_no];
 }
 

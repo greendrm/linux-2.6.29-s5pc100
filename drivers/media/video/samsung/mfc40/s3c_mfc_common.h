@@ -114,5 +114,10 @@ int s3c_mfc_get_inst_no(void);
 void s3c_mfc_return_inst_no(int inst_no);
 int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
 
+void s3c_mfc_set_reset_state(void);
+void s3c_mfc_clear_reset_state(int inst_no);
+s3c_mfc_inst_state s3c_mfc_get_reset_state(int inst_no);
+
+
 #endif /* _S3C_MFC_COMMON_H_ */
 

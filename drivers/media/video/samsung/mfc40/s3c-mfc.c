@@ -184,6 +184,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 		
+		s3c_mfc_backup_init_param(MfcCtx->InstNo, &(InParm.args));		
 		InParm.ret_code = s3c_mfc_init_encode(MfcCtx, &(InParm.args));
 		
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
@@ -200,6 +201,11 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 
+		if (s3c_mfc_get_reset_state(MfcCtx->InstNo) == MFCINST_STATE_RESET) {
+			s3c_mfc_restore_init_param(MfcCtx->InstNo, &local_param);
+			s3c_mfc_init_encode(MfcCtx, &(local_param));
+			s3c_mfc_clear_reset_state(MfcCtx->InstNo);
+		}
 		InParm.ret_code = s3c_mfc_exe_encode(MfcCtx, &(InParm.args));
 		mfc_debug("InParm->ret_code : %d\n", InParm.ret_code);
 		break;
@@ -307,7 +313,13 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 
 	case IOCTL_MFC_DEC_EXE:
 		mfc_debug("IOCTL_MFC_DEC_EXE\n");
-		
+		if (s3c_mfc_get_reset_state(MfcCtx->InstNo) == MFCINST_STATE_RESET) {
+			mfc_warn("decode exe=>Inst no=%d, State=%d\n",MfcCtx->InstNo,MfcCtx->MfcState);
+			if (MfcCtx->MfcState != MFCINST_STATE_RESET_WAIT) {
+				MfcCtx->MfcState = MFCINST_STATE_RESET;
+			}
+			s3c_mfc_clear_reset_state(MfcCtx->InstNo);
+		}		
 	        if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
 			mfc_warn("MFCINST_STATE_RESET\n");   
 			if((InParm.ret_code
@@ -340,6 +352,29 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 
 		InParm.ret_code = s3c_mfc_exe_decode(MfcCtx, &(InParm.args));
 		ret = InParm.ret_code;
+
+
+		if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
+			mfc_warn("--- MFCINST_STATE_RESET Inst_no=%d \n",MfcCtx->InstNo);	
+			if((InParm.ret_code
+			= s3c_mfc_init_decode(MfcCtx, &(InParm.args)))
+			!= MFCINST_RET_OK) {
+				break;
+			}
+		
+			if((InParm.ret_code
+			= s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args)))
+			!= MFCINST_RET_OK) {
+				break;
+			}
+		    
+			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
+				mfc_err("MFCINST_ERR_STATE_INVALID\n");
+				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
+				break;
+			}
+			InParm.ret_code = ret;
+		}
 		break;
 
 	case IOCTL_MFC_GET_CONFIG:
