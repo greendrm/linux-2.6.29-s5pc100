@@ -520,6 +520,9 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s5pc110_device_iis0,
 	&s5pc110_device_pcm1,
 #endif
+#ifdef CONFIG_SND_SOC_SMDK_WM9713
+	&s5pc110_device_ac97,
+#endif
 	&s3c_device_usb_ohci,
 	&s3c_device_usb_ehci,
 	&s3c_device_usbgadget,
