@@ -1530,6 +1530,7 @@ int fimc_s_ctrl_output(struct file *filp, void *fh, struct v4l2_control *c)
 	return ret;
 }
 
+#if defined(CONFIG_CPU_S5PC110)
 int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk)
 {
 	if (ctrl->status == FIMC_STREAMOFF) {
@@ -1545,7 +1546,7 @@ int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk)
 
 	return 0;
 }
-
+#endif
 int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;

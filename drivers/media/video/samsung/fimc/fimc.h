@@ -407,7 +407,9 @@ extern int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c);
+#if defined(CONFIG_CPU_S5PC110)
 extern int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk);
+#endif
 extern int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a);
 extern int fimc_g_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_s_crop_capture(void *fh, struct v4l2_crop *a);
