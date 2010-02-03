@@ -17,6 +17,7 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
 
 #include <sound/soc.h>
 
@@ -316,16 +317,6 @@ static int s3c_ac97_mic_trigger(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static struct snd_soc_dai_ops s3c_ac97_dai_ops = {
-	.hw_params	= s3c_ac97_hw_params,
-	.trigger	= s3c_ac97_trigger,
-};
-
-static struct snd_soc_dai_ops s3c_ac97_mic_dai_ops = {
-	.hw_params	= s3c_ac97_hw_mic_params,
-	.trigger	= s3c_ac97_mic_trigger,
-};
-
 struct snd_soc_dai s3c_ac97_dai[] = {
 	[S3C_AC97_DAI_PCM] = {
 		.name =	"s3c-ac97",
@@ -343,7 +334,10 @@ struct snd_soc_dai s3c_ac97_dai[] = {
 			.channels_max = 2,
 			.rates = SNDRV_PCM_RATE_8000_48000,
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,},
-		.ops = &s3c_ac97_dai_ops,
+		.ops = {
+			.hw_params = s3c_ac97_hw_params,
+			.trigger = s3c_ac97_trigger,
+		},
 	},
 	[S3C_AC97_DAI_MIC] = {
 		.name = "s3c-ac97-mic",
@@ -355,7 +349,10 @@ struct snd_soc_dai s3c_ac97_dai[] = {
 			.channels_max = 1,
 			.rates = SNDRV_PCM_RATE_8000_48000,
 			.formats = SNDRV_PCM_FMTBIT_S16_LE,},
-		.ops = &s3c_ac97_mic_dai_ops,
+		.ops = {
+			.hw_params = s3c_ac97_hw_mic_params,
+			.trigger = s3c_ac97_mic_trigger,
+		},
 	},
 };
 EXPORT_SYMBOL_GPL(s3c_ac97_dai);
