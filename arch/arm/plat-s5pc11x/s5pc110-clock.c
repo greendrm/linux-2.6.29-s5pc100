@@ -983,48 +983,48 @@ static struct clksrc_clk clk_cam1 = {
 
 static struct clksrc_clk clk_fimc0 = {
 	.clk	= {
-		.name		= "lclk_fimc",
+		.name		= "sclk_fimc",
 		.id		= 0,
-		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
-		.enable		= s5pc11x_clk_ip0_ctrl,
+		.ctrlbit        = S5P_SCLK_FIMC2_LCLK ,
+		.enable		= s5pc11x_clk_sclk1_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
 		.get_rate	= s5pc11x_getrate_clksrc,
 		.set_rate	= s5pc11x_setrate_clksrc,
 		.round_rate	= s5pc11x_roundrate_clksrc,
 	},
-	.shift		= S5P_CLKSRC3_FIMC0_LCLK_SHIFT,
-	.mask		= S5P_CLKSRC3_FIMC0_LCLK_MASK,
+	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
 	.sources	= &clkset_fimc0,
-	.divider_shift	= S5P_CLKDIV3_FIMC0_LCLK_SHIFT,
+	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
 	.reg_divider	= S5P_CLK_DIV3,
 	.reg_source	= S5P_CLK_SRC3,
 };
 
 static struct clksrc_clk clk_fimc1 = {
 	.clk	= {
-		.name		= "lclk_fimc",
+		.name		= "sclk_fimc",
 		.id		= 1,
-		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1,
-		.enable		= s5pc11x_clk_ip0_ctrl,
+		.ctrlbit        = S5P_SCLK_FIMC2_LCLK ,
+		.enable		= s5pc11x_clk_sclk1_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
 		.get_rate	= s5pc11x_getrate_clksrc,
 		.set_rate	= s5pc11x_setrate_clksrc,
 		.round_rate	= s5pc11x_roundrate_clksrc,
 	},
-	.shift		= S5P_CLKSRC3_FIMC1_LCLK_SHIFT,
-	.mask		= S5P_CLKSRC3_FIMC1_LCLK_MASK,
+	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
 	.sources	= &clkset_fimc1,
-	.divider_shift	= S5P_CLKDIV3_FIMC1_LCLK_SHIFT,
+	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
 	.reg_divider	= S5P_CLK_DIV3,
 	.reg_source	= S5P_CLK_SRC3,
 };
 
 static struct clksrc_clk clk_fimc2 = {
 	.clk	= {
-		.name		= "lclk_fimc",
+		.name		= "sclk_fimc",
 		.id		= 2,
-		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2,
-		.enable		= s5pc11x_clk_ip0_ctrl,
+		.ctrlbit        = S5P_SCLK_FIMC2_LCLK ,
+		.enable		= s5pc11x_clk_sclk1_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
 		.get_rate	= s5pc11x_getrate_clksrc,
 		.set_rate	= s5pc11x_setrate_clksrc,

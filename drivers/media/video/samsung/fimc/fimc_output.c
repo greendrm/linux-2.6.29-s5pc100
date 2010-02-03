@@ -22,6 +22,7 @@
 #include <linux/uaccess.h>
 #include <linux/mman.h>
 #include <plat/media.h>
+#include <linux/clk.h>
 
 #include "fimc.h"
 #include "fimc-ipc.h"
@@ -1527,6 +1528,22 @@ int fimc_s_ctrl_output(struct file *filp, void *fh, struct v4l2_control *c)
 	}
 
 	return ret;
+}
+
+int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk)
+{
+	if (ctrl->status == FIMC_STREAMOFF) {
+		clk_disable(ctrl->clk);
+		if (fimc_clk == FIMC_HCLK) {
+			fimc_hwset_hclksrc(ctrl);
+		} else {
+			fimc_hwset_sclksrc(ctrl);
+		}
+		clk_enable(ctrl->clk);
+		fimc_hwset_reset(ctrl);
+	}
+
+	return 0;
 }
 
 int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)

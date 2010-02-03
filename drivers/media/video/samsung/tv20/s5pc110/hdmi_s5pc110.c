@@ -375,6 +375,18 @@ int __s5p_hdmi_phy_power(bool on)
 	return 0;
 }
 
+s32 hdmi_corereset(void)
+{
+	u32 i;
+	
+	writeb(0x0, hdmi_base+ S5P_HDMI_CTRL_CORE_RSTOUT);
+	for(i=0 ; i<1000 ; i++);
+	writeb(0x1, hdmi_base+ S5P_HDMI_CTRL_CORE_RSTOUT);
+
+	return 0;
+}
+
+
 s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 {
 	s32 index;
@@ -446,6 +458,8 @@ s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 	printk("\n");
 }
 #endif	
+	hdmi_corereset();
+
 	while(!(readb(hdmi_base + HDMI_PHY_STATUS) & HDMI_PHY_READY));
 
 	writeb(I2C_CLK_PEND_INT, i2c_hdmi_phy_base + I2C_HDMI_CON);
@@ -725,11 +739,13 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd,
 		writeb(gcp_con, hdmi_base + S5P_GCP_CON);
 	}
 
+#if 0
 	/* config Phy */
 	if (hdmi_phy_config(video_params[mode].pixel_clock, cd) == EINVAL) {
 		HDMIPRINTK("[ERR] hdmi_phy_config() failed.\n");
 		return EINVAL;
 	}
+#endif
 
 	return 0;
 }
@@ -1291,6 +1307,11 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 		HDMIPRINTK(" invalid disp_mode parameter(%d)\n\r", disp_mode);
 		return S5P_TV_HDMI_ERR_INVALID_PARAM;
 		break;
+	}
+
+	if (hdmi_phy_config(video_params[hdmi_v_fmt].pixel_clock, HDMI_CD_24) == EINVAL) {
+		HDMIPRINTK("[ERR] hdmi_phy_config() failed.\n");
+		return EINVAL;
 	}
 
 	switch (out_mode) {
