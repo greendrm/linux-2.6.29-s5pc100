@@ -983,10 +983,48 @@ static struct clksrc_clk clk_cam1 = {
 
 static struct clksrc_clk clk_fimc0 = {
 	.clk	= {
-		.name		= "sclk_fimc",
+		.name		= "lclk_fimc",
 		.id		= 0,
-		.ctrlbit        = S5P_SCLK_FIMC2_LCLK ,
-		.enable		= s5pc11x_clk_sclk1_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC0,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC3_FIMC0_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC0_LCLK_MASK,
+	.sources	= &clkset_fimc2,
+	.divider_shift	= S5P_CLKDIV3_FIMC0_LCLK_SHIFT,
+	.reg_divider	= S5P_CLK_DIV3,
+	.reg_source	= S5P_CLK_SRC3,
+};
+
+static struct clksrc_clk clk_fimc1 = {
+	.clk	= {
+		.name		= "lclk_fimc",
+		.id		= 1,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC1 ,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC3_FIMC1_LCLK_SHIFT,
+	.mask		= S5P_CLKSRC3_FIMC1_LCLK_MASK,
+	.sources	= &clkset_fimc1,
+	.divider_shift	= S5P_CLKDIV3_FIMC1_LCLK_SHIFT,
+	.reg_divider	= S5P_CLK_DIV3,
+	.reg_source	= S5P_CLK_SRC3,
+};
+
+static struct clksrc_clk clk_fimc2 = {
+	.clk	= {
+		.name		= "lclk_fimc",
+		.id		= 2,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2 ,
+		.enable		= s5pc11x_clk_ip0_ctrl,
 		.set_parent	= s5pc11x_setparent_clksrc,
 		.get_rate	= s5pc11x_getrate_clksrc,
 		.set_rate	= s5pc11x_setrate_clksrc,
@@ -994,13 +1032,13 @@ static struct clksrc_clk clk_fimc0 = {
 	},
 	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
 	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
-	.sources	= &clkset_fimc0,
+	.sources	= &clkset_fimc2,
 	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
 	.reg_divider	= S5P_CLK_DIV3,
 	.reg_source	= S5P_CLK_SRC3,
 };
 
-static struct clksrc_clk clk_fimc1 = {
+static struct clksrc_clk sclk_fimc = {
 	.clk	= {
 		.name		= "sclk_fimc",
 		.id		= 1,
@@ -1014,25 +1052,6 @@ static struct clksrc_clk clk_fimc1 = {
 	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
 	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
 	.sources	= &clkset_fimc1,
-	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
-	.reg_divider	= S5P_CLK_DIV3,
-	.reg_source	= S5P_CLK_SRC3,
-};
-
-static struct clksrc_clk clk_fimc2 = {
-	.clk	= {
-		.name		= "sclk_fimc",
-		.id		= 2,
-		.ctrlbit        = S5P_SCLK_FIMC2_LCLK ,
-		.enable		= s5pc11x_clk_sclk1_ctrl,
-		.set_parent	= s5pc11x_setparent_clksrc,
-		.get_rate	= s5pc11x_getrate_clksrc,
-		.set_rate	= s5pc11x_setrate_clksrc,
-		.round_rate	= s5pc11x_roundrate_clksrc,
-	},
-	.shift		= S5P_CLKSRC3_FIMC2_LCLK_SHIFT,
-	.mask		= S5P_CLKSRC3_FIMC2_LCLK_MASK,
-	.sources	= &clkset_fimc2,
 	.divider_shift	= S5P_CLKDIV3_FIMC2_LCLK_SHIFT,
 	.reg_divider	= S5P_CLK_DIV3,
 	.reg_source	= S5P_CLK_SRC3,
@@ -1311,6 +1330,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc0,
 	&clk_fimc1,
 	&clk_fimc2,
+	&sclk_fimc,
 	&clk_g2d,
 };
 
@@ -1482,6 +1502,7 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc0.clk,
 	&clk_fimc1.clk,
 	&clk_fimc2.clk,
+	&sclk_fimc.clk,
 	&clk_g2d.clk,
 };
 
