@@ -164,16 +164,10 @@
 #define HIGH_SPEED_CONTROL_PKT_SIZE	64
 #define HIGH_SPEED_BULK_PKT_SIZE	512
 
-#define RX_FIFO_SIZE			4096	
+#define RX_FIFO_SIZE			(4096>>2)
 #define NPTX_FIFO_START_ADDR		RX_FIFO_SIZE
-#define NPTX_FIFO_SIZE			4096
-#define PTX_FIFO_SIZE			1024
-
-#define DEPCTL_TXFNUM_0			(0x0<<22)
-#define DEPCTL_TXFNUM_1			(0x1<<22)
-#define DEPCTL_TXFNUM_2			(0x2<<22)
-#define DEPCTL_TXFNUM_3			(0x3<<22)
-#define DEPCTL_TXFNUM_4			(0x4<<22)
+#define NPTX_FIFO_SIZE			(4096>>2)
+#define PTX_FIFO_SIZE			(1024>>2)
 
 /* Enumeration speed */
 #define USB_HIGH_30_60MHZ		(0x0<<1)
@@ -211,6 +205,8 @@
 #define DEPCTL_CNAK			(0x1<<26)
 #define DEPCTL_STALL			(0x1<<21)
 #define DEPCTL_TYPE_BIT			(18)
+#define DEPCTL_TXFNUM_BIT		(22)
+#define DEPCTL_TXFNUM_MASK		(0xF<<22)
 #define DEPCTL_TYPE_MASK		(0x3<<18)
 #define DEPCTL_CTRL_TYPE		(0x0<<18)
 #define DEPCTL_ISO_TYPE			(0x1<<18)

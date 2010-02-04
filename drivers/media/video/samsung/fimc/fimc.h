@@ -59,6 +59,9 @@
 #define FIMC_MMAP_IDX		-1
 #define FIMC_USERPTR_IDX	-2
 
+#define FIMC_HCLK		0
+#define FIMC_SCLK		1
+
 #if defined(CONFIG_VIDEO_FIMC_FIFO)
 #define FIMC_OVERLAY_MODE	FIMC_OVERLAY_FIFO
 #elif defined(CONFIG_VIDEO_FIMC_DMA_AUTO)
@@ -404,6 +407,9 @@ extern int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b);
 extern int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b);
 extern int fimc_g_ctrl_capture(void *fh, struct v4l2_control *c);
 extern int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c);
+#if defined(CONFIG_CPU_S5PC110)
+extern int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk);
+#endif
 extern int fimc_cropcap_capture(void *fh, struct v4l2_cropcap *a);
 extern int fimc_g_crop_capture(void *fh, struct v4l2_crop *a);
 extern int fimc_s_crop_capture(void *fh, struct v4l2_crop *a);
@@ -459,6 +465,8 @@ extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int le
 extern int fimc_hwset_disable_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_reset(struct fimc_control *ctrl);
+extern int fimc_hwset_hclksrc(struct fimc_control *ctrl);
+extern int fimc_hwset_sclksrc(struct fimc_control *ctrl);
 extern int fimc_hwget_overflow_state(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_offset(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_polarity(struct fimc_control *ctrl);

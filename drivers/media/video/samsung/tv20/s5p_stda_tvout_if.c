@@ -807,7 +807,10 @@ bool _s5p_tv_if_init_hd_reg(void)
 		}
 	}
 */
-
+	if (!_s5p_tv_if_init_hd_video_reg()) {
+		return false;
+	}
+	
 	switch (st->hdmi_audio_type) {
 
 	case HDMI_AUDIO_PCM:
@@ -835,11 +838,6 @@ bool _s5p_tv_if_init_hd_reg(void)
 			      st->hdcp_i2c_client)) {
 		return false;
 	}
-
-	if (!_s5p_tv_if_init_hd_video_reg()) {
-		return false;
-	}
-
 
 	return true;
 }

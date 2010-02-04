@@ -18,6 +18,7 @@ obj-y				+= irq.o
 obj-y				+= irq-eint.o
 obj-y				+= clock.o
 obj-y				+= gpiolib.o
+obj-y				+= dev-audio.o
 
 # CPU support
 

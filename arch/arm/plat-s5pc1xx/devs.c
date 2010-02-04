@@ -357,31 +357,6 @@ struct platform_device s3c_device_keypad = {
 
 EXPORT_SYMBOL(s3c_device_keypad);
 
-/* AC97 */
-
-static struct resource s3c_ac97_resource[] = {
-        [0] = {
-                .start = S5PC1XX_PA_AC97,
-                .end   = S5PC1XX_PA_AC97 + S5PC1XX_SZ_AC97 -1,
-                .flags = IORESOURCE_MEM,
-        }
-};
-
-static u64 s3c_device_ac97_dmamask = 0xffffffffUL;
-
-struct platform_device s3c_device_ac97 = {
-        .name             = "s3c-ac97",
-        .id               = -1,
-        .num_resources    = ARRAY_SIZE(s3c_ac97_resource),
-        .resource         = s3c_ac97_resource,
-        .dev              = {
-                .dma_mask = &s3c_device_ac97_dmamask,
-                .coherent_dma_mask = 0xffffffffUL
-        }
-};
-
-EXPORT_SYMBOL(s3c_device_ac97);
-
 static struct resource s3c_g3d_resource[] = {
         [0] = {
                 .start = S5PC1XX_PA_G3D,

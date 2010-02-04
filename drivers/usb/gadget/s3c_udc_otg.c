@@ -501,15 +501,15 @@ static void reconfig_usbd(void)
 	writel(DIEPMSK_INIT, S3C_UDC_OTG_DIEPMSK);
 
 	/* 11. Set Rx FIFO Size (in 32-bit words) */
-	writel(RX_FIFO_SIZE >> 2, S3C_UDC_OTG_GRXFSIZ);
+	writel(RX_FIFO_SIZE, S3C_UDC_OTG_GRXFSIZ);
 	
 	/* 12. Set Non Periodic Tx FIFO Size*/
-	writel((NPTX_FIFO_SIZE >> 2) << 16 | (NPTX_FIFO_START_ADDR) << 0,
+	writel((NPTX_FIFO_SIZE) << 16 | (NPTX_FIFO_START_ADDR) << 0,
 		S3C_UDC_OTG_GNPTXFSIZ);
 
 #ifdef DED_TX_FIFO
 	for (i = 1; i < S3C_MAX_ENDPOINTS; i++) 
-		writel((PTX_FIFO_SIZE >> 2) << 16 |
+		writel((PTX_FIFO_SIZE) << 16 |
 			(NPTX_FIFO_START_ADDR + NPTX_FIFO_SIZE + PTX_FIFO_SIZE*(i-1)) << 0,
 			S3C_UDC_OTG_DIEPTXF(i));
 #endif

@@ -30,6 +30,9 @@ extern struct platform_device s3c_device_timer[];
 extern struct platform_device s3c_device_usb;
 extern struct platform_device s3c_device_usb_ohci;
 extern struct platform_device s3c_device_usb_ehci;
+
+extern struct platform_device s3c64xx_device_ac97;
+
 extern struct platform_device s3c_device_lcd;
 extern struct platform_device s3c_device_g2d;
 extern struct platform_device s3c_device_g3d;
@@ -88,12 +91,16 @@ extern struct platform_device s5pc100_device_iis2;
 extern struct platform_device s5pc100_device_pcm0;
 extern struct platform_device s5pc100_device_pcm1;
 
+extern struct platform_device s5pc100_device_ac97;
+
 extern struct platform_device s5pc110_device_iis0;
 extern struct platform_device s5pc110_device_iis1;
 extern struct platform_device s5pc110_device_iis2;
 extern struct platform_device s5pc110_device_pcm0;
 extern struct platform_device s5pc110_device_pcm1;
 extern struct platform_device s5pc110_device_pcm2;
+
+extern struct platform_device s5pc110_device_ac97;
 
 extern struct platform_device s5p6442_device_iis0;
 extern struct platform_device s5p6442_device_iis1;

@@ -158,6 +158,10 @@ static int inline s5pc11x_clk_gate(void __iomem *reg,
 	return 0;
 }
 
+int s5pc11x_clk_sclk1_ctrl(struct clk *clk, int enable)
+{
+	return s5pc11x_clk_gate(S5P_CLK_GATE_SCLK1, clk, enable);
+}
 
 int s5pc11x_clk_ip0_ctrl(struct clk *clk, int enable)
 {
@@ -253,6 +257,13 @@ static struct clk init_clocks[] = {
 		.enable         = s5pc11x_clk_ip0_ctrl,
 		.ctrlbit        = S5P_CLKGATE_IP0_MFC,
 		.pd		= &pd_mfc,
+	}, {
+		.name           = "hclk_fimc",
+		.id             = 1,
+		.parent         = &clk_h166,
+		.enable         = s5pc11x_clk_sclk1_ctrl,
+		.ctrlbit        = S5P_SCLK_FIMC2_LCLK,
+		.pd		= &pd_cam,
 	}, {
 		.name           = "jpeg",
 		.id             = -1,
@@ -524,8 +535,13 @@ static struct clk init_clocks[] = {
 		.parent		= &clk_p,
 		.enable		= s5pc11x_clk_ip3_ctrl,
 		.ctrlbit	= S5P_CLKGATE_IP3_I2S2, /* I2S2 is v3.2 */
+	}, {
+		.name		= "ac97",
+		.id		= -1,
+		.parent		= &clk_p,
+		.enable		= s5pc11x_clk_ip3_ctrl,
+		.ctrlbit	= S5P_CLKGATE_IP3_AC97,
 	},
-
 	/* PCM device */
 	{
 		.name		= "pcm",

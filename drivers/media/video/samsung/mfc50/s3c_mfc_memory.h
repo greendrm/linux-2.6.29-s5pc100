@@ -25,7 +25,7 @@
 #define MFC_DRAM1_START		(0x40000000)	/* mDDR, 0x4000_0000 ~ 0x4800_0000 (128MB) */
 
 /* All buffer size have to be aligned to 64K */
-#define FIRMWARE_CODE_SIZE	(0x40000)	/* 0x306c0(198,336 byte) ~ 0x40000(262,144) */
+#define FIRMWARE_CODE_SIZE	(0x60000)	/* 0x306c0(198,336 byte) ~ 0x60000(393,216) */
 #define MFC_FW_SYSTEM_SIZE	(0x100000)	/* 1MB : 1x1024x1024 */
 #define MFC_FW_BUF_SIZE		(0x96000)	/* 600KB : 600x1024 size per instance */
 #define MFC_FW_TOTAL_BUF_SIZE	(MFC_FW_SYSTEM_SIZE + MFC_MAX_INSTANCE_NUM * MFC_FW_BUF_SIZE)

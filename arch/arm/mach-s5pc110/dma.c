@@ -313,17 +313,17 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels	= MAP2(S3C_PDMA1_PCM2_TX),
 		.hw_addr.to	= S3C_PDMA1_PCM2_TX,
 	},
-	[DMACH_AC97_PCM_OUT] = {
+	[DMACH_AC97_PCMOUT] = {
 		.name		= "ac97-pcm-out",
 		.channels	= MAP1(S3C_PDMA0_AC_PCMOUT),
 		.hw_addr.to	= S3C_PDMA0_AC_PCMOUT,
 	},
-	[DMACH_AC97_PCM_IN] = {
+	[DMACH_AC97_PCMIN] = {
 		.name		= "ac97-pcm-in",
 		.channels	= MAP1(S3C_PDMA0_AC_PCMIN),
 		.hw_addr.from	= S3C_PDMA0_AC_PCMIN,
 	},
-	[DMACH_AC97_MIC_IN] = {
+	[DMACH_AC97_MICIN] = {
 		.name		= "ac97-mic-in",
 		.channels	= MAP1(S3C_PDMA0_AC_MICIN),
 		.hw_addr.from	= S3C_PDMA0_AC_MICIN,
