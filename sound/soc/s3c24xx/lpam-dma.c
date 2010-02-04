@@ -14,7 +14,6 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/slab.h>
 #include <linux/dma-mapping.h>
 
 #include <sound/core.h>
@@ -22,13 +21,7 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 
-#include <asm/dma.h>
-#include <asm/io.h>
-#include <mach/hardware.h>
-#include <mach/dma.h>
-#include <mach/audio.h>
-
-#include "s5p-i2s-lp.h"
+#include "lpam-i2s.h"
 
 #define ST_RUNNING		(1<<0)
 #define ST_OPENED		(1<<1)
@@ -70,6 +63,8 @@ static void lpam_dma_done(void *id, int bytes_xfer)
 
 	if (prtd && (prtd->state & ST_RUNNING))
 		snd_pcm_period_elapsed(substream);
+	else
+		s3cdbg("%s:%d\n", __func__, __LINE__);
 }
 
 static int lpam_dma_hw_params(struct snd_pcm_substream *substream,
@@ -79,7 +74,7 @@ static int lpam_dma_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct s5p_i2s_lp_info *lpdma = rtd->dai->cpu_dai->dma_data;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	if (params_buffer_bytes(params) !=
 				lpam_dma_hardware.buffer_bytes_max) {
@@ -93,8 +88,8 @@ static int lpam_dma_hw_params(struct snd_pcm_substream *substream,
 	lpdma->setcallbk(lpam_dma_done, params_period_bytes(params));
 	lpdma->enqueue((void *)substream);
 
-	s3cdbg("DmaAddr=@%x Total=%lubytes PrdSz=%u #Prds=%u\n",
-			runtime->dma_addr, runtime->dma_bytes, 
+	s3cdbg("DmaAddr=@%x Total=0x%xbytes PrdSz=0x%x #Prds=%u\n",
+			runtime->dma_addr, runtime->dma_bytes,
 			params_period_bytes(params), runtime->hw.periods_min);
 
 	return 0;
@@ -102,7 +97,7 @@ static int lpam_dma_hw_params(struct snd_pcm_substream *substream,
 
 static int lpam_dma_hw_free(struct snd_pcm_substream *substream)
 {
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	snd_pcm_set_runtime_buffer(substream, NULL);
 
@@ -113,7 +108,7 @@ static int lpam_dma_prepare(struct snd_pcm_substream *substream)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct s5p_i2s_lp_info *lpdma = rtd->dai->cpu_dai->dma_data;
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	/* flush the DMA channel */
 	lpdma->ctrl(LPAM_DMA_STOP);
@@ -128,7 +123,7 @@ static int lpam_dma_trigger(struct snd_pcm_substream *substream, int cmd)
 	struct s5p_i2s_lp_info *lpdma = rtd->dai->cpu_dai->dma_data;
 	int ret = 0;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	spin_lock(&prtd->lock);
 
@@ -163,7 +158,7 @@ static int lpam_dma_trigger(struct snd_pcm_substream *substream, int cmd)
 	return ret;
 }
 
-static snd_pcm_uframes_t 
+static snd_pcm_uframes_t
 	lpam_dma_pointer(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -181,7 +176,7 @@ static snd_pcm_uframes_t
 
 	spin_unlock(&prtd->lock);
 
-	//s3cdbg("Pointer %x %x\n", src, dst);
+	s3cdbg("Pointer %x %x\n", src, dst);
 
 	return bytes_to_frames(substream->runtime, res);
 }
@@ -193,7 +188,7 @@ static int lpam_dma_mmap(struct snd_pcm_substream *substream,
 	unsigned long size, offset;
 	int ret;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	/* From snd_pcm_lib_mmap_iomem */
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
@@ -212,7 +207,7 @@ static int lpam_dma_open(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct lpam_runtime_data *prtd;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	snd_soc_set_runtime_hwparams(substream, &lpam_dma_hardware);
 
@@ -232,7 +227,7 @@ static int lpam_dma_close(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct lpam_runtime_data *prtd = runtime->private_data;
 
-	s3cdbg("Entered %s, prtd = %p\n", __FUNCTION__, prtd);
+	s3cdbg("Entered %s, prtd = %p\n", __func__, prtd);
 
 	if (prtd)
 		kfree(prtd);
@@ -257,7 +252,7 @@ static int lpam_dma_preallocate_buffer(struct snd_pcm *pcm, int stream)
 	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
 	struct snd_dma_buffer *buf = &substream->dma_buffer;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	buf->dev.dev = pcm->card->dev;
 	buf->private_data = NULL;
@@ -268,8 +263,8 @@ static int lpam_dma_preallocate_buffer(struct snd_pcm *pcm, int stream)
 	buf->bytes = lpam_dma_hardware.buffer_bytes_max;
 	buf->area = (unsigned char *)ioremap(buf->addr, buf->bytes);
 
-	s3cdbg("Preallocate buffer(%s):  VA-%p  PA-%X  %ubytes\n", 
-			stream ? "Capture": "Playback", 
+	s3cdbg("Preallocate buffer(%s):  VA-%p  PA-%X  %ubytes\n",
+			stream ? "Capture" : "Playback",
 			buf->area, buf->addr, buf->bytes);
 	return 0;
 }
@@ -279,7 +274,7 @@ static void lpam_dma_free_buffers(struct snd_pcm *pcm)
 	struct snd_pcm_substream *substream;
 	struct snd_dma_buffer *buf;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	substream = pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream;
 	if (!substream)
@@ -295,19 +290,19 @@ static void lpam_dma_free_buffers(struct snd_pcm *pcm)
 	buf->addr = 0;
 }
 
-static u64 lpam_dma_mask = DMA_32BIT_MASK;
+static u64 lpam_dma_mask = DMA_BIT_MASK(32);
 
-static int lpam_dma_new(struct snd_card *card, 
+static int lpam_dma_new(struct snd_card *card,
 	struct snd_soc_dai *dai, struct snd_pcm *pcm)
 {
 	int ret = 0;
 
-	s3cdbg("Entered %s\n", __FUNCTION__);
+	s3cdbg("Entered %s\n", __func__);
 
 	if (!card->dev->dma_mask)
 		card->dev->dma_mask = &lpam_dma_mask;
 	if (!card->dev->coherent_dma_mask)
-		card->dev->coherent_dma_mask = 0xffffffff;
+		card->dev->coherent_dma_mask = DMA_BIT_MASK(32);
 
 	if (dai->playback.channels_min) {
 		ret = lpam_dma_preallocate_buffer(pcm,

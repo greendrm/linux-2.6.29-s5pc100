@@ -1,8 +1,8 @@
 /*
- * smdks5plp_wm8580.c
+ *  smdk64xx_wm8580.c
  *
- * Copyright (C) 2009, Samsung Elect. Ltd.
- * 	Jaswinder Singh <jassisinghbrar@gmail.com>
+ *  Copyright (c) 2009 Samsung Electronics Co. Ltd
+ *  Author: Jaswinder Singh <jassi.brar@samsung.com>
  *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
@@ -10,59 +10,39 @@
  *  option) any later version.
  */
 
-#include <linux/interrupt.h>
 #include <linux/platform_device.h>
+#include <linux/clk.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
-#include <sound/soc-dai.h>
 #include <sound/soc-dapm.h>
 
-#include <asm/io.h>
-#include <asm/gpio.h> 
-#include <plat/gpio-cfg.h> 
-#include <plat/map-base.h>
-#include <plat/regs-clock.h>
-
 #include "../codecs/wm8580.h"
-#include "s5p-i2s-lp.h"
+#include "lpam-i2s.h"
 
-/* SMDK has 12MHZ Osc attached to WM8580 */
-#define SMDK_WM8580_OSC_FREQ (12000000)
+#include <linux/io.h>
+
+#define I2S_NUM 0
 
 extern struct snd_soc_platform lpam_soc_platform;
 extern struct snd_soc_dai lpam_i2s_dai;
-extern struct s5p_lpdma_func s5p_lpdma;
-extern u32 *lpam_clk_rate;
 
-#define SRC_CLK	(*lpam_clk_rate)
+static int set_epll_rate(unsigned long rate);
 
-/* XXX BLC(bits-per-channel) --> BFS(bit clock shud be >= FS*(Bit-per-channel)*2) XXX */
-/* XXX BFS --> RFS(must be a multiple of BFS)                                 XXX */
-/* XXX RFS & SRC_CLK --> Prescalar Value(SRC_CLK / RFS_VAL / fs - 1)          XXX */
-static int smdks5p_hw_params(struct snd_pcm_substream *substream,
+static int smdk64xx_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
 {
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->dai->cpu_dai;
-	struct snd_soc_dai *codec_dai = rtd->dai->codec_dai;
-	int bfs, rfs, psr, ret;
-	unsigned int pll_out;
+	unsigned int rclk, psr=1;
+	int bfs, rfs, ret;
 
-	/* Choose BFS and RFS values combination that is supported by
-	 * both the WM8580 codec as well as the S3C AP
-	 *
-	 * WM8580 codec supports only S16_LE, S20_3LE, S24_LE & S32_LE.
-	 * S3C AP supports only S8, S16_LE & S24_LE.
-	 * We implement all for completeness but only S16_LE & S24_LE bit-lengths 
-	 * are possible for this AP-Codec combination.
-	 */
 	switch (params_format(params)) {
-	case SNDRV_PCM_FORMAT_U24_LE:
-	case SNDRV_PCM_FORMAT_S24_LE:
-		bfs = 48;
-		break;
+	case SNDRV_PCM_FORMAT_U24:
+	case SNDRV_PCM_FORMAT_S24:
+		printk("%s:%d: 24bits/sample not supported!\n", __func__, __LINE__);
+		return -EINVAL;
 	case SNDRV_PCM_FORMAT_U16_LE:
 	case SNDRV_PCM_FORMAT_S16_LE:
 		bfs = 32;
@@ -81,272 +61,227 @@ static int smdks5p_hw_params(struct snd_pcm_substream *substream,
 	switch (params_rate(params)) {
 	case 16000:
 	case 22050:
+	case 24000:
 	case 32000:
 	case 44100:
 	case 48000:
 	case 88200:
 	case 96000:
-		rfs = 256;
+		if (bfs == 48)
+			rfs = 384;
+		else
+			rfs = 256;
 		break;
 	case 64000:
 		rfs = 384;
 		break;
 	case 8000:
 	case 11025:
-		rfs = 512;
+	case 12000:
+		if (bfs == 48)
+			rfs = 768;
+		else
+			rfs = 512;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	pll_out = params_rate(params) * rfs;
+	rclk = params_rate(params) * rfs;
 
-#ifdef CONFIG_S5P_USE_CLKAUDIO
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_CLKAUDIO,
-				params_rate(params), SND_SOC_CLOCK_OUT);
-	if (ret < 0)
-		return ret;
-#endif
-
-#ifdef CONFIG_SND_WM8580_MASTER
-	/* Set the AP Prescalar */
-	ret = snd_soc_dai_set_pll(codec_dai, WM8580_PLLA,
-					SMDK_WM8580_OSC_FREQ, pll_out);
-	if (ret < 0)
-		return ret;
-#else
-	/* Only 384fs and 768fs are allowed for bfs=48fs in SoC Master mode */
-	if (bfs == 48) {
-		switch (rfs) {
-		case 256:
-			rfs = 384;
-			break;
-		case 512:
-			rfs = 768;
-		default:
-			break;
-		}
+	switch (rclk) {
+	case 4096000:
+	case 5644800:
+	case 6144000:
+	case 8467200:
+	case 9216000:
+		psr = 8;
+		break;
+	case 8192000:
+	case 11289600:
+	case 12288000:
+	case 16934400:
+	case 18432000:
+		psr = 4;
+		break;
+	case 22579200:
+	case 24576000:
+	case 33868800:
+	case 36864000:
+		psr = 2;
+		break;
+	case 67737600:
+	case 73728000:
+		psr = 1;
+		break;
+	default:
+		printk("Not yet supported!\n");
+		return -EINVAL;
 	}
 
-	psr = SRC_CLK / rfs / params_rate(params);
-	ret = SRC_CLK / rfs - psr * params_rate(params);
-	if(ret >= params_rate(params)/2)	// round off
-	   psr += 1;
-	psr -= 1;
-	//printk("SRC_CLK=%d PSR=%d RFS=%d BFS=%d\n", SRC_CLK, psr, rfs, bfs);
+	set_epll_rate(rclk * psr);
 
-	/* Set the AP Prescalar */
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_DIV_PRESCALER, psr);
-#endif
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C64XX_CLKSRC_CDCLK,
+					0, SND_SOC_CLOCK_OUT);
 	if (ret < 0)
 		return ret;
 
-#ifdef CONFIG_SND_WM8580_MASTER
-	/* Set the WM8580 RFS */
-	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX],
-						WM8580_MCLKRATIO, rfs);
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLKRATIO, rfs);
-#else
-	/* Set the AP RFS */
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_DIV_MCLK, rfs);
-#endif
+	/* We use MUX for basic ops in SoC-Master mode */
+	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C64XX_CLKSRC_MUX,
+					0, SND_SOC_CLOCK_IN);
 	if (ret < 0)
 		return ret;
 
-#ifdef CONFIG_SND_WM8580_MASTER
-	/* Set the WM8580 BFS */
-	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX],
-						WM8580_BCLKRATIO, bfs);
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_BCLKRATIO, bfs);
-#else
-	/* Set the AP BFS */
-	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_DIV_BCLK, bfs);
-#endif
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_I2SV2_DIV_PRESCALER, psr-1);
 	if (ret < 0)
 		return ret;
 
-	return 0;
-}
-
-static int init_dais(struct snd_soc_dai *cpu_dai, struct snd_soc_dai *codec_dai)
-{
-	int ret;
-
-	/* Set the Codec DAI configuration */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
-#else
-	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-#endif
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_I2SV2_DIV_BCLK, bfs);
 	if (ret < 0)
 		return ret;
 
-	/* Set the AP DAI configuration */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBM_CFM);
-#else
-	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
-#endif
+	ret = snd_soc_dai_set_clkdiv(cpu_dai, S3C_I2SV2_DIV_RCLK, rfs);
 	if (ret < 0)
 		return ret;
 
-	/* Select the AP Sysclk */
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_EXT, 0, SND_SOC_CLOCK_IN);
-#else
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CDCLKSRC_INT, 0, SND_SOC_CLOCK_OUT);
-#endif
-	if (ret < 0)
-		return ret;
-
-#ifdef CONFIG_SND_WM8580_MASTER
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_SLVPCLK, 0, SND_SOC_CLOCK_IN);
-#else
-#ifdef CONFIG_S5P_USE_CLKAUDIO
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_CLKAUDIO, 44100, SND_SOC_CLOCK_OUT);
-#else
-	ret = snd_soc_dai_set_sysclk(cpu_dai, S3C_CLKSRC_PCLK, 0, SND_SOC_CLOCK_OUT);
-#endif
-#endif
-	if (ret < 0)
-		return ret;
-
-	/* Set the Codec BCLK(no option to set the MCLK) */
-	/* See page 2 and 53 of Wm8580 Manual */
-#ifdef CONFIG_SND_WM8580_MASTER 
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_PLLA); /* Use PLLACLK in AP-Slave Mode */
-#else
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_MCLK, WM8580_CLKSRC_MCLK); /* Use MCLK provided by CPU i/f */
-#endif
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_CLKOUTSRC, WM8580_CLKSRC_NONE); /* Pg-58 */
-	if (ret < 0)
-		return ret;
-
-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8580_DAC_CLKSEL, WM8580_CLKSRC_MCLK); /* Fig-26 Pg-43 */
-	if (ret < 0)
-		return ret;
-	
 	return 0;
 }
 
 /*
- * WM8580 DAI operations.
+ * SMDK64XX WM8580 DAI operations.
  */
-static struct snd_soc_ops smdks5p_ops_paif = {
-	.hw_params = smdks5p_hw_params,
+static struct snd_soc_ops smdk64xx_ops = {
+	.hw_params = smdk64xx_hw_params,
 };
 
-/* SMDK Playback widgets */
+/* SMDK64xx Playback widgets */
 static const struct snd_soc_dapm_widget wm8580_dapm_widgets_pbk[] = {
 	SND_SOC_DAPM_HP("Front-L/R", NULL),
 };
 
-/* smdk card audio map (connections to the codec pins) */
+/* SMDK-PAIFRX connections */
 static const struct snd_soc_dapm_route audio_map_rx[] = {
 	/* Front Left/Right are fed VOUT1L/R */
 	{"Front-L/R", NULL, "VOUT1L"},
 	{"Front-L/R", NULL, "VOUT1R"},
 };
 
-static int smdks5p_wm8580_init_paifrx(struct snd_soc_codec *codec)
+static int smdk64xx_wm8580_init_paifrx(struct snd_soc_codec *codec)
 {
-	/* Add smdk specific Playback widgets */
+	int ret;
+
+	/* Add smdk64xx specific Playback widgets */
 	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets_pbk,
 				  ARRAY_SIZE(wm8580_dapm_widgets_pbk));
- 
+
 	/* Set up PAIFRX audio path */
 	snd_soc_dapm_add_routes(codec, audio_map_rx, ARRAY_SIZE(audio_map_rx));
-
-	/* Stereo enabled by default */
-	snd_soc_dapm_enable_pin(codec, "Front-L/R");
 
 	/* signal a DAPM event */
 	snd_soc_dapm_sync(codec);
 
+	/* Set the Codec DAI configuration */
+	ret = snd_soc_dai_set_fmt(&wm8580_dai[WM8580_DAI_PAIFRX], SND_SOC_DAIFMT_I2S
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set the AP DAI configuration */
+	ret = snd_soc_dai_set_fmt(&lpam_i2s_dai, SND_SOC_DAIFMT_I2S
+					 | SND_SOC_DAIFMT_NB_NF
+					 | SND_SOC_DAIFMT_CBS_CFS);
+	if (ret < 0)
+		return ret;
+
+	/* Set WM8580 to drive MCLK from its MCLK-pin */
+	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX], WM8580_MCLK,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
+	/* Explicitly set WM8580-DAC to source from MCLK */
+	ret = snd_soc_dai_set_clkdiv(&wm8580_dai[WM8580_DAI_PAIFRX], WM8580_DAC_CLKSEL,
+					WM8580_CLKSRC_MCLK);
+	if (ret < 0)
+		return ret;
+
 	return 0;
 }
 
-static struct snd_soc_dai_link smdks5p_dai[] = {
-	{ /* I2S Primary Playback i/f */
-		.name = "WM8580 PAIF RX",
-		.stream_name = "Playback",
-		.cpu_dai = &lpam_i2s_dai,
-		.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
-		.init = smdks5p_wm8580_init_paifrx,
-		.ops = &smdks5p_ops_paif,
-	},
+static struct snd_soc_dai_link smdk64xx_dai[] = {
+{ /* Primary Playback i/f */
+	.name = "WM8580 PAIF RX",
+	.stream_name = "LowPower Mode Playback",
+	.cpu_dai = &lpam_i2s_dai,
+	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
+	.init = smdk64xx_wm8580_init_paifrx,
+	.ops = &smdk64xx_ops,
+},
 };
 
-static struct snd_soc_card smdk = {
+static struct snd_soc_card smdk64xx = {
 	.name = "smdk",
 	.lp_mode = 1,
 	.platform = &lpam_soc_platform,
-	.dai_link = smdks5p_dai,
-	.num_links = ARRAY_SIZE(smdks5p_dai),
+	.dai_link = smdk64xx_dai,
+	.num_links = ARRAY_SIZE(smdk64xx_dai),
 };
 
 static struct wm8580_setup_data smdks5p_wm8580_setup = {
 	.i2c_address = 0x1b,
 };
 
-static struct snd_soc_device smdks5p_snd_devdata = {
-	.card = &smdk,
+static struct snd_soc_device smdk64xx_snd_devdata = {
+	.card = &smdk64xx,
 	.codec_dev = &soc_codec_dev_wm8580,
 	.codec_data = &smdks5p_wm8580_setup,
 };
 
-static struct platform_device *smdks5p_snd_device;
+static struct platform_device *smdk64xx_snd_device;
 
-static int __init smdks5p_audio_init(void)
+static int set_epll_rate(unsigned long rate)
 {
-	int i, ret;
+	struct clk *fout_epll;
 
-	smdks5p_snd_device = platform_device_alloc("soc-audio", 0);
-	if (!smdks5p_snd_device)
-		return -ENOMEM;
-
-	platform_set_drvdata(smdks5p_snd_device, &smdks5p_snd_devdata);
-	smdks5p_snd_devdata.dev = &smdks5p_snd_device->dev;
-
-	ret = platform_device_add(smdks5p_snd_device);
-	if (ret) {
-		printk("Unable to add platform device!\n");
-		goto lb1;
+	fout_epll = clk_get(NULL, "fout_epll");
+	if (IS_ERR(fout_epll)) {
+		printk(KERN_ERR "%s: failed to get fout_epll\n", __func__);
+		return -ENOENT;
 	}
 
-	/* Do inits common to PAIF-Rx */
-	ret = init_dais(smdks5p_dai[0].cpu_dai, smdks5p_dai[0].codec_dai);
-	if (ret) {
-		printk("Unable to init DAIs!\n");
-		goto lb1;
-	}
+	if (rate == clk_get_rate(fout_epll))
+		goto out;
 
-#ifdef CONFIG_SND_WM8580_MASTER
-	s3cdbg("WM8580 is I2S Master\n");
-#else
-	s3cdbg("S5P is I2S Master\n");
-#endif
+	clk_disable(fout_epll);
+	clk_set_rate(fout_epll, rate);
+	clk_enable(fout_epll);
+
+out:
+	clk_put(fout_epll);
 
 	return 0;
+}
 
-lb1:
-	platform_device_put(smdks5p_snd_device);
+static int __init smdk64xx_audio_init(void)
+{
+	int ret;
+
+	smdk64xx_snd_device = platform_device_alloc("soc-audio", -1);
+	if (!smdk64xx_snd_device)
+		return -ENOMEM;
+
+	platform_set_drvdata(smdk64xx_snd_device, &smdk64xx_snd_devdata);
+	smdk64xx_snd_devdata.dev = &smdk64xx_snd_device->dev;
+	ret = platform_device_add(smdk64xx_snd_device);
+
+	if (ret)
+		platform_device_put(smdk64xx_snd_device);
 
 	return ret;
 }
+module_init(smdk64xx_audio_init);
 
-static void __exit smdks5p_audio_exit(void)
-{
-	platform_device_unregister(smdks5p_snd_device);
-}
-
-module_init(smdks5p_audio_init);
-module_exit(smdks5p_audio_exit);
-
-/* Module information */
 MODULE_AUTHOR("Jaswinder Singh, jassi.brar@samsung.com");
-MODULE_DESCRIPTION("ALSA SoC SMDK WM8580");
+MODULE_DESCRIPTION("ALSA SoC SMDK_LPAM WM8580");
 MODULE_LICENSE("GPL");
