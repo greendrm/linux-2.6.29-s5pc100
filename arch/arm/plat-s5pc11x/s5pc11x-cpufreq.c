@@ -59,20 +59,20 @@ struct s5pc11x_dvs_conf {
 static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
 	{
 		.lvl		= L0,
-		.arm_volt	= 1300000,
-		.int_volt	= 1200000,
+		.arm_volt	= 1250000,
+		.int_volt	= 1100000,
 	}, {
 		.lvl		= L1,
 		.arm_volt	= 1200000,
-		.int_volt	= 1200000,
+		.int_volt	= 1100000,
 
 	}, {
 		.lvl		= L2,
-		.arm_volt	= 1200000,
-		.int_volt	= 1200000,
+		.arm_volt	= 1050000,
+		.int_volt	= 1100000,
 	}, {
 		.lvl		= L3,
-		.arm_volt	= 1000000,
+		.arm_volt	= 950000,
 		.int_volt	= 1000000,
 	},
 };

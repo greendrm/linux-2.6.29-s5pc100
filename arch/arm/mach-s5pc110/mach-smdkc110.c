@@ -232,7 +232,7 @@ static struct regulator_consumer_supply buck2_consumers[] = {
 static struct regulator_init_data max8698_buck2_data = {
 	.constraints	= {
 		.name		= "VCC_INTERNAL",
-		.min_uV		= 1000000,
+		.min_uV		= 950000,
 		.max_uV		= 1200000,
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
@@ -426,10 +426,10 @@ static struct max8698_platform_data max8698_platform_data_1 = {
 	.set2		= S5PC11X_GPH1(7),
 	.set3		= S5PC11X_GPH0(4),
 #if defined(CONFIG_CPU_S5PC110_EVT1)
-	.dvsarm1	= 0x9,	// 1.20v
-	.dvsarm2	= 0x8,	// 1.15V
+	.dvsarm1	= 0xa,	// 1.25v
+	.dvsarm2	= 0x9,	// 1.20V
 	.dvsarm3	= 0x6,	// 1.05V
-	.dvsarm4	= 0x5,	// 1.00V
+	.dvsarm4	= 0x4,	// 0.95V
 
 	.dvsint1	= 0x7,	// 1.10v
 	.dvsint2	= 0x5,	// 1.00V
