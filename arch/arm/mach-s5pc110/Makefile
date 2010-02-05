@@ -29,4 +29,4 @@ obj-$(CONFIG_MACH_SMDKC110)	+= button-smdkc110.o
 led-$(CONFIG_MACH_SMDKC110)     += leds-s5pc110.o
 obj-$(CONFIG_LEDS)              += $(led-y)
 
-obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
+obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o deep-idle.o

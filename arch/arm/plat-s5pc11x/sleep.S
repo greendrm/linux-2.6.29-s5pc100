@@ -134,6 +134,16 @@ deepidle_save:
 	@@ turned on, this restores the last bits from the
 	@@ stack
 resume_with_mmu:
+	ldr	r0, =s5pc110_power_mode
+	ldr	r1, [r0]
+	cmp	r1, #0x0
+	beq	skip_l2_enable
+	
+	mrc     p15, 0, r0, c1, c0, 1	@enable L2 cache
+	orr     r0, r0, #(1<<1)
+	mcr     p15, 0, r0, c1, c0, 1
+
+skip_l2_enable:	
 	mov	r0, #1
 
 	/* delete added mmu table list */
@@ -212,6 +222,9 @@ common_restore_1:
 	mcr	p15, 0, r7, c2, c0, 1	@ Translation Table BASE1
 	mcr	p15, 0, r6, c2, c0, 0	@ Translation Table BASE0
 
+	cmp	r1, #0x0		@ if deep-idle wakeup
+					@ r1 = s5pc110_power_mode
+	bicne	r10, r10, #(1<<1)	@ disable L2cache
 	mcr	p15, 0, r10, c1, c0, 1	@ Auxiliary control register
 
 	mov	r1, #0

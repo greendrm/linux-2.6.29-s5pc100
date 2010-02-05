@@ -31,6 +31,7 @@
 #define S5PC110_MAX_STATES	1
 
 
+extern void s5pc110_deepidle();
 /* For saving & restoring VIC register before entering
  * deep-idle mode
  **/
@@ -81,6 +82,7 @@ static void s5pc110_enter_deepidle(void)
 	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
+#if 0	
 	/* Power mode register configuration */
 	tmp = __raw_readl(S5P_PWR_CFG);
 	tmp &= S5P_CFG_WFI_CLEAN;
@@ -93,16 +95,22 @@ static void s5pc110_enter_deepidle(void)
 	tmp |= S5P_OTHER_SYSC_INTOFF;
 	__raw_writel(tmp, S5P_OTHERS);
 #endif
+#endif
 	do {
 		tmp = __raw_readl(S3C24XX_VA_UART1 + S3C2410_UTRSTAT);
 	} while( !(tmp & S3C2410_UTRSTAT_TXE));
 	/* Entering deep-idle mode with WFI instruction */
 	if (s5pc110_cpu_save(regs_save) == 0) {
+#if 0
 		flush_cache_all();
+
 		/* This function for Chip bug on EVT0 */
 	//	while(1);
 		asm("dsb\n\t"
 			"wfi\n\t");
+#else
+		s5pc110_deepidle();
+#endif
 	}
 	
 	tmp = __raw_readl(S5P_IDLE_CFG);
