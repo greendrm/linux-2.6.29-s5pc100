@@ -196,7 +196,6 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 	WRITEL(EncInitMpeg4Arg->in_profile_level, S3C_FIMV_PROFILE);
 	WRITEL(EncInitMpeg4Arg->in_gop_num, S3C_FIMV_IDR_PERIOD);
 	WRITEL(EncInitMpeg4Arg->in_gop_num, S3C_FIMV_I_PERIOD);
-	WRITEL(EncInitMpeg4Arg->in_vop_quant, S3C_FIMV_FRAME_QP_INIT);
 	WRITEL(0, S3C_FIMV_POST_ON);
 	
 #if (CONFIG_VIDEO_MFC_MAX_INSTANCE > 1)
@@ -216,6 +215,10 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 		WRITEL(EncInitMpeg4Arg->in_RC_framerate, S3C_FIMV_RC_FRAME_RATE);
 		WRITEL(EncInitMpeg4Arg->in_RC_bitrate, S3C_FIMV_RC_BIT_RATE);
 		WRITEL(EncInitMpeg4Arg->in_RC_qbound, S3C_FIMV_RC_QBOUND);
+		if (EncInitMpeg4Arg->in_RC_rpara == 0)
+
+			EncInitMpeg4Arg->in_RC_rpara = 5; /* RC_RPARA : '0' is forbidden */
+
 		WRITEL(EncInitMpeg4Arg->in_RC_rpara, S3C_FIMV_RC_RPARA);
 		WRITEL(0, S3C_FIMV_RC_MB_CTRL);
 	}
@@ -856,7 +859,6 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 			return MFCINST_ERR_INVALID_PARAM;
 		}
 		else {
-			printk("FRAME_RATE is =%d %d\n",set_cnf_arg->in_config_value[0],READL(S3C_FIMV_RC_FRAME_RATE));
 			WRITEL(ENC_FRAME_RATE_CHAGNE_ENABLE, S3C_FIMV_CODEC_COMMAND);
 			WRITEL(set_cnf_arg->in_config_value[0], S3C_FIMV_RC_FRAME_RATE);
 		}
@@ -877,7 +879,6 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 			return MFCINST_ERR_INVALID_PARAM;
 		}
 		else {
-			printk("BIT_RATE is =%d %d\n",set_cnf_arg->in_config_value[0],READL(S3C_FIMV_RC_BIT_RATE));
 			WRITEL(ENC_BIT_RATE_CHAGNE_ENABLE, S3C_FIMV_CODEC_COMMAND);
 			WRITEL(set_cnf_arg->in_config_value[0], S3C_FIMV_RC_BIT_RATE);
 		}
