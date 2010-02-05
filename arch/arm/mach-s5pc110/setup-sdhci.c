@@ -53,7 +53,7 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 
 		writel(0x3fc0, S5PC11X_GPG1DRV);
 
-	case 0:	
+	case 0:
 	case 1:
 	case 4:
 	        /* Set all the necessary GPIO function and pull up/down */
@@ -63,11 +63,11 @@ void s3c6410_setup_sdhci0_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		writel(0x3fff, S5PC11X_GPG0DRV);
-		
-	        /* Chip detect pin Pull up*/
-        	s3c_gpio_setpull(S5PC11X_GPG0(2), S3C_GPIO_PULL_UP);
 
-		break;			
+	        /* Chip detect pin Pull up*/
+		s3c_gpio_setpull(S5PC11X_GPG0(2), S3C_GPIO_PULL_UP);
+
+		break;
 	default:
 		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
@@ -89,7 +89,7 @@ void s3c6410_setup_sdhci0_cfg_card(struct platform_device *dev,
 	ctrl2 &= S3C_SDHCI_CTRL2_SELBASECLK_MASK;
 	ctrl2 |= (S3C64XX_SDHCI_CTRL2_ENSTAASYNCCLR |
 		  S3C64XX_SDHCI_CTRL2_ENCMDCNFMSK |
- 		  S3C_SDHCI_CTRL2_DFCNT_NONE |
+		  S3C_SDHCI_CTRL2_DFCNT_NONE |
 		  S3C_SDHCI_CTRL2_ENCLKOUTHOLD);
 
 	writel(ctrl2, r + S3C_SDHCI_CONTROL2);
@@ -103,7 +103,7 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 	switch(width)
 	{
 	/* Channel 1 supports 4-bit bus width */
-	case 0:	
+	case 0:
 	case 1:
 	case 4:
 	        /* Set all the necessary GPIO function and pull up/down */
@@ -113,11 +113,11 @@ void s3c6410_setup_sdhci1_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		writel(0x3fff, S5PC11X_GPG1DRV);
-		
-	        /* Chip detect pin Pull up*/
-        	s3c_gpio_setpull(S5PC11X_GPG1(2), S3C_GPIO_PULL_UP);
 
-		break;			
+	        /* Chip detect pin Pull up*/
+		s3c_gpio_setpull(S5PC11X_GPG1(2), S3C_GPIO_PULL_UP);
+
+		break;
 	default:
 		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
@@ -138,7 +138,7 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		writel(0x3fc0, S5PC11X_GPG3DRV);
-	case 0:		
+	case 0:
 	case 1:
 	case 4:
 	        /* Set all the necessary GPIO function and pull up/down */
@@ -148,11 +148,11 @@ void s3c6410_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		writel(0x3fff, S5PC11X_GPG2DRV);
-		
-	        /* Chip detect pin Pull up*/
-        	s3c_gpio_setpull(S5PC11X_GPG2(2), S3C_GPIO_PULL_UP);
 
-		break;			
+	        /* Chip detect pin Pull up*/
+		s3c_gpio_setpull(S5PC11X_GPG2(2), S3C_GPIO_PULL_UP);
+
+		break;
 	default:
 		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
@@ -165,7 +165,7 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 	switch(width)
 	{
 	/* Channel 3 supports 4-bit bus width */
-	case 0:		
+	case 0:
 	case 1:
 	case 4:
 	        /* Set all the necessary GPIO function and pull up/down */
@@ -175,11 +175,11 @@ void s3c6410_setup_sdhci3_cfg_gpio(struct platform_device *dev, int width)
 	        }
 
 		writel(0x3fff, S5PC11X_GPG3DRV);
-		
-	        /* Chip detect pin Pull up*/
-        	s3c_gpio_setpull(S5PC11X_GPG3(2), S3C_GPIO_PULL_UP);
 
-		break;			
+	        /* Chip detect pin Pull up*/
+		s3c_gpio_setpull(S5PC11X_GPG3(2), S3C_GPIO_PULL_UP);
+
+		break;
 	default:
 		printk("Wrong SD/MMC bus width : %d\n", width);
 	}
@@ -196,7 +196,7 @@ static struct s3c_sdhci_platdata hsmmc0_platdata = {
 #if defined(CONFIG_S5PC110_SD_CH2_8BIT)
 static struct s3c_sdhci_platdata hsmmc2_platdata = {
 	.max_width	= 8,
-	.host_caps	= (MMC_CAP_8_BIT_DATA | 
+	.host_caps	= (MMC_CAP_8_BIT_DATA |
 			   MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED),
 };
 #endif
@@ -208,7 +208,7 @@ void s3c_sdhci_set_platdata(void)
 #endif
 
 #if defined(CONFIG_S5PC110_SD_CH2_8BIT)
-	s3c_sdhci2_set_platdata(&hsmmc2_platdata);	
+	s3c_sdhci2_set_platdata(&hsmmc2_platdata);
 #endif
 };
 
