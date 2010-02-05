@@ -11,6 +11,8 @@
 #include <asm/assembler.h>
 #include <plat/regs-clock.h>
 #include <mach/map.h>
+
+#define NO_L2_CLEAN
 /*
  *	v7_flush_l1_dcache()
  *
@@ -46,16 +48,18 @@ loop2:
 loop3:
 	orr	r11, r10, r9, lsl r5		@ factor way and cache number into r11
 	orr	r11, r11, r7, lsl r2		@ factor index number into r11
-@	mcr	p15, 0, r11, c7, c14, 2		@ clean & invalidate by set/way
-	mcr	p15, 0, r11, c7, c10, 2		@ clean by set/way
+	mcr	p15, 0, r11, c7, c14, 2		@ clean & invalidate by set/way
+@	mcr	p15, 0, r11, c7, c10, 2		@ clean by set/way
 	subs	r9, r9, #1			@ decrement the way
 	bge	loop3
 	subs	r7, r7, #1			@ decrement the index
 	bge	loop2
 skip:
-@	add	r10, r10, #2			@ increment cache number
-@	cmp	r3, r10
-@	bgt	loop1
+#if !defined(NO_L2_CLEAN)
+	add	r10, r10, #2			@ increment cache number
+	cmp	r3, r10
+	bgt	loop1
+#endif	
 finished:
 	mov	r10, #0				@ swith back to cache level 0
 	mcr	p15, 2, r10, c0, c0, 0		@ select current cache level in cssr
