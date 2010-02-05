@@ -262,6 +262,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, MFC_CODEC_TYPE mfc_codec_
 				| ((EncInitH264Arg->in_deblock_alpha_C0 & 0x1f) << 7)
 				| ((EncInitH264Arg->in_deblock_beta     & 0x1f) << 2), S3C_FIMV_DEBLOCK_FILTER_OPTION);
 		WRITEL(0, S3C_FIMV_SHORT_HD_ON);
+
 		break;
 
 	default:
@@ -422,16 +423,7 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 								EncExeArg->in_Y_addr, EncExeArg->in_CbCr_addr);
 	s3c_mfc_set_vsp_buffer(MfcCtx->InstNo);
 
-	if ((MfcCtx->forceSetFrameType > DONT_CARE) &&
-		(MfcCtx->forceSetFrameType <= NOT_CODED)) {
-		WRITEL(MfcCtx->forceSetFrameType, S3C_FIMV_CODEC_COMMAND);
-		MfcCtx->forceSetFrameType = DONT_CARE;
-	} else 
-		WRITEL(DONT_CARE, S3C_FIMV_CODEC_COMMAND);
-	/*
-	if((EncExeArg->in_ForceSetFrameType >= DONT_CARE) && (EncExeArg->in_ForceSetFrameType <= NOT_CODED))
-		WRITEL(EncExeArg->in_ForceSetFrameType, S3C_FIMV_CODEC_COMMAND);
-	*/
+
 	/*
 	 * Set Interrupt
 	 */
@@ -467,6 +459,9 @@ MFC_ERROR_CODE s3c_mfc_exe_encode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 
 	mfc_debug("-- frame type(%d) encodedSize(%d)\r\n",
 		EncExeArg->out_frame_type, EncExeArg->out_encoded_size);
+
+	/* Clear the CodecCommand */
+	WRITEL(DONT_CARE, S3C_FIMV_CODEC_COMMAND);		
 
 	return MFCINST_RET_OK;
 }
@@ -838,13 +833,56 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 			return MFCINST_ERR_STATE_INVALID;
 		}
 
-		if ((set_cnf_arg->in_config_value[0] < DONT_CARE) || (set_cnf_arg->in_config_value[0] > NOT_CODED))
-			MfcCtx->forceSetFrameType = set_cnf_arg->in_config_value[0];
+		if ((set_cnf_arg->in_config_value[0] >= DONT_CARE) && (set_cnf_arg->in_config_value[0] <= NOT_CODED)) 
+			WRITEL(set_cnf_arg->in_config_value[0], S3C_FIMV_CODEC_COMMAND);
 		else {
-			mfc_warn("FRAME_TYPE should be between 0 and 2\n");
-			MfcCtx->forceSetFrameType = DONT_CARE;
+			mfc_err("FRAME_TYPE should be between 0 and 2\n");
+			return MFCINST_ERR_INVALID_PARAM;
 		}
 		break;
+
+	case MFC_ENC_SETCONF_CHANGE_FRAME_RATE:
+		if ((MfcCtx->MfcState < MFCINST_STATE_ENC_INITIALIZE) || 
+		    (MfcCtx->MfcState > MFCINST_STATE_ENC_EXE) || 
+		    !(READL(S3C_FIMV_RC_CONFIG) & 0x0300) ) {
+			mfc_err("MFC_ENC_SETCONF_CHANGE_FRAME_RATE : state is invalid\n");
+			return MFCINST_ERR_STATE_INVALID;
+		}
+	
+		if ((set_cnf_arg->in_config_value[0] == 0) || 
+			(MfcCtx->MfcCodecType != H264_ENC))  {
+			mfc_err("MFC_ENC_SETCONF_CHANGE_FRAME_RATE : '0' is forbidden! \
+				and only H.264 can change the bit rate\n"); 
+			return MFCINST_ERR_INVALID_PARAM;
+		}
+		else {
+			printk("FRAME_RATE is =%d %d\n",set_cnf_arg->in_config_value[0],READL(S3C_FIMV_RC_FRAME_RATE));
+			WRITEL(ENC_FRAME_RATE_CHAGNE_ENABLE, S3C_FIMV_CODEC_COMMAND);
+			WRITEL(set_cnf_arg->in_config_value[0], S3C_FIMV_RC_FRAME_RATE);
+		}
+		break;
+
+	case MFC_ENC_SETCONF_CHANGE_BIT_RATE:
+		if ((MfcCtx->MfcState < MFCINST_STATE_ENC_INITIALIZE) || 
+		    (MfcCtx->MfcState > MFCINST_STATE_ENC_EXE) || 
+		    !(READL(S3C_FIMV_RC_CONFIG) & 0x0300) ) {
+			mfc_err("MFC_ENC_SETCONF_CHANGE_BIT_RATE : state is invalid\n");
+			return MFCINST_ERR_STATE_INVALID;
+		}
+	
+		if ((set_cnf_arg->in_config_value[0] == 0) || 
+		     (MfcCtx->MfcCodecType != H264_ENC))  {
+			mfc_err("MFC_ENC_SETCONF_CHANGE_BIT_RATE : '0' is forbidden! \
+			         and only H.264 can change the bit rate\n");
+			return MFCINST_ERR_INVALID_PARAM;
+		}
+		else {
+			printk("BIT_RATE is =%d %d\n",set_cnf_arg->in_config_value[0],READL(S3C_FIMV_RC_BIT_RATE));
+			WRITEL(ENC_BIT_RATE_CHAGNE_ENABLE, S3C_FIMV_CODEC_COMMAND);
+			WRITEL(set_cnf_arg->in_config_value[0], S3C_FIMV_RC_BIT_RATE);
+		}
+		break;
+ 
 		
 	default:
 		mfc_err("invalid config param\n");
