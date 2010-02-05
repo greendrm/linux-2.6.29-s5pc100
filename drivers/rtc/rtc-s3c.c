@@ -385,7 +385,7 @@ static int s3c_rtc_ioctl(struct device *dev,
 }
 static int s3c_rtc_proc(struct device *dev, struct seq_file *seq)
 {
-	unsigned int ticnt = readb(s3c_rtc_base + S3C2410_TICNT);
+	unsigned int ticnt = readw(s3c_rtc_base + S3C2410_TICNT);
 
 	seq_printf(seq, "periodic_IRQ\t: %s\n",
 		     (ticnt & S3C2410_TICNT_ENABLE) ? "yes" : "no" );
@@ -455,30 +455,30 @@ static void s3c_rtc_enable(struct platform_device *pdev, int en)
 		return;
 
 	if (!en) {
-		tmp = readb(base + S3C2410_RTCCON);
-		writeb(tmp & ~ (S3C2410_RTCCON_RTCEN | S3C_RTCCON_TICEN), base + S3C2410_RTCCON);
+		tmp = readw(base + S3C2410_RTCCON);
+		writew(tmp & ~ (S3C2410_RTCCON_RTCEN | S3C_RTCCON_TICEN), base + S3C2410_RTCCON);
 	} else {
 		/* re-enable the device, and check it is ok */
 
-		if ((readb(base+S3C2410_RTCCON) & S3C2410_RTCCON_RTCEN) == 0){
+		if ((readw(base+S3C2410_RTCCON) & S3C2410_RTCCON_RTCEN) == 0){
 			dev_dbg(&pdev->dev, "rtc disabled, re-enabling\n");
 
-			tmp = readb(base + S3C2410_RTCCON);
-			writeb(tmp|S3C2410_RTCCON_RTCEN, base+S3C2410_RTCCON);
+			tmp = readw(base + S3C2410_RTCCON);
+			writew(tmp|S3C2410_RTCCON_RTCEN, base+S3C2410_RTCCON);
 		}
 
-		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CNTSEL)){
+		if ((readw(base + S3C2410_RTCCON) & S3C2410_RTCCON_CNTSEL)){
 			dev_dbg(&pdev->dev, "removing RTCCON_CNTSEL\n");
 
-			tmp = readb(base + S3C2410_RTCCON);
-			writeb(tmp& ~S3C2410_RTCCON_CNTSEL, base+S3C2410_RTCCON);
+			tmp = readw(base + S3C2410_RTCCON);
+			writew(tmp& ~S3C2410_RTCCON_CNTSEL, base+S3C2410_RTCCON);
 		}
 
-		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CLKRST)){
+		if ((readw(base + S3C2410_RTCCON) & S3C2410_RTCCON_CLKRST)){
 			dev_dbg(&pdev->dev, "removing RTCCON_CLKRST\n");
 
-			tmp = readb(base + S3C2410_RTCCON);
-			writeb(tmp & ~S3C2410_RTCCON_CLKRST, base+S3C2410_RTCCON);
+			tmp = readw(base + S3C2410_RTCCON);
+			writew(tmp & ~S3C2410_RTCCON_CLKRST, base+S3C2410_RTCCON);
 		}
 	}
 }
@@ -556,7 +556,7 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 	s3c_rtc_enable(pdev, 1);
 
  	pr_debug("s3c2410_rtc: RTCCON=%02x\n",
-		 readb(s3c_rtc_base + S3C2410_RTCCON));
+		 readw(s3c_rtc_base + S3C2410_RTCCON));
 
 	s3c_rtc_setfreq(&pdev->dev, 1);
 
@@ -578,9 +578,9 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 	/* check rtc time */
 	for (bcd_loop = S3C2410_RTCSEC ; bcd_loop <= S3C2410_RTCYEAR ; bcd_loop +=0x4)
 	{
-		bcd_tmp = readb(s3c_rtc_base + bcd_loop);
+		bcd_tmp = readw(s3c_rtc_base + bcd_loop);
 		if(((bcd_tmp & 0xf) > 0x9) || ((bcd_tmp & 0xf0) > 0x90))
-			writeb(0, s3c_rtc_base + bcd_loop);
+			writew(0, s3c_rtc_base + bcd_loop);
 	}
 
 	platform_set_drvdata(pdev, rtc);
@@ -611,7 +611,7 @@ static int s3c_rtc_suspend(struct platform_device *pdev, pm_message_t state)
 
 	time.tv_nsec = 0;
 	/* save TICNT for anyone using periodic interrupts */
-	ticnt_save = readb(s3c_rtc_base + S3C2410_TICNT);
+	ticnt_save = readw(s3c_rtc_base + S3C2410_TICNT);
 
 	s3c_rtc_gettime(&pdev->dev, &tm);
 	rtc_tm_to_time(&tm, &time.tv_sec);
@@ -632,7 +632,7 @@ static int s3c_rtc_resume(struct platform_device *pdev)
 	s3c_rtc_gettime(&pdev->dev, &tm);
 	rtc_tm_to_time(&tm, &time.tv_sec);
 	restore_time_delta(&s3c_rtc_delta, &time);
-	writeb(ticnt_save, s3c_rtc_base + S3C2410_TICNT);
+	writew(ticnt_save, s3c_rtc_base + S3C2410_TICNT);
 	return 0;
 }
 #else

@@ -12,9 +12,9 @@
 #define S5P_I2S_H_
 
 /* Clock dividers */
-#define S3C_DIV_MCLK	0
-#define S3C_DIV_BCLK	1
-#define S3C_DIV_PRESCALER	2
+#define S3C_I2SV2_DIV_RCLK	0
+#define S3C_I2SV2_DIV_BCLK	1
+#define S3C_I2SV2_DIV_PRESCALER	2
 
 #define S3C_IISCON		(0x00)
 #define S3C_IISMOD		(0x04)
@@ -168,12 +168,9 @@
 #define S3C_IISADDR_ENSTOP	(1<<0)
 
 /* clock sources */
-#define S3C_CLKSRC_PCLK		S3C_IISMOD_MSTPCLK
-#define S3C_CLKSRC_CLKAUDIO	S3C_IISMOD_MSTCLKAUDIO
-#define S3C_CLKSRC_SLVPCLK	S3C_IISMOD_SLVPCLK
-#define S3C_CLKSRC_I2SEXT	S3C_IISMOD_SLVI2SCLK
-#define S3C_CDCLKSRC_INT	(4<<10)
-#define S3C_CDCLKSRC_EXT	(5<<10)
+#define S3C64XX_CLKSRC_PCLK	(0)
+#define S3C64XX_CLKSRC_MUX	(1)
+#define S3C64XX_CLKSRC_CDCLK    (2)
 
 #define IRQ_S3C_IISV32		IRQ_I2S1
 #define IRQ_S3C_IISV50		IRQ_I2S0
@@ -202,7 +199,7 @@
 #ifdef CONFIG_SND_DEBUG
 #define s3cdbg(x...) printk(x)
 #else
-#define s3cdbg(x...)
+#define s3cdbg(x...) do{}while(0)
 #endif
 
 /* Set LP_DMA_PERIOD to maximum possible size without latency issues with playback.

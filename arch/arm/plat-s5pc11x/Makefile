@@ -69,4 +69,4 @@ obj-$(CONFIG_S5PC11X_SETUP_CSIS)  += setup-csis.o
 # Device setup - IPC
 obj-$(CONFIG_S5PC11X_DEV_IPC)	  += dev-ipc.o
 
-obj-$(CONFIG_SND_S3C24XX_SOC) += dev-audio.o
+obj-$(CONFIG_SND_SAMSUNG_SOC) += dev-audio.o

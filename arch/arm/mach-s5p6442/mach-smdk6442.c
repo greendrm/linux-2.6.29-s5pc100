@@ -195,7 +195,7 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 #if defined CONFIG_USB_GADGET_S3C_OTGD 
 	&s3c_device_usbgadget,
 #endif
-#ifdef CONFIG_SND_S3C24XX_SOC
+#ifdef CONFIG_SND_SAMSUNG_SOC
 	&s5p6442_device_iis0,
 #endif
 	&s3c_device_fimc0,
@@ -208,13 +208,11 @@ static struct platform_device *smdk6442_devices[] __initdata = {
 
 static struct i2c_board_info i2c_devs0[] __initdata = {
 	{ I2C_BOARD_INFO("24c08", 0x50), },
-	//{ I2C_BOARD_INFO("WM8580", 0x10), },
 };
 
 static struct i2c_board_info i2c_devs1[] __initdata = {
 	{ I2C_BOARD_INFO("24c128", 0x54), },	/* Samsung S524AD0XD1 */
 	{ I2C_BOARD_INFO("WM8580", 0x1b), },
-	//{ I2C_BOARD_INFO("WM8580", 0x1b), },
 };
 
 static struct i2c_board_info i2c_devs2[] __initdata = {
