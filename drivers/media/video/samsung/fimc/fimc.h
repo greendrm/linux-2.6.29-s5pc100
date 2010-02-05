@@ -465,8 +465,7 @@ extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int le
 extern int fimc_hwset_disable_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_reset(struct fimc_control *ctrl);
-extern int fimc_hwset_hclksrc(struct fimc_control *ctrl);
-extern int fimc_hwset_sclksrc(struct fimc_control *ctrl);
+extern int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk);
 extern int fimc_hwget_overflow_state(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_offset(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_polarity(struct fimc_control *ctrl);

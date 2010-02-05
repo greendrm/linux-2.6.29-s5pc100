@@ -1536,9 +1536,9 @@ int fimc_change_clksrc(struct fimc_control *ctrl, int fimc_clk)
 	if (ctrl->status == FIMC_STREAMOFF) {
 		clk_disable(ctrl->clk);
 		if (fimc_clk == FIMC_HCLK) {
-			fimc_hwset_hclksrc(ctrl);
+			fimc_hwset_clksrc(ctrl,FIMC_HCLK);
 		} else {
-			fimc_hwset_sclksrc(ctrl);
+			fimc_hwset_clksrc(ctrl,FIMC_SCLK);
 		}
 		clk_enable(ctrl->clk);
 		fimc_hwset_reset(ctrl);
