@@ -72,7 +72,9 @@ typedef enum
 
 typedef enum
 {
-	MFC_ENC_SETCONF_FRAME_TYPE = 100,	
+	MFC_ENC_SETCONF_FRAME_TYPE = 100,
+	MFC_ENC_SETCONF_CHANGE_FRAME_RATE,
+	MFC_ENC_SETCONF_CHANGE_BIT_RATE,	
 }SSBSIP_MFC_ENC_CONF;
 
 /* but, due to lack of memory, MFC driver use 5 as maximum */
@@ -320,5 +322,11 @@ typedef struct tag_mfc_args{
 #define ENC_RC_MB_CTRL_STATIC_DISABLE          (1 << 1)
 #define ENC_RC_MB_CTRL_ACTIVITY_DISABLE        (1 << 0)
 
+
+#define ENC_FRAME_RATE_CHAGNE_ENABLE           (1 << 4) 
+#define ENC_FRAME_RATE_CHAGNE_DISABLE	       (0 << 4) 
+
+#define ENC_BIT_RATE_CHAGNE_ENABLE	       (1 << 3) 
+#define ENC_BIT_RATE_CHAGNE_DISABLE	       (0 << 3) 
 
 #endif /* _S3C_MFC_INTERFACE_H_ */

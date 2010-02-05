@@ -165,23 +165,16 @@ int fimc_hwset_reset(struct fimc_control *ctrl)
 	return 0;
 }
 
-int fimc_hwset_hclksrc(struct fimc_control *ctrl)
+int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk)
 {
 	u32 cfg = readl(ctrl->regs + S3C_MISC_FIMC);
 	cfg &= ~S3C_CLKSRC_HCLK_MASK;
-
-	cfg |= S3C_CLKSRC_HCLK;
-		
-	writel(cfg, ctrl->regs + S3C_MISC_FIMC);
-	return 0;
-}
-
-int fimc_hwset_sclksrc(struct fimc_control *ctrl)
-{
-	u32 cfg = readl(ctrl->regs + S3C_MISC_FIMC);
-	cfg &= ~S3C_CLKSRC_HCLK_MASK;
-
-	cfg |= S3C_CLKSRC_SCLK;
+	
+	if (src_clk == FIMC_HCLK) {
+		cfg |= S3C_CLKSRC_HCLK;
+	} else if (src_clk == FIMC_SCLK) {
+		cfg |= S3C_CLKSRC_SCLK;
+	}
 		
 	writel(cfg, ctrl->regs + S3C_MISC_FIMC);
 	return 0;

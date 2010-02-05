@@ -1075,9 +1075,13 @@ static int __devinit fimc_probe(struct platform_device *pdev)
 	if (ret < 0)
 		fimc_err("failed to add sysfs entries\n");
 #if (defined(CONFIG_VIDEO_FIMC_DMA_AUTO) && defined(CONFIG_CPU_S5PC110))
-        fimc_hwset_hclksrc(ctrl);
+        fimc_hwset_clksrc(ctrl,FIMC_HCLK);
 #elif (defined(CONFIG_VIDEO_FIMC_FIFO) && defined(CONFIG_CPU_S5PC110))
-        fimc_hwset_sclksrc(ctrl);
+	if (ctrl->id == 1) 
+	        fimc_hwset_clksrc(ctrl,FIMC_SCLK);
+	else
+		fimc_hwset_clksrc(ctrl,FIMC_HCLK);
+	
 #endif
 	fimc_info1("controller %d registered successfully\n", ctrl->id);
 

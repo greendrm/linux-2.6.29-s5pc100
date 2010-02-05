@@ -766,6 +766,11 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 
 	s5pc11x_pm_check_restore();
 
+	/* Release retention GPIO/MMC/UART IO */
+	tmp = __raw_readl(S5P_OTHERS);
+	tmp |= ((1<<31) | (1<<29) | (1<<28));
+	__raw_writel(tmp, S5P_OTHERS);
+
 #ifdef DEBUG_S5P_PM
 	s5p_low_lvl_debug(buf, "WAKEUP_STAT_AFTER", S5P_WAKEUP_STAT);
 #endif	

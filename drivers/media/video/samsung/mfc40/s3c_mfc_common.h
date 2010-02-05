@@ -93,7 +93,6 @@ typedef struct tag_mfc_inst_ctx
 	u32 displayDelay;
 	u32 postEnable;
 	u32 endOfFrame;
-	u32 forceSetFrameType;
 	u32 img_width;
 	u32 img_height;
 	u32 dwAccess;  // for Power Management.
