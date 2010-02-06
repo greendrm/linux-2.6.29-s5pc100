@@ -228,6 +228,11 @@ static struct s3c_dma_map __initdata s5pc110_dma_mappings[] = {
 		.channels       = MAP1(S3C_PDMA1_I2S0_TX),
 		.hw_addr.to     = S3C_PDMA1_I2S0_TX,
 	},
+	[DMACH_I2S0_OUT_S] = {
+		.name           = "i2s-v50-sec_out",
+		.channels       = MAP2(S3C_PDMA1_I2S0S_TX),
+		.hw_addr.to     = S3C_PDMA1_I2S0S_TX,
+	},
 	[DMACH_I2S0_IN] = {
 		.name           = "i2s-v50-in",
 		.channels       = MAP1(S3C_PDMA1_I2S0_RX),
