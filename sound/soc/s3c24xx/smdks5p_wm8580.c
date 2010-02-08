@@ -615,6 +615,7 @@ static struct snd_soc_dai_link smdk_dai[] = {
 	.stream_name = "Playback-Sec",
 	.cpu_dai = &i2s_sec_fifo_dai,
 	.codec_dai = &dummy_dai,
+	.use_idma = 1,
 },
 
 #if defined(CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S)
