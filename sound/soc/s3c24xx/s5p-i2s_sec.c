@@ -178,10 +178,13 @@ struct snd_soc_dai i2s_sec_fifo_dai = {
 };
 EXPORT_SYMBOL_GPL(i2s_sec_fifo_dai);
 
+extern void s5p_idma_init(void *regs);
+
 void s5p_i2s_sec_init(void *regs, dma_addr_t phys_base)
 {
 	s5p_i2s0_regs = regs;
 	s5p_i2s_sec_pcm_out.dma_addr = phys_base + S5P_IISTXDS;
+	s5p_idma_init(regs);
 }
 
 /* Module information */
