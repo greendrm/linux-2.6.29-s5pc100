@@ -101,8 +101,10 @@ static int s5p_i2s_hw_params(struct snd_pcm_substream *substream,
 
 	iismod = readl(s5p_i2s0_regs + S3C2412_IISMOD);
 
-	/* Data via APB i/f */
-	iismod &= ~S5P_IISMOD_TXSLP;
+	if (dailink->use_idma)
+		iismod |= S5P_IISMOD_TXSLP;
+	else
+		iismod &= ~S5P_IISMOD_TXSLP;
 
 	/* Copy the same bps as Primary */
 	iismod &= ~S5P_IISMOD_BLCSMASK;
