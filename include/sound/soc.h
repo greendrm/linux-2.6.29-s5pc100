@@ -341,6 +341,8 @@ struct snd_soc_dai_link  {
 	char *name;			/* Codec name */
 	char *stream_name;		/* Stream name */
 
+	unsigned int use_idma;		/* flag to use AUDSS-DMA */
+
 	/* DAI */
 	struct snd_soc_dai *codec_dai;
 	struct snd_soc_dai *cpu_dai;
