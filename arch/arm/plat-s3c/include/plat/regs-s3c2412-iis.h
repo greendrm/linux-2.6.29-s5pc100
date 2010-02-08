@@ -21,9 +21,18 @@
 #define S3C2412_IISRXD			(0x14)
 #define S5P_IISFICS			(0x18)
 #define S5P_IISTXDS			(0x1C)
+#define S5P_IISAHB			(0x20)
+#define S5P_IISSTR			(0x24)
+#define S5P_IISSIZE			(0x28)
+#define S5P_IISTRNCNT			(0x2C)
+#define S5P_IISADDR0			(0x30)
 
+#define S5P_IISCON_FTXSURSTAT		(1 << 24)
+#define S5P_IISCON_FTXSURINTEN		(1 << 23)
 #define S5P_IISCON_TXSDMAPAUSE		(1 << 20)
 #define S5P_IISCON_TXSDMACTIVE		(1 << 18)
+#define S5P_IISCON_FTXURSTATUS		(1 << 17)
+#define S5P_IISCON_FTXURINTEN		(1 << 16)
 
 #define S3C2412_IISCON_LRINDEX		(1 << 11)
 #define S3C2412_IISCON_TXFIFO_EMPTY	(1 << 10)
@@ -85,6 +94,31 @@
 #define S3C2412_IISFIC_TXCOUNT(x)	(((x) >>  8) & 0xf)
 #define S3C2412_IISFIC_RXCOUNT(x)	(((x) >>  0) & 0xf)
 
+#define S5P_IISAHB_INTENLVL3	(1<<27)
+#define S5P_IISAHB_INTENLVL2	(1<<26)
+#define S5P_IISAHB_INTENLVL1	(1<<25)
+#define S5P_IISAHB_INTENLVL0	(1<<24)
+#define S5P_IISAHB_LVL3INT	(1<<23)
+#define S5P_IISAHB_LVL2INT	(1<<22)
+#define S5P_IISAHB_LVL1INT	(1<<21)
+#define S5P_IISAHB_LVL0INT	(1<<20)
+#define S5P_IISAHB_CLRLVL3	(1<<19)
+#define S5P_IISAHB_CLRLVL2	(1<<18)
+#define S5P_IISAHB_CLRLVL1	(1<<17)
+#define S5P_IISAHB_CLRLVL0	(1<<16)
+#define S5P_IISAHB_DMARLD	(1<<5)
+#define S5P_IISAHB_DISRLDINT	(1<<3)
+#define S5P_IISAHB_DMAEND	(1<<2)
+#define S5P_IISAHB_DMACLR	(1<<1)
+#define S5P_IISAHB_DMAEN	(1<<0)
+
+#define S5P_IISSIZE_SHIFT	(16)
+#define S5P_IISSIZE_TRNMSK	(0xffff)
+#define S5P_IISTRNCNT_MASK	(0xffffff)
+
+#define S5P_IISADDR_MASK	(0x3fffff)
+#define S5P_IISADDR_SHIFT	(10)
+#define S5P_IISADDR_ENSTOP	(1<<0)
 
 
 #endif /* __ASM_ARCH_REGS_S3C2412_IIS_H */
