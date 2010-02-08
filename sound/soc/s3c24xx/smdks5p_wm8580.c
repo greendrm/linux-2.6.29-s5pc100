@@ -639,9 +639,11 @@ static struct snd_soc_dai_link smdk_dai[] = {
 
 };
 
+extern struct snd_soc_platform s3c_dma_wrapper;
+
 static struct snd_soc_card smdk = {
 	.name = "smdk",
-	.platform = &s3c24xx_soc_platform,
+	.platform = &s3c_dma_wrapper,
 	.dai_link = smdk_dai,
 	.num_links = ARRAY_SIZE(smdk_dai),
 };
