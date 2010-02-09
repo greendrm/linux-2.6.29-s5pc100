@@ -156,8 +156,12 @@ static void s3c2412_snd_txctrl(struct s3c_i2sv2_info *i2s, int on)
 		 */
 
 		con |=  S3C2412_IISCON_TXDMA_PAUSE;
-		con |=  S3C2412_IISCON_TXCH_PAUSE;
 		con &= ~S3C2412_IISCON_TXDMA_ACTIVE;
+		if (con & S5P_IISCON_TXSDMACTIVE) { /* If sec is active */
+			writel(con, regs + S3C2412_IISCON);
+			return;
+		}
+		con |=  S3C2412_IISCON_TXCH_PAUSE;
 
 		switch (mod & S3C2412_IISMOD_MODE_MASK) {
 		case S3C2412_IISMOD_MODE_TXRX:
@@ -406,6 +410,10 @@ static int s3c2412_i2s_hw_params(struct snd_pcm_substream *substream,
 		iismod |= (S3C64XX_IISMOD_BLC_24BIT | S3C2412_IISMOD_BCLK_48FS);
 		break;
 	}
+
+	/* Set the IISMOD[25:24](BLC_P) to same value */
+	iismod &= ~(S5P_IISMOD_BLCPMASK);
+	iismod |= ((iismod & S3C64XX_IISMOD_BLC_MASK) << 11);
 #endif
 
 	writel(iismod, i2s->regs + S3C2412_IISMOD);
