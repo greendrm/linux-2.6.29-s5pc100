@@ -39,28 +39,68 @@ static struct s3c_dma_params s5p_i2s_sec_pcm_out = {
 
 static void s5p_snd_txctrl(int on)
 {
-	u32 iiscon;
+	u32 iiscon, iismod;
 
-	iiscon  = readl(s5p_i2s0_regs + S3C2412_IISCON);
+	iiscon = readl(s5p_i2s0_regs + S3C2412_IISCON);
+	iismod = readl(s5p_i2s0_regs + S3C2412_IISMOD);
 
 	if (on) {
 		iiscon |= S3C2412_IISCON_IIS_ACTIVE;
-		iiscon  &= ~S3C2412_IISCON_TXCH_PAUSE;
-		iiscon  &= ~S5P_IISCON_TXSDMAPAUSE;
-		iiscon  |= S5P_IISCON_TXSDMACTIVE;
-	} else {
-		/* Stop TX only if Tx-P not active */
-		if (!(iiscon & S3C2412_IISCON_TXDMA_ACTIVE)) {
-			iiscon  |= S3C2412_IISCON_TXCH_PAUSE;
-			/* Stop only if RX not active */
-			if (!(iiscon & S3C2412_IISCON_RXDMA_ACTIVE))
-				iiscon &= ~S3C2412_IISCON_IIS_ACTIVE;
-		}
-		iiscon  |= S5P_IISCON_TXSDMAPAUSE;
-		iiscon  &= ~S5P_IISCON_TXSDMACTIVE;
-	}
+		iiscon &= ~S3C2412_IISCON_TXCH_PAUSE;
+		iiscon &= ~S5P_IISCON_TXSDMAPAUSE;
+		iiscon |= S5P_IISCON_TXSDMACTIVE;
 
-	writel(iiscon,  s5p_i2s0_regs + S3C2412_IISCON);
+		switch (iismod & S3C2412_IISMOD_MODE_MASK) {
+		case S3C2412_IISMOD_MODE_TXONLY:
+		case S3C2412_IISMOD_MODE_TXRX:
+			/* do nothing, we are in the right mode */
+			break;
+
+		case S3C2412_IISMOD_MODE_RXONLY:
+			iismod &= ~S3C2412_IISMOD_MODE_MASK;
+			iismod |= S3C2412_IISMOD_MODE_TXRX;
+			break;
+
+		default:
+			printk("TXEN: Invalid MODE %x in IISMOD\n",
+				iismod & S3C2412_IISMOD_MODE_MASK);
+			break;
+		}
+
+		writel(iiscon, s5p_i2s0_regs + S3C2412_IISCON);
+		writel(iismod, s5p_i2s0_regs + S3C2412_IISMOD);
+	} else {
+		iiscon |= S5P_IISCON_TXSDMAPAUSE;
+		iiscon &= ~S5P_IISCON_TXSDMACTIVE;
+
+		/* return if primary is active */
+		if (iiscon & S3C2412_IISCON_TXDMA_ACTIVE) {
+			writel(iiscon, s5p_i2s0_regs + S3C2412_IISCON);
+			return;
+		}
+
+		iiscon |= S3C2412_IISCON_TXCH_PAUSE;
+
+		switch (iismod & S3C2412_IISMOD_MODE_MASK) {
+		case S3C2412_IISMOD_MODE_TXRX:
+			iismod &= ~S3C2412_IISMOD_MODE_MASK;
+			iismod |= S3C2412_IISMOD_MODE_RXONLY;
+			break;
+
+		case S3C2412_IISMOD_MODE_TXONLY:
+			iismod &= ~S3C2412_IISMOD_MODE_MASK;
+			iiscon &= ~S3C2412_IISCON_IIS_ACTIVE;
+			break;
+
+		default:
+			printk("TXDIS: Invalid MODE %x in IISMOD\n",
+				iismod & S3C2412_IISMOD_MODE_MASK);
+			break;
+		}
+
+		writel(iismod, s5p_i2s0_regs + S3C2412_IISMOD);
+		writel(iiscon, s5p_i2s0_regs + S3C2412_IISCON);
+	}
 }
 
 #define msecs_to_loops(t) (loops_per_jiffy / 1000 * HZ * t)
