@@ -17,6 +17,8 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 
+#include <plat/map.h>
+#include <plat/regs-clock.h>
 #include <plat/regs-s3c2412-iis.h>
 
 #include <mach/s3c-dma.h>
@@ -182,6 +184,36 @@ extern void s5p_idma_init(void *regs);
 
 void s5p_i2s_sec_init(void *regs, dma_addr_t phys_base)
 {
+	u32 val;
+
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+	val = readl(S5P_LPMP_MODE_SEL) & ~0x3;
+	val |= (1<<0);
+	writel(val, S5P_LPMP_MODE_SEL);
+	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2,
+		S5P_CLKGATE_D20);
+	val  = S5P_IISAHB_DMARLD | S5P_IISAHB_DISRLDINT;
+	writel(val, regs + S5P_IISAHB);
+#else
+#ifdef CONFIG_ARCH_S5PC11X /* S5PC110 */
+#include <plat/map.h>
+#define S3C_VA_AUDSS	S3C_ADDR(0x01600000)	/* Audio SubSystem */
+#include <plat/regs-audss.h>
+	/* We use I2SCLK for rate generation, so set EPLLout as
+	 * the parent of I2SCLK.
+	 */
+	val = readl(S5P_CLKSRC_AUDSS);
+	val &= ~(0x3<<2);
+	val |= (1<<0);
+	writel(val, S5P_CLKSRC_AUDSS);
+
+	val = readl(S5P_CLKGATE_AUDSS);
+	val |= (0x7f<<0);
+	writel(val, S5P_CLKGATE_AUDSS);
+#else
+#endif
+#endif
+
 	s5p_i2s0_regs = regs;
 	s5p_i2s_sec_pcm_out.dma_addr = phys_base + S5P_IISTXDS;
 	s5p_idma_init(regs);
