@@ -24,6 +24,10 @@ enum mipi_format {
 	MIPI_CSI_RAW8		= 0x2a,
 	MIPI_CSI_RAW10		= 0x2b,
 	MIPI_CSI_RAW12		= 0x2c,
+	MIPI_CSI_USER_DEFINED_1 = 0x30,
+	MIPI_CSI_USER_DEFINED_2 = 0x31,
+	MIPI_CSI_USER_DEFINED_3 = 0x32,
+	MIPI_CSI_USER_DEFINED_4 = 0x33,
 };
 
 struct s3c_csis_info {
