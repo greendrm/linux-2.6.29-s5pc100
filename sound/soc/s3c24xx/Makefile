@@ -1,5 +1,6 @@
 # S3c24XX Platform Support
 snd-soc-s3c24xx-objs := s3c-dma.o
+snd-soc-s3c-idma-objs := s3c-idma.o
 snd-soc-s3c24xx-i2s-objs := s3c24xx-i2s.o
 snd-soc-s3c2412-i2s-objs := s3c2412-i2s.o
 snd-soc-s5p-i2s-objs := s5p-i2s.o
@@ -10,6 +11,7 @@ snd-soc-s3c-pcm-objs := s3c-pcm.o
 snd-soc-s5p-spdif-objs := s5p-spdif.o
 
 obj-$(CONFIG_SND_S3C24XX_SOC) += snd-soc-s3c24xx.o
+obj-$(CONFIG_SND_S3C24XX_SOC) += snd-soc-s3c-idma.o
 obj-$(CONFIG_SND_S3C24XX_SOC_I2S) += snd-soc-s3c24xx-i2s.o
 obj-$(CONFIG_SND_S3C_SOC_AC97) += snd-soc-s3c-ac97.o
 obj-$(CONFIG_SND_S3C2412_SOC_I2S) += snd-soc-s3c2412-i2s.o
