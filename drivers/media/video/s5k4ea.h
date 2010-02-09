@@ -668,6 +668,12 @@ unsigned char s5k4ea_init_reg5[][4] = {
 	{0x00, 0x2A, 0x02, 0xE8},	//PCLK max
 };
 
+unsigned char s5k4ea_init_jpeg[][4] = {
+	{0x0F, 0x12, 0x00, 0x09},	//YUV	
+	{0x00, 0x2A, 0x02, 0xF8}, 	//PLL config
+	{0x0F, 0x12, 0x00, 0x00},
+	{0x00, 0x2A, 0x02, 0xE8},	//PCLK max
+};
 unsigned short s5k4ea_init_reg6[][2] = {
 	{0x0F12, S5K4EA_PCLK_MAX},
 };
@@ -824,6 +830,7 @@ unsigned char s5k4ea_init_reg11[][4] = {
 #define S5K4EA_INIT_REGS3	(sizeof(s5k4ea_init_reg3) / sizeof(s5k4ea_init_reg3[0]))
 #define S5K4EA_INIT_REGS4	(sizeof(s5k4ea_init_reg4) / sizeof(s5k4ea_init_reg4[0]))
 #define S5K4EA_INIT_REGS5	(sizeof(s5k4ea_init_reg5) / sizeof(s5k4ea_init_reg5[0]))
+#define S5K4EA_INIT_JPEG	(sizeof(s5k4ea_init_jpeg) / sizeof(s5k4ea_init_jpeg[0]))
 #define S5K4EA_INIT_REGS6	(sizeof(s5k4ea_init_reg6) / sizeof(s5k4ea_init_reg6[0]))
 #define S5K4EA_INIT_REGS7	(sizeof(s5k4ea_init_reg7) / sizeof(s5k4ea_init_reg7[0]))
 #define S5K4EA_INIT_REGS8	(sizeof(s5k4ea_init_reg8) / sizeof(s5k4ea_init_reg8[0]))

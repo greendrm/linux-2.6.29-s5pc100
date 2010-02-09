@@ -531,8 +531,12 @@ static int s5k4ea_init(struct v4l2_subdev *sd, u32 val)
 	err = __s5k4ea_init_2bytes(sd, \
 		(unsigned short **) s5k4ea_init_reg4, S5K4EA_INIT_REGS4);
 
-	err = __s5k4ea_init_4bytes(sd, \
-		(unsigned char **) s5k4ea_init_reg5, S5K4EA_INIT_REGS5);
+	if (val == 1)
+		err = __s5k4ea_init_4bytes(sd, \
+			(unsigned char **) s5k4ea_init_jpeg, S5K4EA_INIT_JPEG);
+	else
+		err = __s5k4ea_init_4bytes(sd, \
+			(unsigned char **) s5k4ea_init_reg5, S5K4EA_INIT_REGS5);
 
 	err = __s5k4ea_init_2bytes(sd, \
 		(unsigned short **) s5k4ea_init_reg6, S5K4EA_INIT_REGS6);
