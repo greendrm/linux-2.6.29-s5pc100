@@ -53,4 +53,4 @@ obj-$(CONFIG_S5PC1XX_SETUP_FB)	  += setup-fb.o
 obj-$(CONFIG_S5PC1XX_DEV_CSIS)	  += dev-csis.o
 obj-$(CONFIG_S5PC1XX_SETUP_CSIS)  += setup-csis.o
 
-obj-$(CONFIG_SND_SAMSUNG_SOC) += dev-audio.o
+obj-$(CONFIG_SND_S3C24XX_SOC) += dev-audio.o

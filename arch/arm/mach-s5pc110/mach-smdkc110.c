@@ -512,7 +512,7 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_timer[2],
 	&s3c_device_timer[3],
 #endif
-#ifdef CONFIG_SND_SAMSUNG_SOC
+#ifdef CONFIG_SND_S3C24XX_SOC
 	&s5pc110_device_iis0,
 #endif
 #ifdef CONFIG_SND_S5P_SMDK_WM8580_I2S_I2S
