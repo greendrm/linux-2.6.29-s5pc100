@@ -26,6 +26,7 @@
 #include <linux/err.h>
 #include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/delay.h>
 
 #include <asm/system.h>
 #include <asm/leds.h>
@@ -137,13 +138,11 @@ static unsigned long s5pc11x_gettimeoffset (void)
 	unsigned long tval;
 	unsigned long clk_tick_totcnt;
 
-	clk_tick_totcnt = (timer_icnt + 1) * timer_startval;
+	clk_tick_totcnt = (timer_startval + 1);
 
 	/* work out how many ticks have gone since last timer interrupt */
-	tval = s5pc11x_systimer_read(S3C_SYSTIMER_ICNTO) * timer_startval;
-	tval += s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
-
-	tdone = clk_tick_totcnt - tval;
+	tval = s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
+	tdone = clk_tick_totcnt - tval - 1;
 
 	/* check to see if there is an interrupt pending */
 	if (s5pc11x_ostimer_pending()) {
@@ -151,16 +150,11 @@ static unsigned long s5pc11x_gettimeoffset (void)
 		 * interrupt. Note, the interrupt may go off before the
 		 * timer has re-loaded from wrapping.
 		 */
-
-		tval = s5pc11x_systimer_read(S3C_SYSTIMER_ICNTO) * timer_startval;
-		tval += s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
-
-		tdone = clk_tick_totcnt - tval;
-
-		if (tval != 0)
-			tdone += clk_tick_totcnt;
+		tval = s5pc11x_systimer_read(S3C_SYSTIMER_TCNTO);
+		tdone = clk_tick_totcnt - tval - 1;
+		tdone += clk_tick_totcnt;
 	}
-
+	
 	return timer_ticks_to_usec(tdone);
 }
 
