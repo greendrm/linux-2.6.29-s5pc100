@@ -644,6 +644,13 @@ static int soc_suspend(struct platform_device *pdev, pm_message_t state)
 	struct snd_soc_codec *codec = socdev->codec;
 	int i;
 
+	for (i = 0; i < card->num_links; i++) {
+		struct snd_soc_dai *dai = card->dai_link[i].codec_dai;
+		/* Do not suspend if playback active _via_ iDMA */
+		if (dai->active && card->dai_link[i].use_idma)
+			return 0;
+	}
+
 	/* Due to the resume being scheduled into a workqueue we could
 	* suspend before that's finished - wait for it to complete.
 	 */
@@ -779,8 +786,16 @@ static int soc_resume(struct platform_device *pdev)
 {
 	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
 	struct snd_soc_card *card = socdev->card;
+	int i;
 
 	dev_dbg(socdev->dev, "scheduling resume work\n");
+
+	for (i = 0; i < card->num_links; i++) {
+		struct snd_soc_dai *dai = card->dai_link[i].codec_dai;
+		/* Nothing to do if playback active _via_ iDMA */
+		if (dai->active && card->dai_link[i].use_idma)
+			return 0;
+	}
 
 	if (!schedule_work(&card->deferred_resume_work))
 		dev_err(socdev->dev, "resume work item may be lost\n");
