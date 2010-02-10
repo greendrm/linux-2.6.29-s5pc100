@@ -583,16 +583,6 @@ static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 }
 
 extern struct snd_soc_dai i2s_sec_fifo_dai;
-static struct snd_soc_dai dummy_dai = {
-		.name = "SecFifo",
-		.id = 0,
-		.playback = {
-			.stream_name = "Playback-Sec",
-			.channels_min = 2,
-			.channels_max = 2,
-		},
-};
-
 static struct snd_soc_dai_link smdk_dai[] = {
 {
 	.name = "WM8580 PAIF RX",
@@ -614,7 +604,7 @@ static struct snd_soc_dai_link smdk_dai[] = {
 	.name = "WM8580 PAIF RX",
 	.stream_name = "Playback-Sec",
 	.cpu_dai = &i2s_sec_fifo_dai,
-	.codec_dai = &dummy_dai,
+	.codec_dai = &wm8580_dai[WM8580_DAI_PAIFRX],
 	.use_idma = 1,
 },
 
@@ -754,10 +744,6 @@ static int __init smdk_audio_init(void)
 	reg |= 1 << S5P_CLKOUT_DIV_SHIFT;
 	__raw_writel(reg, S5P_CLK_OUT);
 #endif
-
-	dummy_dai.playback.rates = s5p_i2s_dai[SMDK_WM8580_I2S_V5_PORT].playback.rates;
-	dummy_dai.playback.formats = s5p_i2s_dai[SMDK_WM8580_I2S_V5_PORT].playback.formats;
-	snd_soc_register_dai(&dummy_dai);
 
 	smdk_snd_device = platform_device_alloc("soc-audio", -1);
 	if (!smdk_snd_device)
