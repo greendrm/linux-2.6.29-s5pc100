@@ -20,6 +20,7 @@
 #include <linux/io.h>
 #include <asm/proc-fns.h>
 #include <asm/cacheflush.h>
+#include <linux/dma-mapping.h>
 
 #include <mach/map.h>
 #include <mach/regs-irq.h>
@@ -30,23 +31,22 @@
 
 #define S5PC110_MAX_STATES	1
 
-
 extern void s5pc110_deepidle();
 /* For saving & restoring VIC register before entering
  * deep-idle mode
  **/
 static unsigned long vic_regs[4];
-static unsigned long regs_save[64];
+static unsigned long *regs_save;
+static dma_addr_t phy_regs_save;
 
 static void s5pc110_enter_deepidle(void)
 {
 	unsigned long tmp;
 
 	/* store the physical address of the register recovery block */
-	s5pc110_sleep_save_phys = virt_to_phys(regs_save);
+	__raw_writel(phy_regs_save, S5P_INFORM2);
 	
-	s5pc110_power_mode = DEEPIDLE_MODE;
-		
+	__raw_writel(DEEPIDLE_MODE, S5P_INFORM1);		
 	/* ensure INF_REG0  has the resume address */
 	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
@@ -284,6 +284,12 @@ static int s5pc110_init_cpuidle(void)
 		printk(KERN_ERR "s5pc110_init_cpuidle: Failed registering\n");
 		return -EIO;
 	}
+	regs_save = dma_alloc_coherent(NULL, 4096, &phy_regs_save, GFP_KERNEL);
+	if (regs_save == NULL) {
+		printk(KERN_ERR "DMA alloc error\n");
+		return -1;
+	}
+	printk("cpuidle: phy_regs_save:0x%x\n", phy_regs_save);
 	return 0;
 }
 
