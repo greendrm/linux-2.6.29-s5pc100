@@ -19,6 +19,7 @@
 #include <linux/wait.h>
 #include <linux/poll.h>
 #include <linux/irq.h>
+#include <linux/kobject.h>
 
 #include <asm/io.h>
 
@@ -31,7 +32,7 @@
 
 #define HPDDEBUG
 
-//#define USEEXTINT
+#define USEEXTINT
 
 #ifdef HPDDEBUG
 #define HPDIFPRINTK(fmt, args...) \
@@ -44,6 +45,13 @@ static struct hpd_struct hpd_struct;
 static int last_hpd_state;
 
 static bool hdmi_on = false;
+
+static DECLARE_WORK(hpd_work, s5p_tv_kobject_uevent);
+
+int s5p_hpd_get_state(void)
+{
+       return atomic_read(&hpd_struct.state);
+}
 
 int s5p_hpd_open(struct inode *inode, struct file *file)
 {
@@ -135,23 +143,35 @@ irqreturn_t s5p_hpd_irq_handler(int irq)
 #ifdef USEEXTINT
 	spin_lock_irq(&hpd_struct.lock);
 
-	if (gpio_get_value(S5PC11X_GPH1(5)))
+	if (gpio_get_value(S5PC11X_GPH1(5))) {
+		if (atomic_read(&hpd_struct.state) == HPD_HI)
+			goto out;
 		atomic_set(&hpd_struct.state, HPD_HI);
-	else
+	} else {
+		if (atomic_read(&hpd_struct.state) == HPD_LO)
+			goto out;
 		atomic_set(&hpd_struct.state, HPD_LO);
-	
+	}
 	if(atomic_read(&hpd_struct.state)){
 
-		set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_RISING);
+		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_LOW);
 		
 	}else{
-		set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_FALLING);			
+		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_HIGH);
 
 	}
+
+	schedule_work(&hpd_work);
 
 	spin_unlock_irq(&hpd_struct.lock);
 
 	HPDIFPRINTK("hpd_status = %d\n", atomic_read(&hpd_struct.state));
+
+	return IRQ_HANDLED;
+out:
+	spin_unlock_irq(&hpd_struct.lock);
+
+	return IRQ_HANDLED;
 #else
 	u8 flag;
 	int ret = IRQ_HANDLED;
@@ -210,10 +230,10 @@ irqreturn_t s5p_hpd_irq_handler(int irq)
 		wake_up_interruptible(&hpd_struct.waitq);
 	}
 
-#endif
-		
 out:
 	return IRQ_HANDLED;
+#endif
+
 }
 
 
@@ -231,13 +251,15 @@ static int __init s5p_hpd_probe(struct platform_device *pdev)
 	atomic_set(&hpd_struct.state, -1);
 
 #ifdef USEEXTINT
-	s3c_gpio_cfgpin(S5PV2XX_GPH1(5), S5PV2XX_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PV2XX_GPH1(5), S3C_GPIO_PULL_UP);
+	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
 
-	if (gpio_get_value(S5PV2XX_GPH1(5)))
+	if (gpio_get_value(S5PC11X_GPH1(5)))
 		atomic_set(&hpd_struct.state, HPD_HI);
 	else
 		atomic_set(&hpd_struct.state, HPD_LO);
+
+	set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_BOTH);
 
 	if (request_irq(IRQ_EINT13, s5p_hpd_irq_handler, IRQF_DISABLED, "hpd", s5p_hpd_irq_handler)){
 		printk(KERN_ERR  "failed to install %s irq\n", "hpd");
