@@ -391,7 +391,7 @@ s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 {
 	s32 index;
 	s32 size;
-	u8 *buffer;
+	u8 buffer[32] = {0, };
 		
 	switch (cd) {
 
@@ -411,13 +411,21 @@ s32 hdmi_phy_config(phy_freq freq, s5p_hdmi_color_depth cd)
 		return false;
 	}
 
+	buffer[0] = PHY_REG_MODE_SET_DONE;
+	buffer[1] = 0x00;
+
+	if (i2c_hdmi_phy_write(PHY_I2C_ADDRESS, 2, buffer) != 0) {
+		HDMIPRINTK("i2c_hdmi_phy_write failed.\n");
+		return EINVAL;
+	}
+	
 	/* i2c_hdmi init - set i2c filtering */	
 	writeb(0x5, i2c_hdmi_phy_base + I2C_HDMI_LC);
 		
 	size = sizeof(phy_config[freq][index]) 
 		/ sizeof(phy_config[freq][index][0]);
 
-	buffer = (u8 *) phy_config[freq][index];
+	memcpy(buffer, phy_config[freq][index], sizeof(buffer));
 
 	if (i2c_hdmi_phy_write(PHY_I2C_ADDRESS, size, buffer) != 0) {
 		return EINVAL;
