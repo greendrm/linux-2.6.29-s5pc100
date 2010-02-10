@@ -228,6 +228,7 @@ static void s5pc11x_tick_set_mode(enum clock_event_mode mode,
 		break;
 	case CLOCK_EVT_MODE_RESUME:
 		s5pc11x_tick_timer_setup();
+		s5pc11x_sched_timer_start(~0, 1);
 		break;
 	}
 }
@@ -260,7 +261,7 @@ static struct irqaction s5pc11x_tick_timer_irq = {
 	.handler	= s5pc11x_tick_timer_interrupt,
 };
 
-static void __init  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
+static void  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
 {
 	tick_timer_mode = 1;
 	
@@ -307,7 +308,7 @@ struct clocksource clocksource_s5pc11x = {
 	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
 };
 
-static void __init s5pc11x_init_clocksource(unsigned long rate)
+static void s5pc11x_init_clocksource(unsigned long rate)
 {
 	static char err[] __initdata = KERN_ERR
 			"%s: can't register clocksource!\n";
@@ -329,7 +330,9 @@ static void s5pc11x_timer_setup(void)
 {
 	unsigned long rate;
 	/* Setup event timer using XrtcXTI */
-	clk_event = clk_get(NULL, "XrtcXTI");
+	if (clk_event == NULL)
+		clk_event = clk_get(NULL, "XrtcXTI");
+	
 	if (IS_ERR(clk_event))
 		panic("failed to get clock for event timer");
 
@@ -337,7 +340,8 @@ static void s5pc11x_timer_setup(void)
 	s5pc11x_init_dynamic_tick_timer(rate);
 
 	/* Setup sched-timer using XusbXTI */
-	clk_sched = clk_get(NULL, "XusbXTI");
+	if (clk_sched == NULL)
+		clk_sched = clk_get(NULL, "XusbXTI");
 	if (IS_ERR(clk_sched))
 		panic("failed to get clock for sched-timer");
 	rate = clk_get_rate(clk_sched);
