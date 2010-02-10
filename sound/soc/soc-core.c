@@ -133,7 +133,7 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 	mutex_lock(&pcm_mutex);
 
 	/* startup the audio subsystem */
-	if (cpu_dai->ops.startup) {
+	if (cpu_dai->active == 0 && cpu_dai->ops.startup) {
 		ret = cpu_dai->ops.startup(substream, cpu_dai);
 		if (ret < 0) {
 			printk(KERN_ERR "asoc: can't open interface %s\n",
@@ -150,7 +150,7 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 		}
 	}
 
-	if (codec_dai->ops.startup) {
+	if (codec_dai->active == 0 && codec_dai->ops.startup) {
 		ret = codec_dai->ops.startup(substream, codec_dai);
 		if (ret < 0) {
 			printk(KERN_ERR "asoc: can't open codec %s\n",
@@ -163,7 +163,7 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 		ret = machine->ops->startup(substream);
 		if (ret < 0) {
 			printk(KERN_ERR "asoc: %s startup failed\n", machine->name);
-			goto machine_err;
+			goto mach_err;
 		}
 	}
 
@@ -228,11 +228,15 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 	pr_debug("asoc: min rate %d max rate %d\n", runtime->hw.rate_min,
 		 runtime->hw.rate_max);
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		cpu_dai->playback.active = codec_dai->playback.active = 1;
-	else
-		cpu_dai->capture.active = codec_dai->capture.active = 1;
-	cpu_dai->active = codec_dai->active = 1;
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		cpu_dai->playback.active++;
+		codec_dai->playback.active++;
+	} else {
+		cpu_dai->capture.active++;
+		codec_dai->capture.active++;
+	}
+	cpu_dai->active++;
+	codec_dai->active++;
 	cpu_dai->runtime = runtime;
 	socdev->codec->active++;
 	mutex_unlock(&pcm_mutex);
@@ -242,12 +246,16 @@ machine_err:
 	if (machine->ops && machine->ops->shutdown)
 		machine->ops->shutdown(substream);
 
+mach_err:
+	if (codec_dai->active == 0 && codec_dai->ops.shutdown)
+		codec_dai->ops.shutdown(substream, cpu_dai);
+
 codec_dai_err:
 	if (platform->pcm_ops->close)
 		platform->pcm_ops->close(substream);
 
 platform_err:
-	if (cpu_dai->ops.shutdown)
+	if (cpu_dai->active == 0 && cpu_dai->ops.shutdown)
 		cpu_dai->ops.shutdown(substream, cpu_dai);
 out:
 	mutex_unlock(&pcm_mutex);
@@ -323,27 +331,28 @@ static int soc_codec_close(struct snd_pcm_substream *substream)
 
 	mutex_lock(&pcm_mutex);
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		cpu_dai->playback.active = codec_dai->playback.active = 0;
-	else
-		cpu_dai->capture.active = codec_dai->capture.active = 0;
-
-	if (codec_dai->playback.active == 0 &&
-		codec_dai->capture.active == 0) {
-		cpu_dai->active = codec_dai->active = 0;
+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+		cpu_dai->playback.active--;
+		codec_dai->playback.active--;
+	} else {
+		cpu_dai->capture.active--;
+		codec_dai->capture.active--;
 	}
+
+	cpu_dai->active--;
+	codec_dai->active--;
 	codec->active--;
 
 	/* Muting the DAC suppresses artifacts caused during digital
 	 * shutdown, for example from stopping clocks.
 	 */
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+	if (codec_dai->active == 0 && substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		snd_soc_dai_digital_mute(codec_dai, 1);
 
-	if (cpu_dai->ops.shutdown)
+	if (cpu_dai->active == 0 && cpu_dai->ops.shutdown)
 		cpu_dai->ops.shutdown(substream, cpu_dai);
 
-	if (codec_dai->ops.shutdown)
+	if (codec_dai->active == 0 && codec_dai->ops.shutdown)
 		codec_dai->ops.shutdown(substream, codec_dai);
 
 	if (machine->ops && machine->ops->shutdown)
@@ -352,6 +361,9 @@ static int soc_codec_close(struct snd_pcm_substream *substream)
 	if (platform->pcm_ops->close)
 		platform->pcm_ops->close(substream);
 	cpu_dai->runtime = NULL;
+
+	if (codec_dai->active)
+		goto exit;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		/* start delayed pop wq here for playback streams */
@@ -368,7 +380,7 @@ static int soc_codec_close(struct snd_pcm_substream *substream)
 			snd_soc_dapm_set_bias_level(socdev,
 						SND_SOC_BIAS_STANDBY);
 	}
-
+exit:
 	mutex_unlock(&pcm_mutex);
 	return 0;
 }
@@ -570,10 +582,10 @@ static int soc_pcm_hw_free(struct snd_pcm_substream *substream)
 		platform->pcm_ops->hw_free(substream);
 
 	/* now free hw params for the DAI's  */
-	if (codec_dai->ops.hw_free)
+	if (codec_dai->active == 0 && codec_dai->ops.hw_free)
 		codec_dai->ops.hw_free(substream, codec_dai);
 
-	if (cpu_dai->ops.hw_free)
+	if (cpu_dai->active == 0 && cpu_dai->ops.hw_free)
 		cpu_dai->ops.hw_free(substream, cpu_dai);
 
 	mutex_unlock(&pcm_mutex);
