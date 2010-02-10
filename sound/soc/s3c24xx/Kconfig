@@ -9,9 +9,6 @@ config SND_SAMSUNG_SOC
 config SND_S3C24XX_SOC
 	tristate
 
-config SND_LPAM_SOC
-	tristate
-
 config SND_S3C24XX_SOC_I2S
 	tristate
 
@@ -24,9 +21,6 @@ config SND_S3C2412_SOC_I2S
 config SND_S5P_SOC_I2S
 	tristate
 	select SND_S3C_I2SV2_SOC
-
-config SND_S5P_SOC_I2S_LP
-	tristate
 
 config SND_S3C_SOC_PCM
 	tristate
@@ -61,16 +55,6 @@ config	SND_S5P_SMDK_WM8580_I2S_PCM
 
 endchoice
 
-config SND_S5P_SOC_WM8580_LP
-	tristate "SoC Audio support for WM8580 on SMDK-S5P in LPAM"
-	depends on SND_SAMSUNG_SOC && (MACH_SMDKC110 || MACH_SMDKC100)
-	depends on !SND_S3C24XX_SOC
-	select SND_LPAM_SOC
-	select SND_S5P_SOC_I2S_LP
-	select SND_SOC_WM8580
-	help
-	  Sat Y if you want to add support for SoC audio on the SMDKS5P.
-
 config SND_WM8580_MASTER
 	bool "WM8580 Codec is I2S Master"
 	depends on SND_S5P_SOC_WM8580
@@ -81,11 +65,6 @@ config SND_WM8580_MASTER
 config SND_S5P_USE_XCLK_OUT
 	bool
 	depends on MACH_SMDKC110 && SND_S5P_SOC_WM8580
-	default y
-
-config  S5P_USE_CLKAUDIO
-	bool
-	depends on SND_S5P_SOC_WM8580_LP && !SND_WM8580_MASTER
 	default y
 
 config SND_S3C24XX_SOC_NEO1973_WM8753
