@@ -75,7 +75,7 @@ ENTRY(s5pc110_cpu_save)
 	mrc	p15, 0, r12, c10, c2, 0	@ Read PRRR
 	mrc	p15, 0, r3, c10, c2, 1	@ READ NMRR	
 
-	ldr	r2, =s5pc110_power_mode
+	ldr	r2, =S5P_INFORM1 
 	ldr	r1, [r2]
 	cmp	r1, #0x0
 	bne	deepidle_save
@@ -137,7 +137,7 @@ deepidle_save:
 	@@ stack
 resume_with_mmu:
 #if defined(NO_L2_CLEAN)
-	ldr	r0, =s5pc110_power_mode
+	ldr	r0, =S5P_INFORM1 
 	ldr	r1, [r0]
 	cmp	r1, #0x0
 	beq	skip_l2_enable
@@ -205,8 +205,10 @@ ENTRY(s5pc110_cpu_resume)
 	mcr	p15, 0, r1, c8, c7, 0		@@ invalidate TLBs
 	mcr	p15, 0, r1, c7, c5, 0		@@ invalidate I Cache
 
-	ldr	r0, s5pc110_sleep_save_phys	@ address of restore block
-	ldr	r1, s5pc110_power_mode
+	ldr	r1, =0xe010f008 	@ Read INFORM2 register
+	ldr	r0, [r1]		@ Load phy_regs_save value
+	ldr	r1, =0xe010f004		@ Read INFORM1 register 
+	ldr	r1, [r1]		
 	cmp 	r1, #0x0
 	bne	deepidle_restore_1
 
@@ -227,7 +229,6 @@ common_restore_1:
 
 #if defined(NO_L2_CLEAN)
 	cmp	r1, #0x0		@ if deep-idle wakeup
-					@ r1 = s5pc110_power_mode
 	bicne	r10, r10, #(1<<1)	@ disable L2cache
 	mcr	p15, 0, r10, c1, c0, 1	@ Auxiliary control register
 #endif
@@ -241,7 +242,8 @@ common_restore_1:
 	mcr	p15, 0, r12, c10, c2, 0	@ write PRRR
 	mcr	p15, 0, r3, c10, c2, 1	@ write NMRR
 	
-	ldr	r1, s5pc110_power_mode
+	ldr	r1, =0xe010f004		@ Read INFORM1 register
+	ldr	r1, [r1]
 	cmp 	r1, #0x0
 	beq	common_restore_2
 	
@@ -313,7 +315,7 @@ common_restore_2:
 
 	ldr	r2, =resume_with_mmu
 	mcr	p15, 0, r9, c1, c0, 0		@ turn on MMU, etc
-
+	
         nop
         nop
         nop

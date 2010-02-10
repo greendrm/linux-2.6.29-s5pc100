@@ -44,7 +44,6 @@ extern void s5pc110_cpu_suspend(void);
 extern void s5pc110_cpu_resume(void);
 
 extern unsigned long s5pc110_sleep_save_phys;
-extern unsigned long s5pc110_power_mode;
 
 #define SLEEP_MODE	0
 #define DEEPIDLE_MODE	1

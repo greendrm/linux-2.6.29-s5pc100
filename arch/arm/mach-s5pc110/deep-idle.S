@@ -93,7 +93,6 @@ ENTRY(s5pc110_deepidle)
 	str	r1, [r0]
 	
 	ldmfd	sp!, {r4-r5, r7, r9-r11, lr}
-	
 	dmb
 	dsb
 	wfi

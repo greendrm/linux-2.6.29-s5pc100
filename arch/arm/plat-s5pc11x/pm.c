@@ -37,6 +37,7 @@
 #include <linux/io.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/machine.h>
+#include <linux/dma-mapping.h>
 
 #include <asm/cacheflush.h>
 #include <mach/hardware.h>
@@ -58,6 +59,13 @@
 
 #define DEBUG_S5P_PM
 #undef DEBUG_S5P_PM
+
+#define USE_DMA_ALLOC
+
+#if defined(USE_DMA_ALLOC)
+static unsigned long *regs_save;
+static dma_addr_t phy_regs_save;
+#endif
 
 #if defined(DEBUG_S5P_PM)
 static void s5p_low_lvl_debug(char *buf, char *name, void  __iomem *regs)
@@ -589,7 +597,9 @@ void (*pm_cpu_sleep)(void);
 */
 static int s5pc11x_pm_enter(suspend_state_t state)
 {
+#if !defined(USE_DMA_ALLOC)
 	unsigned long regs_save[64];
+#endif	
 	unsigned int tmp;
 
 #ifdef DEBUG_S5P_PM
@@ -605,9 +615,14 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	}
 
 	/* store the physical address of the register recovery block */
+#if !defined(USE_DMA_ALLOC)
 	s5pc110_sleep_save_phys = virt_to_phys(regs_save);
+#else
+	__raw_writel(phy_regs_save, S5P_INFORM2);
+#endif
+	/* set flag for sleep mode deep-idle flag is also reserved */
+	__raw_writel(SLEEP_MODE, S5P_INFORM1);
 
-	s5pc110_power_mode = SLEEP_MODE;
 	DBG("s5pc11x_sleep_save_phys=0x%08lx\n", s5pc110_sleep_save_phys);
 
 	s5pc11x_pm_do_save(gpio_save, ARRAY_SIZE(gpio_save));
@@ -806,7 +821,14 @@ int __init s5pc11x_pm_init(void)
 	u32 tmp;
 
 	printk(KERN_INFO "s5pc11x Power Management, (c) 2008 Samsung Electronics\n");
-
+#if defined(USE_DMA_ALLOC)
+	regs_save = dma_alloc_coherent(NULL, 4096, &phy_regs_save, GFP_KERNEL);
+	if (regs_save == NULL) {
+		printk(KERN_ERR "DMA alloc error\n");
+		return -1;
+	}
+#endif
+	printk("pm: phy_regs_save =0x%x\n", phy_regs_save);
 	tmp = __raw_readl(S5P_CLK_OUT);
 	tmp |= (0xf << 12);
 	__raw_writel(tmp , S5P_CLK_OUT);
