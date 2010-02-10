@@ -64,6 +64,7 @@
 #define S3C_CIEXTEN				S3C_FIMCREG(0x188)	/* Real output DMA image size */
 #define S3C_CIDMAPARAM				S3C_FIMCREG(0x18c)	/* DMA parameter */
 #define S3C_CSIIMGFMT				S3C_FIMCREG(0x194)	/* MIPI CSI image format */
+#define S3C_MISC_FIMC				S3C_FIMCREG(0x198)	/* FIMC Clock Source Select */
 
 /*************************************************************************
  * Macro part
@@ -133,7 +134,8 @@
 
 #define S3C_CIEXTEN_TARGETH_EXT(x)		(((x) & 0x2000) << 26)
 #define S3C_CIEXTEN_TARGETV_EXT(x)		(((x) & 0x2000) << 24)
-
+#define S3C_CIEXTEN_MAINHORRATIO_EXT(x)		(((x) & 0x3F) << 10)
+#define S3C_CIEXTEN_MAINVERRATIO_EXT(x)		((x) & 0x3F)
 /*************************************************************************
  * Bit definition part
  ************************************************************************/
@@ -379,6 +381,13 @@
 /* Gathering Extension register */
 #define S3C_CIEXTEN_TARGETH_EXT_MASK		(1 << 26)
 #define S3C_CIEXTEN_TARGETV_EXT_MASK		(1 << 24)
+#define S3C_CIEXTEN_MAINHORRATIO_EXT_MASK	(0x3F << 10)
+#define S3C_CIEXTEN_MAINVERRATIO_EXT_MASK	(0x3F)
 #define S3C_CIEXTEN_YUV444_OUT			(1 << 22)
+
+/* FIMC Clock Source Select register */
+#define S3C_CLKSRC_HCLK				(0 << 1)
+#define S3C_CLKSRC_HCLK_MASK			(1 << 1)
+#define S3C_CLKSRC_SCLK				(1 << 1)
 
 #endif /* _REGS_FIMC_H */

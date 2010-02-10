@@ -111,11 +111,16 @@ const static struct v4l2_fmtdesc capture_fmts[] = {
 		.flags		= FORMAT_FLAGS_PLANAR,
 		.description	= "YUV 4:2:0 planar, Y/Cb/Cr",
 		.pixelformat	= V4L2_PIX_FMT_YUV420,
+	}, {
+		.index		= 13,
+		.type		= V4L2_BUF_TYPE_VIDEO_CAPTURE,
+		.description	= "JPEG encoded data",
+		.pixelformat	= V4L2_PIX_FMT_JPEG,
 	},
 };
 
 #ifndef CONFIG_VIDEO_FIMC_MIPI
-void s3c_csis_start(int lanes, int settle, int align, int width, int height) {}
+void s3c_csis_start(int lanes, int settle, int align, int width, int height, int pixel_format) {}
 #endif
 
 static int fimc_init_camera(struct fimc_control *ctrl)
@@ -124,6 +129,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 	struct s3c_platform_fimc *pdata;
 	struct s3c_platform_camera *cam;
 	int ret = -1;
+	u32 pixelformat;
 
 	pdata = to_fimc_plat(ctrl->dev);
 	if (pdata->default_cam >= FIMC_MAXCAMS) {
@@ -182,7 +188,14 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		cam->cam_power(1);
 
 	/* subdev call for init */
-	ret = v4l2_subdev_call(cam->sd, core, init, 0);
+	if (ctrl->cap->fmt.pixelformat == V4L2_PIX_FMT_JPEG) {
+		ret = v4l2_subdev_call(cam->sd, core, init, 1);
+		pixelformat = V4L2_PIX_FMT_JPEG;
+	}
+	else {
+		ret = v4l2_subdev_call(cam->sd, core, init, 0);
+		pixelformat = cam->pixelformat;
+	}
 	if (ret == -ENOIOCTLCMD) {
 		fimc_err("%s: init subdev api not supported\n", __func__);
 		return ret;
@@ -195,7 +208,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 		*/
 		v4l2_subdev_call(cam->sd, video, s_stream, 0);
 		s3c_csis_start(cam->mipi_lanes, cam->mipi_settle, \
-				cam->mipi_align, cam->width, cam->height);
+				cam->mipi_align, cam->width, cam->height, pixelformat);
 		v4l2_subdev_call(cam->sd, video, s_stream, 1);
 	}
 
@@ -447,7 +460,6 @@ int fimc_s_input(struct file *file, void *fh, unsigned int i)
 	}
 
 	mutex_unlock(&ctrl->v4l2_lock);
-	fimc_init_camera(ctrl);
 
 	return 0;
 }
@@ -552,6 +564,9 @@ static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_format *f)
 		depth = 12;
 		fimc_dbg("12bpp\n");
 		break;
+	case V4L2_PIX_FMT_JPEG:
+		depth = 8;
+		break;
 	default:
 		fimc_dbg("why am I here?\n");
 		break;
@@ -602,9 +617,9 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	cap->fmt.bytesperline = (cap->fmt.width * fimc_fmt_depth(ctrl, f)) >> 3;
 	cap->fmt.sizeimage = (cap->fmt.bytesperline * cap->fmt.height);
 
-	if (cap->fmt.colorspace == V4L2_COLORSPACE_JPEG) {
+	if (cap->fmt.pixelformat == V4L2_PIX_FMT_JPEG) {
 		ctrl->sc.bypass = 1;
-		cap->lastirq = 1;
+//		cap->lastirq = 1;
 	}
 
 	/* WriteBack doesn't have subdev_call */
@@ -699,6 +714,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	}
 
 	switch (cap->fmt.pixelformat) {
+	case V4L2_PIX_FMT_JPEG:		/* fall through */
 	case V4L2_PIX_FMT_RGB32:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */

@@ -386,7 +386,7 @@ extern int s3cfb_open_fifo(int id, int ch, int (*do_priv) (void *), void *param)
 extern int s3cfb_close_fifo(int id, int (*do_priv) (void *), void *param);
 
 /* general */
-extern void s3c_csis_start(int lanes, int settle, int align, int width, int height);
+extern void s3c_csis_start(int lanes, int settle, int align, int width, int height, int pixel_format);
 extern int fimc_dma_alloc(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i, int align);
 extern void fimc_dma_free(struct fimc_control *ctrl, struct fimc_buf_set *bs, int i);
 extern u32 fimc_mapping_rot_flip(u32 rot, u32 flip);

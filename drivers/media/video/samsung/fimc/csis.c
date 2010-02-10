@@ -19,6 +19,7 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 
+#include <linux/videodev2.h>
 #include <linux/io.h>
 #include <linux/memory.h>
 #include <plat/clock.h>
@@ -209,7 +210,7 @@ static void s3c_csis_set_hs_settle(int settle)
 }
 #endif
 
-void s3c_csis_start(int lanes, int settle, int align, int width, int height)
+void s3c_csis_start(int lanes, int settle, int align, int width, int height, int pixel_format)
 {
 	struct s3c_platform_csis *pdata;
 
@@ -225,7 +226,10 @@ void s3c_csis_start(int lanes, int settle, int align, int width, int height)
 	s3c_csis_set_hs_settle(settle);	/* s5k6aa */
 	s3c_csis_set_data_align(align);
 	s3c_csis_set_wclk(0);
-	s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
+	if (pixel_format == V4L2_PIX_FMT_JPEG) 
+		s3c_csis_set_format(MIPI_CSI_USER_DEFINED_1);
+	else
+		s3c_csis_set_format(MIPI_CSI_YCBCR422_8BIT);
 	s3c_csis_set_resol(width, height);
 	s3c_csis_update_shadow();
 #endif

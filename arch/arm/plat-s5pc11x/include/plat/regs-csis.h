@@ -46,8 +46,8 @@
 /* D-PHY Control Register */
 #define S3C_CSIS_DPHYCTRL_HS_SETTLE_MASK	(0x1f << 27)
 #define S3C_CSIS_DPHYCTRL_HS_SETTLE_SHIFT	(27)
-#define S3C_CSIS_DPHYCTRL_DISABLE		(0xf << 0)
-#define S3C_CSIS_DPHYCTRL_ENABLE		(0xf << 0)
+#define S3C_CSIS_DPHYCTRL_DISABLE		(0x1f << 0)
+#define S3C_CSIS_DPHYCTRL_ENABLE		(0x1f << 0)
 
 /* Configuration Register */
 #define S3C_CSIS_CONFIG_FORMAT_SHIFT		(2)

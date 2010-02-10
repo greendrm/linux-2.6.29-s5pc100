@@ -292,7 +292,10 @@ int fimc_hwset_camera_type(struct fimc_control *ctrl)
 		cfg |= S3C_CIGCTRL_SELCAM_MIPI_A;
 
 		/* FIXME: temporary hardcoded value used */
-		writel(cam->fmt | (0x1 << 8), ctrl->regs + S3C_CSIIMGFMT);
+		if (ctrl->cap->fmt.pixelformat == V4L2_PIX_FMT_JPEG)
+			writel((MIPI_USER_DEFINED_1 | (0x1 << 8)), ctrl->regs + S3C_CSIIMGFMT);
+		else
+			writel(cam->fmt | (0x1 << 8), ctrl->regs + S3C_CSIIMGFMT);
 	} else if (cam->type == CAM_TYPE_ITU) {
 		if (cam->id == CAMERA_PAR_A)
 			cfg |= S3C_CIGCTRL_SELCAM_ITU_A;
@@ -344,6 +347,8 @@ int fimc_hwset_output_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 	cfg &= ~S3C_CITRGFMT_OUTFORMAT_MASK;
 
 	switch (pixelformat) {
+	case V4L2_PIX_FMT_JPEG:
+		break;
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 	case V4L2_PIX_FMT_RGB32:
 		cfg |= S3C_CITRGFMT_OUTFORMAT_RGB;

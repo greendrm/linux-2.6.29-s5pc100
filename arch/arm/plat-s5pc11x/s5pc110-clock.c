@@ -242,6 +242,7 @@ static int fout_set_rate(struct clk *clk, unsigned long rate)
 		epll_con |= S5P_EPLLVAL(1, 65, 3, 4);
 		epll_con1 = S5P_EPLL_CON1_MASK & 35127;
 		break;
+	case 45158400:
 	case 45000000:
 	case 45158000:
 		epll_con |= S5P_EPLLVAL(0, 45, 3, 3);

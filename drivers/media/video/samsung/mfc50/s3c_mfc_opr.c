@@ -549,7 +549,7 @@ static void s3c_mfc_set_encode_init_param(int inst_no, SSBSIP_MFC_CODEC_TYPE mfc
 		WRITEL((enc_init_mpeg4_arg->in_profile_level), S3C_FIMV_ENC_PROFILE);
 		WRITEL((enc_init_h264_arg->in_transform8x8_mode), S3C_FIMV_ENC_H264_TRANS_FLAG);
 		WRITEL((enc_init_h264_arg->in_symbolmode & 0x1), S3C_FIMV_ENC_ENTRP_MODE);
-		WRITEL((enc_init_h264_arg->in_deblock_filt & 0x1), S3C_FIMV_ENC_LF_CTRL);
+		WRITEL((enc_init_h264_arg->in_deblock_filt & 0x3), S3C_FIMV_ENC_LF_CTRL);
 		WRITEL((enc_init_h264_arg->in_deblock_alpha_C0 & 0x1f)*2, S3C_FIMV_ENC_ALPHA_OFF);
 		WRITEL((enc_init_h264_arg->in_deblock_beta & 0x1f)*2, S3C_FIMV_ENC_BETA_OFF);
 
