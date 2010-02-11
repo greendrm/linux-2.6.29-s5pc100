@@ -277,8 +277,10 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 		}
 	}
 	else {
-		cap->irq = 1;
-		wake_up(&ctrl->wq);
+		if (!(list_empty(&cap->inq))) {
+			cap->irq = 1;
+			wake_up(&ctrl->wq);
+		}
 	}	
 	
 }
