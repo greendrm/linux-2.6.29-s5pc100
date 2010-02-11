@@ -125,7 +125,7 @@ static int s5p_snd_lrsync(void)
 	}
 
 	if (!loops) {
-		printk(KERN_ERR "%s: timeout\n", __func__);
+		pr_debug("%s: timeout\n", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -186,15 +186,15 @@ static int s5p_i2s_startup(struct snd_pcm_substream *substream,
 static int s5p_i2s_trigger(struct snd_pcm_substream *substream,
 		int cmd, struct snd_soc_dai *dai)
 {
-	int ret = 0;
-
 	switch (cmd) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
-		ret = s5p_snd_lrsync();
-		if (ret)
-			goto exit_err;
+		/* We don't configure clocks from this Sec i/f.
+		 * So, we simply wait enough time for LRSYNC to
+		 * get synced and not check return 'error'
+		 */
+		s5p_snd_lrsync();
 		s5p_snd_txctrl(1);
 		break;
 
@@ -205,8 +205,7 @@ static int s5p_i2s_trigger(struct snd_pcm_substream *substream,
 		break;
 	}
 
-exit_err:
-	return ret;
+	return 0;
 }
 
 struct snd_soc_dai i2s_sec_fifo_dai = {
