@@ -542,10 +542,16 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 	MfcCtx->img_width = READL(S3C_FIMV_IMG_SIZE_X);
 	MfcCtx->img_height = READL(S3C_FIMV_IMG_SIZE_Y);
 
+
 	switch (MfcCtx->MfcCodecType) {
 	case H264_DEC: 
 		MfcCtx->totalDPBCnt = (READL(S3C_FIMV_DPB_SIZE)*3)>>1;
 		MfcCtx->DPBCnt = READL(S3C_FIMV_DPB_SIZE);
+
+		InitArg->out_crop_right_offset = (int)((READL(S3C_FIMV_CROP_INFO1))>>16) & 0xffff;
+		InitArg->out_crop_left_offset = (int)(READL(S3C_FIMV_CROP_INFO1)) & 0xffff;
+		InitArg->out_crop_bottom_offset = (int)((READL(S3C_FIMV_CROP_INFO2))>>16) & 0xffff;
+		InitArg->out_crop_top_offset = (int)(READL(S3C_FIMV_CROP_INFO2)) & 0xffff;	
 		break;
 
 	case MPEG4_DEC:
@@ -698,6 +704,18 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 	frame_type = READL(S3C_FIMV_FRAME_TYPE);
 	MfcCtx->FrameType = (s3c_mfc_frame_type)(frame_type & 0x3);
 
+
+	if (MfcCtx->MfcCodecType == H264_DEC) {
+		DecArg->out_crop_right_offset = (int)((READL(S3C_FIMV_CROP_INFO1))>>16) & 0xffff;
+		DecArg->out_crop_left_offset = (int)(READL(S3C_FIMV_CROP_INFO1)) & 0xffff;
+		DecArg->out_crop_bottom_offset = (int)((READL(S3C_FIMV_CROP_INFO2))>>16) & 0xffff;
+		DecArg->out_crop_top_offset = (int)(READL(S3C_FIMV_CROP_INFO2)) & 0xffff;
+	} else {
+		DecArg->out_crop_right_offset = 0;
+		DecArg->out_crop_left_offset = 0;
+		DecArg->out_crop_bottom_offset = 0;
+		DecArg->out_crop_top_offset = 0;
+	}
 	mfc_debug("(Y_ADDR : 0x%08x  C_ADDR : 0x%08x)\r\n", \
 		DecArg->out_display_Y_addr , DecArg->out_display_C_addr);  
 	mfc_debug("(in_strmsize : 0x%08x  consumed byte : 0x%08x)\r\n", \

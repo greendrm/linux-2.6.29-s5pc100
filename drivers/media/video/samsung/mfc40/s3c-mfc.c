@@ -238,6 +238,11 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 		InParm.args.dec_super_init.out_buf_width = local_param.dec_init.out_buf_width;
 		InParm.args.dec_super_init.out_buf_height = local_param.dec_init.out_buf_height;
 		InParm.args.dec_super_init.out_dpb_cnt = local_param.dec_init.out_dpb_cnt;
+		
+		InParm.args.dec_super_init.out_crop_right_offset = local_param.dec_init.out_crop_right_offset;
+		InParm.args.dec_super_init.out_crop_left_offset = local_param.dec_init.out_crop_left_offset;
+		InParm.args.dec_super_init.out_crop_bottom_offset = local_param.dec_init.out_crop_bottom_offset;
+		InParm.args.dec_super_init.out_crop_top_offset = local_param.dec_init.out_crop_top_offset;
 		if (local_param.dec_init.out_dpb_cnt <=0 ) {
 			mfc_err("MFC out_dpb_cnt error\n");
 			break;

@@ -184,7 +184,12 @@ typedef struct {
 	int out_buf_height;	/* [OUT] height of YUV420 frame */
 
 	/* [OUT] the number of buffers which is nessary during decoding. */
-	int out_dpb_cnt; 
+	int out_dpb_cnt; 	
+
+	int out_crop_right_offset;  /* [OUT] H.264 crop information - right offset  */
+	int out_crop_left_offset;  /* [OUT] H.264 crop information - left offset  */
+	int out_crop_bottom_offset; /* [OUT] H.264 crop information - bottom offset  */
+	int out_crop_top_offset; /* [OUT] H.264 crop information - top offset  */		
 } s3c_mfc_dec_init_arg_t;
 
 typedef struct {
@@ -223,6 +228,11 @@ typedef struct {
 	unsigned int out_p_addr;
 
 	int out_frame_buf_size;
+	
+	int out_crop_right_offset;  /* [OUT] H.264 crop information - right offset  */
+	int out_crop_left_offset;  /* [OUT] H.264 crop information - left offset  */
+	int out_crop_bottom_offset; /* [OUT] H.264 crop information - bottom offset  */
+	int out_crop_top_offset; /* [OUT] H.264 crop information - top offset  */		
 } s3c_mfc_dec_super_init_arg_t;
 
 typedef struct {
@@ -239,6 +249,11 @@ typedef struct {
 	 * (0:no more frame, 1:frame exist)
 	 */
 	int out_display_status; 
+
+	int out_crop_right_offset;  /* [OUT] H.264 crop information - right offset  */
+	int out_crop_left_offset;  /* [OUT] H.264 crop information - left offset  */
+	int out_crop_bottom_offset; /* [OUT] H.264 crop information - bottom offset  */
+	int out_crop_top_offset; /* [OUT] H.264 crop information - top offset  */	
 } s3c_mfc_dec_exe_arg_t;
 
 typedef struct {
