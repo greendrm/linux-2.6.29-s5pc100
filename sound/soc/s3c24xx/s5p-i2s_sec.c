@@ -231,8 +231,6 @@ void s5p_i2s_sec_init(void *regs, dma_addr_t phys_base)
 	writel(val, S5P_LPMP_MODE_SEL);
 	writel(readl(S5P_CLKGATE_D20) | S5P_CLKGATE_D20_HCLKD2,
 		S5P_CLKGATE_D20);
-	val  = S5P_IISAHB_DMARLD | S5P_IISAHB_DISRLDINT;
-	writel(val, regs + S5P_IISAHB);
 #else
 #ifdef CONFIG_ARCH_S5PC11X /* S5PC110 */
 #include <plat/map.h>
@@ -252,6 +250,9 @@ void s5p_i2s_sec_init(void *regs, dma_addr_t phys_base)
 #else
 #endif
 #endif
+
+	val  = S5P_IISAHB_DMARLD | S5P_IISAHB_DISRLDINT;
+	writel(val, regs + S5P_IISAHB);
 
 	s5p_i2s0_regs = regs;
 	s5p_i2s_sec_pcm_out.dma_addr = phys_base + S5P_IISTXDS;
