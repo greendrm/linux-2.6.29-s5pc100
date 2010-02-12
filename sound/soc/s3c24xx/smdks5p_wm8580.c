@@ -28,6 +28,9 @@
 #include "s5p-i2s.h"
 #include "s3c-pcm.h"
 
+extern struct snd_soc_dai i2s_sec_fifo_dai;
+extern struct snd_soc_platform s3c_dma_wrapper;
+
 #define SMDK_WM8580_XTI_FREQ		12000000
 
 #define SMDK_WM8580_I2S_V5_PORT 	0
@@ -505,6 +508,24 @@ static struct snd_soc_ops smdk_pcm_ops = {
 };
 #endif
 
+static int get_dma_mode(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol);
+static int set_dma_mode(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_value *ucontrol);
+
+static const char *dma_modes[] = {
+	"SysDMA",
+	"iDMA",
+};
+
+static const struct soc_enum dma_mode_enum[] = {
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dma_modes), dma_modes),
+};
+
+static const struct snd_kcontrol_new smdk_idma_control[] = {
+	SOC_ENUM_EXT("Sec_Fifo Mode", dma_mode_enum[0],
+		get_dma_mode, set_dma_mode),
+};
 /* SMDK Playback widgets */
 static const struct snd_soc_dapm_widget wm8580_dapm_widgets_pbk[] = {
 	SND_SOC_DAPM_HP("Front-L/R", NULL),
@@ -564,9 +585,20 @@ static int smdk_wm8580_init_paiftx(struct snd_soc_codec *codec)
 
 static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 {
+	int i, err;
+
 	/* Add smdk specific Playback widgets */
 	snd_soc_dapm_new_controls(codec, wm8580_dapm_widgets_pbk,
 				  ARRAY_SIZE(wm8580_dapm_widgets_pbk));
+
+	/* add neo1973 specific controls */
+	for (i = 0; i < ARRAY_SIZE(smdk_idma_control); i++) {
+		err = snd_ctl_add(codec->card,
+				snd_soc_cnew(&smdk_idma_control[i],
+				codec, NULL));
+		if (err < 0)
+			return err;
+	}
 
 	/* Set up PAIFRX audio path */
 	snd_soc_dapm_add_routes(codec, audio_map_rx, ARRAY_SIZE(audio_map_rx));
@@ -582,7 +614,6 @@ static int smdk_wm8580_init_paifrx(struct snd_soc_codec *codec)
 	return 0;
 }
 
-extern struct snd_soc_dai i2s_sec_fifo_dai;
 static struct snd_soc_dai_link smdk_dai[] = {
 {
 	.name = "WM8580 PAIF RX",
@@ -630,7 +661,45 @@ static struct snd_soc_dai_link smdk_dai[] = {
 
 };
 
-extern struct snd_soc_platform s3c_dma_wrapper;
+static int get_dma_mode(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	int i;
+
+	/* Find the dai_link with sec_fifo as its cpu_dai */
+	for (i = 0; i < ARRAY_SIZE(smdk_dai); i++)
+		if (smdk_dai[i].cpu_dai == &i2s_sec_fifo_dai)
+			break;
+
+	if (i == ARRAY_SIZE(smdk_dai))
+		ucontrol->value.integer.value[0] = 0;
+	else
+		ucontrol->value.integer.value[0] = smdk_dai[i].use_idma;
+
+	return 0;
+}
+
+static int set_dma_mode(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_value *ucontrol)
+{
+	int i;
+
+	/* Find the dai_link with sec_fifo as its cpu_dai */
+	for (i = 0; i < ARRAY_SIZE(smdk_dai); i++)
+		if (smdk_dai[i].cpu_dai == &i2s_sec_fifo_dai)
+			break;
+
+	if (i == ARRAY_SIZE(smdk_dai))
+		return 0;
+
+	if (smdk_dai[i].use_idma == ucontrol->value.integer.value[0]
+		|| smdk_dai[i].cpu_dai->active)
+		return 0;
+
+	smdk_dai[i].use_idma = ucontrol->value.integer.value[0];
+
+	return 1;
+}
 
 static struct snd_soc_card smdk = {
 	.name = "smdk",
