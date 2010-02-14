@@ -13,15 +13,19 @@
 #include <linux/dma-mapping.h>
 
 #include <asm/io.h>
+#include <asm/atomic.h>
 #include <mach/map.h>
 
 #include <plat/regs-g2d.h>
 
-#define G2D_MMAP_SIZE	0x1000
-#define G2D_MINOR	240
+#define G2D_MMAP_SIZE		0x1000
+#define G2D_MINOR		240
 
-#define G2D_IOCTL_MAGIC	'G'
-#define G2D_DMA_SYNC	_IO(G2D_IOCTL_MAGIC, 0)
+#define G2D_IOCTL_MAGIC		'G'
+#define G2D_DMA_CACHE_INVAL	_IOWR(G2D_IOCTL_MAGIC, 0, struct g2d_dma_info)
+#define G2D_DMA_CACHE_CLEAN	_IOWR(G2D_IOCTL_MAGIC, 1, struct g2d_dma_info)
+#define G2D_DMA_CACHE_FLUSH	_IOWR(G2D_IOCTL_MAGIC, 2, struct g2d_dma_info)
+#define G2D_WAIT_FOR_IRQ	_IO(G2D_IOCTL_MAGIC, 3)
 
 struct g2d_info {
 	struct clk *clock;
@@ -31,21 +35,22 @@ struct g2d_info {
 	struct mutex *lock;
 	wait_queue_head_t wq;
 	struct device *dev;
+	atomic_t in_use;
 };
 
 struct g2d_dma_info {
-	dma_addr_t addr;
+	unsigned long addr;
 	size_t size;
 };
 
 static struct g2d_info *g2d;
-static u32 g2d_poll_flag = 0;
 
 irqreturn_t g2d_irq(int irq, void *dev_id)
 {
 	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_INTP_CMD_FIN) {
+		writel(0, g2d->base + G2D_INTEN_REG);
 		writel(G2D_INTP_CMD_FIN, g2d->base + G2D_INTC_PEND_REG);
-		g2d_poll_flag = 1;
+		atomic_set(&g2d->in_use, 1);
 		wake_up(&g2d->wq);
 	}
 
@@ -90,13 +95,14 @@ static int g2d_mmap(struct file *file, struct vm_area_struct *vma)
 
 	return 0;
 }
+
 static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 {
 	u32 mask = 0;
 
-	if (g2d_poll_flag == 1) {
+	if (atomic_read(&g2d->in_use) == 1) {
 		mask = POLLOUT | POLLWRNORM;
-		g2d_poll_flag = 0;
+		atomic_set(&g2d->in_use, 0);
 	} else {
 		poll_wait(file, &g2d->wq, wait);
 	}
@@ -107,15 +113,30 @@ static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 static int g2d_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct g2d_dma_info dma_info;
+	void *vaddr;
+
+	if (cmd == G2D_WAIT_FOR_IRQ) {
+		wait_event_timeout(g2d->wq, (atomic_read(&g2d->in_use) == 1), 10000);
+		atomic_set(&g2d->in_use, 0);
+		return 0;
+	}
 
 	if (copy_from_user(&dma_info, (struct g2d_dma_info *)arg, sizeof(dma_info)))
 		return -EFAULT;
 
-	switch(cmd) {
-	case G2D_DMA_SYNC:
-#if 0 /* re-implement need */
-		dma_sync_single_for_cpu(g2d->dev, dma_info.addr, dma_info.size, DMA_BIDIRECTIONAL);
-#endif
+	vaddr = phys_to_virt(dma_info.addr);
+
+	switch (cmd) {
+	case G2D_DMA_CACHE_INVAL:
+		dma_cache_maint(vaddr, dma_info.size, DMA_FROM_DEVICE);
+		break;
+
+	case G2D_DMA_CACHE_CLEAN:
+		dma_cache_maint(vaddr, dma_info.size, DMA_TO_DEVICE);
+		break;
+
+	case G2D_DMA_CACHE_FLUSH:
+		dma_cache_maint(vaddr, dma_info.size, DMA_BIDIRECTIONAL);
 		break;
 
 	default:
@@ -125,7 +146,7 @@ static int g2d_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 	return 0;
 }
 
-struct file_operations g2d_fops = {
+static const struct file_operations g2d_fops = {
 	.owner		= THIS_MODULE,
 	.open		= g2d_open,
 	.release	= g2d_release,
@@ -155,7 +176,7 @@ static int g2d_probe(struct platform_device *pdev)
 
 	/* memory region */
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if(!res) {
+	if (!res) {
 		dev_err(&pdev->dev, "failed to get resource\n");
 		ret = -ENOENT;
 		goto err_res;
@@ -194,7 +215,7 @@ static int g2d_probe(struct platform_device *pdev)
 
 	/* clock */
 	g2d->clock = clk_get(&pdev->dev, "g2d");
-	if(IS_ERR(g2d->clock)) {
+	if (IS_ERR(g2d->clock)) {
 		dev_err(&pdev->dev, "failed to enable clock\n");
 		ret = -ENOENT;
 		goto err_clk;
@@ -204,6 +225,9 @@ static int g2d_probe(struct platform_device *pdev)
 
 	/* blocking I/O */
 	init_waitqueue_head(&g2d->wq);
+
+	/* atomic init */
+	atomic_set(&g2d->in_use, 0);
 
 	/* misc register */
 	ret = misc_register(&g2d_dev);
