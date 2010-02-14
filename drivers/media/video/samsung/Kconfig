@@ -13,6 +13,7 @@ config VIDEO_SAMSUNG_V4L2
 	---help---
 	 This feature is for new V4L2 APIs all about digital camera
 
+source "drivers/media/video/samsung/cmm/Kconfig"
 source "drivers/media/video/samsung/fimc/Kconfig"
 #source "drivers/media/video/samsung/post/Kconfig"
 
@@ -133,8 +134,8 @@ endif
 
 config VIDEO_SAMSUNG_MEMSIZE_CMM
 	int "Memory size in kbytes for CMM"
-	depends on VIDEO_CMM && CPU_S3C6410
-	default "0"
+	depends on VIDEO_CMM && (CPU_S3C6410 || CPU_S5PC110)
+	default "32768"
 
 if CPU_S5P6440
 config VIDEO_SAMSUNG_MEMSIZE_GVG

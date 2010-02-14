@@ -1,3 +1,4 @@
+obj-$(CONFIG_VIDEO_CMM)		+= cmm/
 obj-$(CONFIG_VIDEO_FIMC)	+= fimc/
 obj-$(CONFIG_VIDEO_MFC10)	+= mfc10/
 obj-$(CONFIG_VIDEO_MFC40)	+= mfc40/
