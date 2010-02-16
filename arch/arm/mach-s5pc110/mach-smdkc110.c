@@ -659,12 +659,12 @@ static struct s5k3ba_platform_data s5k3ba_plat = {
 	.is_mipi = 0,
 };
 
-static struct i2c_board_info  __initdata s5k3ba_i2c_info = {
+static struct i2c_board_info s5k3ba_i2c_info = {
 	I2C_BOARD_INFO("S5K3BA", 0x2d),
 	.platform_data = &s5k3ba_plat,
 };
 
-static struct s3c_platform_camera __initdata s5k3ba = {
+static struct s3c_platform_camera s5k3ba = {
 #ifdef CAM_ITU_CH_A
 	.id		= CAMERA_PAR_A,
 #else
@@ -717,12 +717,12 @@ static struct s5k4ba_platform_data s5k4ba_plat = {
 	.is_mipi = 0,
 };
 
-static struct i2c_board_info  __initdata s5k4ba_i2c_info = {
+static struct i2c_board_info s5k4ba_i2c_info = {
 	I2C_BOARD_INFO("S5K4BA", 0x2d),
 	.platform_data = &s5k4ba_plat,
 };
 
-static struct s3c_platform_camera __initdata s5k4ba = {
+static struct s3c_platform_camera s5k4ba = {
 #ifdef CAM_ITU_CH_A
 	.id		= CAMERA_PAR_A,
 #else
@@ -776,12 +776,12 @@ static struct s5k4ea_platform_data s5k4ea_plat = {
 	.is_mipi = 1,
 };
 
-static struct i2c_board_info  __initdata s5k4ea_i2c_info = {
+static struct i2c_board_info  s5k4ea_i2c_info = {
 	I2C_BOARD_INFO("S5K4EA", 0x2d),
 	.platform_data = &s5k4ea_plat,
 };
 
-static struct s3c_platform_camera __initdata s5k4ea = {
+static struct s3c_platform_camera s5k4ea = {
 	.id		= CAMERA_CSI_C,
 	.type		= CAM_TYPE_MIPI,
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
@@ -826,12 +826,12 @@ static struct s5k6aa_platform_data s5k6aa_plat = {
 	.is_mipi = 1,
 };
 
-static struct i2c_board_info  __initdata s5k6aa_i2c_info = {
+static struct i2c_board_info s5k6aa_i2c_info = {
 	I2C_BOARD_INFO("S5K6AA", 0x3c),
 	.platform_data = &s5k6aa_plat,
 };
 
-static struct s3c_platform_camera __initdata s5k6aa = {
+static struct s3c_platform_camera s5k6aa = {
 	.id		= CAMERA_CSI_C,
 	.type		= CAM_TYPE_MIPI,
 	.fmt		= MIPI_CSI_YCBCR422_8BIT,
@@ -869,11 +869,11 @@ static struct s3c_platform_camera __initdata s5k6aa = {
 #endif
 
 #ifdef WRITEBACK_ENABLED
-static struct i2c_board_info  __initdata writeback_i2c_info = {
+static struct i2c_board_info writeback_i2c_info = {
 	I2C_BOARD_INFO("WriteBack", 0x0),
 };
 
-static struct s3c_platform_camera __initdata writeback = {
+static struct s3c_platform_camera writeback = {
 	.id		= CAMERA_WB,
 	.fmt		= ITU_601_YCBCR422_8BIT,
 	.order422	= CAM_ORDER422_8BIT_CBYCRY,
@@ -896,7 +896,7 @@ static struct s3c_platform_camera __initdata writeback = {
 #endif
 
 /* Interface setting */
-static struct s3c_platform_fimc __initdata fimc_plat = {
+static struct s3c_platform_fimc fimc_plat = {
 #if defined(S5K4EA_ENABLED) || defined(S5K6AA_ENABLED)
 	.default_cam	= CAMERA_CSI_C,
 #else
