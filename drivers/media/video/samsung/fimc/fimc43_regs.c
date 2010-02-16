@@ -165,6 +165,15 @@ int fimc_hwset_reset(struct fimc_control *ctrl)
 	return 0;
 }
 
+int fimc_hwset_sclk_enable(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(S5PC11X_VA_SYSCON + 0x460);
+	cfg |= 0x1 << 26;
+	writel(cfg, S5PC11X_VA_SYSCON + 0x460);
+
+	return 0;
+}
+
 int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk)
 {
 	u32 cfg = readl(ctrl->regs + S3C_MISC_FIMC);

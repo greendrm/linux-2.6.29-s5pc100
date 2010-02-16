@@ -122,7 +122,7 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 	}
 
 	clk_enable(clk);
-#if defined(CONFIG_VIDEO_FIMC_FIFO)	
+#if (defined(CONFIG_VIDEO_FIMC_FIFO) && defined(CONFIG_CPU_S5PC110))	
 	sclk = clk_get(&pdev->dev, "sclk_fimc");
 	if (IS_ERR(sclk)) {
 		dev_err(&pdev->dev, "failed to get local clock\n");
@@ -154,13 +154,13 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 
 	clk_put(sclk);
 
-	hclk = clk_get(&pdev->dev, "hclk_fimc");
+	clk = clk_get(&pdev->dev, "hclk_fimc");
 	if (IS_ERR(hclk)) {
 		dev_err(&pdev->dev, "failed to get interface clock\n");
 		goto err_clk3;
 	}
 
-	clk_enable(hclk);
+	clk_disable(clk);
 #endif
 	return 0;
 
