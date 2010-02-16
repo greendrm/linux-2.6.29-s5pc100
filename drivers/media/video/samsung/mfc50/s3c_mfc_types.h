@@ -16,6 +16,6 @@
 
 #include <linux/types.h>
 
-typedef enum {FALSE, TRUE} BOOL;
+typedef enum { FALSE, TRUE } BOOL;
 
 #endif /* __SAMSUNG_SYSLSI_APDEV_MFC_TYPE_H__ */

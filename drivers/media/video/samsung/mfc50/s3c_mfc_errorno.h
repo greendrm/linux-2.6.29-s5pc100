@@ -14,8 +14,7 @@
 #ifndef _S3C_MFC_ERRORNO_H_
 #define _S3C_MFC_ERRORNO_H_
 
-typedef enum
-{
+typedef enum {
 	MFC_RET_OK = 1,
 	MFC_RET_FAIL = -1000,
 	MFC_RET_OPEN_FAIL = -1001,

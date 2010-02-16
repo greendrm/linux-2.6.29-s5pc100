@@ -27,10 +27,10 @@
 #include "s3c_mfc_interface.h"
 
 /* port1 */
-extern volatile unsigned char	*s3c_mfc_virt_buf;
+extern volatile unsigned char *s3c_mfc_virt_buf;
 
 /* port 2 */
-extern volatile unsigned char	*s3c_mfc_virt_dpb_luma_buf;
+extern volatile unsigned char *s3c_mfc_virt_dpb_luma_buf;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
 
@@ -49,8 +49,9 @@ volatile unsigned char *s3c_mfc_get_data_buf_virt_addr()
 {
 	volatile unsigned char *virt_addr;
 
-	virt_addr = s3c_mfc_virt_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE
-		    + MFC_MAX_INSTANCE_NUM*RISC_BUF_SIZE;
+	virt_addr =
+	    s3c_mfc_virt_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE +
+	    MFC_MAX_INSTANCE_NUM * RISC_BUF_SIZE;
 	//virt_addr = Align(virt_addr, 4*BUF_L_UNIT);
 
 	return virt_addr;
@@ -79,7 +80,9 @@ unsigned int s3c_mfc_get_fw_context_phys_addr(int inst_no)
 {
 	unsigned int phys_addr;
 
-	phys_addr = s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_SYSTEM_SIZE + inst_no*MFC_FW_BUF_SIZE;
+	phys_addr =
+	    s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_SYSTEM_SIZE +
+	    inst_no * MFC_FW_BUF_SIZE;
 
 	return phys_addr;
 }
@@ -89,7 +92,9 @@ unsigned int s3c_mfc_get_risc_buf_phys_addr(int inst_no)
 {
 	unsigned int phys_addr;
 
-	phys_addr = s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE + inst_no*RISC_BUF_SIZE;
+	phys_addr =
+	    s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE +
+	    inst_no * RISC_BUF_SIZE;
 
 	return phys_addr;
 }
@@ -98,8 +103,9 @@ unsigned int s3c_mfc_get_data_buf_phys_addr()
 {
 	unsigned int phys_addr;
 
-	s3c_mfc_phys_data_buf = s3c_mfc_get_risc_buf_phys_addr(MFC_MAX_INSTANCE_NUM);
-	phys_addr = Align(s3c_mfc_phys_data_buf, 4*BUF_L_UNIT);
+	s3c_mfc_phys_data_buf =
+	    s3c_mfc_get_risc_buf_phys_addr(MFC_MAX_INSTANCE_NUM);
+	phys_addr = Align(s3c_mfc_phys_data_buf, 4 * BUF_L_UNIT);
 
 	return phys_addr;
 }

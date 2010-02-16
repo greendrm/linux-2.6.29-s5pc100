@@ -45,7 +45,6 @@
 			fmt, ##__VA_ARGS__);			\
 	} while (0)
 
-
 #ifdef CONFIG_VIDEO_MFC50_DEBUG
 #define mfc_debug(fmt, ...)		MFC_DEBUG(fmt, ##__VA_ARGS__)
 #else

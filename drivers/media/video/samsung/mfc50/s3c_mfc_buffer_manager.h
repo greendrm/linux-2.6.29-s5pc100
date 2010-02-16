@@ -19,9 +19,7 @@
 
 #define MFC_MAX_PORT_NUM	(2)
 
-
-typedef struct tag_alloc_mem_t
-{
+typedef struct tag_alloc_mem_t {
 	struct tag_alloc_mem_t *prev;
 	struct tag_alloc_mem_t *next;
 	unsigned int p_addr;	/* physical address */
@@ -33,9 +31,7 @@ typedef struct tag_alloc_mem_t
 	int port_no;
 } s3c_mfc_alloc_mem_t;
 
-
-typedef struct tag_free_mem_t
-{
+typedef struct tag_free_mem_t {
 	struct tag_free_mem_t *prev;
 	struct tag_free_mem_t *next;
 	unsigned int start_addr;
@@ -45,9 +41,11 @@ typedef struct tag_free_mem_t
 void s3c_mfc_print_list(void);
 int s3c_mfc_init_buffer_manager(void);
 void s3c_mfc_merge_frag(int inst_no);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_alloc_mem_t *node);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx *mfc_ctx, s3c_mfc_args *args);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx  *mfc_ctx,  s3c_mfc_args *args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_release_alloc_mem(s3c_mfc_inst_ctx * mfc_ctx,
+						s3c_mfc_alloc_mem_t * node);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_phys_addr(s3c_mfc_inst_ctx * mfc_ctx,
+					    s3c_mfc_args * args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx * mfc_ctx,
+					    s3c_mfc_args * args);
 
 #endif /* _S3C_MFC_BUFFER_MANAGER_H_ */
-

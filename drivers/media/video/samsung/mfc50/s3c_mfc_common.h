@@ -40,8 +40,7 @@
 #define HEC_ENABLE			(1<<0)
 #endif
 
-typedef enum
-{
+typedef enum {
 	MFCINST_STATE_NULL = 0,
 
 	/* Instance is created */
@@ -59,28 +58,24 @@ typedef enum
 	MFCINST_STATE_ENC_EXE_DONE
 } s3c_mfc_inst_state;
 
-typedef enum
-{
+typedef enum {
 	MEM_STRUCT_LINEAR = 0,
-	MEM_STRUCT_TILE_ENC  = 3  /* 64x32 */
+	MEM_STRUCT_TILE_ENC = 3	/* 64x32 */
 } s3c_mfc_mem_type;
 
-typedef enum
-{
+typedef enum {
 	MEMORY = 0,
-	CONTEXT  = 1
+	CONTEXT = 1
 } s3c_mfc_inst_no_type;
 
-typedef enum
-{
+typedef enum {
 	SEQ_HEADER = 1,
 	FRAME = 2,
 	LAST_FRAME = 3,
 	INIT_BUFFER = 4
 } s3c_mfc_dec_type;
 
-typedef enum
-{
+typedef enum {
 	H2R_CMD_EMPTY = 0,
 	H2R_CMD_OPEN_INSTANCE = 1,
 	H2R_CMD_CLOSE_INSTANCE = 2,
@@ -89,9 +84,7 @@ typedef enum
 	H2R_CMD_WAKEUP = 6
 } s3c_mfc_facade_cmd;
 
-
-typedef enum
-{
+typedef enum {
 	R2H_CMD_EMPTY = 0,
 	R2H_CMD_OPEN_INSTANCE_RET = 1,
 	R2H_CMD_CLOSE_INSTANCE_RET = 2,
@@ -108,9 +101,7 @@ typedef enum
 	R2H_CMD_ERR_RET = 32
 } s3c_mfc_wait_done_type;
 
-
-typedef enum
-{
+typedef enum {
 	DECODING_ONLY = 0,
 	DECODING_DISPLAY = 1,
 	DISPLAY_ONLY = 2,
@@ -118,8 +109,7 @@ typedef enum
 } s3c_mfc_display_status;
 
 /* In case of decoder */
-typedef enum
-{
+typedef enum {
 	MFC_RET_FRAME_NOT_SET = 0,
 	MFC_RET_FRAME_I_FRAME = 1,
 	MFC_RET_FRAME_P_FRAME = 2,
@@ -127,14 +117,12 @@ typedef enum
 	MFC_RET_FRAME_OTHERS = 7,
 } s3c_mfc_frame_type;
 
-typedef enum
-{
+typedef enum {
 	PORTA = 0,
 	PORTB = 1
 } s3c_mfc_port_type;
 
-typedef struct tag_mfc_inst_ctx
-{
+typedef struct tag_mfc_inst_ctx {
 	int InstNo;
 	unsigned int DPBCnt;
 	unsigned int totalDPBCnt;
@@ -150,7 +138,7 @@ typedef struct tag_mfc_inst_ctx
 	unsigned int dynamic_bitrate;
 	unsigned int img_width;
 	unsigned int img_height;
-	unsigned int dwAccess;		/* for Power Management. */
+	unsigned int dwAccess;	/* for Power Management. */
 	unsigned int IsPackedPB;
 	unsigned int interlace_mode;
 	unsigned int h264_i_period_enable;
@@ -166,17 +154,24 @@ typedef struct tag_mfc_inst_ctx
 } s3c_mfc_inst_ctx;
 
 struct s3c_mfc_ctrl {
-	char	clk_name[16];
-	struct clk	*clock;
+	char clk_name[16];
+	struct clk *clock;
 };
 
-s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args, s3c_mfc_frame_buf_arg_t buf_size);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx  *mfc_ctx, s3c_mfc_args *args);
-SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no, SSBSIP_MFC_CODEC_TYPE codec_type);
+s3c_mfc_frame_buf_arg_t s3c_mfc_get_frame_buf_size(s3c_mfc_inst_ctx * mfc_ctx,
+						   s3c_mfc_args * args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_frame_buf(s3c_mfc_inst_ctx * mfc_ctx,
+						 s3c_mfc_args * args,
+						 s3c_mfc_frame_buf_arg_t
+						 buf_size);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_allocate_stream_ref_buf(s3c_mfc_inst_ctx *
+						      mfc_ctx,
+						      s3c_mfc_args * args);
+SSBSIP_MFC_ERROR_CODE s3c_mfc_return_inst_no(int inst_no,
+					     SSBSIP_MFC_CODEC_TYPE codec_type);
 BOOL s3c_mfc_is_running(void);
-int s3c_mfc_set_state(s3c_mfc_inst_ctx *ctx, s3c_mfc_inst_state state);
-void  s3c_mfc_init_mem_inst_no(void);
+int s3c_mfc_set_state(s3c_mfc_inst_ctx * ctx, s3c_mfc_inst_state state);
+void s3c_mfc_init_mem_inst_no(void);
 int s3c_mfc_get_mem_inst_no(s3c_mfc_inst_no_type type);
 void s3c_mfc_return_mem_inst_no(int inst_no);
 
