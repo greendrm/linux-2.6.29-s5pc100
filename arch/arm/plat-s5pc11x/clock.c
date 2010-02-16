@@ -259,10 +259,10 @@ static struct clk init_clocks[] = {
 		.pd		= &pd_mfc,
 	}, {
 		.name           = "hclk_fimc",
-		.id             = 1,
+		.id             = -1,
 		.parent         = &clk_h166,
-		.enable         = s5pc11x_clk_sclk1_ctrl,
-		.ctrlbit        = S5P_SCLK_FIMC2_LCLK,
+		.enable         = s5pc11x_clk_ip0_ctrl,
+		.ctrlbit        = S5P_CLKGATE_IP0_FIMC2,
 		.pd		= &pd_cam,
 	}, {
 		.name           = "jpeg",
