@@ -1133,3 +1133,14 @@ int fimc_hw_reset_camera(struct fimc_control *ctrl)
 
 	return 0;	
 }
+
+int fimc_hwset_sclk_enable(struct fimc_control *ctrl)
+{
+	return 0;
+}
+
+int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk)
+{
+	return 0;
+}
+

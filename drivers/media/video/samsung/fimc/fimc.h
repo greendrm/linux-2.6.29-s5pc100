@@ -465,9 +465,7 @@ extern int fimc_hwset_enable_irq(struct fimc_control *ctrl, int overflow, int le
 extern int fimc_hwset_disable_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_reset(struct fimc_control *ctrl);
-#if defined(CONFIG_CPU_S5PC110)
 extern int fimc_hwset_sclk_enable(struct fimc_control *ctrl);
-#endif
 extern int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk);
 extern int fimc_hwget_overflow_state(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_offset(struct fimc_control *ctrl);
