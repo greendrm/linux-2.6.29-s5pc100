@@ -1017,6 +1017,7 @@ static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
 	case V4L2_PIX_FMT_RGB565:
 		pixels = 2;
 		break;		
+	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		pixels = 8;		
@@ -1044,6 +1045,7 @@ static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
 	case V4L2_PIX_FMT_RGB565:
 		pixels = 2;
 		break;
+	case V4L2_PIX_FMT_YUV420:
 	case V4L2_PIX_FMT_NV12:
 		pixels = 8;		
 		break;
@@ -1741,6 +1743,7 @@ static int fimc_qbuf_output_none(struct fimc_control *ctrl)
 	u32 width = ctrl->out->fbuf.fmt.width;
 	u32 height = ctrl->out->fbuf.fmt.height;
 	u32 y_size = width * height;
+	u32 c_size = (y_size >> 2);
 	u32 index = 0;
 	int ret = -1;
 	u32 i = 0;
@@ -1761,6 +1764,11 @@ static int fimc_qbuf_output_none(struct fimc_control *ctrl)
 		case V4L2_PIX_FMT_RGB32:
 		buf_set.base[FIMC_ADDR_Y] = (dma_addr_t)ctrl->out->fbuf.base;
 			break;
+		case V4L2_PIX_FMT_YUV420:
+				buf_set.base[FIMC_ADDR_Y] = (dma_addr_t)ctrl->out->fbuf.base;
+				buf_set.base[FIMC_ADDR_CB] = buf_set.base[FIMC_ADDR_Y] + y_size;
+				buf_set.base[FIMC_ADDR_CR] = buf_set.base[FIMC_ADDR_CB] + c_size;
+			break;	
 		case V4L2_PIX_FMT_NV12:
 		buf_set.base[FIMC_ADDR_Y] = (dma_addr_t)ctrl->out->fbuf.base;
 				buf_set.base[FIMC_ADDR_CB] = buf_set.base[FIMC_ADDR_Y] + y_size;
