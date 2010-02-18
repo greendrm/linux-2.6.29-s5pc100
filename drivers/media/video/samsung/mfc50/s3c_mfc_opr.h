@@ -42,7 +42,8 @@
 #define		NUM_POST_DPB		(3)
 #define		NUM_VC1_DPB		(4)
 
-#define		STUFF_BYTE_SIZE		(8)
+#define		STUFF_BYTE_SIZE		(4)
+#define 	NAL_START_CODE		(0x00000001)
 
 int s3c_mfc_load_firmware(void);
 

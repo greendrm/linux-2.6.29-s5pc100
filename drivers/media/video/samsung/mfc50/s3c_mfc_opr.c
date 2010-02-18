@@ -71,6 +71,9 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 						      s3c_mfc_dec_exe_arg_t *
 						      dec_arg,
 						      int *consumed_strm_size);
+static void get_byte(char *buff, int *code);
+static BOOL is_vcl(s3c_mfc_dec_exe_arg_t *dec_arg, int consumed_strm_size);
+
 
 static void s3c_mfc_cmd_reset(void)
 {
@@ -1326,6 +1329,49 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 	return MFC_RET_OK;
 }
 
+static void get_byte(char *buff, int *code)
+{
+	int byte;
+
+	*code = (*code << 8);
+	byte = (int)*buff;
+	byte &= 0xFF;
+	*code |= byte;
+}
+
+static BOOL is_vcl(s3c_mfc_dec_exe_arg_t *dec_arg, int consumed_strm_size)
+{
+	char *strm_buf = NULL;
+	int start_code = 0xffffffff;
+	int remained_size;
+
+	strm_buf = phys_to_virt((char*)dec_arg->in_strm_buf);
+	remained_size = dec_arg->in_strm_size - consumed_strm_size;
+
+	strm_buf += consumed_strm_size;
+	while (remained_size) {
+		while (remained_size &&
+			((start_code & 0xffffff) != NAL_START_CODE)) {
+			get_byte(strm_buf, &start_code);
+			strm_buf++; remained_size--;
+		}
+		if (!remained_size)
+			return FALSE;
+
+		mfc_debug("(start_code : 0x%08x  remained_size : 0x%08x)\r\n",
+		  start_code, remained_size);
+		printk("(start_code : 0x%08x  remained_size : 0x%08x)\r\n",
+		  	start_code, remained_size);
+		get_byte(strm_buf, &start_code);
+		strm_buf++; remained_size--;
+		if ( (start_code & 0x0f) < 0x6)	// In case of VCL
+			return TRUE;
+	}
+
+	return FALSE;
+
+}
+
 SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx * mfc_ctx,
 					 s3c_mfc_args * args)
 {
@@ -1345,7 +1391,8 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx * mfc_ctx,
 #else // MFC fw 11/30
 	if ((mfc_ctx->MfcCodecType == H264_DEC) &&
 	    (mfc_ctx->FrameType >= 1) && (mfc_ctx->FrameType <= 3) &&
-	    (dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE)) {
+	    (dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE) &&
+	    (is_vcl(dec_arg, consumed_strm_size)) ) {
 #endif
 		mfc_debug
 		    ("In case that two samples exist in the one stream buffer\n");
