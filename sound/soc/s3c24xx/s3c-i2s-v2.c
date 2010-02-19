@@ -704,24 +704,22 @@ static int s3c2412_i2s_suspend(struct snd_soc_dai *dai)
 	struct s3c_i2sv2_info *i2s = to_info(dai);
 	u32 iismod;
 
-	if (dai->active) {
-		i2s->suspend_iismod = readl(i2s->regs + S3C2412_IISMOD);
-		i2s->suspend_iiscon = readl(i2s->regs + S3C2412_IISCON);
-		i2s->suspend_iispsr = readl(i2s->regs + S3C2412_IISPSR);
+	i2s->suspend_iismod = readl(i2s->regs + S3C2412_IISMOD);
+	i2s->suspend_iiscon = readl(i2s->regs + S3C2412_IISCON);
+	i2s->suspend_iispsr = readl(i2s->regs + S3C2412_IISPSR);
 
-		/* some basic suspend checks */
+	/* some basic suspend checks */
 
-		iismod = readl(i2s->regs + S3C2412_IISMOD);
+	iismod = readl(i2s->regs + S3C2412_IISMOD);
 
-		if (iismod & S3C2412_IISCON_RXDMA_ACTIVE)
-			pr_warning("%s: RXDMA active?\n", __func__);
+	if (iismod & S3C2412_IISCON_RXDMA_ACTIVE)
+		pr_warning("%s: RXDMA active?\n", __func__);
 
-		if (iismod & S3C2412_IISCON_TXDMA_ACTIVE)
-			pr_warning("%s: TXDMA active?\n", __func__);
+	if (iismod & S3C2412_IISCON_TXDMA_ACTIVE)
+		pr_warning("%s: TXDMA active?\n", __func__);
 
-		if (iismod & S3C2412_IISCON_IIS_ACTIVE)
-			pr_warning("%s: IIS active\n", __func__);
-	}
+	if (iismod & S3C2412_IISCON_IIS_ACTIVE)
+		pr_warning("%s: IIS active\n", __func__);
 
 	return 0;
 }
@@ -733,17 +731,15 @@ static int s3c2412_i2s_resume(struct snd_soc_dai *dai)
 	pr_info("dai_active %d, IISMOD %08x, IISCON %08x\n",
 		dai->active, i2s->suspend_iismod, i2s->suspend_iiscon);
 
-	if (dai->active) {
-		writel(i2s->suspend_iiscon, i2s->regs + S3C2412_IISCON);
-		writel(i2s->suspend_iismod, i2s->regs + S3C2412_IISMOD);
-		writel(i2s->suspend_iispsr, i2s->regs + S3C2412_IISPSR);
+	writel(i2s->suspend_iiscon, i2s->regs + S3C2412_IISCON);
+	writel(i2s->suspend_iismod, i2s->regs + S3C2412_IISMOD);
+	writel(i2s->suspend_iispsr, i2s->regs + S3C2412_IISPSR);
 
-		writel(S3C2412_IISFIC_RXFLUSH | S3C2412_IISFIC_TXFLUSH,
-		       i2s->regs + S3C2412_IISFIC);
+	writel(S3C2412_IISFIC_RXFLUSH | S3C2412_IISFIC_TXFLUSH,
+	       i2s->regs + S3C2412_IISFIC);
 
-		ndelay(250);
-		writel(0x0, i2s->regs + S3C2412_IISFIC);
-	}
+	ndelay(250);
+	writel(0x0, i2s->regs + S3C2412_IISFIC);
 
 	return 0;
 }
