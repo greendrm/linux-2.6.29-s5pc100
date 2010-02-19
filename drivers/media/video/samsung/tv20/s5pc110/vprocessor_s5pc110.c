@@ -677,6 +677,9 @@ s5p_tv_vp_err __s5p_vp_start(void)
 
 	writel(VP_ON_ENABLE, vp_base + S5P_VP_ENABLE);
 
+	VPPRINTK("VP %s\n", readl(vp_base + S5P_VP_ENABLE) & VP_ON_ENABLE ?
+		"enabled":"disabled" );
+
 	error = __s5p_vp_update();
 
 	VPPRINTK("()\n\r");
@@ -694,6 +697,9 @@ s5p_tv_vp_err __s5p_vp_stop(void)
 
 	writel((readl(vp_base + S5P_VP_ENABLE) &~VP_ON_ENABLE), 
 		vp_base + S5P_VP_ENABLE);
+
+	VPPRINTK("VP %s\n", readl(vp_base + S5P_VP_ENABLE) & VP_ON_ENABLE ?
+		"enabled":"disabled" );
 
 	error = __s5p_vp_update();
 

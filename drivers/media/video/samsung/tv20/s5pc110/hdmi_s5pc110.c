@@ -1753,8 +1753,11 @@ void __s5p_hdmi_video_init_tg_cmd(bool time_c_e,
 		temp_reg |= TG_EN;
 	else
 		temp_reg &= TG_DIS;		
-	
+
 	writel(temp_reg, hdmi_base + S5P_TG_CMD);
+
+	HDMIPRINTK("HDMI TG %s\n", readl(hdmi_base + S5P_TG_CMD) & TG_EN ?
+		"enabled":"disabled" );
 
 	HDMIPRINTK("TG_CMD = 0x%08x \n\r", readl(hdmi_base + S5P_TG_CMD));
 }
@@ -1787,6 +1790,9 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | temp_reg,
 	       hdmi_base + S5P_HDMI_CON_0);
+
+	HDMIPRINTK("HDMI Link %s\n", readl(hdmi_base + S5P_HDMI_CON_0) &
+		HDMI_EN ? "enabled":"disabled");
 
 	if (hdcp_en) {
 //		__s5p_init_hdcp(true, ddc_port);
@@ -1840,6 +1846,9 @@ void __s5p_hdmi_stop(void)
 	do {
 		temp = readl(hdmi_base + S5P_HDMI_CON_0);
 	} while ( temp & HDMI_EN );
+
+	HDMIPRINTK("HDMI Link %s\n", readl(hdmi_base + S5P_HDMI_CON_0) &
+		HDMI_EN ? "enabled":"disabled");
 
 	HDMIPRINTK("HPD 0x%08x,HDMI_CON_0 0x%08x\n\r",
 		   readl(hdmi_base + S5P_HPD),

@@ -593,11 +593,6 @@ bool _s5p_tv_if_init_hd_video_reg(void)
 	s5p_hdmi_transmit s_trans_type = st->hdmi_spd_info_frame.trans_type;
 	u8 *spd_header = st->hdmi_spd_info_frame.spd_header;
 	u8 *spd_data = st->hdmi_spd_info_frame.spd_data;
-
-	bool timing_correction_en = st->hdmi_tg_cmd.timing_correction_en;
-	bool bt656_sync_en = st->hdmi_tg_cmd.bt656_sync_en;
-	bool tg_en;
-
 	
 	herr = __s5p_hdmi_video_init_display_mode(disp_mode,out_mode);
 
@@ -654,11 +649,6 @@ bool _s5p_tv_if_init_hd_video_reg(void)
 	if (herr != HDMI_NO_ERROR) {
 		return false;
 	}
-
-	st->hdmi_tg_cmd.tg_en = true;
-	tg_en = st->hdmi_tg_cmd.tg_en;
-
-	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,bt656_sync_en,tg_en);
 
 	return true;
 }
@@ -795,6 +785,10 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 bool _s5p_tv_if_init_hd_reg(void)
 {
 	s5p_tv_status *st = &s5ptv_status;
+	bool timing_correction_en = st->hdmi_tg_cmd.timing_correction_en;
+	bool bt656_sync_en = st->hdmi_tg_cmd.bt656_sync_en;
+	bool tg_en;
+
 	
 	TVOUTIFPRINTK("audio type : %d, hdcp : %s)\n\r", 
 		st->hdmi_audio_type, st->hdcp_en ? "enabled":"disabled");
@@ -838,6 +832,12 @@ bool _s5p_tv_if_init_hd_reg(void)
 			      st->hdcp_i2c_client)) {
 		return false;
 	}
+
+	st->hdmi_tg_cmd.tg_en = true;
+	tg_en = st->hdmi_tg_cmd.tg_en;
+
+	__s5p_hdmi_video_init_tg_cmd(timing_correction_en,
+		bt656_sync_en, tg_en);
 
 	return true;
 }

@@ -78,6 +78,9 @@ s5p_tv_vmx_err __s5p_vm_set_layer_show(s5p_tv_vmx_layer layer, bool show)
 
 	writel(mxr_config, mixer_base + S5P_MXR_CFG);
 
+	VMPRINTK("VMixer:Video %s\n", readl(mixer_base + S5P_MXR_CFG) &
+		S5P_MXR_VIDEO_LAYER_SHOW ?"enabled":"disabled");
+
 	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_CFG));
 
 	return VMIXER_NO_ERROR;
@@ -931,8 +934,12 @@ s5p_tv_vmx_err __s5p_vm_get_layer_info(s5p_tv_vmx_layer layer,
 void __s5p_vm_start(void)
 {
 	VMPRINTK("()\n\r");
+
 	writel((readl(mixer_base + S5P_MXR_STATUS) | S5P_MXR_MIXER_START), mixer_base + S5P_MXR_STATUS);
 	VMPRINTK("0x%x\n\r", readl(mixer_base + S5P_MXR_STATUS));
+
+	VMPRINTK("VMixer %s\n",	readl(mixer_base + S5P_MXR_STATUS) &
+		S5P_MXR_MIXER_START ? "enabled":"disabled");
 
 
 	VMPRINTK("S5P_MXR_STATUS \t\t 0x%08x\n ", readl(mixer_base + S5P_MXR_STATUS));
@@ -980,6 +987,9 @@ void __s5p_vm_stop(void)
 	do {
 		reg = readl(mixer_base + S5P_MXR_STATUS);
 	} while ( reg & S5P_MXR_MIXER_START );
+
+	VMPRINTK("VMixer %s\n",	readl(mixer_base + S5P_MXR_STATUS) &
+		S5P_MXR_MIXER_START ? "enabled":"disabled");
 }
 
 /*
