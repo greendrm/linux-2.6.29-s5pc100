@@ -645,7 +645,7 @@ static int soc_suspend(struct platform_device *pdev, pm_message_t state)
 	int i;
 
 	for (i = 0; i < card->num_links; i++) {
-		struct snd_soc_dai *dai = card->dai_link[i].codec_dai;
+		struct snd_soc_dai *dai = card->dai_link[i].cpu_dai;
 		/* Do not suspend if playback active _via_ iDMA */
 		if (dai->active && card->dai_link[i].use_idma)
 			return 0;
@@ -791,7 +791,7 @@ static int soc_resume(struct platform_device *pdev)
 	dev_dbg(socdev->dev, "scheduling resume work\n");
 
 	for (i = 0; i < card->num_links; i++) {
-		struct snd_soc_dai *dai = card->dai_link[i].codec_dai;
+		struct snd_soc_dai *dai = card->dai_link[i].cpu_dai;
 		/* Nothing to do if playback active _via_ iDMA */
 		if (dai->active && card->dai_link[i].use_idma)
 			return 0;
