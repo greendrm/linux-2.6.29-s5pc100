@@ -444,6 +444,28 @@ struct platform_device s3c_device_jpeg = {
 EXPORT_SYMBOL(s3c_device_jpeg);
 
 /* rotator interface */
+#ifdef CONFIG_CPU_S5PC110_EVT1
+static struct resource s5p_rotator_resource[] = {
+        [0] = {
+                .start = S5PC11X_PA_ROTATOR,
+                .end   = S5PC11X_PA_ROTATOR + S5PC11X_SZ_ROTATOR - 1,
+                .flags = IORESOURCE_MEM,
+        },
+        [1] = {
+                .start = IRQ_ROTATOR,
+                .end   = IRQ_ROTATOR,
+                .flags = IORESOURCE_IRQ,
+        }
+};
+
+struct platform_device s5p_device_rotator = {
+        .name             = "s5p-rotator",
+        .id               = -1,
+        .num_resources    = ARRAY_SIZE(s5p_rotator_resource),
+        .resource         = s5p_rotator_resource
+};
+EXPORT_SYMBOL(s5p_device_rotator);
+#else
 static struct resource s3c_rotator_resource[] = {
         [0] = {
                 .start = S5PC11X_PA_ROTATOR,
@@ -464,6 +486,7 @@ struct platform_device s3c_device_rotator = {
         .resource         = s3c_rotator_resource
 };
 EXPORT_SYMBOL(s3c_device_rotator);
+#endif
 
 /* TVOUT interface */
 static struct resource s5p_tvout_resources[] = {

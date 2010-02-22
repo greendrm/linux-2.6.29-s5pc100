@@ -164,7 +164,7 @@ int fimc_hwset_reset(struct fimc_control *ctrl)
 
 	return 0;
 }
-
+#if defined(CONFIG_CPU_S5PC110)
 int fimc_hwset_sclk_enable(struct fimc_control *ctrl)
 {
 	u32 cfg = readl(S5PC11X_VA_SYSCON + 0x460);
@@ -188,7 +188,17 @@ int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk)
 	writel(cfg, ctrl->regs + S3C_MISC_FIMC);
 	return 0;
 }
+#elif defined(CONFIG_CPU_S5P6442)
+int fimc_hwset_sclk_enable(struct fimc_control *ctrl)
+{
+	return 0;
+}
 
+int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk)
+{
+	return 0;
+}
+#endif
 int fimc_hwget_overflow_state(struct fimc_control *ctrl)
 {
 	u32 cfg, status, flag;

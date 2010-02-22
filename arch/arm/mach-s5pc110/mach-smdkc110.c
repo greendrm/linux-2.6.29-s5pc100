@@ -538,7 +538,11 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s3c_device_i2c2,
 	&s3c_device_ipc,
 	&s3c_device_jpeg,
+#ifdef CONFIG_CPU_S5PC110_EVT1
+	&s5p_device_rotator,
+#else
 	&s3c_device_rotator,
+#endif
 	&s5p_device_cec,
 	&s5p_device_hpd,
 	&s3c_device_test,

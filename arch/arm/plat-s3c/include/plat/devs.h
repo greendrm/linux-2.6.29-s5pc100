@@ -39,7 +39,11 @@ extern struct platform_device s3c_device_g3d;
 extern struct platform_device s3c_device_vpp;
 extern struct platform_device s3c_device_tvenc;
 extern struct platform_device s3c_device_tvscaler;
+#ifdef CONFIG_CPU_S5PC110_EVT1
+extern struct platform_device s5p_device_rotator;
+#else
 extern struct platform_device s3c_device_rotator;
+#endif
 extern struct platform_device s3c_device_jpeg;
 extern struct platform_device s3c_device_wdt;
 extern struct platform_device s3c_device_i2c0;
