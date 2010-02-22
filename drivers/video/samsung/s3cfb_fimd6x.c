@@ -304,6 +304,23 @@ int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable)
 	return 0;	
 }
 
+int s3cfb_get_vsync_interrupt(struct s3cfb_global *ctrl)
+{
+	u32 cfg = 0;
+
+	cfg = readl(ctrl->regs + S3C_VIDINTCON0);
+	cfg &= S3C_VIDINTCON0_FRAMESEL0_VSYNC;
+
+	if (cfg & S3C_VIDINTCON0_FRAMESEL0_VSYNC) {
+		dev_dbg(ctrl->dev, "vsync interrupt is on\n");
+		return 1;
+	} else {
+		dev_dbg(ctrl->dev, "vsync interrupt is off\n");
+		return 0;
+	}
+}
+
+
 #ifdef CONFIG_FB_S3C_TRACE_UNDERRUN
 int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable)
 {
