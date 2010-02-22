@@ -20,7 +20,7 @@
 #include "op_arm_model.h"
 #include "op_model_v7.h"
 
-/* #define DEBUG */
+#define DEBUG
 
 
 /*
@@ -371,6 +371,11 @@ static int irqs[] = {
 #ifdef CONFIG_ARCH_OMAP3
 	INT_34XX_BENCH_MPU_EMUL,
 #endif
+
+#ifdef CONFIG_CPU_S5PC110
+	IRQ_CORTEX0,
+#endif	
+
 };
 
 static void armv7_pmnc_stop(void)
