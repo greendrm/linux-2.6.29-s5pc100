@@ -284,7 +284,7 @@ static struct regulator_init_data max8698_ldo3_data = {
 		.state_mem	={
 			.uV		= 1100000,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled	= 0,	/* LDO3 should be OFF in sleep mode */
+			.enabled	= 1,	/* LDO3 should be OFF in sleep mode */
 		},
 	},
 };
@@ -357,7 +357,7 @@ static struct regulator_init_data max8698_ldo8_data = {
 		.state_mem	={
 			.uV		= 0,
 			.mode		= REGULATOR_MODE_NORMAL,
-			.enabled	= 0,	/* LDO8 should be OFF in sleep mode */
+			.enabled	= 1,	/* LDO8 should be OFF in sleep mode */
 		},
 	},
 };
