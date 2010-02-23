@@ -153,7 +153,10 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	s3c_mfc_merge_frag(mfc_ctx->mem_inst_no);
 
 	s3c_mfc_return_mem_inst_no(mfc_ctx->mem_inst_no);
-	s3c_mfc_return_inst_no(mfc_ctx->InstNo, mfc_ctx->MfcCodecType);
+
+	if ((mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) ||
+		(mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE))
+		s3c_mfc_return_inst_no(mfc_ctx->InstNo, mfc_ctx->MfcCodecType);
 
 	s3c_mfc_openhandle_count--;
 	kfree(mfc_ctx);
