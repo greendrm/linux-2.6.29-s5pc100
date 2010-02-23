@@ -185,14 +185,9 @@ static struct snd_pcm_ops s3c_wrpdma_ops = {
 
 static void s3c_wrpdma_pcm_free(struct snd_pcm *pcm)
 {
-	struct snd_soc_pcm_runtime *rtd = pcm->private_data;
-	struct snd_soc_dai_link *dai_link = rtd->dai;
 	struct snd_soc_platform *platform;
 
-	if (dai_link->use_idma)
-		platform = &idma_soc_platform;
-	else
-		platform = &s3c24xx_soc_platform;
+	platform = &s3c24xx_soc_platform;
 
 	if (platform->pcm_free)
 		platform->pcm_free(pcm);
@@ -201,14 +196,9 @@ static void s3c_wrpdma_pcm_free(struct snd_pcm *pcm)
 static int s3c_wrpdma_pcm_new(struct snd_card *card,
 		struct snd_soc_dai *dai, struct snd_pcm *pcm)
 {
-	struct snd_soc_pcm_runtime *rtd = pcm->private_data;
-	struct snd_soc_dai_link *dai_link = rtd->dai;
 	struct snd_soc_platform *platform;
 
-	if (dai_link->use_idma)
-		platform = &idma_soc_platform;
-	else
-		platform = &s3c24xx_soc_platform;
+	platform = &s3c24xx_soc_platform;
 
 	if (platform->pcm_new)
 		return platform->pcm_new(card, dai, pcm);
