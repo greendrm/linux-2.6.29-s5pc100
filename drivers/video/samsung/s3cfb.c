@@ -811,6 +811,17 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 		win->owner = (enum s3cfb_mem_owner_t)argp;
 		break;
 
+	case S3CFB_SET_VSYNC_INT:
+		if (argp)
+			s3cfb_set_global_interrupt(fbdev, 1);
+
+		s3cfb_set_vsync_interrupt(fbdev, argp);
+		break;
+
+	case S3CFB_GET_VSYNC_INT_STATUS:
+		ret = s3cfb_get_vsync_interrupt(fbdev);
+		break;
+
 	default:
 		ret = s3cfb_ioctl(fb, cmd, arg);
 		break;

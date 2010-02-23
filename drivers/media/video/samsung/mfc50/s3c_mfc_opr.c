@@ -48,6 +48,7 @@ static volatile unsigned char *shared_mem_vir_addr;
 #define READL_SHARED_MEM(address) \
 	{ dma_cache_maint((void*)address, 4, DMA_FROM_DEVICE); \
 	readl(address); }
+#define READL_STREAM_BUF(address) READL_SHARED_MEM(address)
 
 static void s3c_mfc_cmd_reset(void);
 static void s3c_mfc_set_encode_init_param(int inst_no,
@@ -71,7 +72,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 						      s3c_mfc_dec_exe_arg_t *
 						      dec_arg,
 						      int *consumed_strm_size);
-static void get_byte(char *buff, int *code);
+static void get_byte(int buff, int *code);
 static BOOL is_vcl(s3c_mfc_dec_exe_arg_t *dec_arg, int consumed_strm_size);
 
 
@@ -1150,6 +1151,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx * mfc_ctx,
 	 *      - set input risc buffer
 	 *      - set NUM_EXTRA_DPB
 	 */
+
 	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, init_arg->in_strm_buf,
 				      start_byte_num, init_arg->in_strm_size);
 
@@ -1329,30 +1331,34 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 	return MFC_RET_OK;
 }
 
-static void get_byte(char *buff, int *code)
+static void get_byte(int buff, int *code)
 {
 	int byte;
 
 	*code = (*code << 8);
-	byte = (int)*buff;
-	byte &= 0xFF;
+	byte = (buff & 0xFF);
 	*code |= byte;
 }
 
 static BOOL is_vcl(s3c_mfc_dec_exe_arg_t *dec_arg, int consumed_strm_size)
 {
-	char *strm_buf = NULL;
+	volatile unsigned char *strm_buf_vir_addr;
+	unsigned char *strm_buf;
 	int start_code = 0xffffffff;
 	int remained_size;
 
-	strm_buf = phys_to_virt((char*)dec_arg->in_strm_buf);
+	strm_buf_vir_addr = phys_to_virt((unsigned long)dec_arg->in_strm_buf);
 	remained_size = dec_arg->in_strm_size - consumed_strm_size;
 
-	strm_buf += consumed_strm_size;
+	mfc_debug("(strm_buf_vir_addr : 0x%08x) \n",
+				(unsigned int)strm_buf_vir_addr);
+
+	strm_buf = (unsigned char *)(strm_buf_vir_addr + consumed_strm_size);
 	while (remained_size) {
 		while (remained_size &&
 			((start_code & 0xffffff) != NAL_START_CODE)) {
-			get_byte(strm_buf, &start_code);
+			get_byte((int)(READL_STREAM_BUF(strm_buf)),
+					&start_code);
 			strm_buf++; remained_size--;
 		}
 		if (!remained_size)
@@ -1360,12 +1366,14 @@ static BOOL is_vcl(s3c_mfc_dec_exe_arg_t *dec_arg, int consumed_strm_size)
 
 		mfc_debug("(start_code : 0x%08x  remained_size : 0x%08x)\r\n",
 		  start_code, remained_size);
-		printk("(start_code : 0x%08x  remained_size : 0x%08x)\r\n",
-		  	start_code, remained_size);
-		get_byte(strm_buf, &start_code);
+
+		get_byte((int)(READL_STREAM_BUF(strm_buf)), &start_code);
 		strm_buf++; remained_size--;
-		if ( (start_code & 0x0f) < 0x6)	// In case of VCL
+		if ( (start_code & 0x0f) < 0x6) {	// In case of VCL
+			mfc_debug("(start_code : 0x%08x) \n", start_code);
 			return TRUE;
+		}
+		mfc_debug("(start_code : 0x%08x) \n", start_code);
 	}
 
 	return FALSE;

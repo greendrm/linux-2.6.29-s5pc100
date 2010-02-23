@@ -267,6 +267,7 @@ struct s3cfb_user_chroma {
 #define S3CFB_WIN_SET_PLANE_ALPHA	_IOW ('F', 204, struct s3cfb_user_plane_alpha)
 #define S3CFB_WIN_SET_CHROMA		_IOW ('F', 205, struct s3cfb_user_chroma)
 #define S3CFB_SET_VSYNC_INT		_IOW ('F', 206, u32)
+#define S3CFB_GET_VSYNC_INT_STATUS	_IOR ('F', 207, u32)
 #define S3CFB_GET_LCD_WIDTH		_IOR ('F', 302, int)
 #define S3CFB_GET_LCD_HEIGHT		_IOR ('F', 303, int)
 #define S3CFB_SET_WRITEBACK		_IOW ('F', 304, u32)
@@ -295,6 +296,7 @@ extern int s3cfb_set_timing(struct s3cfb_global *ctrl);
 extern int s3cfb_set_lcd_size(struct s3cfb_global *ctrl);
 extern int s3cfb_set_global_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_set_vsync_interrupt(struct s3cfb_global *ctrl, int enable);
+extern int s3cfb_get_vsync_interrupt(struct s3cfb_global *ctrl);
 extern int s3cfb_set_fifo_interrupt(struct s3cfb_global *ctrl, int enable);
 extern int s3cfb_clear_interrupt(struct s3cfb_global *ctrl);
 extern int s3cfb_channel_localpath_on(struct s3cfb_global *ctrl, int id);

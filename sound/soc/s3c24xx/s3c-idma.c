@@ -73,6 +73,7 @@ struct lpam_i2s_pdata {
 	 * Internal DMA i/f *
 	 ********************/
 static struct s3c_idma_info {
+	struct snd_dma_buffer ibuff;
 	void __iomem  *regs;
 	unsigned      dma_prd;
 	spinlock_t    lock;
@@ -157,6 +158,7 @@ static int s3c_idma_hw_params(struct snd_pcm_substream *substream,
 				struct snd_pcm_hw_params *params)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
+	struct snd_dma_buffer *buf = &substream->dma_buffer;
 
 	pr_debug("Entered %s\n", __func__);
 
@@ -166,7 +168,10 @@ static int s3c_idma_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
+	s3c_idma.ibuff.dev.dev = buf->dev.dev;
+	s3c_idma.ibuff.dev.type = buf->dev.type;
+
+	snd_pcm_set_runtime_buffer(substream, &s3c_idma.ibuff);
 	runtime->dma_bytes = params_buffer_bytes(params);
 
 	s3c_idma_setcallbk(s3c_idma_done, params_period_bytes(params));
@@ -402,8 +407,6 @@ static void s3c_idma_pcm_free(struct snd_pcm *pcm)
 	if (!buf->area)
 		return;;
 
-	iounmap(buf->area);
-
 	buf->area = NULL;
 	buf->addr = 0;
 }
@@ -420,9 +423,9 @@ static int s3c_idma_preallocate_buffer(struct snd_pcm *pcm, int stream)
 
 	/* Assign PCM buffer pointers */
 	buf->dev.type = SNDRV_DMA_TYPE_CONTINUOUS;
-	buf->addr = LP_TXBUFF_ADDR;
-	buf->bytes = s3c_idma_hardware.buffer_bytes_max;
-	buf->area = (unsigned char *)ioremap(buf->addr, buf->bytes);
+	buf->addr = s3c_idma.ibuff.addr;
+	buf->bytes = s3c_idma.ibuff.bytes;
+	buf->area = s3c_idma.ibuff.area;
 
 	pr_debug("Preallocate buffer:  VA-%p  PA-%X  %ubytes\n",
 			buf->area, buf->addr, buf->bytes);
@@ -466,6 +469,12 @@ void s5p_idma_init(void *regs)
 
 static int __init s5p_soc_platform_init(void)
 {
+	s3c_idma.ibuff.addr = LP_TXBUFF_ADDR;
+	s3c_idma.ibuff.bytes = s3c_idma_hardware.buffer_bytes_max;
+	s3c_idma.ibuff.area = (unsigned char*)ioremap(s3c_idma.ibuff.addr,
+							s3c_idma.ibuff.bytes);
+	s3c_idma.ibuff.private_data = NULL;
+
 	return snd_soc_register_platform(&idma_soc_platform);
 }
 module_init(s5p_soc_platform_init);
@@ -473,6 +482,9 @@ module_init(s5p_soc_platform_init);
 static void __exit s5p_soc_platform_exit(void)
 {
 	snd_soc_unregister_platform(&idma_soc_platform);
+
+	iounmap(s3c_idma.ibuff.area);
+	s3c_idma.ibuff.area = NULL;
 }
 module_exit(s5p_soc_platform_exit);
 
