@@ -39,7 +39,7 @@ static struct regulator *internal_regulator;
 
 struct s3c_cpufreq_freqs s3c_freqs;
 
-#define BOOTUP_LEVEL		(L1)	/* 800MHz */
+#define BOOTUP_LEVEL		(L0)	/* 1000MHz */
 
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
@@ -168,7 +168,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	unsigned int bus_speed_changing = 0;
 
 	s3c_freqs.freqs.old = s5pc110_getspeed(0);
-
+	
 	if (cpufreq_frequency_table_target(policy, s5pc110_freq_table,
 		target_freq, relation, &index)) {
 		ret = -EINVAL;
@@ -211,7 +211,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	if (index == L3) {
 		/* Reconfigure DRAM refresh counter value for new clock */
 		__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);
-#if defined(CONFIG_S5PC110_AC_TYPE)
+#if !defined(CONFIG_S5PC110_H_TYPE)
 		__raw_writel(0x287, S5P_VA_DMC0 + 0x30);
 #else
 		__raw_writel(0x30c, S5P_VA_DMC0 + 0x30);
@@ -419,7 +419,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		if (index == L2) {
 			/* Reconfigure DRAM refresh counter value */
 			__raw_writel(0x618, S5P_VA_DMC1 + 0x30);
-#if defined(CONFIG_S5PC110_AC_TYPE)
+#if !defined(CONFIG_S5PC110_H_TYPE)
 			__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
 #else
 			__raw_writel(0x618, S5P_VA_DMC0 + 0x30);
@@ -499,7 +499,7 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 
 	policy->cpuinfo.transition_latency = 40000;
 
-	memcpy(&s3c_freqs.old, &s5pc110_clk_info[1], sizeof(struct s3c_freq));
+	memcpy(&s3c_freqs.old, &s5pc110_clk_info[0], sizeof(struct s3c_freq));
 
 	return cpufreq_frequency_table_cpuinfo(policy, s5pc110_freq_table);
 }
