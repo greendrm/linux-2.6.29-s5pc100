@@ -263,15 +263,18 @@ static int s3c_dma_trigger(struct snd_pcm_substream *substream, int cmd)
 	spin_lock(&prtd->lock);
 
 	switch (cmd) {
-	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
+		s3c_dma_enqueue(substream);
+	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
 		prtd->state |= ST_RUNNING;
 		s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_START);
 		break;
 
-	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
+		if (prtd->dma_loaded)
+			prtd->dma_loaded--;
+	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		prtd->state &= ~ST_RUNNING;
 		s3c2410_dma_ctrl(prtd->params->channel, S3C2410_DMAOP_STOP);
