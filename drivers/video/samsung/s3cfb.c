@@ -1046,12 +1046,19 @@ s3cfb_freq_transition(struct notifier_block *nb, unsigned long val,
 			 void *data)
 {
 	struct s3cfb_global *fbdev = container_of(nb, struct s3cfb_global, freq_transition);
+	struct s3c_platform_fb *pdata = to_fb_plat(fbdev->dev);
 	struct s3c_cpufreq_freqs *f = to_s3c_cpufreq(data);
 #if defined(CONFIG_CPU_S5PC110)
-	printk("f->new.hclk_msys =%d, f->old.hclk_msys=%d\n",f->new.hclk_msys,f->old.hclk_msys);
+	printk("f->new.hclk_dsys =%d, f->old.hclk_dsys=%d\n",f->new.hclk_dsys,f->old.hclk_dsys);
 	
-	if (f->new.hclk_msys == f->old.hclk_msys)
+	if (f->new.hclk_dsys == f->old.hclk_dsys) {
+		printk("New Hclk_dsys is the same as old one.\n");
 		return 0;
+	} else {	
+		if (strcmp(pdata->clk_name, "sclk_fimd") != 0) {
+			fbdev->clock->parent->rate = (f->new.hclk_dsys)*1000;
+		}
+	}
 #endif
 	switch (val) {
 	case CPUFREQ_PRECHANGE:
@@ -1059,6 +1066,7 @@ s3cfb_freq_transition(struct notifier_block *nb, unsigned long val,
 		break;
 
 	case CPUFREQ_POSTCHANGE:
+		s3cfb_set_clock(fbdev);
 		printk("s3cfb cpufreq postchange\n");
 		break;
 	}

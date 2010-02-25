@@ -170,9 +170,9 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 		src_clk = ctrl->clock->get_rate(ctrl->clock);
 	} else {
 		cfg |= S3C_VIDCON0_CLKSEL_HCLK;
-	src_clk = ctrl->clock->parent->rate;
+		src_clk = ctrl->clock->parent->rate;
 	}
-	
+
 	vclk = ctrl->fb[pdata->default_win]->var.pixclock;
 
 	if (vclk > maxclk) {
@@ -189,6 +189,7 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 		dev_info(ctrl->dev, "vclk(%d) should be smaller than %d Hz\n",
 			src_clk/div, maxclk);
 
+	cfg &= ~S3C_VIDCON0_CLKVAL_MASK;
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
