@@ -187,6 +187,60 @@ struct clk clk_dout_apll = {
 	.round_rate = s5pc11x_doutapll_roundrate,
 };
 
+static unsigned long s5pc11x_clk_douta2m_get_rate(struct clk *clk)
+{
+  	unsigned long rate = clk_get_rate(clk->parent);
+
+	rate /= (((__raw_readl(S5P_CLK_DIV0) & S5P_CLKDIV0_A2M_MASK) >> S5P_CLKDIV0_A2M_SHIFT) + 1);
+
+	return rate;
+}
+
+int s5pc11x_clk_douta2m_set_rate(struct clk *clk, unsigned long rate)
+{
+	struct clk *temp_clk = clk;
+	unsigned int div;
+	u32 val;
+
+	rate = clk_round_rate(temp_clk, rate);
+	div = clk_get_rate(temp_clk->parent) / rate;
+
+	val = __raw_readl(S5P_CLK_DIV0);
+	val &=~ S5P_CLKDIV0_A2M_MASK;
+	val |= (div - 1) << S5P_CLKDIV0_A2M_SHIFT;
+	__raw_writel(val, S5P_CLK_DIV0);
+
+	return 0;
+}
+
+static unsigned long s5pc11x_douta2m_roundrate(struct clk *clk,
+					      unsigned long rate)
+{
+	unsigned long parent_rate = clk_get_rate(clk->parent);
+	int div;
+
+	if (rate > parent_rate)
+		rate = parent_rate;
+	else {
+		div = parent_rate / rate;
+
+		div ++;
+		
+		rate = parent_rate / div;
+	}
+
+	return rate;
+}
+
+struct clk clk_dout_a2m = {
+	.name = "dout_a2m",
+	.id = -1,
+	.parent = &clk_mout_apll.clk,
+	.get_rate = s5pc11x_clk_douta2m_get_rate,
+	.set_rate = s5pc11x_clk_douta2m_set_rate,
+	.round_rate = s5pc11x_douta2m_roundrate,
+};
+
 
 static int fout_enable(struct clk *clk, int enable)
 {
@@ -1304,6 +1358,38 @@ static struct clksrc_clk clk_g2d = {
 	.reg_source	= S5P_CLK_SRC2,
 };
 
+/* mfc */
+static struct clk *clkset_mfc_list[] = {
+	&clk_dout_a2m,
+	&clk_mout_mpll.clk,
+	&clk_mout_epll.clk,
+	&clk_mout_vpll.clk,
+};
+
+static struct clk_sources clkset_mfc = {
+	.sources	= clkset_mfc_list,
+	.nr_sources	= ARRAY_SIZE(clkset_mfc_list),
+};
+
+static struct clksrc_clk clk_mfc = {
+	.clk	= {
+		.name		= "sclk_mfc",
+		.id		= -1,
+		.ctrlbit        = S5P_CLKGATE_IP0_MFC,
+		.enable		= s5pc11x_clk_ip0_ctrl,
+		.set_parent	= s5pc11x_setparent_clksrc,
+		.get_rate	= s5pc11x_getrate_clksrc,
+		.set_rate	= s5pc11x_setrate_clksrc,
+		.round_rate	= s5pc11x_roundrate_clksrc,
+	},
+	.shift		= S5P_CLKSRC2_MFC_SHIFT,
+	.mask		= S5P_CLKSRC2_MFC_MASK,
+	.sources	= &clkset_mfc,
+	.divider_shift	= S5P_CLKDIV2_MFC_SHIFT,
+	.reg_divider	= S5P_CLK_DIV2,
+	.reg_source	= S5P_CLK_SRC2,
+};
+
 /* Clock initialisation code */
 
 static struct clksrc_clk *init_parents[] = {
@@ -1333,6 +1419,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc2,
 	&sclk_fimc,
 	&clk_g2d,
+	&clk_mfc,
 };
 
 static void __init_or_cpufreq s5pc11x_set_clksrc(struct clksrc_clk *clk)
@@ -1498,6 +1585,7 @@ static struct clk *clks[] __initdata = {
 	&clk_i2smain.clk,
 	&clk_fimd.clk,
 	&clk_dout_apll,
+	&clk_dout_a2m,
 	&clk_cam0.clk,
 	&clk_cam1.clk,
 	&clk_fimc0.clk,
