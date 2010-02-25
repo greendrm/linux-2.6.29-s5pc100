@@ -43,6 +43,8 @@
 
 struct s3c_mfc_ctrl s3c_mfc;
 struct s3c_mfc_ctrl *ctrl = &s3c_mfc;
+struct s3c_mfc_sys  s3c_mfc_sclk;
+struct s3c_mfc_sys  *mfc_sys = &s3c_mfc_sclk;
 
 static int s3c_mfc_openhandle_count = 0;
 static struct resource *s3c_mfc_mem;
@@ -74,14 +76,14 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	if (s3c_mfc_openhandle_count == 1) {
 
 		clk_enable(ctrl->clock);
+		clk_enable(mfc_sys->clock);
 
 		/* MFC Hardware Initialization */
 		if (s3c_mfc_init_hw() == FALSE)
 			return -ENODEV;
 	}
 
-	mfc_ctx =
-	    (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
+	mfc_ctx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
 	if (mfc_ctx == NULL) {
 		mfc_err("MFC_RET_MEM_ALLOC_FAIL\n");
 		ret = -ENOMEM;
@@ -165,6 +167,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	/* In EVT1, it should be tested */
 #if 1
 	if (s3c_mfc_openhandle_count == 0) {
+		clk_disable(mfc_sys->clock);
 		clk_disable(ctrl->clock);
 	}
 #endif
@@ -600,16 +603,45 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	struct s3c_mfc_platdata *pdata = pdev->dev.platform_data;
 	struct resource *res;
 	size_t size;
-	int ret;
+	int ret,err;
+	struct clk *sys_clk = mfc_sys->clock;
+	struct clk *parent = NULL;
 	//struct s3c_mfc_ctrl   *ctrl = &s3c_mfc;
 
 	/* mfc clock enable should be here */
 	sprintf(ctrl->clk_name, "%s", S3C_MFC_CLK_NAME);
+	sprintf(mfc_sys->clk_name, "%s", S3C_MFC_SCLK_NAME);
 
 	ctrl->clock = clk_get(&pdev->dev, ctrl->clk_name);
 	if (IS_ERR(ctrl->clock)) {
 		printk(KERN_ERR "failed to get mfc clock source\n");
 		return EPERM;
+	}
+
+	sys_clk = clk_get(&pdev->dev, mfc_sys->clk_name);
+	if (IS_ERR(sys_clk)) {
+		printk(KERN_ERR "failed to get mfc sys clock source\n");
+		return EPERM;
+	}
+
+	if(sys_clk->set_parent){
+		parent = clk_get(&pdev->dev, "dout_a2m");
+		if (IS_ERR(parent)) {
+			dev_err(&pdev->dev, "failed to get parent of interface clock\n");
+			return EPERM;
+		}
+		sys_clk->parent = parent;
+
+		err = sys_clk->set_parent(sys_clk, parent);
+		if (err) {
+			dev_err(&pdev->dev, "failed to set parent of interface clock\n");
+			return EPERM;
+		}
+	}
+
+	if(sys_clk->set_rate){
+		sys_clk->set_rate(sys_clk, 200000000);	
+		dev_info(&pdev->dev, "set interface clock rate to 200000000\n");
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -712,6 +744,7 @@ static int s3c_mfc_remove(struct platform_device *pdev)
 {
 	//struct s3c_mfc_ctrl   *ctrl = &s3c_mfc;
 	clk_disable(ctrl->clock);
+	clk_disable(mfc_sys->clock);
 
 	iounmap(s3c_mfc_sfr_virt_base);
 	iounmap(s3c_mfc_virt_buf);

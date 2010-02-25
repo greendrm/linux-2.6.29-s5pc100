@@ -23,6 +23,7 @@
 #define BUF_S_UNIT (32)
 #define Align(x, alignbyte) (((x)+(alignbyte)-1)/(alignbyte)*(alignbyte))
 #define S3C_MFC_CLK_NAME	"mfc"
+#define S3C_MFC_SCLK_NAME	"sclk_mfc"
 
 #if 1
 /* Aspect ratio VUI is enabled in H.264 encoding */
@@ -154,6 +155,11 @@ typedef struct tag_mfc_inst_ctx {
 } s3c_mfc_inst_ctx;
 
 struct s3c_mfc_ctrl {
+	char clk_name[16];
+	struct clk *clock;
+};
+
+struct s3c_mfc_sys{
 	char clk_name[16];
 	struct clk *clock;
 };
