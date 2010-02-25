@@ -108,18 +108,69 @@ int s3cfb_reset_lcd(struct platform_device *pdev)
 
 int s3cfb_clk_on(struct platform_device *pdev, struct clk **s3cfb_clk)
 {
-	struct clk *clk = NULL;
+	struct clk *clk = NULL, *sclk_parent = NULL, *sclk = NULL;
+	u32 rate = 0;
+	int err;
 
-	clk = clk_get(&pdev->dev, "fimd"); /* Core, Pixel source clock */
+	clk = clk_get(&pdev->dev, "fimd"); 
 	if (IS_ERR(clk)) {
 		dev_err(&pdev->dev, "failed to get fimd clock source\n");
-		return -EINVAL;
+		goto err_clk1;
 	}
 	clk_enable(clk);
 
-	*s3cfb_clk = clk;
+	sclk = clk_get(&pdev->dev, "sclk_fimd");
+	if (IS_ERR(sclk)) {
+		dev_err(&pdev->dev, "failed to get sclk for fimd\n");
+		goto err_clk2;
+	}
+
+	if (sclk->set_parent) {
+		sclk_parent = clk_get(&pdev->dev, "mout_mpll");
+		if (IS_ERR(sclk_parent)) {
+			dev_err(&pdev->dev, "failed to get parent of fimd sclk\n");
+			goto err_clk3;
+		}
+
+		sclk->parent = sclk_parent;
+
+		err = sclk->set_parent(sclk, sclk_parent);
+		if (err) {
+			dev_err(&pdev->dev, "failed to set parent of fimd sclk\n");
+			goto err_clk4;
+		}
+
+		if (sclk->round_rate)
+			rate = sclk->round_rate(sclk, 700000000);
+
+		if (!rate)
+			rate = 667000000;
+		
+		if (sclk->set_rate) {
+			sclk->set_rate(sclk, rate);
+			dev_dbg(&pdev->dev, "set fimd sclk rate to %d\n", rate);
+		}
+
+		clk_put(sclk_parent);
+		clk_enable(sclk);
+	}
 	
+	*s3cfb_clk = sclk;
+
 	return 0;
+
+err_clk4:
+	clk_put(sclk_parent);
+
+err_clk3:
+	clk_put(sclk);
+		
+err_clk2:
+	clk_disable(clk);
+	clk_put(clk);
+
+err_clk1:
+	return -EINVAL;
 }
 
 int s3cfb_clk_off(struct platform_device *pdev, struct clk **clk)
@@ -134,7 +185,7 @@ int s3cfb_clk_off(struct platform_device *pdev, struct clk **clk)
 
 void s3cfb_get_clk_name(char *clk_name)
 {
-	strcpy(clk_name, "fimd");
+	strcpy(clk_name, "sclk_fimd");
 }
 
 #elif defined(CONFIG_FB_S3C_TL2796)
