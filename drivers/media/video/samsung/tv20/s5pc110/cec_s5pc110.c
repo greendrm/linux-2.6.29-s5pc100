@@ -31,7 +31,7 @@ static struct resource	*cec_mem;
 void __iomem		*cec_base;
 
 #define S5P_HDMI_FIN	24000000
-#define CEC_DIV_RATIO	187500
+#define CEC_DIV_RATIO	320000
 
 /**
  * Set CEC divider value.
