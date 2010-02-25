@@ -1371,7 +1371,7 @@ static struct clk_sources clkset_mfc = {
 	.nr_sources	= ARRAY_SIZE(clkset_mfc_list),
 };
 
-static struct clksrc_clk clk_mfc = {
+static struct clksrc_clk sclk_mfc = {
 	.clk	= {
 		.name		= "sclk_mfc",
 		.id		= -1,
@@ -1419,7 +1419,7 @@ static struct clksrc_clk *init_parents[] = {
 	&clk_fimc2,
 	&sclk_fimc,
 	&clk_g2d,
-	&clk_mfc,
+	&sclk_mfc,
 };
 
 static void __init_or_cpufreq s5pc11x_set_clksrc(struct clksrc_clk *clk)
@@ -1593,6 +1593,7 @@ static struct clk *clks[] __initdata = {
 	&clk_fimc2.clk,
 	&sclk_fimc.clk,
 	&clk_g2d.clk,
+	&sclk_mfc.clk,
 };
 
 void __init s5pc110_register_clocks(void)
