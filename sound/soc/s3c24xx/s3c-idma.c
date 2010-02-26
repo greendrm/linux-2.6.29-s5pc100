@@ -162,12 +162,6 @@ static int s3c_idma_hw_params(struct snd_pcm_substream *substream,
 
 	pr_debug("Entered %s\n", __func__);
 
-	if (params_buffer_bytes(params) !=
-				s3c_idma_hardware.buffer_bytes_max) {
-		pr_debug("Use full buffer in lowpower playback mode!");
-		return -EINVAL;
-	}
-
 	s3c_idma.ibuff.dev.dev = buf->dev.dev;
 	s3c_idma.ibuff.dev.type = buf->dev.type;
 
@@ -345,6 +339,8 @@ static int s3c_idma_open(struct snd_pcm_substream *substream)
 
 	pr_debug("Entered %s\n", __func__);
 
+	snd_pcm_hw_constraint_minmax(runtime,
+		SNDRV_PCM_HW_PARAM_BUFFER_BYTES, MAX_LP_BUFF, MAX_LP_BUFF);
 	snd_soc_set_runtime_hwparams(substream, &s3c_idma_hardware);
 
 	prtd = kzalloc(sizeof(struct lpam_i2s_pdata), GFP_KERNEL);
