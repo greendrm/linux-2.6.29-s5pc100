@@ -509,7 +509,7 @@ int fimc_g_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
  * depends on FIMC node
  */
 static int fimc_fmt_avail(struct fimc_control *ctrl,
-		struct v4l2_format *f)
+		struct v4l2_pix_format *f)
 {
 	int i;
 
@@ -519,7 +519,7 @@ static int fimc_fmt_avail(struct fimc_control *ctrl,
 	 */
 
 	for (i = 0; i < ARRAY_SIZE(capture_fmts); i++) {
-		if (capture_fmts[i].pixelformat == f->fmt.pix.pixelformat)
+		if (capture_fmts[i].pixelformat == f->pixelformat)
 			return 0;
 	}
 
@@ -531,7 +531,7 @@ static int fimc_fmt_avail(struct fimc_control *ctrl,
 /*
  * figures out the depth of requested format
  */
-static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_format *f)
+static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_pix_format *f)
 {
 	int err, depth = 0;
 
@@ -541,7 +541,7 @@ static int fimc_fmt_depth(struct fimc_control *ctrl, struct v4l2_format *f)
 		return -1;
 
 	/* handles only supported pixelformats */
-	switch (f->fmt.pix.pixelformat) {
+	switch (f->pixelformat) {
 	case V4L2_PIX_FMT_RGB32:
 		depth = 32;
 		fimc_dbg("32bpp\n");
@@ -614,7 +614,7 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	 * bytesperline = width * depth / 8
 	 * sizeimage = bytesperline * height
 	 */
-	cap->fmt.bytesperline = (cap->fmt.width * fimc_fmt_depth(ctrl, f)) >> 3;
+	cap->fmt.bytesperline = (cap->fmt.width * fimc_fmt_depth(ctrl, &f->fmt.pix)) >> 3;
 	cap->fmt.sizeimage = (cap->fmt.bytesperline * cap->fmt.height);
 
 	if (cap->fmt.pixelformat == V4L2_PIX_FMT_JPEG) {
@@ -640,18 +640,45 @@ int fimc_try_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 	return 0;
 }
 
-static int fimc_alloc_buffers(struct fimc_control *ctrl, 
-				int plane, int size, int align)
+static int fimc_alloc_buffers(struct fimc_control *ctrl,
+				int plane, int size, int align, int bpp)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
 	int i, j;
+	int plane_length[3];
 
 	if (plane < 1 || plane > 3)
 		return -ENOMEM;
 
+	switch (plane) {
+		case 1:
+			plane_length[0] = PAGE_ALIGN((size*bpp) >> 3);
+			plane_length[1] = 0;
+			plane_length[2] = 0;
+			break;
+		/* In case of 2, only NV12 and NV12T is supported. */
+		case 2:
+			plane_length[0] = PAGE_ALIGN((size*8) >> 3);
+			plane_length[1] = PAGE_ALIGN((size*(bpp-8)) >> 3);
+			plane_length[2] = 0;
+			break;
+		/* In case of 3
+		 * YUV422 : 8 / 4 / 4 (bits)
+		 * YUV420 : 8 / 2 / 2 (bits)
+		 * 3rd plane have to consider page align for mmap */
+		case 3:
+			plane_length[0] = (size*8) >> 3;
+			plane_length[1] = (size*((bpp-8)/2)) >> 3;
+			plane_length[2] = PAGE_ALIGN((size*bpp)>>3) - plane_length[0] - plane_length[1];
+			break;
+		default:
+			fimc_err("impossible!\n");
+			return -ENOMEM;
+	}
+
 	for (i = 0; i < cap->nr_bufs; i++) {
 		for (j = 0; j < plane; j++) {
-			cap->bufs[i].length[j] = PAGE_ALIGN(size/(j+1));
+			cap->bufs[i].length[j] = plane_length[j];
 			fimc_dma_alloc(ctrl, &cap->bufs[i], j, align);
 
 			if (!cap->bufs[i].base[j])
@@ -679,6 +706,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	struct fimc_control *ctrl = fh;
 	struct fimc_capinfo *cap = ctrl->cap;
 	int ret = 0, i;
+	int bpp = 0;
 
 	if (!cap) {
 		fimc_err("%s: no capture device info\n", __func__);
@@ -713,6 +741,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 		INIT_LIST_HEAD(&cap->bufs[i].list);
 	}
 
+	bpp = fimc_fmt_depth(ctrl, &cap->fmt);
 	switch (cap->fmt.pixelformat) {
 	case V4L2_PIX_FMT_JPEG:		/* fall through */
 	case V4L2_PIX_FMT_RGB32:	/* fall through */
@@ -723,16 +752,20 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 	case V4L2_PIX_FMT_YVYU:		/* fall through */
 	case V4L2_PIX_FMT_NV16:		/* fall through */
 	case V4L2_PIX_FMT_NV61:		/* fall through */
-	case V4L2_PIX_FMT_YUV422P:	/* fall through */
-	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_NV21:
-		ret = fimc_alloc_buffers(ctrl, 1, cap->fmt.sizeimage, 0);
+		ret = fimc_alloc_buffers(ctrl, 1,
+			cap->fmt.width * cap->fmt.height, 0, bpp);
 		break;
 
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		ret = fimc_alloc_buffers(ctrl, 2,
-			cap->fmt.width * cap->fmt.height, SZ_64K);
+			cap->fmt.width * cap->fmt.height, SZ_64K, bpp);
+		break;
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:	/* fall through */
+		ret = fimc_alloc_buffers(ctrl, 3,
+			cap->fmt.width * cap->fmt.height, 0, bpp);
 		break;
 
 	default:
