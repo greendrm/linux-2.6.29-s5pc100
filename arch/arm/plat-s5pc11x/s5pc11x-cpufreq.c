@@ -39,7 +39,7 @@ static struct regulator *internal_regulator;
 
 struct s3c_cpufreq_freqs s3c_freqs;
 
-#define BOOTUP_LEVEL		(L0)	/* 1000MHz */
+static enum perf_level bootup_level;
 
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
@@ -479,16 +479,15 @@ static int s5pc110_cpufreq_resume(struct cpufreq_policy *policy)
 {
 	int ret = 0;
 	/* Clock inforamtion update with wakeup value */
-	memcpy(&s3c_freqs.old, &s5pc110_clk_info[BOOTUP_LEVEL],
-					sizeof(struct s3c_freq));
-
+	memcpy(&s3c_freqs.old, &s5pc110_clk_info[bootup_level],
+			sizeof(struct s3c_freq));
 	return ret;
 }
 #endif
 
 static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 {
-	u32 reg;
+	u32 reg, rate;
 
 #ifdef CLK_OUT_PROBING
 	reg = __raw_readl(S5P_CLK_OUT);
@@ -521,7 +520,24 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 
 	policy->cpuinfo.transition_latency = 40000;
 
-	memcpy(&s3c_freqs.old, &s5pc110_clk_info[0], sizeof(struct s3c_freq));
+	rate = clk_get_rate(mpu_clk);
+
+	switch (rate) {
+	case 1000000000:	/* 1GHz */
+		bootup_level = L0;
+		break;
+	case 800000000:		/* 800MHz */
+		bootup_level = L1;
+		break;
+	default:
+		printk(KERN_ERR "[%s] cannot find matching clock"
+				"[%s] rate [%d]\n"
+				, __FUNCTION__, MPU_CLK, rate);
+		bootup_level = L1;
+		break;
+	}
+	memcpy(&s3c_freqs.old, &s5pc110_clk_info[bootup_level],
+			sizeof(struct s3c_freq));
 
 	return cpufreq_frequency_table_cpuinfo(policy, s5pc110_freq_table);
 }
