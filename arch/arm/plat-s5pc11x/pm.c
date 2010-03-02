@@ -80,6 +80,8 @@ static void s5p_low_lvl_debug(char *buf, char *name, void  __iomem *regs)
 
 static struct sleep_save core_save[] = {
 	/* Clock source */
+	SAVE_ITEM(S5P_EPLL_CON),
+	SAVE_ITEM(S5P_EPLL_CON1),
 	SAVE_ITEM(S5P_CLK_SRC0),
 	SAVE_ITEM(S5P_CLK_SRC1),
 	SAVE_ITEM(S5P_CLK_SRC2),
