@@ -59,11 +59,15 @@ irqreturn_t g2d_irq(int irq, void *dev_id)
 
 static int g2d_open(struct inode *inode, struct file *file)
 {
+	clk_enable(g2d->clock);
+
 	return 0;
 }
 
 static int g2d_release(struct inode *inode, struct file *file)
 {
+	clk_disable(g2d->clock);
+
 	return 0;
 }
 
@@ -221,8 +225,6 @@ static int g2d_probe(struct platform_device *pdev)
 		goto err_clk;
 	}
 
-	clk_enable(g2d->clock);
-
 	/* blocking I/O */
 	init_waitqueue_head(&g2d->wq);
 
@@ -257,8 +259,7 @@ err_lock:
 	misc_deregister(&g2d_dev);
 
 err_reg:
-	clk_disable(g2d->clock);
-
+	clk_put(g2d->clock);
 err_clk:
 	iounmap(g2d->base);
 
