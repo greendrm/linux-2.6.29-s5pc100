@@ -55,6 +55,7 @@ struct s3c_i2sv2_info {
 	u32		 suspend_iismod;
 	u32		 suspend_iiscon;
 	u32		 suspend_iispsr;
+	u32		 suspend_audss_clksrc;
 };
 
 struct s3c_i2sv2_rate_calc {

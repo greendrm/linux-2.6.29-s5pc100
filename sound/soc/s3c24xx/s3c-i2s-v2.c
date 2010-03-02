@@ -699,6 +699,10 @@ int s3c_i2sv2_probe(struct platform_device *pdev,
 EXPORT_SYMBOL_GPL(s3c_i2sv2_probe);
 
 #ifdef CONFIG_PM
+
+#include <plat/map.h>
+#define S3C_VA_AUDSS	S3C_ADDR(0x01600000)	/* Audio SubSystem */
+#include <plat/regs-audss.h>
 static int s3c2412_i2s_suspend(struct snd_soc_dai *dai)
 {
 	struct s3c_i2sv2_info *i2s = to_info(dai);
@@ -707,6 +711,10 @@ static int s3c2412_i2s_suspend(struct snd_soc_dai *dai)
 	i2s->suspend_iismod = readl(i2s->regs + S3C2412_IISMOD);
 	i2s->suspend_iiscon = readl(i2s->regs + S3C2412_IISCON);
 	i2s->suspend_iispsr = readl(i2s->regs + S3C2412_IISPSR);
+
+	/* Is this dai for I2Sv5? */
+	if (dai->id == 0)
+		i2s->suspend_audss_clksrc = readl(S5P_CLKSRC_AUDSS);
 
 	/* some basic suspend checks */
 
@@ -734,6 +742,10 @@ static int s3c2412_i2s_resume(struct snd_soc_dai *dai)
 	writel(i2s->suspend_iiscon, i2s->regs + S3C2412_IISCON);
 	writel(i2s->suspend_iismod, i2s->regs + S3C2412_IISMOD);
 	writel(i2s->suspend_iispsr, i2s->regs + S3C2412_IISPSR);
+
+	/* Is this dai for I2Sv5? */
+	if (dai->id == 0)
+		writel(i2s->suspend_audss_clksrc, S5P_CLKSRC_AUDSS);
 
 	writel(S3C2412_IISFIC_RXFLUSH | S3C2412_IISFIC_TXFLUSH,
 	       i2s->regs + S3C2412_IISFIC);
