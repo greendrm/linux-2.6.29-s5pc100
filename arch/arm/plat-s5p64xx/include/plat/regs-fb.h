@@ -166,6 +166,7 @@
 #define S3C_VIDCON0_CLKVALUP_START_FRAME 	(1 << 16)
 #define S3C_VIDCON0_CLKVALUP_MASK 		(1 << 16)
 #define S3C_VIDCON0_CLKVAL_F(x)			(((x) & 0xff) << 6)
+#define S3C_VIDCON0_CLKVAL_MASK			((0xff) << 6)
 #define S3C_VIDCON0_VCLKEN_NORMAL		(0 << 5)
 #define S3C_VIDCON0_VCLKEN_FREERUN		(1 << 5)
 #define S3C_VIDCON0_VCLKEN_MASK			(1 << 5)
