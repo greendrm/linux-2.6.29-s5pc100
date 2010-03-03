@@ -18,7 +18,7 @@
 #include <linux/videodev2.h>
 
 #define FIMC_SRC_MAX_W		1280
-#define FIMC_SRC_MAX_H		720
+#define FIMC_SRC_MAX_H		768
 
 struct platform_device;
 
