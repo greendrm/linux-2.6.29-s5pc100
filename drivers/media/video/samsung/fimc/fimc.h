@@ -301,6 +301,7 @@ struct fimc_control {
 	spinlock_t			lock_out;
 	wait_queue_head_t		wq;
 	struct device			*dev;
+	int				irq;
 
 	/* v4l2 related */
 	struct video_device		*vd;

@@ -303,7 +303,7 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	struct s3c_platform_fimc *pdata;
 	struct fimc_control *ctrl;
 	struct resource *res;
-	int id, mdev_id, irq;
+	int id, mdev_id;
 
 	id = pdev->id;
 	mdev_id = S3C_MDEV_FIMC0 + id;
@@ -357,8 +357,8 @@ struct fimc_control *fimc_register_controller(struct platform_device *pdev)
 	}
 
 	/* irq */
-	irq = platform_get_irq(pdev, 0);
-	if (request_irq(irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
+	ctrl->irq = platform_get_irq(pdev, 0);
+	if (request_irq(ctrl->irq, fimc_irq, IRQF_DISABLED, ctrl->name, ctrl))
 		fimc_err("%s: request_irq failed\n", __func__);
 
 	fimc_hwset_reset(ctrl);
@@ -374,6 +374,11 @@ static int fimc_unregister_controller(struct platform_device *pdev)
 
 	pdata = to_fimc_plat(&pdev->dev);
 	ctrl = get_fimc_ctrl(id);
+
+	free_irq(ctrl->irq, ctrl);
+	mutex_destroy(&ctrl->lock);
+	mutex_destroy(&ctrl->v4l2_lock);
+	kfree(&ctrl->wq);
 	
 	if (pdata->clk_off)
 		pdata->clk_off(pdev, ctrl->clk);
