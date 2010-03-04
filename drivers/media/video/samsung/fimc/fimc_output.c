@@ -1158,8 +1158,7 @@ int fimc_outdev_set_param(struct fimc_control *ctrl)
 	if (ret < 0)
 		return ret;
 
-	if (ctrl->out->overlay.mode == FIMC_OVERLAY_NONE)
-		fimc_outdev_set_dst_dma_offset(ctrl);
+	fimc_outdev_set_dst_dma_offset(ctrl);
 
 	ret = fimc_outdev_set_dst_dma_size(ctrl);
 	if (ret < 0)
