@@ -831,9 +831,6 @@ int __init s5pc11x_pm_init(void)
 	}
 #endif
 	printk("pm: phy_regs_save =0x%x\n", phy_regs_save);
-	tmp = __raw_readl(S5P_CLK_OUT);
-	tmp |= (0xf << 12);
-	__raw_writel(tmp , S5P_CLK_OUT);
 
 	__raw_writel(0xffff, S5P_WAKEUP_MASK);
 

@@ -61,7 +61,7 @@ static u32 clkdiv0_val[5][3] = {
 
 #define MPU_CLK		"dout_apll"
 
-#define CLK_OUT_PROBING	//TP80 on SMDKC100 board
+//#define CLK_OUT_PROBING
 
 enum perf_level {
 	L0,
