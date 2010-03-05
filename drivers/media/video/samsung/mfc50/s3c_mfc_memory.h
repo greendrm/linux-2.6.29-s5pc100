@@ -48,6 +48,8 @@ unsigned int s3c_mfc_get_fw_buf_phys_addr(void);
 unsigned int s3c_mfc_get_fw_context_phys_addr(int instNo);
 unsigned int s3c_mfc_get_risc_buf_phys_addr(int instNo);
 unsigned int s3c_mfc_get_data_buf_phys_addr(void);
+unsigned int s3c_mfc_get_data_buf_phys_size(void);
 unsigned int s3c_mfc_get_dpb_luma_buf_phys_addr(void);
+unsigned int s3c_mfc_get_dpb_luma_buf_phys_size(void);
 
 #endif /* _S3C_MFC_MEMORY_H_ */

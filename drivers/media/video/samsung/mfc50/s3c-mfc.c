@@ -45,6 +45,7 @@ struct s3c_mfc_ctrl s3c_mfc;
 struct s3c_mfc_ctrl *ctrl = &s3c_mfc;
 struct s3c_mfc_sys  s3c_mfc_sclk;
 struct s3c_mfc_sys  *mfc_sys = &s3c_mfc_sclk;
+unsigned int align_margin;
 
 static int s3c_mfc_openhandle_count = 0;
 static struct resource *s3c_mfc_mem;
@@ -57,7 +58,6 @@ static struct mutex s3c_mfc_mutex;
 unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
 unsigned int s3c_mfc_buf_size, s3c_mfc_dpb_luma_buf_size;
 volatile unsigned char *s3c_mfc_virt_buf, *s3c_mfc_virt_dpb_luma_buf;
-int vir_mmap_size;
 
 extern s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_head[MFC_MAX_PORT_NUM];
 extern s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_tail[MFC_MAX_PORT_NUM];
@@ -450,6 +450,22 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
 
 		break;
 
+	case IOCTL_MFC_GET_MMAP_SIZE:
+
+		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
+			mfc_err("MFC_RET_STATE_INVALID\n");
+			in_param.ret_code = MFC_RET_STATE_INVALID;
+			ret = -EINVAL;
+
+			break;
+		}
+
+		in_param.ret_code = MFC_RET_OK;
+		ret = s3c_mfc_get_data_buf_phys_size()
+		    + s3c_mfc_get_dpb_luma_buf_phys_size();
+
+		break;
+
 	default:
 
 		mfc_err
@@ -476,16 +492,15 @@ out_ioctl:
 static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	unsigned long vir_size = vma->vm_end - vma->vm_start;
-	unsigned long phy_size, offset;
-	//unsigned long mem0_size, mem1_size;
-	unsigned long pageFrameNo = 0;
-
-	mfc_debug("vma->vm_start = 0x%08x, vma->vm_end = 0x%08x\n",
-		  (unsigned int)vma->vm_start, (unsigned int)vma->vm_end);
-	mfc_debug("vma->vm_end - vma->vm_start = %d\n", (int)vir_size);
+	unsigned long phy_size;
+	unsigned long offset;
+	unsigned long pfn;
+	unsigned long remap_offset, remap_size;
+ 
+	mfc_debug("vm_start= 0x%08lx, vm_end= 0x%08lx, size= %ld(%ldMB)\n",
+		vma->vm_start, vma->vm_end, vir_size, (vir_size >> 20));
 
 	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
-	offset = Align(offset, 4 * BUF_L_UNIT);
 
 	phy_size =
 	    (unsigned long)(s3c_mfc_buf_size + s3c_mfc_dpb_luma_buf_size -
@@ -496,44 +511,50 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	 * size allocated in the driver
 	 */
 	if (vir_size > phy_size) {
-		mfc_err
-		    ("virtual requested mem(%d) is bigger than physical mem(%d)\n",
-		     (int)vir_size, (int)phy_size);
+		mfc_err("virtual requested mem(%ld) is bigger than physical mem(%ld)\n",
+			vir_size, phy_size);
 		return -EINVAL;
 	}
-	vir_mmap_size = vir_size;
+
+	remap_offset = 0;
+	remap_size = min((unsigned long)s3c_mfc_get_data_buf_phys_size(), vir_size);
 
 	vma->vm_flags |= VM_RESERVED | VM_IO;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 
 	/*
-	 * port0 mapping for stream buf & frame buf (chroma + MV)
+	 * Port 0 mapping for stream buf & frame buf (chroma + MV)
 	 */
-	pageFrameNo = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());
-	if (remap_pfn_range
-	    (vma, vma->vm_start, pageFrameNo, vir_size / 2,
-	     vma->vm_page_prot)) {
-		mfc_err("mfc remap port0 error\n");
+	pfn = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());
+	if (remap_pfn_range(vma, vma->vm_start + remap_offset, pfn,
+		remap_size, vma->vm_page_prot)) {
+
+		mfc_err("mfc remap port 0 error\n");
+
 		return -EAGAIN;
 	}
+
+	remap_offset = remap_size;
+	remap_size = min((unsigned long)s3c_mfc_get_dpb_luma_buf_phys_size(), vir_size - remap_offset);
 
 	vma->vm_flags |= VM_RESERVED | VM_IO;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 
 	/*
-	 * port1 mapping for frame buf (luma)
+	 * Port 1 mapping for frame buf (luma)
 	 */
-	pageFrameNo = __phys_to_pfn(s3c_mfc_get_dpb_luma_buf_phys_addr());
-	if (remap_pfn_range
-	    (vma, vma->vm_start + vir_size / 2, pageFrameNo, vir_size / 2,
-	     vma->vm_page_prot)) {
-		mfc_err("mfc remap port1 error\n");
+	pfn = __phys_to_pfn(s3c_mfc_get_dpb_luma_buf_phys_addr());
+	if (remap_pfn_range(vma, vma->vm_start + remap_offset, pfn,
+		remap_size, vma->vm_page_prot)) {
+		mfc_err("mfc remap port 1 error\n");
 		return -EAGAIN;
 	}
+	mfc_debug("virtual requested mem = %ld, physical reserved data mem = %ld\n",
+		  vir_size, phy_size);
 
-	mfc_debug
-	    ("virtual requested mem = %d, physical reserved data mem = %d\n",
-	     (int)vir_size, (int)phy_size);
+	if ((remap_offset + remap_size) < phy_size)
+		mfc_warn("The MFC reserved memory dose not mmap fully [%ld: %ld]\n",
+		  phy_size, (remap_offset + remap_size));
 
 	return 0;
 
@@ -697,7 +718,8 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 		ret = -EPERM;
 		goto probe_out;
 	}
-	s3c_mfc_buf_size = pdata->buf_size[0];
+	align_margin = s3c_mfc_phys_buf - pdata->buf_phy_base[0];
+	s3c_mfc_buf_size = pdata->buf_size[0] - align_margin;
 
 	s3c_mfc_phys_dpb_luma_buf = pdata->buf_phy_base[1];
 	s3c_mfc_phys_dpb_luma_buf =

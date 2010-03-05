@@ -42,7 +42,6 @@ s3c_mfc_free_mem_t *s3c_mfc_free_mem_tail[MFC_MAX_PORT_NUM];
 
 extern unsigned int s3c_mfc_buf_size;
 extern unsigned int s3c_mfc_dpb_luma_buf_size;
-extern int vir_mmap_size;
 
 /* insert node ahead of s3c_mfc_alloc_mem_head */
 static void s3c_mfc_insert_node_to_alloc_list(s3c_mfc_alloc_mem_t * node,
@@ -435,23 +434,19 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_get_virt_addr(s3c_mfc_inst_ctx * mfc_ctx,
 	p_allocMem->p_addr = p_startAddr;
 	if (port_no) {		/* port 1 */
 		p_allocMem->v_addr =
-		    (unsigned char *)(s3c_mfc_get_dpb_luma_buf_virt_addr() +
-				      (p_allocMem->p_addr -
-				       s3c_mfc_get_dpb_luma_buf_phys_addr()));
+			(unsigned char *)(s3c_mfc_get_dpb_luma_buf_virt_addr() +
+			(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));
 		p_allocMem->u_addr =
-		    (unsigned char *)(in_param->mapped_addr +
-				      vir_mmap_size / 2 + (p_allocMem->p_addr -
-							   s3c_mfc_get_dpb_luma_buf_phys_addr
-							   ()));
-	} else {		/* Check whether p_allocMem->v_addr is aligned 4KB */
+			(unsigned char *)(in_param->mapped_addr +
+			s3c_mfc_get_data_buf_phys_size() +
+			(p_allocMem->p_addr - s3c_mfc_get_dpb_luma_buf_phys_addr()));
+	} else {	/* Check whether p_allocMem->v_addr is aligned 4KB */
 		p_allocMem->v_addr =
-		    (unsigned char *)(s3c_mfc_get_data_buf_virt_addr() +
-				      (p_allocMem->p_addr -
-				       s3c_mfc_get_data_buf_phys_addr()));
+			(unsigned char *)(s3c_mfc_get_data_buf_virt_addr() +
+			(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr()));
 		p_allocMem->u_addr =
-		    (unsigned char *)(in_param->mapped_addr +
-				      (p_allocMem->p_addr -
-				       s3c_mfc_get_data_buf_phys_addr()));
+			(unsigned char *)(in_param->mapped_addr +
+			(p_allocMem->p_addr - s3c_mfc_get_data_buf_phys_addr()));
 	}
 
 	if (p_allocMem->v_addr == NULL) {

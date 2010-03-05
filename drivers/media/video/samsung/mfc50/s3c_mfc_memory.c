@@ -33,6 +33,7 @@ extern volatile unsigned char *s3c_mfc_virt_buf;
 extern volatile unsigned char *s3c_mfc_virt_dpb_luma_buf;
 
 extern unsigned int s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf;
+extern unsigned int s3c_mfc_buf_size, s3c_mfc_dpb_luma_buf_size;
 
 unsigned int s3c_mfc_phys_data_buf;
 
@@ -94,10 +95,17 @@ unsigned int s3c_mfc_get_risc_buf_phys_addr(int inst_no)
 
 	phys_addr =
 	    s3c_mfc_phys_buf + FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE +
-	    inst_no * RISC_BUF_SIZE;
+	    (inst_no * RISC_BUF_SIZE);
 
 	return phys_addr;
 }
+
+unsigned int s3c_mfc_get_risc_buf_phys_size(int inst_no)
+{
+	return FIRMWARE_CODE_SIZE + MFC_FW_TOTAL_BUF_SIZE +
+	    (inst_no * RISC_BUF_SIZE);
+}
+
 
 unsigned int s3c_mfc_get_data_buf_phys_addr()
 {
@@ -110,6 +118,16 @@ unsigned int s3c_mfc_get_data_buf_phys_addr()
 	return phys_addr;
 }
 
+unsigned int s3c_mfc_get_data_buf_phys_size(void)
+{
+	unsigned long offset;
+
+	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
+
+	return (s3c_mfc_buf_size - offset);
+}
+
+
 unsigned int s3c_mfc_get_dpb_luma_buf_phys_addr()
 {
 	unsigned int phys_addr;
@@ -118,3 +136,11 @@ unsigned int s3c_mfc_get_dpb_luma_buf_phys_addr()
 
 	return phys_addr;
 }
+
+unsigned int s3c_mfc_get_dpb_luma_buf_phys_size()
+{
+	unsigned long offset; 
+	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
+	return (s3c_mfc_buf_size - offset); 
+}
+
