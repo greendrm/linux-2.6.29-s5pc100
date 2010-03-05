@@ -496,7 +496,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	unsigned long offset;
 	unsigned long pfn;
 	unsigned long remap_offset, remap_size;
- 
+
 	mfc_debug("vm_start= 0x%08lx, vm_end= 0x%08lx, size= %ld(%ldMB)\n",
 		vma->vm_start, vma->vm_end, vir_size, (vir_size >> 20));
 
