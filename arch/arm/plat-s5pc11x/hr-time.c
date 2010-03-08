@@ -50,6 +50,11 @@
 #include <plat/clock.h>
 #include <plat/cpu.h>
 
+static unsigned long long time_stamp = 0;
+static unsigned long long s5pc11x_mpu_timer2_overflows = 0;
+static unsigned long long old_overflows = 0;
+static cycle_t last_ticks = 0;
+static unsigned int sched_timer_running = 0;
 
 static void s5pc11x_timer_setup(void);
 
@@ -158,13 +163,12 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 
 	__raw_writel(tcon, S3C2410_TCON);
 
-
-
 	/* start the timer running */
 	tcon |= S3C2410_TCON_T2START;
 	tcon &= ~S3C2410_TCON_T2MANUALUPD;
 	__raw_writel(tcon, S3C2410_TCON);
 
+	sched_timer_running = 1;
 }
 
 /*
@@ -192,6 +196,8 @@ static void s5pc11x_tick_set_mode(enum clock_event_mode mode,
 		break;
 	case CLOCK_EVT_MODE_UNUSED:
 	case CLOCK_EVT_MODE_SHUTDOWN:
+		/* Sched timer stopped */
+		sched_timer_running = 0;
 		break;
 	case CLOCK_EVT_MODE_RESUME:
 		s5pc11x_timer_setup();
@@ -246,15 +252,9 @@ static void __init  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
  * ---------------------------------------------------------------------------
  */
 
-static unsigned long s5pc11x_mpu_timer2_overflows;
-
 irqreturn_t s5pc11x_mpu_timer2_interrupt(int irq, void *dev_id)
 {
-
-	unsigned long tcstat;
-
 	s5pc11x_mpu_timer2_overflows++;
-
 	return IRQ_HANDLED;
 }
 
@@ -267,8 +267,7 @@ struct irqaction s5pc11x_timer2_irq = {
 
 static cycle_t s5pc11x_sched_timer_read(void)
 {
-
-	return (cycle_t)~__raw_readl(S3C_TIMERREG(0x2c));
+	return (cycle_t) ~__raw_readl(S3C_TIMERREG(0x2c));
 }
 
 struct clocksource clocksource_s5pc11x = {
@@ -280,6 +279,43 @@ struct clocksource clocksource_s5pc11x = {
 	.flags		= CLOCK_SOURCE_IS_CONTINUOUS ,
 };
 
+/*
+ * Returns current time from boot in nsecs. It's OK for this to wrap
+ * around for now, as it's just a relative time stamp.
+ */
+
+unsigned long long sched_clock(void)
+{
+	unsigned long irq_flags;
+	cycle_t ticks, elapsed_ticks = 0;
+	unsigned long long increment = 0;
+	unsigned int overflow_cnt = 0;
+
+	local_irq_save(irq_flags);
+	
+	if (likely(sched_timer_running)) {
+		overflow_cnt = (s5pc11x_mpu_timer2_overflows - old_overflows);
+	
+		ticks = s5pc11x_sched_timer_read();
+
+		if (overflow_cnt) {
+			increment = (overflow_cnt - 1) * (cyc2ns(&clocksource_s5pc11x,
+						clocksource_s5pc11x.mask));
+			elapsed_ticks = (clocksource_s5pc11x.mask - last_ticks) + ticks;
+		} else {
+			elapsed_ticks = (ticks - last_ticks);
+		}	
+
+		time_stamp += (cyc2ns(&clocksource_s5pc11x, elapsed_ticks) + increment);
+
+		old_overflows = s5pc11x_mpu_timer2_overflows;
+		last_ticks = ticks;	
+	}
+	local_irq_restore(irq_flags);
+
+	return time_stamp;
+}
+
 static void __init s5pc11x_init_clocksource(unsigned long rate)
 {
 	static char err[] __initdata = KERN_ERR
@@ -287,7 +323,6 @@ static void __init s5pc11x_init_clocksource(unsigned long rate)
 
 	clocksource_s5pc11x.mult
 		= clocksource_khz2mult(rate/1000, clocksource_s5pc11x.shift);
-
 
 	s5pc11x_sched_timer_start(~0, 1);
 
@@ -322,16 +357,22 @@ static void s5pc11x_timer_setup(void)
 	struct clk	*ck_ref = clk_get(NULL, "timers");
 	unsigned long	rate;
 
-
 	if (IS_ERR(ck_ref))
 		panic("failed to get clock for system timer");
 
 	rate = clk_get_rate(ck_ref);
 	clk_put(ck_ref);
 
+	/* Restart tick timer */
 	s5pc11x_tick_timer_start((rate / HZ) - 1, 1);
-	s5pc11x_sched_timer_start(~0, 1);
+	
+	/* Reset sched_clock variables after sleep/wakeup */
+	last_ticks = 0;
+	s5pc11x_mpu_timer2_overflows = 0; 
+	old_overflows = 0;
 
+	/* Restart sched timer */
+	s5pc11x_sched_timer_start(~0, 1);
 }
 
 
