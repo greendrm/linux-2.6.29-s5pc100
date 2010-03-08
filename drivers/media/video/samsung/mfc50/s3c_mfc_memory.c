@@ -139,8 +139,6 @@ unsigned int s3c_mfc_get_dpb_luma_buf_phys_addr()
 
 unsigned int s3c_mfc_get_dpb_luma_buf_phys_size()
 {
-	unsigned long offset;
-	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
-	return (s3c_mfc_buf_size - offset);
+	return s3c_mfc_dpb_luma_buf_size;
 }
 
