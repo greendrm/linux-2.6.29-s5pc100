@@ -50,11 +50,16 @@
 #include <plat/clock.h>
 #include <plat/cpu.h>
 
-static unsigned long long time_stamp = 0;
-static unsigned long long s5pc11x_mpu_timer2_overflows = 0;
-static unsigned long long old_overflows = 0;
-static cycle_t last_ticks = 0;
-static unsigned int sched_timer_running = 0;
+static unsigned long long time_stamp;
+static unsigned long long s5pc11x_mpu_timer2_overflows;
+static unsigned long long old_overflows;
+static cycle_t last_ticks;
+
+/* sched_timer_running 
+ * 0 : sched timer stopped or not initialized
+ * 1 : sched timer started
+ */
+static unsigned int sched_timer_running;
 
 static void s5pc11x_timer_setup(void);
 
@@ -230,7 +235,7 @@ static struct irqaction s5pc11x_tick_timer_irq = {
 	.handler	= s5pc11x_tick_timer_interrupt,
 };
 
-static void __init  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
+static void __init s5pc11x_init_dynamic_tick_timer(unsigned long rate)
 {
 	s5pc11x_tick_timer_start((rate / HZ) - 1, 1);
 
@@ -292,24 +297,25 @@ unsigned long long sched_clock(void)
 	unsigned int overflow_cnt = 0;
 
 	local_irq_save(irq_flags);
-	
+
 	if (likely(sched_timer_running)) {
 		overflow_cnt = (s5pc11x_mpu_timer2_overflows - old_overflows);
-	
+
 		ticks = s5pc11x_sched_timer_read();
 
 		if (overflow_cnt) {
-			increment = (overflow_cnt - 1) * (cyc2ns(&clocksource_s5pc11x,
-						clocksource_s5pc11x.mask));
+			increment = (overflow_cnt - 1) *
+					(cyc2ns(&clocksource_s5pc11x,
+					clocksource_s5pc11x.mask));
 			elapsed_ticks = (clocksource_s5pc11x.mask - last_ticks) + ticks;
 		} else {
 			elapsed_ticks = (ticks - last_ticks);
-		}	
+		}
 
 		time_stamp += (cyc2ns(&clocksource_s5pc11x, elapsed_ticks) + increment);
 
 		old_overflows = s5pc11x_mpu_timer2_overflows;
-		last_ticks = ticks;	
+		last_ticks = ticks;
 	}
 	local_irq_restore(irq_flags);
 
@@ -365,10 +371,10 @@ static void s5pc11x_timer_setup(void)
 
 	/* Restart tick timer */
 	s5pc11x_tick_timer_start((rate / HZ) - 1, 1);
-	
+
 	/* Reset sched_clock variables after sleep/wakeup */
 	last_ticks = 0;
-	s5pc11x_mpu_timer2_overflows = 0; 
+	s5pc11x_mpu_timer2_overflows = 0;
 	old_overflows = 0;
 
 	/* Restart sched timer */
@@ -378,6 +384,13 @@ static void s5pc11x_timer_setup(void)
 
 static void __init s5pc11x_dynamic_timer_init(void)
 {
+	/* Initialize variables before starting each timers */
+	last_ticks = 0;
+	s5pc11x_mpu_timer2_overflows = 0;
+	old_overflows = 0;
+	time_stamp = 0;
+	sched_timer_running = 0;
+
 	s5pc11x_dynamic_timer_setup();
 	setup_irq(IRQ_TIMER2, &s5pc11x_timer2_irq);
 	setup_irq(IRQ_TIMER4, &s5pc11x_tick_timer_irq);
