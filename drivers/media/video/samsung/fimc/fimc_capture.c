@@ -1111,8 +1111,13 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
+#if defined(PINGPONG_2ADDR_MODE)
+	/* find out the real index */
+	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4);
+#else
 	/* find out the real index */
 	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
+#endif
 
 	/* skip even frame: no data */
 	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)
