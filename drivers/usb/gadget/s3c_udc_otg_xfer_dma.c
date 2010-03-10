@@ -38,7 +38,7 @@ static int set_conf_done = 0;
 #define TEST_SELECTOR_MASK	0xFF
 #define TEST_PKT_SIZE		53
 
-static u8 test_pkt[TEST_PKT_SIZE] = {
+static u8 test_pkt[TEST_PKT_SIZE] __attribute__((aligned(8))) = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,				//JKJKJKJK x 9
 	0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,				//JJKKJJKK x 8
 	0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,				//JJJJKKKK x 8
@@ -758,7 +758,7 @@ static int s3c_ep0_write(struct s3c_udc *dev)
 	return 1;
 }
 
-u16	g_status;
+u16     g_status __attribute__((aligned(8)));
 
 static int s3c_udc_get_status(struct s3c_udc *dev,
 		struct usb_ctrlrequest *crq)
