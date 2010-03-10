@@ -37,7 +37,6 @@
 
 #include <asm/system.h>
 #include <mach/hardware.h>
-#include <asm/leds.h>
 #include <asm/irq.h>
 #include <asm/mach/irq.h>
 #include <asm/mach/time.h>
@@ -51,6 +50,22 @@
 
 #include <plat/clock.h>
 #include <plat/cpu.h>
+
+static unsigned long long time_stamp;
+static unsigned long long s5pc11x_sched_timer_overflows;
+static unsigned long long old_overflows;
+static cycle_t last_ticks;
+
+/* Sched timer interrupt is not processed right after
+ * timer counter expired
+ */
+static unsigned int pending_irq;
+
+/* sched_timer_running
+ * 0 : sched timer stopped or not initialized
+ * 1 : sched timer started
+ */
+static unsigned int sched_timer_running;
 
 void __iomem *rtc_base = S3C_VA_RTC;
 static struct clk *clk_event;
@@ -79,21 +94,21 @@ static unsigned int s5pc11x_systimer_write(unsigned int *reg_offset,
 	__raw_writel(value, reg_offset);
 
 	if (reg_offset == S3C_SYSTIMER_TCON) {
-		while(!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
+		while (!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
 				S3C_SYSTIMER_INT_TCON));
 		temp_regs = __raw_readl(S3C_SYSTIMER_INT_CSTAT);
 		temp_regs |= S3C_SYSTIMER_INT_TCON;
 		__raw_writel(temp_regs, S3C_SYSTIMER_INT_CSTAT);
 
 	} else if (reg_offset == S3C_SYSTIMER_ICNTB) {
-		while(!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
+		while (!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
 				S3C_SYSTIMER_INT_ICNTB));
 		temp_regs = __raw_readl(S3C_SYSTIMER_INT_CSTAT);
 		temp_regs |= S3C_SYSTIMER_INT_ICNTB;
 		__raw_writel(temp_regs, S3C_SYSTIMER_INT_CSTAT);
 
 	} else if (reg_offset == S3C_SYSTIMER_TCNTB) {
-		while(!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
+		while (!(__raw_readl(S3C_SYSTIMER_INT_CSTAT) &
 				S3C_SYSTIMER_INT_TCNTB));
 		temp_regs = __raw_readl(S3C_SYSTIMER_INT_CSTAT);
 		temp_regs |= S3C_SYSTIMER_INT_TCNTB;
@@ -137,7 +152,7 @@ static inline void s5pc11x_tick_timer_stop(void)
 
 	tmp = __raw_readl(rtc_base + S3C2410_RTCCON) &
 		~(S3C_RTCCON_TICEN | S3C2410_RTCCON_RTCEN);
-	
+
 	__raw_writel(tmp, rtc_base + S3C2410_RTCCON);
 
 }
@@ -162,9 +177,9 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCFG, tcfg);
 
-	/* TCFG must not be changed at run-time. 
-	 * If you want to change TCFG, stop timer(TCON[0] = 0) 
-	 * */
+	/* TCFG must not be changed at run-time.
+	 * If you want to change TCFG, stop timer(TCON[0] = 0)
+	 */
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, 0);
 
 	/* read the current timer configuration bits */
@@ -178,7 +193,7 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 	clk_enable(clk);
 
 	clk_put(clk);
-	
+
 	tcfg &= ~S3C_SYSTIMER_TCLK_MASK;
 	tcfg |= S3C_SYSTIMER_TCLK_USB;
 	tcfg &= ~S3C_SYSTIMER_PRESCALER_MASK;
@@ -194,9 +209,19 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCNTB, tcnt);
 
 	/* set timer con */
-	tcon =  S3C_SYSTIMER_START | S3C_SYSTIMER_AUTO_RELOAD;
+	tcon =  S3C_SYSTIMER_INT_AUTO | S3C_SYSTIMER_START |
+			S3C_SYSTIMER_AUTO_RELOAD;
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
 
+	tcon |= S3C_SYSTIMER_INT_START;
+	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
+
+	/* Interrupt Start and Enable */
+	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT,
+				(S3C_SYSTIMER_INT_ICNTEIE |
+					S3C_SYSTIMER_INT_EN));
+
+	sched_timer_running = 1;
 }
 
 /*
@@ -205,8 +230,8 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 static int s5pc11x_tick_set_next_event(unsigned long cycles,
 				   struct clock_event_device *evt)
 {
-	//printk(KERN_INFO "%d\n", cycles);
-	if  (cycles == 0 )	/* Should be larger than 0 */
+	/* printk(KERN_INFO "%d\n", cycles); */
+	if  (cycles == 0)	/* Should be larger than 0 */
 		cycles = 1;
 	s5pc11x_tick_timer_start(cycles, 0);
 	return 0;
@@ -225,6 +250,14 @@ static void s5pc11x_tick_set_mode(enum clock_event_mode mode,
 		break;
 	case CLOCK_EVT_MODE_UNUSED:
 	case CLOCK_EVT_MODE_SHUTDOWN:
+		/* Sched timer stopped */
+		sched_timer_running = 0;
+
+		/* Reset sched_clock variables after sleep/wakeup */
+		last_ticks = 0;
+		s5pc11x_sched_timer_overflows = 0;
+		old_overflows = 0;
+		pending_irq = 0;
 		break;
 	case CLOCK_EVT_MODE_RESUME:
 		s5pc11x_tick_timer_setup();
@@ -249,7 +282,7 @@ irqreturn_t s5pc11x_tick_timer_interrupt(int irq, void *dev_id)
 	/* In case of oneshot mode */
 	if (tick_timer_mode == 0)
 		s5pc11x_tick_timer_stop();
-		
+
 	evt->event_handler(evt);
 
 	return IRQ_HANDLED;
@@ -264,7 +297,7 @@ static struct irqaction s5pc11x_tick_timer_irq = {
 static void  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
 {
 	tick_timer_mode = 1;
-	
+
 	s5pc11x_tick_timer_stop();
 
 	s5pc11x_tick_timer_start((rate / HZ) - 1, 1);
@@ -278,7 +311,7 @@ static void  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
 
 	clockevent_tick_timer.cpumask = cpumask_of(0);
 	clockevents_register_device(&clockevent_tick_timer);
-	
+
 	printk(KERN_INFO "mult[%d]\n", clockevent_tick_timer.mult);
 	printk(KERN_INFO "max_delta_ns[%d]\n", clockevent_tick_timer.max_delta_ns);
 	printk(KERN_INFO "min_delta_ns[%d]\n", clockevent_tick_timer.min_delta_ns);
@@ -292,6 +325,29 @@ static void  s5pc11x_init_dynamic_tick_timer(unsigned long rate)
  * SYSTEM TIMER ... free running 32-bit clock source and scheduler clock
  * ---------------------------------------------------------------------------
  */
+irqreturn_t s5pc11x_sched_timer_interrupt(int irq, void *dev_id)
+{
+	volatile unsigned int temp_cstat;
+
+	temp_cstat = s5pc11x_systimer_read(S3C_SYSTIMER_INT_CSTAT);
+	temp_cstat |= S3C_SYSTIMER_INT_STATS;
+
+	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT, temp_cstat);
+
+	if (unlikely(pending_irq))
+		pending_irq = 0;
+	else
+		s5pc11x_sched_timer_overflows++;
+
+	return IRQ_HANDLED;
+}
+
+struct irqaction s5pc11x_systimer_irq = {
+	.name		= "System timer",
+	.flags		= IRQF_DISABLED ,
+	.handler	= s5pc11x_sched_timer_interrupt,
+};
+
 
 static cycle_t s5pc11x_sched_timer_read(void)
 {
@@ -324,6 +380,50 @@ static void s5pc11x_init_clocksource(unsigned long rate)
 }
 
 /*
+ * Returns current time from boot in nsecs. It's OK for this to wrap
+ * around for now, as it's just a relative time stamp.
+ */
+#if 1
+unsigned long long sched_clock(void)
+{
+	unsigned long irq_flags;
+	cycle_t ticks, elapsed_ticks = 0;
+	unsigned long long increment = 0;
+	unsigned int overflow_cnt = 0;
+
+	local_irq_save(irq_flags);
+
+	if (likely(sched_timer_running)) {
+		overflow_cnt = (s5pc11x_sched_timer_overflows - old_overflows);
+
+		ticks = s5pc11x_sched_timer_read();
+
+		if (overflow_cnt) {
+			increment = (overflow_cnt - 1) *
+					(cyc2ns(&clocksource_s5pc11x,
+					clocksource_s5pc11x.mask));
+			elapsed_ticks = (clocksource_s5pc11x.mask - last_ticks) + ticks;
+		} else {
+			if (unlikely(last_ticks > ticks)) {
+				pending_irq = 1;
+				elapsed_ticks = (clocksource_s5pc11x.mask - last_ticks) + ticks;
+				s5pc11x_sched_timer_overflows++;
+			} else {
+				elapsed_ticks = (ticks - last_ticks);
+			}
+		}
+
+		time_stamp += (cyc2ns(&clocksource_s5pc11x, elapsed_ticks) + increment);
+
+		old_overflows = s5pc11x_sched_timer_overflows;
+		last_ticks = ticks;
+	}
+	local_irq_restore(irq_flags);
+
+	return time_stamp;
+}
+#endif
+/*
  *  Event/Sched Timer initialization
  */
 static void s5pc11x_timer_setup(void)
@@ -332,7 +432,7 @@ static void s5pc11x_timer_setup(void)
 	/* Setup event timer using XrtcXTI */
 	if (clk_event == NULL)
 		clk_event = clk_get(NULL, "XrtcXTI");
-	
+
 	if (IS_ERR(clk_event))
 		panic("failed to get clock for event timer");
 
@@ -360,8 +460,17 @@ static void s5pc11x_tick_timer_setup(void)
 
 static void __init s5pc11x_timer_init(void)
 {
+	/* Initialize variables before starting each timers */
+	last_ticks = 0;
+	s5pc11x_sched_timer_overflows = 0;
+	old_overflows = 0;
+	time_stamp = 0;
+	sched_timer_running = 0;
+	pending_irq = 0;
+
 	s5pc11x_timer_setup();
 	setup_irq(IRQ_RTC_TIC, &s5pc11x_tick_timer_irq);
+	setup_irq(IRQ_SYSTIMER, &s5pc11x_systimer_irq);
 }
 
 
