@@ -28,6 +28,10 @@
 #include <plat/pm.h>
 #include <plat/regs-serial.h>
 #include <mach/cpuidle.h>
+#include <plat/regs-hsmmc.h>
+#include <plat/devs.h>
+
+#include <linux/mmc/host.h>
 
 #define S5PC110_MAX_STATES	1
 
@@ -38,6 +42,84 @@ extern void s5pc110_deepidle();
 static unsigned long vic_regs[4];
 static unsigned long *regs_save;
 static dma_addr_t phy_regs_save;
+
+/* Simple data structure from struct sdhci_host
+ * Use only ioaddr field
+ * */
+struct sdhci_host_simple {
+	const char	*hw_name;
+	unsigned int	quirks;
+	int		irq;
+	void __iomem *	ioaddr;
+};
+
+/* If SD/MMC interface is working: return = 1 or not 0 */
+static int check_sdmmc_op(unsigned int ch)
+{
+	struct platform_device *pdev;
+	struct sdhci_host_simple *host;
+	unsigned int reg;
+
+	switch (ch) {
+	case 0:
+		pdev = &s3c_device_hsmmc0;
+		break;
+	case 1:
+		pdev = &s3c_device_hsmmc1;
+		break;
+	case 2:	
+		pdev = &s3c_device_hsmmc2;
+		break;
+	case 3:
+		pdev = &s3c_device_hsmmc3;
+		break;
+	default:
+		printk(KERN_ERR "No suitable ch # for SDMMC[%d]\n", ch);
+		break;
+	}
+
+	if (pdev == NULL)
+		return 0;
+
+	host = platform_get_drvdata(pdev);
+	
+	/* Check CMDINHDAT[1] and CMDINHCMD [0] */
+	reg = readl(host->ioaddr + S3C_HSMMC_PRNSTS);	
+	
+	if ( reg & (S3C_HSMMC_CMD_INHIBIT | S3C_HSMMC_DATA_INHIBIT)) {
+		printk(KERN_INFO "sdmmc[%d] is working\n", ch);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static int loop_sdmmc_check(void)
+{
+	unsigned int iter;
+	
+	for (iter = 0; iter < 4; iter ++) {
+		if ( check_sdmmc_op(iter))
+			return 1;
+	}
+	return 0;
+}
+
+static void s5pc110_enter_idle(void)
+{
+	unsigned long tmp;
+
+	tmp = __raw_readl(S5P_IDLE_CFG);
+	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
+	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
+	__raw_writel(tmp, S5P_IDLE_CFG);
+
+	tmp = __raw_readl(S5P_PWR_CFG);
+	tmp &= S5P_CFG_WFI_CLEAN;
+	__raw_writel(tmp, S5P_PWR_CFG);
+
+	cpu_do_idle();
+}
 
 static void s5pc110_enter_deepidle(void)
 {
@@ -143,21 +225,11 @@ static int s5pc110_enter_idle_normal(struct cpuidle_device *dev,
 {
 	struct timeval before, after;
 	int idle_time;
-	unsigned long tmp;
 
 	local_irq_disable();
 	do_gettimeofday(&before);
 	
-	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
-	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
-	__raw_writel(tmp, S5P_IDLE_CFG);
-
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= S5P_CFG_WFI_CLEAN;
-	__raw_writel(tmp, S5P_PWR_CFG);
-
-	cpu_do_idle();
+	s5pc110_enter_idle();
 
 	do_gettimeofday(&after);
 	local_irq_enable();
@@ -172,28 +244,20 @@ static int s5pc110_enter_idle_lpaudio(struct cpuidle_device *dev,
 {
 	struct timeval before, after;
 	int idle_time;
-	unsigned long tmp;
 
 	local_irq_disable();
 	do_gettimeofday(&before);
 	if (state == &dev->states[0]) {
 		/* Wait for interrupt state */
 		//printk(KERN_INFO "Normal idle\n");
-		
-		tmp = __raw_readl(S5P_IDLE_CFG);
-		tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
-		tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
-		__raw_writel(tmp, S5P_IDLE_CFG);
+		s5pc110_enter_idle();	
 
-		tmp = __raw_readl(S5P_PWR_CFG);
-		tmp &= S5P_CFG_WFI_CLEAN;
-		__raw_writel(tmp, S5P_PWR_CFG);
-
-		cpu_do_idle();
-
-	} else if (state == &dev->states[1]) {
+	} else {
 		//printk(KERN_INFO "Deep idle\n");
-		s5pc110_enter_deepidle();
+		if ( loop_sdmmc_check())
+			s5pc110_enter_idle();
+		else
+			s5pc110_enter_deepidle();
 	}
 	do_gettimeofday(&after);
 	local_irq_enable();
