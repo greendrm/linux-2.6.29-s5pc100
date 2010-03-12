@@ -77,19 +77,19 @@ static struct s5pc11x_dvs_conf s5pc110_dvs_conf[] = {
 	},
 };
 
-static u32 clkdiv_val[4][9] = {
+static u32 clkdiv_val[4][12] = {
 /*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
  *	HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS,
- *		ONEDRAM}
+ *		ONEDRAM, MFC, G3D, G2D}
  */
-	/* L0 : [1000/200/100][166/83][133/66] */
-	{0, 0, 4, 1, 3, 1, 4, 1, 3},
-	/* L1 : [800/200/100][166/83][133/66] */
-	{0, 0, 3, 1, 3, 1, 4, 1, 3},
-	/* L2 : [400/200/100][166/83][133/66] */
-	{1, 0, 1, 1, 3, 1, 4, 1, 3},
-	/* L3 : [100/100/50][83/83][66/66] */
-	{7, 0, 0, 0, 7, 0, 9, 0, 7},
+	/* L0 : [1000/200/100][166/83][133/66][200/200/200] */
+	{0, 0, 4, 1, 3, 1, 4, 1, 3, 4, 4, 4},
+	/* L1 : [800/200/100][166/83][133/66][200/200/200] */
+	{0, 0, 3, 1, 3, 1, 4, 1, 3, 3, 3, 3},
+	/* L2 : [400/200/100][166/83][133/66][200/200/200] */
+	{1, 0, 1, 1, 3, 1, 4, 1, 3, 3, 3, 3},
+	/* L3 : [100/100/100][83/83][66/66][100/100/100] */
+	{7, 0, 0, 0, 7, 0, 9, 0, 7, 7, 7, 7},
 };
 
 static struct s3c_freq s5pc110_clk_info[] = {
@@ -168,7 +168,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	unsigned int bus_speed_changing = 0;
 
 	s3c_freqs.freqs.old = s5pc110_getspeed(0);
-	
+
 	if (cpufreq_frequency_table_target(policy, s5pc110_freq_table,
 		target_freq, relation, &index)) {
 		ret = -EINVAL;
@@ -208,14 +208,17 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	if (s3c_freqs.new.hclk_msys != s3c_freqs.old.hclk_msys)
 		bus_speed_changing = 1;
 
-	if (index == L3) {
-		/* Reconfigure DRAM refresh counter value for new clock */
-		__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);
-#if !defined(CONFIG_S5PC110_H_TYPE)
+	if (bus_speed_changing) {
+		/* Reconfigure DRAM refresh counter value for minimum
+		 * temporary clock while changing divider.
+		 * expected clock is 83Mhz : 7.8usec/(1/83Mhz) = 0x287
+		 **/
+		if (pll_changing)
+			__raw_writel(0x287, S5P_VA_DMC1 + 0x30);
+		else
+			__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);
+
 		__raw_writel(0x287, S5P_VA_DMC0 + 0x30);
-#else
-		__raw_writel(0x30c, S5P_VA_DMC0 + 0x30);
-#endif
 
 	}
 
@@ -225,10 +228,47 @@ static int s5pc110_target(struct cpufreq_policy *policy,
  * in below code.
  */
 	if (pll_changing) {
-		/* DMC1 refresh count for 166Mhz */
-		__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
+		/* 1. Change APLL(1000 or 800Mhz)to MPLL in MFC_MUX, G3D MUX 
+		 * G2D_MUX
+		 **/
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &= ~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK |
+				S5P_CLKSRC2_G2D_MASK);
+		reg |= 	(1 << S5P_CLKSRC2_G3D_SHIFT) |
+			(1 << S5P_CLKSRC2_MFC_SHIFT) |
+			(1 << S5P_CLKSRC2_G2D_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
 
-		/* SCLKAPLL -> SCLKMPLL */
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1 << 7) | (1 << 3) | (1 << 27)));
+
+		/* 2. Change divider for MFC and G3D */
+		reg = __raw_readl(S5P_CLK_DIV2);
+		reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+		reg |= (clkdiv_val[index][10] << S5P_CLKDIV2_G3D_SHIFT) |
+			(clkdiv_val[index][9] << S5P_CLKDIV2_MFC_SHIFT) |
+			(clkdiv_val[index][11] << S5P_CLKDIV2_G2D_SHIFT);
+		__raw_writel(reg, S5P_CLK_DIV2);
+
+		/* For MFC, G3D dividing */
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT0);
+		} while (reg & ((1 << 16) | (1 << 17)));
+		
+		/* For G2D dividing */
+		do {
+			reg = __raw_readl(S5P_CLK_DIV_STAT1);
+		} while (reg & (1 << 20));
+
+		/* 3. DMC1 refresh count for 133Mhz if (index == L3) is
+		 * true refresh counter is already programed in upper
+		 * code. 0x287@83Mhz
+		 **/
+		if (!bus_speed_changing)
+			__raw_writel(0x40d, S5P_VA_DMC1 + 0x30);
+
+		/* 4. SCLKAPLL -> SCLKMPLL */
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &= ~(S5P_CLKSRC0_MUX200_MASK);
 		reg |= (0x1 << S5P_CLKSRC0_MUX200_SHIFT);
@@ -236,27 +276,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
-		} while (reg & (0x1<<18));
-
-		/* Change APLL(1000 or 800Mhz)to MPLL in MFC_MUX and G3D MUX */
-		reg = __raw_readl(S5P_CLK_DIV2);
-		reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
-		reg |= (0x3<<S5P_CLKDIV2_G3D_SHIFT) |
-			(0x3<<S5P_CLKDIV2_MFC_SHIFT);
-		__raw_writel(reg, S5P_CLK_DIV2);
-
-		do {
-			reg = __raw_readl(S5P_CLK_DIV_STAT0);
-		} while (reg & ((1<<16)|(1<<17)));
-
-		reg = __raw_readl(S5P_CLK_SRC2);
-		reg &= ~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
-		reg |= (1<<S5P_CLKSRC2_G3D_SHIFT) | (1<<S5P_CLKSRC2_MFC_SHIFT);
-		__raw_writel(reg, S5P_CLK_SRC2);
-
-		do {
-			reg = __raw_readl(S5P_CLK_MUX_STAT1);
-		} while (reg & ((1<<7)|(1<<3)));
+		} while (reg & (0x1 << 18));
 
 #if defined(CONFIG_S5PC110_H_TYPE)
 		/* DMC0 source clock : SCLKA2M -> SCLKMPLL */
@@ -269,19 +289,20 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 		do {
 			reg = __raw_readl(S5P_CLK_DIV_STAT1);
-		} while (reg & (1<<15));
+		} while (reg & (1 << 15));
 
 		reg = __raw_readl(S5P_CLK_SRC6);
 		reg &= ~(S5P_CLKSRC6_ONEDRAM_MASK);
-		reg |= (0x1<<S5P_CLKSRC6_ONEDRAM_SHIFT);
+		reg |= (0x1 << S5P_CLKSRC6_ONEDRAM_SHIFT);
 		__raw_writel(reg, S5P_CLK_SRC6);
 
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT1);
-		} while (reg & (1<<11));
+		} while (reg & (1 << 11));
 #endif
 	}
 
+	/* 5. Change divider */
 	reg = __raw_readl(S5P_CLK_DIV0);
 
 	reg &= ~(S5P_CLKDIV0_APLL_MASK | S5P_CLKDIV0_A2M_MASK |
@@ -289,14 +310,14 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		S5P_CLKDIV0_HCLK166_MASK | S5P_CLKDIV0_PCLK83_MASK |
 		S5P_CLKDIV0_HCLK133_MASK | S5P_CLKDIV0_PCLK66_MASK);
 
-	reg |= ((clkdiv_val[index][0]<<S5P_CLKDIV0_APLL_SHIFT) |
-		(clkdiv_val[index][1]<<S5P_CLKDIV0_A2M_SHIFT) |
-		(clkdiv_val[index][2]<<S5P_CLKDIV0_HCLK200_SHIFT) |
-		(clkdiv_val[index][3]<<S5P_CLKDIV0_PCLK100_SHIFT) |
-		(clkdiv_val[index][4]<<S5P_CLKDIV0_HCLK166_SHIFT) |
-		(clkdiv_val[index][5]<<S5P_CLKDIV0_PCLK83_SHIFT) |
-		(clkdiv_val[index][6]<<S5P_CLKDIV0_HCLK133_SHIFT) |
-		(clkdiv_val[index][7]<<S5P_CLKDIV0_PCLK66_SHIFT));
+	reg |= ((clkdiv_val[index][0] << S5P_CLKDIV0_APLL_SHIFT) |
+		(clkdiv_val[index][1] << S5P_CLKDIV0_A2M_SHIFT) |
+		(clkdiv_val[index][2] << S5P_CLKDIV0_HCLK200_SHIFT) |
+		(clkdiv_val[index][3] << S5P_CLKDIV0_PCLK100_SHIFT) |
+		(clkdiv_val[index][4] << S5P_CLKDIV0_HCLK166_SHIFT) |
+		(clkdiv_val[index][5] << S5P_CLKDIV0_PCLK83_SHIFT) |
+		(clkdiv_val[index][6] << S5P_CLKDIV0_HCLK133_SHIFT) |
+		(clkdiv_val[index][7] << S5P_CLKDIV0_PCLK66_SHIFT));
 
 	__raw_writel(reg, S5P_CLK_DIV0);
 
@@ -305,29 +326,32 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	} while (reg & 0xff);
 
 	if (pll_changing) {
-		reg = __raw_readl(S5P_CLK_SRC6);
-		reg &= ~S5P_CLKSRC6_HPM_MASK;
-		reg |= (1<<S5P_CLKSRC6_HPM_SHIFT);
-		__raw_writel(reg, S5P_CLK_SRC6);
-
-		do {
-			reg = __raw_readl(S5P_CLK_MUX_STAT1);
-		} while (reg & (1<<18));
-
-		/* Deselect APLL output : FOUTAPLL -> FINPLL */
+		/* Turn off APLL 
+		 * 1. De-select the output of a PLL
+		 * 2. Power "OFF" the PLL
+		 **/
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &= ~S5P_CLKSRC0_APLL_MASK;
-		reg |= 0<<S5P_CLKSRC0_APLL_SHIFT;
 		__raw_writel(reg, S5P_CLK_SRC0);
 
-		/* Turn off PLL */
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT0);
+		} while (reg & (1 << 2));
+
 		reg = __raw_readl(S5P_APLL_CON);
-		reg &= ~(1<<31);
+		reg &= ~(1 << 31);
 		__raw_writel(reg, S5P_APLL_CON);
 
 		/* Lock time = 300us*24Mhz = 7200(0x1c20) */
 		__raw_writel(0x1c20, S5P_APLL_LOCK);
 
+		/* Turn on APLL
+		 * 1. Set PMS values
+		 * 2. Power "ON" the PLL
+		 * 3. Wait untile the PLL is locked
+		 * 4. Select the PLL output
+		 **/
+		
 		if (index == L0)
 			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
 		else
@@ -335,19 +359,31 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 		do {
 			reg = __raw_readl(S5P_APLL_CON);
-		} while (!(reg & (0x1<<29)));
+		} while (!(reg & (0x1 << 29)));
 
-		/* Select APLL output : FINPLL -> FOUTAPLL */
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &= ~S5P_CLKSRC0_APLL_MASK;
-		reg |= 1<<S5P_CLKSRC0_APLL_SHIFT;
+		reg |= (1 << S5P_CLKSRC0_APLL_SHIFT);
 		__raw_writel(reg, S5P_CLK_SRC0);
 
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
-		} while (reg & (1<<2));
+		} while (reg & (1 << 2));
 
-		/* Change MPLL to APLL in MSYS_MUX and HPM_MUX */
+		/* 6. Change MPLL to APLL in MFC_MUX and G3D MUX */
+		reg = __raw_readl(S5P_CLK_SRC2);
+		reg &= ~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK |
+				S5P_CLKSRC2_G2D_MASK);
+		reg |= 	(0 << S5P_CLKSRC2_G3D_SHIFT) |
+			(0 << S5P_CLKSRC2_MFC_SHIFT) |
+			(0 << S5P_CLKSRC2_G2D_SHIFT);
+		__raw_writel(reg, S5P_CLK_SRC2);
+
+		do {
+			reg = __raw_readl(S5P_CLK_MUX_STAT1);
+		} while (reg & ((1 << 7) | (1 << 3) | (1 << 27)));
+
+		/* 7. Change MPLL to APLL in MSYS_MUX */
 		reg = __raw_readl(S5P_CLK_SRC0);
 		reg &= ~(S5P_CLKSRC0_MUX200_MASK);
 		reg |= (0x0 << S5P_CLKSRC0_MUX200_SHIFT);
@@ -355,60 +391,26 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT0);
-		} while (reg & (0x1<<18));
+		} while (reg & (0x1 << 18));
 
-		/* Change MPLL to APLL in MFC_MUX and G3D MUX */
-		/* Entry MFC clock : 667(SCLKMPLL)/4 = 166Mhz */
-		if (index == L0) {
-			/* MFC/G3D divider change */
-			/* MFC : 667/4 = 166 -> 667/5 = 133 */
-			reg = __raw_readl(S5P_CLK_DIV2);
-			reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
-			reg |= (0x4<<S5P_CLKDIV2_G3D_SHIFT) |\
-			       (0x4<<S5P_CLKDIV2_MFC_SHIFT);
-			__raw_writel(reg, S5P_CLK_DIV2);
-		
-			do {
-				reg = __raw_readl(S5P_CLK_DIV_STAT0);
-			} while (reg & ((1<<16)|(1<<17)));
 
-			/* MFC/G3D source change: SCLKMPLL->SCLKA2M */
-			/* MFC : 667/5 = 133 -> 1000/5 = 200 */
-			reg = __raw_readl(S5P_CLK_SRC2);
-			reg &= ~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
-			reg |= (0<<S5P_CLKSRC2_G3D_SHIFT) |\
-			       (0<<S5P_CLKSRC2_MFC_SHIFT);
-			__raw_writel(reg, S5P_CLK_SRC2);
-
-			do {
-				reg = __raw_readl(S5P_CLK_MUX_STAT1);
-			} while (reg & ((1<<7)|(1<<3)));
-		} else {
-			/* MFC/G3D source change: SCLKMPLL->SCLKA2M */
-			/* MFC : 667/4 = 166 -> 800/4 = 200 */
-			reg = __raw_readl(S5P_CLK_SRC2);
-			reg &= ~(S5P_CLKSRC2_G3D_MASK | S5P_CLKSRC2_MFC_MASK);
-			reg |= (0<<S5P_CLKSRC2_G3D_SHIFT) |\
-			       (0<<S5P_CLKSRC2_MFC_SHIFT);
-			__raw_writel(reg, S5P_CLK_SRC2);
-
-			do {
-				reg = __raw_readl(S5P_CLK_MUX_STAT1);
-			} while (reg & ((1<<7)|(1<<3)));
-		}
-		/* DMC1 refresh counter for 200Mhz */
-		__raw_writel(0x618, S5P_VA_DMC1 + 0x30);
+		/* 8. DMC1 refresh counter
+		 * L3 : DMC1 = 100Mhz 7.8us/(1/100) = 0x30c
+		 * Others : DMC1 = 200Mhz 7.8us/(1/200) = 0x618
+		 **/
+		if (!bus_speed_changing)
+			__raw_writel(0x618, S5P_VA_DMC1 + 0x30);
 
 #if defined(CONFIG_S5PC110_H_TYPE)
 		/* DMC0 source clock : SCLKMPLL -> SCLKA2M */
 		reg = __raw_readl(S5P_CLK_SRC6);
 		reg &= ~(S5P_CLKSRC6_ONEDRAM_MASK);
-		reg |= (0x0<<S5P_CLKSRC6_ONEDRAM_SHIFT);
+		reg |= (0x0 << S5P_CLKSRC6_ONEDRAM_SHIFT);
 		__raw_writel(reg, S5P_CLK_SRC6);
 
 		do {
 			reg = __raw_readl(S5P_CLK_MUX_STAT1);
-		} while (reg & (1<<11));
+		} while (reg & (1 << 11));
 
 		reg = __raw_readl(S5P_CLK_DIV6);
 		reg &= ~(S5P_CLKDIV6_ONEDRAM_MASK);
@@ -417,10 +419,9 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 
 		do {
 			reg = __raw_readl(S5P_CLK_DIV_STAT1);
-		} while (reg & (1<<15));
+		} while (reg & (1 << 15));
 		__raw_writel(0x618, S5P_VA_DMC0 + 0x30);
 #endif
-
 	}
 
 
@@ -431,21 +432,43 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	if (bus_speed_changing) {
 		reg = __raw_readl(S5P_CLK_DIV6);
 		reg &= ~S5P_CLKDIV6_ONEDRAM_MASK;
-		reg |= (clkdiv_val[index][8]<<S5P_CLKDIV6_ONEDRAM_SHIFT);
+		reg |= (clkdiv_val[index][8] << S5P_CLKDIV6_ONEDRAM_SHIFT);
 		__raw_writel(reg, S5P_CLK_DIV6);
 
 		do {
 			reg = __raw_readl(S5P_CLK_DIV_STAT1);
-		} while (reg & (1<<15));
+		} while (reg & (1 << 15));
 
-		if (index == L2) {
-			/* Reconfigure DRAM refresh counter value */
+		/* Reconfigure DRAM refresh counter value */
+		if (index != L3) {
+			/* DMC0 : 166Mhz
+			 * DMC1 : 200Mhz
+			 **/
 			__raw_writel(0x618, S5P_VA_DMC1 + 0x30);
 #if !defined(CONFIG_S5PC110_H_TYPE)
 			__raw_writel(0x50e, S5P_VA_DMC0 + 0x30);
 #else
 			__raw_writel(0x618, S5P_VA_DMC0 + 0x30);
 #endif
+		} else {
+			/* DMC0 : 83Mhz
+			 * DMC1 : 100Mhz
+			 **/
+			__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);
+			__raw_writel(0x287, S5P_VA_DMC0 + 0x30);
+		}
+
+		if (!pll_changing) {
+			/* Change divider for MFC and G3D */
+			reg = __raw_readl(S5P_CLK_DIV2);
+			reg &= ~(S5P_CLKDIV2_G3D_MASK | S5P_CLKDIV2_MFC_MASK);
+			reg |= (clkdiv_val[index][10] << S5P_CLKDIV2_G3D_SHIFT) |
+				(clkdiv_val[index][9] << S5P_CLKDIV2_MFC_SHIFT);
+			__raw_writel(reg, S5P_CLK_DIV2);
+
+			do {
+				reg = __raw_readl(S5P_CLK_DIV_STAT0);
+			} while (reg & ((1 << 16)|(1 << 17)));
 		}
 	}
 
@@ -458,7 +481,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	}
 
 	cpufreq_notify_transition(&s3c_freqs.freqs, CPUFREQ_POSTCHANGE);
-	
+
 	memcpy(&s3c_freqs.old, &s3c_freqs.new, sizeof(struct s3c_freq));
 	printk(KERN_INFO "Perf changed[L%d]\n", index);
 
