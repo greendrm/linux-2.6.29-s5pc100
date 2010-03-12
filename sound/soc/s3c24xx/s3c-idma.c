@@ -358,6 +358,11 @@ static int s3c_idma_open(struct snd_pcm_substream *substream)
 
 	runtime->private_data = prtd;
 
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+	/* Hog Rotator buffer for LPAM */
+	writel(readl(S5P_LPMP_MODE_SEL) | (1 << 0), S5P_LPMP_MODE_SEL);
+#endif
+
 	return 0;
 }
 
