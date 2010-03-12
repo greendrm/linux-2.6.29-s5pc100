@@ -259,7 +259,15 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 static int fimc_add_inqueue(struct fimc_control *ctrl, int i)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
+	struct fimc_buf_set *tmp_buf;
+	struct list_head *count;
 
+	list_for_each(count, &cap->inq) {
+		tmp_buf = list_entry(count, struct fimc_buf_set, list);
+		/* skip list_add_tail if already buffer is in cap->inq list*/
+		if (tmp_buf->id == i)
+			return 0;
+	}
 	list_add_tail(&cap->bufs[i].list, &cap->inq);
 
 	return 0;
