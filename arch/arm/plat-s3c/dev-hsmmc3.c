@@ -60,8 +60,8 @@ void s3c_sdhci3_set_platdata(struct s3c_sdhci_platdata *pd)
 {
 	struct s3c_sdhci_platdata *set = &s3c_hsmmc3_def_platdata;
 
-	set->max_width = pd->max_width;
-
+	if (pd->max_width)
+		set->max_width = pd->max_width;
 	if (pd->host_caps)
 		set->host_caps |= pd->host_caps;
 	if (pd->cfg_gpio)
@@ -74,5 +74,9 @@ void s3c_sdhci3_set_platdata(struct s3c_sdhci_platdata *pd)
 		set->detect_ext_cd = pd->detect_ext_cd;
 	if (pd->ext_cd)
 		set->ext_cd = pd->ext_cd;
+	if (pd->cfg_wp)
+		set->cfg_wp = pd->cfg_wp;
+	if (pd->get_ro)
+		set->get_ro = pd->get_ro;
 }
 
