@@ -244,6 +244,7 @@ struct sdhci_host {
 	unsigned int		timeout_clk;	/* Timeout freq (KHz) */
 
 	unsigned int		clock;		/* Current clock (MHz) */
+	unsigned int		clock_to_restore; /* Saved clock for dynamic clock gating (MHz) */
 	unsigned short		power;		/* Current voltage */
 
 	struct mmc_request	*mrq;		/* Current request */
