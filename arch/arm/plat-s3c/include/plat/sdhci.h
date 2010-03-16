@@ -50,6 +50,9 @@ struct s3c_sdhci_platdata {
 	unsigned int	(*detect_ext_cd) (void);
 	unsigned int	ext_cd;
 
+	/* add to deal with GPIO as a card write protection pin */
+	void            (*cfg_wp) (void);
+	int		(*get_ro) (struct mmc_host *mmc);
 };
 
 /**
