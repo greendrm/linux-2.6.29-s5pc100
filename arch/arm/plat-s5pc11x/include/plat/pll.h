@@ -12,7 +12,7 @@
  * published by the Free Software Foundation.
 */
 
-#define XTAL_FREQ	12000000
+#define XTAL_FREQ	24000000
 
 #define S5P_PLL_MDIV_MASK	((1 << (25-16+1)) - 1)
 #define S5P_PLL_PDIV_MASK	((1 << (13-8+1)) - 1)

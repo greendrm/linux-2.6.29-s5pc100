@@ -31,7 +31,11 @@
 extern struct snd_soc_dai i2s_sec_fifo_dai;
 extern struct snd_soc_platform s3c_dma_wrapper;
 
+#ifdef CONFIG_MACH_SMDKC110
+#define SMDK_WM8580_XTI_FREQ		24000000
+#else
 #define SMDK_WM8580_XTI_FREQ		12000000
+#endif
 
 #define SMDK_WM8580_I2S_V5_PORT 	0
 #define SMDK_WM8580_I2S_V2_PORT 	1
@@ -798,6 +802,8 @@ static int __init smdk_audio_init(void)
 
 #if defined(CONFIG_SND_S5P_USE_XCLK_OUT)
 	unsigned int reg = 0x0;
+
+#ifndef CONFIG_MACH_SMDKC110
 	/* Clear XCLK_OUT Reg. */
 	__raw_writel(reg, S5P_CLK_OUT);
 
@@ -812,6 +818,29 @@ static int __init smdk_audio_init(void)
 	reg &= ~S5P_CLKOUT_DIV_MASK;
 	reg |= 1 << S5P_CLKOUT_DIV_SHIFT;
 	__raw_writel(reg, S5P_CLK_OUT);
+#else
+	/* Set PM MISC register to set CLK_OUT to use XUSBXTI
+	 * as it's source clock.
+	 */
+	reg = __raw_readl(S5P_OTHERS);
+	reg &= ~S5P_OTHERS_CLKOUT_MASK;
+	reg |= S5P_OTHERS_CLKOUT_XUSBXTI;
+	__raw_writel(reg, S5P_OTHERS);
+
+	/* Set CLK_OUT clock selection register to select DOUT
+	 * and disable internal mux to avoid interference.
+	 */
+	reg = __raw_readl(S5P_CLK_OUT);
+	reg &= ~S5P_CLKOUT_CLKSEL_MASK;
+	reg |= S5P_CLKOUT_CLKSEL_DOUT;
+	__raw_writel(reg, S5P_CLK_OUT);
+
+	reg = __raw_readl(S5P_CLK_OUT);
+	reg &= ~S5P_CLKOUT_DCLKEN_MASK;
+	reg |= S5P_CLKOUT_DCLKEN_DISABLE;
+	__raw_writel(reg, S5P_CLK_OUT);
+#endif
+
 #endif
 
 	smdk_snd_device = platform_device_alloc("soc-audio", -1);

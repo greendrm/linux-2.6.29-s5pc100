@@ -28,7 +28,7 @@ config MACH_SMDKC110
 	select S3C_DEV_HSMMC
 	select S3C_DEV_HSMMC1 if !S5PC110_SD_CH0_8BIT
 	select S3C_DEV_HSMMC2
-	select S3C_DEV_HSMMC3 if !S5PC110_SD_CH2_8BIT       
+	select S3C_DEV_HSMMC3 if !S5PC110_SD_CH2_8BIT
 	select S5PC11X_SETUP_SDHCI
 	select S3C64XX_SETUP_I2C1
 	select ARCH_DISCONTIGMEM_ENABLE
@@ -72,7 +72,7 @@ choice
 	prompt "CPU revision"
 	depends on CPU_S5PC110 && !S5P_DEEP_IDLE_TEST
 	default	CPU_S5PC110_EVT1
-	 
+
 config CPU_S5PC110_EVT0_ERRATA
 	bool "EVT0"
 	help
@@ -86,25 +86,61 @@ config CPU_S5PC110_EVT1
 endchoice
 
 	comment "MMC/SD slot setup"
-	depends on PLAT_S5PC11X	
+	depends on PLAT_S5PC11X
 
+menu "Use 8-bit bus width"
 config S5PC110_SD_CH0_8BIT
-	bool "Use 8-bit bus with channel 0"
+	bool "Channel 0"
 	depends on PLAT_S5PC11X
 	default n
 	help
-		IF channel 0 uses 8-bit bus, channel 1 shoule be disabled.
-       
+		IF channel 0 uses 8-bit bus, channel 1 is disabled.
+
 config S5PC110_SD_CH2_8BIT
-	bool "Use 8-bit bus with channel 2"
+	bool "Channel 2"
 	depends on PLAT_S5PC11X
-	default n	
+	default n
 	help
-		IF channel 2 uses 8-bit bus, channel 3 shoule be disabled.
+		IF channel 2 uses 8-bit bus, channel 3 is disabled.
+endmenu
+
+menu "Use dynamic clock gating"
+config MMC_CH0_CLOCK_GATING
+	bool "Channel 0"
+	depends on S3C_DEV_HSMMC
+	default n
+	help
+		This feature turns off clock of channel 0
+		for power saving when MMC/SD cards are not used.
+
+config MMC_CH1_CLOCK_GATING
+	bool "Channel 1"
+	depends on S3C_DEV_HSMMC1
+	default n
+	help
+		This feature turns off clock of channel 1
+		for power saving when MMC/SD cards are not used.
+
+config MMC_CH2_CLOCK_GATING
+	bool "Channel 2"
+	depends on S3C_DEV_HSMMC2
+	default n
+	help
+		This feature turns off clock of channel 2
+		for power saving when MMC/SD cards are not used.
+
+config MMC_CH3_CLOCK_GATING
+	bool "Channel 3"
+	depends on S3C_DEV_HSMMC3
+	default n
+	help
+		This feature turns off clock of channel 3
+		for power saving when MMC/SD cards are not used.
+endmenu
 
 config DM9000_16BIT
 	bool "Use 16-bit bus for DM9000 ethernet controller"
 	depends on MACH_SMDKC110
-	default n	
+	default n
 	help
 		Some SMDKC110 board have 16bit data bus for DM9000 ethernet controller..

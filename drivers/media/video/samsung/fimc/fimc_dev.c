@@ -37,6 +37,8 @@
 #include <plat/clock.h>
 #include <plat/media.h>
 #include <plat/fimc.h>
+#include <plat/regs-clock.h>
+#include <mach/map.h>
 
 #include "fimc.h"
 
@@ -637,7 +639,7 @@ static int fimc_open(struct file *filp)
 {
 	struct fimc_control *ctrl;
 	struct s3c_platform_fimc *pdata;
-	int ret;
+	int ret, val;
 
 	ctrl = video_get_drvdata(video_devdata(filp));
 	pdata = to_fimc_plat(ctrl->dev);
@@ -659,6 +661,11 @@ static int fimc_open(struct file *filp)
 #endif
 	if (pdata->hw_ver == 0x40)
 		fimc_hw_reset_camera(ctrl);
+		
+#ifdef CONFIG_ARCH_S5PC1XX /* S5PC100 */
+	val = readl(S5P_LPMP_MODE_SEL) & ~0x1;
+	writel(val, S5P_LPMP_MODE_SEL);
+#endif
 
 	/* Apply things to interface register */
 	fimc_hwset_reset(ctrl);

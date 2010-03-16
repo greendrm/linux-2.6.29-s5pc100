@@ -291,6 +291,8 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 		size = PAGE_ALIGN(width * height * 4);
 		break;
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
+		size = PAGE_ALIGN((width * height) + (width * height >> 1));
+		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		size = PAGE_ALIGN(width * height * 2);
@@ -1426,7 +1428,7 @@ int fimc_querybuf_output(void *fh, struct v4l2_buffer *b)
 	buf_length = ctrl->out->src[b->index].length[FIMC_ADDR_Y] + \
 			ctrl->out->src[b->index].length[FIMC_ADDR_CB] + \
 			ctrl->out->src[b->index].length[FIMC_ADDR_CR];
- 	b->length = buf_length;
+ 	b->length = PAGE_ALIGN(buf_length);
 
 	return 0;
 }

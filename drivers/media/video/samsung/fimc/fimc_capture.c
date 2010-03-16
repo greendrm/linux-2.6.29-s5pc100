@@ -259,7 +259,15 @@ static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 static int fimc_add_inqueue(struct fimc_control *ctrl, int i)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
+	struct fimc_buf_set *tmp_buf;
+	struct list_head *count;
 
+	list_for_each(count, &cap->inq) {
+		tmp_buf = list_entry(count, struct fimc_buf_set, list);
+		/* skip list_add_tail if already buffer is in cap->inq list*/
+		if (tmp_buf->id == i)
+			return 0;
+	}
 	list_add_tail(&cap->bufs[i].list, &cap->inq);
 
 	return 0;
@@ -1111,8 +1119,13 @@ int fimc_dqbuf_capture(void *fh, struct v4l2_buffer *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
+#if defined(PINGPONG_2ADDR_MODE)
+	/* find out the real index */
+	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4);
+#else
 	/* find out the real index */
 	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4) % cap->nr_bufs;
+#endif
 
 	/* skip even frame: no data */
 	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB)

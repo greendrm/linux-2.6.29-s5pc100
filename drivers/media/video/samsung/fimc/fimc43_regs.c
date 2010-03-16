@@ -1111,7 +1111,7 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 				struct v4l2_rect *bounds,
 				struct v4l2_rect *crop)
 {
-	u32 cfg_y = 0, cfg_cb = 0;
+	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
 	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
 
 	if (crop->left || crop->top ||
@@ -1119,7 +1119,6 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 		(bounds->height != crop->height)) {
 		switch (pixelformat) {
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
-		case V4L2_PIX_FMT_YUV420:	/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
 			if (pdata->hw_ver == 0x50)
 				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
@@ -1147,6 +1146,24 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
 
 			break;
+		case V4L2_PIX_FMT_YUV420:
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop->left);
+			if (pdata->hw_ver == 0x50)
+				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
+			else
+				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
+
+			cfg_cr |= S3C_CIICROFF_HORIZONTAL(crop->left);
+			if (pdata->hw_ver == 0x50)
+				cfg_cr |= S3C_CIICROFF_VERTICAL(crop->top);
+			else
+				cfg_cr |= S3C_CIICROFF_VERTICAL(crop->top / 2);
+
+
+			break;
+
 		default: 
 			fimc_err("%s: Invalid pixelformt : %d\n", 
 					__func__, pixelformat);
@@ -1155,6 +1172,7 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 
 	writel(cfg_y, ctrl->regs + S3C_CIIYOFF);
 	writel(cfg_cb, ctrl->regs + S3C_CIICBOFF);
+	writel(cfg_cr, ctrl->regs + S3C_CIICROFF);
 
 	return 0;
 }
