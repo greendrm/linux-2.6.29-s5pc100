@@ -226,7 +226,7 @@ int fimc_hwget_overflow_state(struct fimc_control *ctrl)
 int fimc_hwset_camera_offset(struct fimc_control *ctrl)
 {
 	struct s3c_platform_camera *cam = ctrl->cam;
-	struct v4l2_rect *rect = &cam->window;
+	struct v4l2_rect *rect = &ctrl->cap->crop;
 	u32 cfg, h1, h2, v1, v2;
 
 	if (!cam) {

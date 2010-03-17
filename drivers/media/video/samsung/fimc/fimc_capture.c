@@ -220,7 +220,7 @@ static int fimc_init_camera(struct fimc_control *ctrl)
 static int fimc_capture_scaler_info(struct fimc_control *ctrl)
 {
 	struct fimc_scaler *sc = &ctrl->sc;
-	struct v4l2_rect *window = &ctrl->cam->window;
+	struct v4l2_rect *window = &ctrl->cap->crop;
 	int tx, ty, sx, sy;
 
 	sx = window->width;
@@ -629,6 +629,14 @@ int fimc_s_fmt_vid_capture(struct file *file, void *fh, struct v4l2_format *f)
 		ctrl->sc.bypass = 1;
 //		cap->lastirq = 1;
 	}
+	else
+		ctrl->sc.bypass = 0;
+
+	/* To support crop, cap->crop must be initialized. */
+	cap->crop.left = ctrl->cam->window.left;
+	cap->crop.top = ctrl->cam->window.top;
+	cap->crop.width = ctrl->cam->window.width;
+	cap->crop.height = ctrl->cam->window.height;
 
 	/* WriteBack doesn't have subdev_call */
 	if (ctrl->cam->id == CAMERA_WB) {
@@ -947,15 +955,69 @@ int fimc_g_crop_capture(void *fh, struct v4l2_crop *a)
 	return 0;
 }
 
+static int fimc_capture_crop_size_check(struct fimc_control *ctrl,
+							struct v4l2_crop *crop)
+{
+	struct fimc_capinfo *cap = ctrl->cap;
+	int WinHorOfst, WinHorOfst2;
+	int cropHsize, cropVsize;
+
+	/* check WinHorOfst, WinHorOfst2 */
+	WinHorOfst = crop->c.left;
+	WinHorOfst2 = ctrl->cam->width - crop->c.left - crop->c.width;
+
+	if ((WinHorOfst % 2) || (WinHorOfst2 % 2)) {
+		fimc_err("WinHorOfst must be multiple of 2\n");
+		return -1;
+	}
+
+	/* check cropHsize, cropVsize */
+	cropHsize = crop->c.width;
+	cropVsize = crop->c.height;
+
+	if (cropHsize % 16) {
+		fimc_err("cropHsize must be multiple of 16\n");
+		return -1;
+	}
+
+	/* check YUV420 output */
+	switch (cap->fmt.pixelformat) {
+		case V4L2_PIX_FMT_YUV420:       /* fall through */
+		case V4L2_PIX_FMT_NV12:         /* fall through */
+			if ((cropVsize % 2) || (cropVsize < 8)) {
+				fimc_err("cropVsize error!\n");
+				return -1;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+
 int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 {
 	struct fimc_control *ctrl = fh;
+	int ret;
 
 	fimc_dbg("%s\n", __func__);
+
+	ret = fimc_capture_crop_size_check(ctrl, a);
+	if (ret < 0)
+		return ret;
 
 	mutex_lock(&ctrl->v4l2_lock);
 	ctrl->cap->crop = a->c;
 	mutex_unlock(&ctrl->v4l2_lock);
+
+	if (ctrl->status == FIMC_STREAMON) {
+		fimc_hwset_camera_offset(ctrl);
+		fimc_capture_scaler_info(ctrl);
+		fimc_hwset_prescaler(ctrl);
+		fimc_hwset_scaler(ctrl);
+	}
 
 	return 0;
 }
