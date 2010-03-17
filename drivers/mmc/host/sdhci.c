@@ -1281,8 +1281,10 @@ static void sdhci_tasklet_finish(unsigned long param)
 
 	if (host->mmc->caps & MMC_CAP_CLOCK_GATING) {
 		/* Disable the clock for power saving */
-		host->clock_to_restore = host->clock;
-		sdhci_set_clock(host, 0);
+		if (host->clock != 0) {
+			host->clock_to_restore = host->clock;
+			sdhci_set_clock(host, 0);
+		}
 	}
 
 	host->mrq = NULL;
