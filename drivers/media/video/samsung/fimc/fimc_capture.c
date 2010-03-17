@@ -1012,6 +1012,13 @@ int fimc_s_crop_capture(void *fh, struct v4l2_crop *a)
 	ctrl->cap->crop = a->c;
 	mutex_unlock(&ctrl->v4l2_lock);
 
+	if (ctrl->status == FIMC_STREAMON) {
+		fimc_hwset_camera_offset(ctrl);
+		fimc_capture_scaler_info(ctrl);
+		fimc_hwset_prescaler(ctrl);
+		fimc_hwset_scaler(ctrl);
+	}
+
 	return 0;
 }
 
