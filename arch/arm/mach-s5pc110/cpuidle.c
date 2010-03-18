@@ -29,19 +29,58 @@
 #include <plat/regs-serial.h>
 #include <mach/cpuidle.h>
 #include <plat/regs-hsmmc.h>
+#include <plat/regs-fb.h>
 #include <plat/devs.h>
 
-#include <linux/mmc/host.h>
+#include <mach/dma.h>
+#include <plat/regs-otg.h>
+#include <plat/dma.h>
 
 #define S5PC110_MAX_STATES	1
 
 extern void s5pc110_deepidle();
+
 /* For saving & restoring VIC register before entering
  * deep-idle mode
  **/
 static unsigned long vic_regs[4];
 static unsigned long *regs_save;
 static dma_addr_t phy_regs_save;
+
+#define MAX_CHK_DEV	0xf
+
+/* Specific device list for checking before entering
+ * deep-idle mode
+ **/
+struct check_device_op {
+	void __iomem		*base;
+	struct platform_device	*pdev;
+
+};
+
+/* Array of checking devices list */
+static struct check_device_op chk_dev_op[] = {
+	{.base = 0, .pdev = &s3c_device_onenand},
+	{.base = 0, .pdev = NULL},
+};
+
+/* Check if wether Framebuffer is working or not
+ * if not retunr "0"
+ **/
+static int check_fb_op(void)
+{
+	unsigned long val;
+
+	val = __raw_readl(S5PC11X_VA_LCD + S3C_VIDCON0);
+
+	if (val & (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE)) {
+		printk("FB is working\n");
+		return 1;
+	} else {
+		printk("FB is stopping\n");
+		return 0;
+	}
+}
 
 /* Simple data structure from struct sdhci_host
  * Use only ioaddr field
@@ -94,6 +133,7 @@ static int check_sdmmc_op(unsigned int ch)
 	}
 }
 
+/* Check all sdmmc controller */
 static int loop_sdmmc_check(void)
 {
 	unsigned int iter;
@@ -101,6 +141,62 @@ static int loop_sdmmc_check(void)
 	for (iter = 0; iter < 4; iter ++) {
 		if ( check_sdmmc_op(iter))
 			return 1;
+	}
+	return 0;
+}
+
+/* Check onenand is working or not */
+static void __iomem *onenand_base;
+
+/* ONENAND_IF_STATUS(0xB060010C)
+ * ORWB[0] = 	1b : busy
+ * 		0b : Not busy
+ **/
+static int check_onenand_op(void)
+{
+	unsigned int val;
+
+	val = __raw_readl(onenand_base + 0x10c);
+
+	if (val & 0x1) {
+		printk(KERN_INFO "Onenand is working\n");
+		return 1;
+	}
+	return 0;
+}
+
+/* Check P/MDMA is working or not */
+static void __iomem *dma_base[S3C_DMA_CONTROLLERS];
+
+static int check_dma_op(void)
+{
+	int i, j = 0;
+	unsigned int val;
+
+	for (i ; i < S3C_DMA_CONTROLLERS ; i++) {
+		
+		for (j ; j < S3C_DMA_CHANNELS ; j++) {
+			val = __raw_readl(dma_base[i] + S3C_DMAC_CS(j));
+			if (val & 0xf) {
+				printk(KERN_INFO "DMA[%d][%d] is working\n",i,j);
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/* Check USBOTG is woring or not*/
+static int check_usbotg_op(void)
+{
+	unsigned int val;
+
+	val = __raw_readl(S3C_UDC_OTG_GOTGCTL);
+
+	if (val & 0x3) {
+		printk(KERN_INFO "USBOTG is working\n");
+		return 1;
 	}
 	return 0;
 }
@@ -164,37 +260,10 @@ static void s5pc110_enter_deepidle(void)
 	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
-#if 0	
-	/* Power mode register configuration */
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= S5P_CFG_WFI_CLEAN;
-	tmp |= S5P_CFG_WFI_IDLE;
-	__raw_writel(tmp, S5P_PWR_CFG);
-
-	/* SYSC INT Disable */
-#if 1 
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= S5P_OTHER_SYSC_INTOFF;
-	__raw_writel(tmp, S5P_OTHERS);
-#endif
-#endif
-	do {
-		tmp = __raw_readl(S3C24XX_VA_UART1 + S3C2410_UTRSTAT);
-	} while( !(tmp & S3C2410_UTRSTAT_TXE));
 	/* Entering deep-idle mode with WFI instruction */
-	if (s5pc110_cpu_save(regs_save) == 0) {
-#if 0
-		flush_cache_all();
-
-		/* This function for Chip bug on EVT0 */
-	//	while(1);
-		asm("dsb\n\t"
-			"wfi\n\t");
-#else
+	if (s5pc110_cpu_save(regs_save) == 0)
 		s5pc110_deepidle();
-#endif
-	}
-	
+
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));	// No DEEP IDLE
 	tmp |= ((2<<30)|(2<<28));			// TOP logic : ON
@@ -254,7 +323,9 @@ static int s5pc110_enter_idle_lpaudio(struct cpuidle_device *dev,
 
 	} else {
 		//printk(KERN_INFO "Deep idle\n");
-		if ( loop_sdmmc_check())
+		if ( loop_sdmmc_check() || check_fb_op() ||
+				check_onenand_op() || check_dma_op() ||
+				check_usbotg_op() )
 			s5pc110_enter_idle();
 		else
 			s5pc110_enter_deepidle();
@@ -330,6 +401,9 @@ EXPORT_SYMBOL(s5pc110_setup_lpaudio);
 static int s5pc110_init_cpuidle(void)
 {
 	struct cpuidle_device *device;
+	struct platform_device *pdev;
+	struct resource *res;
+	int i = 0;
 
 	cpuidle_register_driver(&s5pc110_idle_driver);
 
@@ -354,6 +428,46 @@ static int s5pc110_init_cpuidle(void)
 		return -1;
 	}
 	printk("cpuidle: phy_regs_save:0x%x\n", phy_regs_save);
+
+	/* Allocate memory region to access IP's directly */
+	for (i ; i < MAX_CHK_DEV ; i++) {
+		
+		pdev = chk_dev_op[i].pdev;
+		
+		if (pdev == NULL)
+			break;
+
+		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+		if (!res)
+			printk(KERN_ERR "failed to get io memory region\n");
+		/* request mem region */
+		res = request_mem_region(res->start,
+				 res->end - res->start + 1, pdev->name);
+		if (!res)
+			printk(KERN_ERR "failed to request io memory region\n");
+
+		/* ioremap for register block */
+		chk_dev_op[i].base = ioremap(res->start, res->end - res->start + 1);
+	
+		if (!chk_dev_op[i].base)
+			printk(KERN_ERR "failed to remap io region\n");
+	}
+
+	onenand_base = chk_dev_op[0].base;
+
+	/* M,PDMA0,1 controller memory region allocation */
+	dma_base[0] = ioremap(S3C_PA_DMA, 4096);
+	if (dma_base[0] == NULL)
+		printk(KERN_ERR "M2M-DMA ioremap failed\n");
+
+	dma_base[1] = ioremap(S3C_PA_PDMA, 4096);
+	if (dma_base[1] == NULL)
+		printk(KERN_ERR "PDMA0 ioremap failed\n");
+
+	dma_base[2] = ioremap(S3C_PA_PDMA + 0x100000, 4096);
+	if (dma_base[2] == NULL)
+		printk(KERN_ERR "PDMA1 ioremap failed\n");
+
 	return 0;
 }
 
