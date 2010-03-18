@@ -1197,7 +1197,7 @@ out:
 	spin_unlock_irqrestore(&host->lock, flags);
 }
 
-static const struct mmc_host_ops sdhci_ops = {
+static struct mmc_host_ops sdhci_ops = {
 	.request	= sdhci_request,
 	.set_ios	= sdhci_set_ios,
 	.get_ro		= sdhci_get_ro,
@@ -1281,8 +1281,10 @@ static void sdhci_tasklet_finish(unsigned long param)
 
 	if (host->mmc->caps & MMC_CAP_CLOCK_GATING) {
 		/* Disable the clock for power saving */
-		host->clock_to_restore = host->clock;
-		sdhci_set_clock(host, 0);
+		if (host->clock != 0) {
+			host->clock_to_restore = host->clock;
+			sdhci_set_clock(host, 0);
+		}
 	}
 
 	host->mrq = NULL;
@@ -1745,6 +1747,10 @@ int sdhci_add_host(struct sdhci_host *host)
 	/*
 	 * Set host parameters.
 	 */
+
+	if(host->ops->get_ro)
+		sdhci_ops.get_ro = host->ops->get_ro;
+
 	mmc->ops = &sdhci_ops;
 	mmc->f_min = 400000;
 	mmc->f_max = host->max_clk;

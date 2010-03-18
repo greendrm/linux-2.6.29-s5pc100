@@ -79,8 +79,10 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 		clk_enable(mfc_sys->clock);
 
 		/* MFC Hardware Initialization */
-		if (s3c_mfc_init_hw() == FALSE)
-			return -ENODEV;
+		if (s3c_mfc_init_hw() == FALSE){
+			ret = -ENODEV;
+			goto out_open;
+		}
 	}
 
 	mfc_ctx = (s3c_mfc_inst_ctx *) kmalloc(sizeof(s3c_mfc_inst_ctx), GFP_KERNEL);
