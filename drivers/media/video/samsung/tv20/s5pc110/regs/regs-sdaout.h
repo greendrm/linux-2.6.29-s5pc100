@@ -208,6 +208,7 @@
 
 // SDO_CLKCON
 #define SDO_TVOUT_SW_RESET      (1<<4)
+#define SDO_TVOUT_CLK_DOWN_RDY	(1<<1)
 #define SDO_TVOUT_CLOCK_ON      (1)
 #define SDO_TVOUT_CLOCK_OFF     (0)
 

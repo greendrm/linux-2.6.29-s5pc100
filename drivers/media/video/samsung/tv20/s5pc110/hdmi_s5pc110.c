@@ -880,48 +880,57 @@ void __s5p_hdmi_audio_irq_enable(u32 irq_en)
 }
 
 
-void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec, 
-			u32 sample_rate, 
-			u32 bits)
+void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
+	u32 sample_rate, u32 bits)
 {
 	u8 sum_of_bits, bytes1, bytes2, bytes3, check_sum;
 	u32 bit_rate;
-	/* Ac3 16bit only */
-	u32 bps = (audio_codec == PCM) ? bits : 16; 
+#if 1
+        u32 type = 0;
+        u32 ch = (audio_codec == PCM) ? 1 : 0;
+        u32 sample = 0;
+        u32 bps_type = 0;
+#else
+        /* Ac3 16bit only */
+        u32 bps = (audio_codec == PCM) ? bits : 16;
 
-	/* AUI Packet set. */
-	u32 type = (audio_codec == PCM) ? 1 :  		/* PCM */
-			(audio_codec == AC3) ? 2 : 0; 	/* AC3 or Refer stream header */
-	u32 ch = (audio_codec == PCM) ? 1 : 0; 		/* 2ch or refer to stream header */
+        /* AUI Packet set. */
+        u32 type = (audio_codec == PCM) ? 1 :
+                        (audio_codec == AC3) ? 2 : 0;
+        u32 ch = (audio_codec == PCM) ? 1 : 0;
 
-	u32 sample = (sample_rate == 32000) ? 1 :
-			(sample_rate == 44100) ? 2 :
-			(sample_rate == 48000) ? 3 :
-			(sample_rate == 88200) ? 4 :
-			(sample_rate == 96000) ? 5 :
-			(sample_rate == 176400) ? 6 :
-			(sample_rate == 192000) ? 7 : 0;
+        u32 sample = (sample_rate == 32000) ? 1 :
+                        (sample_rate == 44100) ? 2 :
+                        (sample_rate == 48000) ? 3 :
+                        (sample_rate == 88200) ? 4 :
+                        (sample_rate == 96000) ? 5 :
+                        (sample_rate == 176400) ? 6 :
+                        (sample_rate == 192000) ? 7 : 0;
 
-	u32 bpsType = (bps == 16) ? 1 :
-			(bps == 20) ? 2 :
-			(bps == 24) ? 3 : 0;
+        u32 bps_type = (bps == 16) ? 1 :
+                        (bps == 20) ? 2 :
+                        (bps == 24) ? 3 : 0;
+#endif
 
 	
-	bpsType = (audio_codec == PCM) ? bpsType : 0;
+	bps_type = (audio_codec == PCM) ? bps_type : 0;
 
-	sum_of_bits = (0x84 + 0x1 + 10);//header
+	sum_of_bits = (0x84 + 0x1 + 10);
 
 	bytes1 = (u8)((type << 4) | ch);
 
-	bytes2 = (u8)((sample << 2) | bpsType);
+	bytes2 = (u8)((sample << 2) | bps_type);
 
-	bit_rate = 256; // AC3 Test
+	bit_rate = 256;
 
 	bytes3 = (audio_codec == PCM) ? (u8)0 : (u8)(bit_rate / 8) ;
 
 
 	sum_of_bits += (bytes1 + bytes2 + bytes3);
 	check_sum = 256 - sum_of_bits;
+
+	HDMIPRINTK("byte1=0x%x, byte2=0x%x, byte3=0x%x\n",
+		bytes1, bytes2, bytes3 );
 
 	/* AUI Packet set. */
 	writel(check_sum , hdmi_base + S5P_AUI_CHECK_SUM);
@@ -932,16 +941,21 @@ void __s5p_hdmi_audio_set_aui(s5p_tv_audio_codec_type audio_codec,
 	writel(0x00 , hdmi_base + S5P_AUI_BYTE5); 	/* 2ch pcm or Stream */
 
 
-	writel(2 , hdmi_base + S5P_ACP_CON);
+	writel(HDMI_DO_NOT_TANS , hdmi_base + S5P_ACP_CON);
 	writel(1 , hdmi_base + S5P_ACP_TYPE);
 
 	writel(0x10 , hdmi_base + S5P_GCP_BYTE1);
-	/* 
-	 * packet will be transmitted within 384 cycles 
-	 * after active sync. 
-	 */
-	//writel(0x2 , hdmi_base + S5P_GCP_CON);  
 
+	HDMIPRINTK("AUI_BYTE1 = 0x%08x \n",
+		readl(hdmi_base + S5P_AUI_BYTE1));
+	HDMIPRINTK("AUI_BYTE2 = 0x%08x \n",
+		readl(hdmi_base + S5P_AUI_BYTE2));
+	HDMIPRINTK("AUI_BYTE3 = 0x%08x \n",
+		readl(hdmi_base + S5P_AUI_BYTE3));
+	HDMIPRINTK("AUI_BYTE4 = 0x%08x \n",
+		readl(hdmi_base + S5P_AUI_BYTE4));
+	HDMIPRINTK("AUI_BYTE5 = 0x%08x \n",
+		readl(hdmi_base + S5P_AUI_BYTE5));
 }
 
 void __s5p_hdmi_video_set_bluescreen(bool en,

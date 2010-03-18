@@ -106,7 +106,7 @@ int s3c_fimc_clk_on(struct platform_device *pdev, struct clk *clk)
 		}
 
 		if (lclk->set_rate) {
-			lclk->set_rate(lclk, 166000000);
+			lclk->set_rate(lclk, 170000000);
 		}
 
 		clk_put(lclk_parent);

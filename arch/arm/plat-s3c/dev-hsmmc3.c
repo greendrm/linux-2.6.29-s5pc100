@@ -38,7 +38,10 @@ static u64 s3c_device_hsmmc3_dmamask = 0xffffffffUL;
 struct s3c_sdhci_platdata s3c_hsmmc3_def_platdata = {
 	.max_width	= 4,
 	.host_caps	= (MMC_CAP_4_BIT_DATA | MMC_CAP_MMC_HIGHSPEED |
-				MMC_CAP_SD_HIGHSPEED | MMC_CAP_ON_BOARD),
+#if defined(CONFIG_MMC_CH3_CLOCK_GATING)
+			   MMC_CAP_CLOCK_GATING |
+#endif
+			   MMC_CAP_SD_HIGHSPEED | MMC_CAP_ON_BOARD),
 };
 
 struct platform_device s3c_device_hsmmc3 = {
@@ -57,10 +60,10 @@ void s3c_sdhci3_set_platdata(struct s3c_sdhci_platdata *pd)
 {
 	struct s3c_sdhci_platdata *set = &s3c_hsmmc3_def_platdata;
 
-	set->max_width = pd->max_width;
-
+	if (pd->max_width)
+		set->max_width = pd->max_width;
 	if (pd->host_caps)
-		set->host_caps = pd->host_caps;
+		set->host_caps |= pd->host_caps;
 	if (pd->cfg_gpio)
 		set->cfg_gpio = pd->cfg_gpio;
 	if (pd->cfg_card)
@@ -71,5 +74,9 @@ void s3c_sdhci3_set_platdata(struct s3c_sdhci_platdata *pd)
 		set->detect_ext_cd = pd->detect_ext_cd;
 	if (pd->ext_cd)
 		set->ext_cd = pd->ext_cd;
+	if (pd->cfg_wp)
+		set->cfg_wp = pd->cfg_wp;
+	if (pd->get_ro)
+		set->get_ro = pd->get_ro;
 }
 

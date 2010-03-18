@@ -200,6 +200,20 @@ static void sdhci_s3c_change_clock(struct sdhci_host *host, unsigned int clock)
 	sdhci_change_clock(host, clock);
 }
 
+static int sdhci_s3c_get_ro(struct mmc_host *mmc)
+{
+	struct sdhci_host *host;
+	struct sdhci_s3c *sc;
+
+	host = mmc_priv(mmc);
+	sc = sdhci_priv(host);
+
+	if(sc->pdata->get_ro)
+		return sc->pdata->get_ro(mmc);
+
+	return 0;
+}
+
 static struct sdhci_ops sdhci_s3c_ops = {
 	.get_max_clock		= sdhci_s3c_get_max_clk,
 	.get_timeout_clock	= sdhci_s3c_get_timeout_clk,
@@ -320,6 +334,9 @@ static int __devinit sdhci_s3c_probe(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev, 0);
 
+	if (pdata->get_ro)
+		sdhci_s3c_ops.get_ro = sdhci_s3c_get_ro;
+
 	sdhci_s3c_check_sclk(host);
 
 	host->hw_name = "samsung-hsmmc";
@@ -352,6 +369,10 @@ static int __devinit sdhci_s3c_probe(struct platform_device *pdev)
 		if (pdata->detect_ext_cd())
 			host->flags |= SDHCI_DEVICE_ALIVE;
 	}
+
+	/* to configure gpio pin as a card write protection signal */
+	if (pdata->cfg_wp)
+		pdata->cfg_wp();
 
 	ret = sdhci_add_host(host);
 	if (ret) {
