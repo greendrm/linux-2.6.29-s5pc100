@@ -713,7 +713,7 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 #ifdef CONFIG_CPU_S5PC110
 	/* added for phy cut off when boot up */
 	clk_enable(s5ptv_status.i2c_phy_clk);
-	__s5p_hdmi_phy_power(true);
+	__s5p_hdmi_phy_power(false);
 	clk_disable(s5ptv_status.i2c_phy_clk);
 #endif
 	return 0;

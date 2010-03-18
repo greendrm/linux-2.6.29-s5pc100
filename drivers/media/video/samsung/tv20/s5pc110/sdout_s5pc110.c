@@ -1795,7 +1795,6 @@ void __s5p_sdout_start(void)
 */
 void __s5p_sdout_stop(void)
 {
-	u32 reg;
 	unsigned long j, timeout;
 
 	SDPRINTK("()\n\r");
@@ -1804,20 +1803,18 @@ void __s5p_sdout_stop(void)
 
 	timeout = jiffies + HZ * 2;
 
-	do {
+	while (!(readl(sdout_base + S5P_SDO_CLKCON) &
+		SDO_TVOUT_CLK_DOWN_RDY)) {
+
 		j = jiffies;
 
 		if (j > timeout) {
-			printk(KERN_ERR,
-				"Stopping tv encoder clock time-out!!\n");
+			SDPRINTK("Stopping tv encoder clock time-out!!\n");
 			break;
 		}
-		reg = readl(sdout_base + S5P_SDO_CLKCON);
 
 		msleep(1);
-
-	} while(!(reg & SDO_TVOUT_CLK_DOWN_RDY));
-
+	}
 
 	SDPRINTK(" 0x%x)\n\r", readl(sdout_base + S5P_SDO_CLKCON));
 }
