@@ -13,6 +13,8 @@
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/jiffies.h>
+#include <linux/delay.h>
 
 #include <plat/clock.h>
 #include <asm/io.h>
@@ -1793,9 +1795,29 @@ void __s5p_sdout_start(void)
 */
 void __s5p_sdout_stop(void)
 {
+	u32 reg;
+	unsigned long j, timeout;
+
 	SDPRINTK("()\n\r");
 
 	writel(SDO_TVOUT_CLOCK_OFF, sdout_base + S5P_SDO_CLKCON);
+
+	timeout = jiffies + HZ * 2;
+
+	do {
+		j = jiffies;
+
+		if (j > timeout) {
+			printk(KERN_ERR,
+				"Stopping tv encoder clock time-out!!\n");
+			break;
+		}
+		reg = readl(sdout_base + S5P_SDO_CLKCON);
+
+		msleep(1);
+
+	} while(!(reg & SDO_TVOUT_CLK_DOWN_RDY));
+
 
 	SDPRINTK(" 0x%x)\n\r", readl(sdout_base + S5P_SDO_CLKCON));
 }
