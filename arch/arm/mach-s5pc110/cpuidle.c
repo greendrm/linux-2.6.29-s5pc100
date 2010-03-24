@@ -34,6 +34,7 @@
 
 #include <mach/dma.h>
 #include <plat/regs-otg.h>
+#include <plat/regs-gpio.h>
 #include <plat/dma.h>
 
 #define S5PC110_MAX_STATES	1
@@ -60,6 +61,10 @@ struct check_device_op {
 
 /* Array of checking devices list */
 static struct check_device_op chk_dev_op[] = {
+	{.base = 0, .pdev = &s3c_device_hsmmc0},
+	{.base = 0, .pdev = &s3c_device_hsmmc1},
+	{.base = 0, .pdev = &s3c_device_hsmmc2},
+	{.base = 0, .pdev = &s3c_device_hsmmc3},
 	{.base = 0, .pdev = &s3c_device_onenand},
 	{.base = 0, .pdev = NULL},
 };
@@ -82,48 +87,21 @@ static int check_fb_op(void)
 	}
 }
 
-/* Simple data structure from struct sdhci_host
- * Use only ioaddr field
- * */
-struct sdhci_host_simple {
-	const char	*hw_name;
-	unsigned int	quirks;
-	int		irq;
-	void __iomem *	ioaddr;
-};
-
 /* If SD/MMC interface is working: return = 1 or not 0 */
 static int check_sdmmc_op(unsigned int ch)
 {
-	struct platform_device *pdev;
-	struct sdhci_host_simple *host;
 	unsigned int reg;
+	void __iomem *base_addr;
 
-	switch (ch) {
-	case 0:
-		pdev = &s3c_device_hsmmc0;
-		break;
-	case 1:
-		pdev = &s3c_device_hsmmc1;
-		break;
-	case 2:	
-		pdev = &s3c_device_hsmmc2;
-		break;
-	case 3:
-		pdev = &s3c_device_hsmmc3;
-		break;
-	default:
-		printk(KERN_ERR "No suitable ch # for SDMMC[%d]\n", ch);
-		break;
+	if (unlikely(ch > 3)) {
+		printk(KERN_ERR "Invalid ch[%d] for SD/MMC \n", ch);
+		return 0;
 	}
 
-	if (pdev == NULL)
-		return 0;
-
-	host = platform_get_drvdata(pdev);
-	
+	base_addr = chk_dev_op[ch].base;
+#if 0
 	/* Check CMDINHDAT[1] and CMDINHCMD [0] */
-	reg = readl(host->ioaddr + S3C_HSMMC_PRNSTS);	
+	reg = readl(base_addr + S3C_HSMMC_PRNSTS);	
 	
 	if ( reg & (S3C_HSMMC_CMD_INHIBIT | S3C_HSMMC_DATA_INHIBIT)) {
 		printk(KERN_INFO "sdmmc[%d] is working\n", ch);
@@ -131,6 +109,18 @@ static int check_sdmmc_op(unsigned int ch)
 	} else {
 		return 0;
 	}
+#else
+	/* Check CLKCON [2]: ENSDCLK */
+	reg = readl(base_addr + S3C_HSMMC_CLKCON);	
+	
+	if ( reg & (S3C_HSMMC_CLOCK_CARD_EN)) {
+		printk(KERN_INFO "sdmmc[%d] is working 0x%x\n", ch, reg);
+		return 1;
+	} else {
+		return 0;
+	}
+
+#endif
 }
 
 /* Check all sdmmc controller */
@@ -146,7 +136,6 @@ static int loop_sdmmc_check(void)
 }
 
 /* Check onenand is working or not */
-static void __iomem *onenand_base;
 
 /* ONENAND_IF_STATUS(0xB060010C)
  * ORWB[0] = 	1b : busy
@@ -155,8 +144,11 @@ static void __iomem *onenand_base;
 static int check_onenand_op(void)
 {
 	unsigned int val;
+	void __iomem *base_addr;
 
-	val = __raw_readl(onenand_base + 0x10c);
+	base_addr = chk_dev_op[4].base;
+
+	val = __raw_readl(base_addr + 0x10c);
 
 	if (val & 0x1) {
 		printk(KERN_INFO "Onenand is working\n");
@@ -201,6 +193,33 @@ static int check_usbotg_op(void)
 	return 0;
 }
 
+/* Before entering, deep-idle mode GPIO Powe Down Mode
+ * Configuration register has to be set with same state
+ * in Normal Mode
+ **/
+#define GPIO_OFFSET		0x20
+#define GPIO_CON_PDN_OFFSET	0x10
+#define GPIO_PUD_PDN_OFFSET	0x14	
+#define GPIO_PUD_OFFSET		0x08
+
+static void s5pc110_gpio_pdn_conf(void)
+{
+	void __iomem *gpio_base = S5PC11X_GPA0_BASE;
+	unsigned int val;
+
+	do {
+		/* Keep the previous state in deep-idle mode */
+		__raw_writel(0xffff, gpio_base + GPIO_CON_PDN_OFFSET);
+		
+		/* Pull up-down state in deep-idle is same as normal */
+		val = __raw_readl(gpio_base + GPIO_PUD_OFFSET);
+		__raw_writel(val, gpio_base + GPIO_PUD_PDN_OFFSET);
+
+		gpio_base += GPIO_OFFSET;
+
+	} while (gpio_base <= S5PC11X_MP28_BASE);
+}
+
 static void s5pc110_enter_idle(void)
 {
 	unsigned long tmp;
@@ -239,6 +258,9 @@ static void s5pc110_enter_deepidle(void)
 	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
+	
+	/* GPIO Power Down Control */
+	s5pc110_gpio_pdn_conf();
 
 	/* Wakeup source configuration for deep-idle */
 	tmp = __raw_readl(S5P_WAKEUP_MASK);
@@ -271,7 +293,7 @@ static void s5pc110_enter_deepidle(void)
 	
 	/* Release retention GPIO/MMC/UART IO */
 	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= ((1<<31) | (1<<29) | (1<<28));
+	tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
 	__raw_writel(tmp, S5P_OTHERS);
 
 	__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
@@ -440,20 +462,13 @@ static int s5pc110_init_cpuidle(void)
 		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 		if (!res)
 			printk(KERN_ERR "failed to get io memory region\n");
-		/* request mem region */
-		res = request_mem_region(res->start,
-				 res->end - res->start + 1, pdev->name);
-		if (!res)
-			printk(KERN_ERR "failed to request io memory region\n");
 
 		/* ioremap for register block */
-		chk_dev_op[i].base = ioremap(res->start, res->end - res->start + 1);
+		chk_dev_op[i].base = ioremap(res->start, 4096);
 	
 		if (!chk_dev_op[i].base)
 			printk(KERN_ERR "failed to remap io region\n");
 	}
-
-	onenand_base = chk_dev_op[0].base;
 
 	/* M,PDMA0,1 controller memory region allocation */
 	dma_base[0] = ioremap(S3C_PA_DMA, 4096);
