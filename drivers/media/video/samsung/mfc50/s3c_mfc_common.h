@@ -25,6 +25,9 @@
 #define S3C_MFC_CLK_NAME	"mfc"
 #define S3C_MFC_SCLK_NAME	"sclk_mfc"
 
+#define MFC_ERR_START_NO	1
+#define MFC_WARN_START_NO	151
+
 #if 1
 /* Aspect ratio VUI is enabled in H.264 encoding */
 #define ASPECT_RATIO_VUI_ENABLE	(1<<15)
