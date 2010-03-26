@@ -831,8 +831,8 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 			return -EINVAL;
 		}
 
-		if (org->width % 8) {
-			fimc_err("DST Org_W: multiple of 8\n");
+		if (org->width % 16) {
+			fimc_err("DST Org_W: multiple of 16\n");
 			return -EINVAL;
 		}
 
