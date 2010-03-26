@@ -795,12 +795,12 @@ static int fimc_outdev_check_dst_size(struct fimc_control *ctrl, \
 				struct v4l2_rect *real, struct v4l2_rect *org)
 {
 	u32 rot = ctrl->out->rotate;
-
+#ifndef CONFIG_CPU_S5PC110 
 	if (real->height % 2) {
 		fimc_err("DST Real_H: even number\n");
 		return -EINVAL;
 	}
-
+#endif
 	if ((ctrl->out->overlay.mode != FIMC_OVERLAY_FIFO) && ((rot == 90) || (rot == 270))) {
 		/* Use Output Rotator */
 		if (org->height < real->width) {

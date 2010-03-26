@@ -162,12 +162,12 @@ static void __iomem *dma_base[S3C_DMA_CONTROLLERS];
 
 static int check_dma_op(void)
 {
-	int i, j = 0;
+	int i, j;
 	unsigned int val;
 
-	for (i ; i < S3C_DMA_CONTROLLERS ; i++) {
+	for (i = 0 ; i < S3C_DMA_CONTROLLERS ; i++) {
 		
-		for (j ; j < S3C_DMA_CHANNELS ; j++) {
+		for (j = 0 ; j < S3C_CHANNELS_PER_DMA ; j++) {
 			val = __raw_readl(dma_base[i] + S3C_DMAC_CS(j));
 			if (val & 0xf) {
 				printk(KERN_INFO "DMA[%d][%d] is working\n",i,j);

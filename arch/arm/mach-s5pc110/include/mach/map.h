@@ -169,7 +169,7 @@
 #define S3C_SZ_SPI2		SZ_4K
 
 /* ONENAND CON*/
-#define S5PC11X_PA_ONENAND      (0xE7100000)
+#define S5PC11X_PA_ONENAND      (0xB0600000)
 #define S5PC11X_SZ_ONENAND      SZ_1M
 
 /* KEYPAD IF */
