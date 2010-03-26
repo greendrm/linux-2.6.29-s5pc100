@@ -81,6 +81,23 @@ int s3cfb_backlight_on(struct platform_device *pdev)
 	return 0;
 }
 
+int s3cfb_backlight_off(struct platform_device *pdev)
+{
+	int err;
+
+	err = gpio_request(S5PC11X_GPD0(3), "GPD0");
+
+	if (err) {
+		printk(KERN_ERR "failed to request GPD0 for "
+			"lcd backlight control\n");
+		return err;
+	}
+
+	gpio_direction_output(S5PC11X_GPD0(3), 0);
+	gpio_free(S5PC11X_GPD0(3));
+
+	return 0;
+}
 int s3cfb_reset_lcd(struct platform_device *pdev)
 {
 	int err;
@@ -403,6 +420,10 @@ int s3cfb_backlight_on(struct platform_device *pdev)
 	gpio_free(S5PC11X_GPB(6));
 	gpio_free(S5PC11X_GPB(7));
 
+	return 0;
+}
+
+int s3cfb_backlight_off(struct platform_device *pdev) {
 	return 0;
 }
 
