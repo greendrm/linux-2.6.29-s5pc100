@@ -294,6 +294,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 		size = PAGE_ALIGN((width * height) + (width * height >> 1));
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		size = PAGE_ALIGN(width * height * 2);
 		break;
@@ -315,6 +316,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	/* Initialize source buffer addr */
 	switch (format) {
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 	case V4L2_PIX_FMT_RGB32:
 		for (i = 0; i < FIMC_OUTBUFS; i++) {
@@ -1016,6 +1018,7 @@ static int fimc_outdev_check_scaler(struct fimc_control *ctrl, \
 		pixels = 1;		
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_RGB565:
 		pixels = 2;
 		break;		
@@ -1573,6 +1576,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
 		max_w = FIMC_SRC_MAX_W;
 		max_h = FIMC_SRC_MAX_H;		
@@ -1588,7 +1592,7 @@ int fimc_cropcap_output(void *fh, struct v4l2_cropcap *a)
 
 		break;
 	default: 
-		fimc_warn("Supported format : V4L2_PIX_FMT_YUYV, \
+		fimc_warn("Supported format : V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_UYVY\
 				V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV12T, \
 				V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_RGB565\n");
 		return -EINVAL;
@@ -2128,12 +2132,13 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:	/* fall through */
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_RGB32:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		break;
 	default: 
-		fimc_warn("Supported format : V4L2_PIX_FMT_YUYV, \
+		fimc_warn("Supported format : V4L2_PIX_FMT_YUYV, V4L2_PIX_FMT_UYVY\
 				V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV12T, \
 				V4L2_PIX_FMT_RGB32, V4L2_PIX_FMT_RGB565\n");
 		fimc_warn("Changed format : V4L2_PIX_FMT_RGB32\n");
@@ -2147,6 +2152,7 @@ int fimc_try_fmt_vid_out(struct file *filp, void *fh, struct v4l2_format *f)
 		f->fmt.pix.bytesperline	= f->fmt.pix.width<<2;
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		f->fmt.pix.bytesperline	= f->fmt.pix.width<<1;		

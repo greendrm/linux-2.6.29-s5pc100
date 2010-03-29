@@ -890,6 +890,7 @@ int fimc_hwset_input_colorspace(struct fimc_control *ctrl, u32 pixelformat)
 		cfg |= S3C_MSCTRL_INFORMAT_YCBCR420;
 		break;
 	case V4L2_PIX_FMT_YUYV:
+	case V4L2_PIX_FMT_UYVY:
 		cfg |= S3C_MSCTRL_INFORMAT_YCBCR422_1PLANE;
 		break;		
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
@@ -919,6 +920,9 @@ int fimc_hwset_input_yuv(struct fimc_control *ctrl, u32 pixelformat)
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
 		cfg |= S3C_MSCTRL_ORDER422_YCBYCR;
+		break;
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+		cfg |= S3C_MSCTRL_ORDER422_CBYCRY;
 		break;
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
@@ -1119,6 +1123,7 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 		(bounds->height != crop->height)) {
 		switch (pixelformat) {
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
+		case V4L2_PIX_FMT_UYVY:		/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
 			if (pdata->hw_ver == 0x50)
 				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
@@ -1132,8 +1137,7 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			else
 				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
-
-			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+				cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			break;
 		case V4L2_PIX_FMT_NV12:		/* fall through */
 		case V4L2_PIX_FMT_NV12T:
