@@ -52,6 +52,7 @@ static struct resource *s3c_mfc_mem;
 void __iomem *s3c_mfc_sfr_virt_base;
 
 unsigned int s3c_mfc_int_type = 0;
+unsigned int s3c_mfc_err_type;
 
 static struct mutex s3c_mfc_mutex;
 
@@ -578,45 +579,29 @@ static struct miscdevice s3c_mfc_miscdev = {
 
 static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 {
-	unsigned int intReason;
+	unsigned int int_reason;
 	unsigned int error_reason;
 
-	intReason =
+	int_reason =
 	    readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD) & 0x1FFFF;
+	mfc_debug("Interrupt !! : %d\n", int_reason);
+
 	error_reason =
 	    readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_ARG2) & 0xFFFF;
-	mfc_debug("Interrupt !! : %d\n", intReason);
-	if (error_reason)
-		mfc_debug("error code : %d\n", error_reason);
 
-	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
-	    || ((intReason & R2H_CMD_SLICE_DONE_RET) == R2H_CMD_SLICE_DONE_RET)
-	    || ((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
-	    || ((intReason & R2H_CMD_INIT_BUFFERS_RET) ==
-		R2H_CMD_INIT_BUFFERS_RET)
-	    || ((intReason & R2H_CMD_SYS_INIT_RET) == R2H_CMD_SYS_INIT_RET)
-	    || ((intReason & R2H_CMD_OPEN_INSTANCE_RET) ==
-		R2H_CMD_OPEN_INSTANCE_RET)
-	    || ((intReason & R2H_CMD_CLOSE_INSTANCE_RET) ==
-		R2H_CMD_CLOSE_INSTANCE_RET)
-	    || ((intReason & R2H_CMD_SLEEP_RET) == R2H_CMD_SLEEP_RET)
-	    || ((intReason & R2H_CMD_WAKEUP_RET) == R2H_CMD_WAKEUP_RET)
-	    || ((intReason & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
-		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC_HOST_INT);
-		writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
-		s3c_mfc_int_type = intReason;
+	if ((error_reason >= MFC_ERR_START_NO) &&
+	    (error_reason < MFC_WARN_START_NO))
+		mfc_debug("MFC fw error code : %d\n", error_reason);
+	else if (error_reason >= MFC_WARN_START_NO)
+		mfc_info("MFC fw warning code : %d\n", error_reason);
+
+	if ((int_reason >= R2H_CMD_EMPTY) && (int_reason <= R2H_CMD_ERR_RET)) {
+		s3c_mfc_clear_int();
+		s3c_mfc_int_type = int_reason;
+		s3c_mfc_err_type = error_reason;
 		wake_up_interruptible(&s3c_mfc_wait_queue);
 	}
-	writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC_HOST_INT);
-	writel(0, s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD);
-
-	if (((intReason & R2H_CMD_FRAME_DONE_RET) == R2H_CMD_FRAME_DONE_RET)
-	    || ((intReason & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET)
-	    || ((intReason & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
-
-		writel(0xffff, s3c_mfc_sfr_virt_base + S3C_FIMV_SI_RTN_CHID);
-
-	}
+	s3c_mfc_clear_ch_id(int_reason);
 
 	return IRQ_HANDLED;
 }

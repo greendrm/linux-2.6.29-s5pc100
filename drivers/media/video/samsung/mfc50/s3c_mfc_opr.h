@@ -70,4 +70,7 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_deinit_hw(s3c_mfc_inst_ctx * mfc_ctx);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_set_sleep(void);
 SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(void);
 
+void s3c_mfc_clear_int(void);
+void s3c_mfc_clear_ch_id(unsigned int int_type);
+
 #endif /* _S3C_MFC_OPR_H_ */

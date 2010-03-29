@@ -134,26 +134,6 @@ static void s3c_mfc_cmd_host2risc(s3c_mfc_facade_cmd cmd, int arg1, int arg2)
 	WRITEL(cmd, S3C_FIMV_HOST2RISC_CMD);
 }
 
-/*
-static void s3c_mfc_cmd_frame_start(void)
-{
-	WRITEL(1, S3C_FIMV_FRAME_START);
-}
-
-static void s3c_mfc_cmd_sleep()
-{
-	WRITEL(-1, S3C_FIMV_CH_ID);
-	WRITEL(MFC_SLEEP, S3C_FIMV_COMMAND_TYPE);
-}
-
-static void s3c_mfc_cmd_wakeup()
-{
-	WRITEL(-1, S3C_FIMV_CH_ID);
-	WRITEL(MFC_WAKEUP, S3C_FIMV_COMMAND_TYPE);
-	mdelay(100);
-}
-*/
-
 static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no,
 							   int buf_addr,
 							   unsigned int
@@ -602,10 +582,19 @@ static void s3c_mfc_set_encode_init_param(int inst_no,
 	WRITEL(0, S3C_FIMV_ENC_INT_MASK);	/* mask interrupt */
 
 	/* Set Rate Control */
-	if ((mfc_codec_type != MPEG4_ENC)
-	    && (enc_init_mpeg4_arg->in_RC_framerate != 0))
+	/* for MFC fw 2010/03/08 */
+	if ((mfc_codec_type == MPEG4_ENC) &&
+	    (enc_init_mpeg4_arg->in_VopTimeIncreament > 0)) {
+		enc_init_mpeg4_arg->in_RC_framerate =
+			enc_init_mpeg4_arg->in_TimeIncreamentRes /
+			enc_init_mpeg4_arg->in_VopTimeIncreament;
 		WRITEL(enc_init_mpeg4_arg->in_RC_framerate,
 		       S3C_FIMV_ENC_RC_FRAME_RATE);
+	} else if (enc_init_mpeg4_arg->in_RC_framerate != 0) {
+		WRITEL(enc_init_mpeg4_arg->in_RC_framerate,
+		       S3C_FIMV_ENC_RC_FRAME_RATE);
+	}
+
 	if (enc_init_mpeg4_arg->in_RC_bitrate != 0)
 		WRITEL(enc_init_mpeg4_arg->in_RC_bitrate,
 		       S3C_FIMV_ENC_RC_BIT_RATE);
@@ -1069,7 +1058,10 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_encode_one_frame(s3c_mfc_inst_ctx *
 		mfc_err("MFC_RET_ENC_EXE_TIME_OUT\n");
 		return MFC_RET_ENC_EXE_TIME_OUT;
 	}
-	if (interrupt_flag == R2H_CMD_ERR_RET) {
+
+	if ((interrupt_flag == R2H_CMD_ERR_RET) &&
+	    (s3c_mfc_err_type >= MFC_ERR_START_NO) &&
+	    (s3c_mfc_err_type < MFC_WARN_START_NO)) {
 		mfc_err("MFC_RET_ENC_EXE_ERR\n");
 		return MFC_RET_ENC_EXE_ERR;
 	}
@@ -1269,7 +1261,10 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 		mfc_err("MFC_RET_DEC_EXE_TIME_OUT\n");
 		return MFC_RET_DEC_EXE_TIME_OUT;
 	}
-	if (interrupt_flag == R2H_CMD_ERR_RET) {
+
+	if ((interrupt_flag == R2H_CMD_ERR_RET) &&
+	    (s3c_mfc_err_type >= MFC_ERR_START_NO) &&
+	    (s3c_mfc_err_type < MFC_WARN_START_NO)) {
 		mfc_err("MFC_RET_DEC_EXE_ERR\n");
 		return MFC_RET_DEC_EXE_ERR;
 	}
@@ -1696,3 +1691,24 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(void)
 	return MFC_RET_OK;
 
 }
+
+void s3c_mfc_clear_int(void)
+{
+	WRITEL(0, S3C_FIMV_RISC_HOST_INT);
+	WRITEL(0, S3C_FIMV_RISC2HOST_CMD);
+
+}
+
+void s3c_mfc_clear_ch_id(unsigned int int_type)
+{
+
+	if (((int_type & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_SEQ_DONE_RET) ||
+	    ((int_type & R2H_CMD_SEQ_DONE_RET) == R2H_CMD_FRAME_DONE_RET) ||
+	    ((int_type & R2H_CMD_ERR_RET) == R2H_CMD_ERR_RET)) {
+
+	    WRITEL(0xffff, S3C_FIMV_SI_RTN_CHID);
+
+	}
+
+}
+

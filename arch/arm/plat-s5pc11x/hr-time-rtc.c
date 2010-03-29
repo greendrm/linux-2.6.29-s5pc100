@@ -60,6 +60,7 @@ static cycle_t last_ticks;
  * timer counter expired
  */
 static unsigned int pending_irq;
+#define USE_SYSTIMER_IRQ
 
 /* sched_timer_running
  * 0 : sched timer stopped or not initialized
@@ -208,6 +209,11 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 
 	s5pc11x_systimer_write(S3C_SYSTIMER_TCNTB, tcnt);
 
+#if !defined(USE_SYSTIMER_IRQ)
+	/* set timer con */
+	tcon =  (S3C_SYSTIMER_START | S3C_SYSTIMER_AUTO_RELOAD);
+	s5pc11x_systimer_write(S3C_SYSTIMER_TCON, tcon);
+#else
 	/* set timer con */
 	tcon =  S3C_SYSTIMER_INT_AUTO | S3C_SYSTIMER_START |
 			S3C_SYSTIMER_AUTO_RELOAD;
@@ -220,7 +226,7 @@ static void s5pc11x_sched_timer_start(unsigned long load_val,
 	s5pc11x_systimer_write(S3C_SYSTIMER_INT_CSTAT,
 				(S3C_SYSTIMER_INT_ICNTEIE |
 					S3C_SYSTIMER_INT_EN));
-
+#endif
 	sched_timer_running = 1;
 }
 
@@ -470,7 +476,9 @@ static void __init s5pc11x_timer_init(void)
 
 	s5pc11x_timer_setup();
 	setup_irq(IRQ_RTC_TIC, &s5pc11x_tick_timer_irq);
+#if defined(USE_SYSTIMER_IRQ)
 	setup_irq(IRQ_SYSTIMER, &s5pc11x_systimer_irq);
+#endif
 }
 
 

@@ -16,6 +16,11 @@
 
 #include "s3c_mfc_common.h"
 
+#define MFC_TIMEOUT	5000
+
+extern unsigned int s3c_mfc_int_type;
+extern unsigned int s3c_mfc_err_type;
+extern wait_queue_head_t s3c_mfc_wait_queue;
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command);
 
 #endif /* _S3C_MFC_INTR_H_ */

@@ -214,7 +214,7 @@ static struct regulator_init_data max8698_buck1_data = {
 		.always_on	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE,
 		.state_mem	= {
-			.uV		= 1100000,
+			.uV		= 1250000,
 			.mode		= REGULATOR_MODE_NORMAL,
 			.enabled	= 0,
 		},
