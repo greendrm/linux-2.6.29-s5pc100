@@ -29,6 +29,8 @@
 
 #include "hdmi_param.h"
 
+#include "../hpd.h"
+
 #ifdef COFIG_TVOUT_RAW_DBG
 #define S5P_HDMI_DEBUG 1
 #endif
@@ -1808,6 +1810,8 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 	HDMIPRINTK("HDMI Link %s\n", readl(hdmi_base + S5P_HDMI_CON_0) &
 		HDMI_EN ? "enabled":"disabled");
 
+	s5p_hpd_set_hdmiint();
+
 	if (hdcp_en) {
 //		__s5p_init_hdcp(true, ddc_port);
 		
@@ -1815,7 +1819,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 			HDMIPRINTK("HDCP start failed\n");
 		}
 	}
-	
+
 	HDMIPRINTK("HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
 	//	   readl(hdmi_base + S5P_HDCP_CTRL),
 		   readl(hdmi_base + S5P_HPD),
@@ -1860,6 +1864,8 @@ void __s5p_hdmi_stop(void)
 	do {
 		temp = readl(hdmi_base + S5P_HDMI_CON_0);
 	} while ( temp & HDMI_EN );
+
+	s5p_hpd_set_eint();
 
 	HDMIPRINTK("HDMI Link %s\n", readl(hdmi_base + S5P_HDMI_CON_0) &
 		HDMI_EN ? "enabled":"disabled");

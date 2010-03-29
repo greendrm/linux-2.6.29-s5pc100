@@ -32,8 +32,6 @@
 
 #define HPDDEBUG
 
-#define USEEXTINT
-
 #ifdef HPDDEBUG
 #define HPDIFPRINTK(fmt, args...) \
 	printk("[HPD_IF] %s: " fmt, __FUNCTION__ , ## args)
@@ -43,8 +41,8 @@
 
 static struct hpd_struct hpd_struct;
 static int last_hpd_state;
-
-static bool hdmi_on = false;
+atomic_t hdmi_status;
+atomic_t poll_state;
 
 static DECLARE_WORK(hpd_work, s5p_tv_kobject_uevent);
 
@@ -55,38 +53,13 @@ int s5p_hpd_get_state(void)
 
 int s5p_hpd_open(struct inode *inode, struct file *file)
 {
-#ifdef USEEXTINT
-#else
-	s5p_tv_clk_gate(true);
-	hdmi_on = true;
+	atomic_set(&poll_state, 1);
 
-	/* adjust the duration of HPD detection */
-	
-	s5p_hdmi_hpd_gen();
-
-	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_HDMI_HPD);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
-	
-	s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
-	s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
-#endif
-	
-	
 	return 0;
 }
 
 int s5p_hpd_release(struct inode *inode, struct file *file)
 {
-	/* disable HPD interrupts */
-#ifdef USEEXTINT
-#else
-	s5p_tv_clk_gate(false);
-	hdmi_on = false;
-	
-	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
-	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
-#endif
-
 	return 0;
 }
 
@@ -94,14 +67,11 @@ ssize_t s5p_hpd_read(struct file *file, char __user *buffer, size_t count, loff_
 {
 	ssize_t retval;
 
-	if (wait_event_interruptible(hpd_struct.waitq, atomic_read(&hpd_struct.state) != -1))
-		return -ERESTARTSYS;
-
 	spin_lock_irq(&hpd_struct.lock);
 
 	retval = put_user(atomic_read(&hpd_struct.state), (unsigned int __user *) buffer);
 
-	atomic_set(&hpd_struct.state, -1);
+	atomic_set(&poll_state, -1);
 
 	spin_unlock_irq(&hpd_struct.lock);
 
@@ -112,7 +82,7 @@ unsigned int s5p_hpd_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &hpd_struct.waitq, wait);
 
-	if (atomic_read(&hpd_struct.state) != -1)
+	if (atomic_read(&poll_state) != -1)
 		return POLLIN | POLLRDNORM;
 
 	return 0;
@@ -132,52 +102,90 @@ static struct miscdevice hpd_misc_device = {
 	&hpd_fops,
 };
 
-/*
- * HPD interrupt handler
- *
- * Handles interrupt requests from HPD hardware.
- * Handler changes value of internal variable and notifies waiting thread.
- */
-irqreturn_t s5p_hpd_irq_handler(int irq)
+int s5p_hpd_set_hdmiint(void)
 {
-#ifdef USEEXTINT
-	spin_lock_irq(&hpd_struct.lock);
+	/* EINT -> HDMI */
 
+	set_irq_type(IRQ_EINT13, IRQ_TYPE_NONE);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
+	atomic_set(&hdmi_status, HDMI_ON);
+
+	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_HDMI_HPD);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+
+	s5p_hdmi_hpd_gen();
+
+	s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
+	return 0;
+}
+EXPORT_SYMBOL(s5p_hpd_set_hdmiint);
+
+int s5p_hpd_set_eint(void)
+{
+	/* HDMI -> EINT */
+	atomic_set(&hdmi_status, HDMI_OFF);
+
+	s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
+
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
+	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+
+	return 0;
+}
+EXPORT_SYMBOL(s5p_hpd_set_eint);
+
+int irq_eint(int irq)
+{
 	if (gpio_get_value(S5PC11X_GPH1(5))) {
-		if (atomic_read(&hpd_struct.state) == HPD_HI)
-			goto out;
 		atomic_set(&hpd_struct.state, HPD_HI);
+		atomic_set(&poll_state, 1);
+
+		last_hpd_state = HPD_HI;
+		wake_up_interruptible(&hpd_struct.waitq);
 	} else {
-		if (atomic_read(&hpd_struct.state) == HPD_LO)
-			goto out;
 		atomic_set(&hpd_struct.state, HPD_LO);
-	}
-	if(atomic_read(&hpd_struct.state)){
+		atomic_set(&poll_state, 1);
 
+		last_hpd_state = HPD_LO;
+		wake_up_interruptible(&hpd_struct.waitq);
+	}
+
+	if (atomic_read(&hpd_struct.state))
 		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_LOW);
-		
-	}else{
+	else
 		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_HIGH);
-
-	}
 
 	schedule_work(&hpd_work);
 
-	spin_unlock_irq(&hpd_struct.lock);
-
-	HPDIFPRINTK("hpd_status = %d\n", atomic_read(&hpd_struct.state));
-
-	return IRQ_HANDLED;
-out:
-	spin_unlock_irq(&hpd_struct.lock);
+	HPDIFPRINTK("%s\n", atomic_read(&hpd_struct.state) == HPD_HI ?
+		"HPD HI" : "HPD LO");
 
 	return IRQ_HANDLED;
-#else
+
+}
+
+int irq_hdmi(int irq)
+{
 	u8 flag;
 	int ret = IRQ_HANDLED;
-	
+
 	/* read flag register */
 	flag = s5p_hdmi_get_interrupts();
+
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
+	s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
+
 
 	/* is this our interrupt? */
 
@@ -186,61 +194,79 @@ out:
 		goto out;
 	}
 
-	/* workaround: ignore HPD IRQ caused by reseting HDCP engine */
-	if (s5p_hdmi_get_swhpd_status()) {
-		s5p_hdmi_swhpd_disable();
-		/* clear pending bit */
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
-		ret = IRQ_HANDLED;
-		goto out;
-	}
-
 	if (flag == (1 << HDMI_IRQ_HPD_PLUG | 1 << HDMI_IRQ_HPD_UNPLUG)) {
+
 		HPDIFPRINTK("HPD_HI && HPD_LO\n");
 
 		if (last_hpd_state == HPD_HI && s5p_hdmi_get_hpd_status())
-			//if ( last_hpd_state == HPD_HI )
 			flag = 1 << HDMI_IRQ_HPD_UNPLUG;
 		else
 			flag = 1 << HDMI_IRQ_HPD_PLUG;
 	}
 
 	if (flag & (1 << HDMI_IRQ_HPD_PLUG)) {
-		HPDIFPRINTK("HPD_HI\n");
-		/* clear pending bit */
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
+
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
 		atomic_set(&hpd_struct.state, HPD_HI);
-		// workaround: enable HDMI_IRQ_HPD_UNPLUG interrupt
-		s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
-		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);		
+		atomic_set(&poll_state, 1);
+
 		last_hpd_state = HPD_HI;
 		wake_up_interruptible(&hpd_struct.waitq);
+
+		HPDIFPRINTK("HPD_HI\n");
+
 	} else if (flag & (1 << HDMI_IRQ_HPD_UNPLUG)) {
-		HPDIFPRINTK("HPD_LO\n");
-		/* clear pending bit */
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_PLUG);
-		s5p_hdmi_clear_pending(HDMI_IRQ_HPD_UNPLUG);
-		atomic_set(&hpd_struct.state, HPD_LO);
-		// workaround: disable HDMI_IRQ_HPD_UNPLUG interrupt
-		last_hpd_state = HPD_LO;
-		s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
+
+		atomic_set(&hpd_struct.state, HPD_LO);
+		atomic_set(&poll_state, 1);
+
+		last_hpd_state = HPD_LO;
 		wake_up_interruptible(&hpd_struct.waitq);
+
+		HPDIFPRINTK("HPD_LO\n");
 	}
+
+	schedule_work(&hpd_work);
 
 out:
 	return IRQ_HANDLED;
-#endif
-
 }
 
+/*
+ * HPD interrupt handler
+ *
+ * Handles interrupt requests from HPD hardware.
+ * Handler changes value of internal variable and notifies waiting thread.
+ */
+irqreturn_t s5p_hpd_irq_handler(int irq)
+{
+	int ret = IRQ_HANDLED;
+
+	spin_lock_irq(&hpd_struct.lock);
+
+	/* check HDMI status */
+	if (atomic_read(&hdmi_status)) {
+		/* HDMI on */
+		ret = irq_hdmi(irq);
+		HPDIFPRINTK("HDMI HPD interrupt\n");
+	} else {
+		/* HDMI off */
+		ret = irq_eint(irq);
+		HPDIFPRINTK("EINT HPD interrupt\n");
+	}
+
+	spin_unlock_irq(&hpd_struct.lock);
+
+	return ret;
+}
 
 static int __init s5p_hpd_probe(struct platform_device *pdev)
 {
 	if (misc_register(&hpd_misc_device)) {
-		printk(KERN_WARNING " Couldn't register device 10, %d.\n", HPD_MINOR);
+		printk(KERN_WARNING "Couldn't register device 10, %d.\n", HPD_MINOR);
 		return -EBUSY;
 	}
 
@@ -250,14 +276,18 @@ static int __init s5p_hpd_probe(struct platform_device *pdev)
 
 	atomic_set(&hpd_struct.state, -1);
 
-#ifdef USEEXTINT
+	atomic_set(&hdmi_status, HDMI_OFF);
+
 	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
 	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
 
-	if (gpio_get_value(S5PC11X_GPH1(5)))
+	if (gpio_get_value(S5PC11X_GPH1(5))) {
 		atomic_set(&hpd_struct.state, HPD_HI);
-	else
+		last_hpd_state = HPD_HI;
+	} else {
 		atomic_set(&hpd_struct.state, HPD_LO);
+		last_hpd_state = HPD_LO;
+	}
 
 	set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_BOTH);
 
@@ -267,11 +297,8 @@ static int __init s5p_hpd_probe(struct platform_device *pdev)
 		return -EIO;
 	}
 
-#else
-	/* must be checked */
 	s5p_hdmi_register_isr(s5p_hpd_irq_handler, (u8)HDMI_IRQ_HPD_PLUG);
-	s5p_hdmi_register_isr(s5p_hpd_irq_handler, (u8)HDMI_IRQ_HPD_UNPLUG);	
-#endif
+	s5p_hdmi_register_isr(s5p_hpd_irq_handler, (u8)HDMI_IRQ_HPD_UNPLUG);
 
 	return 0;
 }
@@ -291,9 +318,6 @@ static int s5p_hpd_remove(struct platform_device *pdev)
  */
 int s5p_hpd_suspend(struct platform_device *dev, pm_message_t state)
 {
-	if ( hdmi_on )
-		s5p_tv_clk_gate(false);
-		
 	return 0;
 }
 
@@ -302,9 +326,6 @@ int s5p_hpd_suspend(struct platform_device *dev, pm_message_t state)
  */
 int s5p_hpd_resume(struct platform_device *dev)
 {
-	if ( hdmi_on )
-		s5p_tv_clk_gate(true);
-	
 	return 0;
 }
 #else
