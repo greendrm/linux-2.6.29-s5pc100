@@ -204,7 +204,8 @@ static inline u32 fimc_irq_out_dma(struct fimc_control *ctrl)
 
 static inline u32 fimc_irq_out_fimd(struct fimc_control *ctrl)
 {
-	u32 prev, next, wakeup = 0;
+	int prev, next;
+	u32 wakeup = 0;
 	int ret = -1;
 
 	/* Attach done buffer to outgoing queue. */
@@ -570,38 +571,28 @@ u32 fimc_mapping_rot_flip(u32 rot, u32 flip)
 
 	switch (rot) {
 	case 0:
-		if (flip & V4L2_CID_HFLIP)
+		if (flip == V4L2_CID_HFLIP)
 			ret |= FIMC_XFLIP;
 
-		if (flip & V4L2_CID_VFLIP)
+		if (flip == V4L2_CID_VFLIP)
 			ret |= FIMC_YFLIP;
 		break;
 
 	case 90:
 		ret = FIMC_ROT;
-		if (flip & V4L2_CID_HFLIP)
+		if (flip == V4L2_CID_HFLIP)
 			ret |= FIMC_XFLIP;
 
-		if (flip & V4L2_CID_VFLIP)
+		if (flip == V4L2_CID_VFLIP)
 			ret |= FIMC_YFLIP;
 		break;
 
 	case 180:
 		ret = (FIMC_XFLIP | FIMC_YFLIP);
-		if (flip & V4L2_CID_HFLIP)
-			ret &= ~FIMC_XFLIP;
-
-		if (flip & V4L2_CID_VFLIP)
-			ret &= ~FIMC_YFLIP;
 		break;
 
 	case 270:
 		ret = (FIMC_XFLIP | FIMC_YFLIP | FIMC_ROT);
-		if (flip & V4L2_CID_HFLIP)
-			ret &= ~FIMC_XFLIP;
-
-		if (flip & V4L2_CID_VFLIP)
-			ret &= ~FIMC_YFLIP;
 		break;
 	}
 
@@ -1148,11 +1139,7 @@ static inline int fimc_suspend_out(struct fimc_control *ctrl)
 					__func__, __LINE__);
 
 			fimc_outdev_stop_streaming(ctrl);
-
-			if (ctrl->status == FIMC_STREAMON_IDLE)
-				ctrl->status = FIMC_ON_IDLE_SLEEP;
-			else
-				ctrl->status = FIMC_ON_SLEEP;
+			ctrl->status = FIMC_ON_SLEEP;
 		} else if (ctrl->status == FIMC_STREAMON_IDLE) {
 			fimc_outdev_stop_streaming(ctrl);
 			ctrl->status = FIMC_ON_IDLE_SLEEP;
