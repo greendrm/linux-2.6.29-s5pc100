@@ -19,9 +19,9 @@
 
 #include "s3c_mfc_common.h"
 #include "s3c_mfc_opr.h"
+#include "s3c_mfc_fw.h"
 #include "s3c_mfc_logmsg.h"
 #include "s3c_mfc_memory.h"
-#include "s3c_mfc_fw.h"
 #include "s3c_mfc_buffer_manager.h"
 #include "s3c_mfc_interface.h"
 #include "s3c_mfc_intr.h"
@@ -33,6 +33,10 @@ static int s3c_mfc_init_count;
 
 static unsigned int shared_mem_phy_addr;
 static volatile unsigned char *shared_mem_vir_addr;
+
+/* for Multi-slice decoding */
+static int acc_consumed_size;
+static int in_strm_buf_base;
 
 #define READL(offset)		readl(s3c_mfc_sfr_virt_base + (offset))
 #define WRITEL(data, offset)	writel((data), s3c_mfc_sfr_virt_base + (offset))
@@ -144,11 +148,11 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no,
 	unsigned int fw_phybuf;
 	unsigned int risc_phy_buf, aligned_risc_phy_buf;
 
-	mfc_debug
-	    ("inst_no : %d, buf_addr : 0x%08x, start_byte_num : 0x%08x, buf_size : 0x%08x\n",
-	     inst_no, buf_addr, start_byte_num, buf_size);
 
 	fw_phybuf = Align(s3c_mfc_get_fw_buf_phys_addr(), 128 * BUF_L_UNIT);
+
+	mfc_debug("inst_no : %d, buf_addr : 0x%08x, start_byte_num : 0x%08x, buf_size : 0x%08x, ",
+	     inst_no, buf_addr, start_byte_num);
 
 	risc_phy_buf = s3c_mfc_get_risc_buf_phys_addr(inst_no);
 	aligned_risc_phy_buf = Align(risc_phy_buf, 2 * BUF_L_UNIT);
@@ -161,9 +165,6 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_set_dec_stream_buffer(int inst_no,
 	WRITEL((buf_addr - fw_phybuf) >> 11, S3C_FIMV_SI_CH1_SB_ST_ADR);
 
 	WRITEL_SHARED_MEM(start_byte_num, shared_mem_vir_addr + 0x18);
-
-	mfc_debug("risc_phy_buf : 0x%08x, aligned_risc_phy_buf : 0x%08x\n",
-		  risc_phy_buf, aligned_risc_phy_buf);
 
 	return MFC_RET_OK;
 }
@@ -1158,10 +1159,16 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx * mfc_ctx,
 		       S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
 	else
 		WRITEL((mfc_ctx->sliceEnable << 31),
-		       S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
+				S3C_FIMV_SI_CH1_DPB_CONF_CTRL);
 
 	WRITEL((SEQ_HEADER << 16 & 0x70000) | (mfc_ctx->InstNo),
-	       S3C_FIMV_SI_CH1_INST_ID);
+			S3C_FIMV_SI_CH1_INST_ID);
+
+	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {
+		WRITEL(mfc_ctx->divx311_info.width, S3C_FIMV_SI_DIVX311_HRESOL);
+		WRITEL(mfc_ctx->divx311_info.height,
+		       S3C_FIMV_SI_DIVX311_VRESOL);
+	}
 
 	if (s3c_mfc_wait_for_done(R2H_CMD_SEQ_DONE_RET) == 0) {
 		mfc_err("MFC_RET_DEC_HEADER_FAIL\n");
@@ -1171,9 +1178,6 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx * mfc_ctx,
 	s3c_mfc_set_risc_buffer(mfc_ctx->MfcCodecType, mfc_ctx->InstNo);
 
 	if (mfc_ctx->MfcCodecType == DIVX311_DEC) {
-		WRITEL(mfc_ctx->divx311_info.width, S3C_FIMV_SI_DIVX311_HRESOL);
-		WRITEL(mfc_ctx->divx311_info.height,
-		       S3C_FIMV_SI_DIVX311_VRESOL);
 
 		mfc_ctx->img_width = READL(S3C_FIMV_SI_DIVX311_HRESOL);
 		mfc_ctx->img_height = READL(S3C_FIMV_SI_DIVX311_VRESOL);
@@ -1230,19 +1234,26 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 	unsigned int frame_type;
 	int start_byte_num;
 	int interrupt_flag;
+	int out_display_Y_addr;
+	int out_display_C_addr;
 
 	mfc_debug("++ InstNo%d \r\n", mfc_ctx->InstNo);
 
 	WRITEL(0xffffffff, S3C_FIMV_SI_CH1_RELEASE_BUF);	/* MFC fw 8/7 */
 
 	if ((*consumed_strm_size)) {
-		start_byte_num = (int)((*consumed_strm_size) -
-				       (Align
-					(*consumed_strm_size,
-					 4 * BUF_L_UNIT) - 4 * BUF_L_UNIT));
+		start_byte_num = acc_consumed_size +
+			(int)((*consumed_strm_size) -
+			(Align (acc_consumed_size + *consumed_strm_size,
+		 	4 * BUF_L_UNIT) - 4 * BUF_L_UNIT));
+		dec_arg->in_strm_buf = in_strm_buf_base +
+			((acc_consumed_size + *consumed_strm_size)& 0xff000);
 	} else {
 		start_byte_num = 0;
 	}
+
+	acc_consumed_size += *consumed_strm_size;
+	mfc_debug("acc_consumed_size : %x\n",acc_consumed_size);
 
 	s3c_mfc_set_dec_stream_buffer(mfc_ctx->InstNo, dec_arg->in_strm_buf,
 				      start_byte_num, dec_arg->in_strm_size);
@@ -1269,18 +1280,6 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 		return MFC_RET_DEC_EXE_ERR;
 	}
 
-	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_ONLY) {
-		dec_arg->out_display_Y_addr = 0;
-		dec_arg->out_display_C_addr = 0;
-		mfc_debug("DECODING_ONLY frame decoded \n");
-	} else {
-		dec_arg->out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
-		dec_arg->out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
-	}
-
-	dec_arg->out_display_Y_addr = (dec_arg->out_display_Y_addr << 11);
-	dec_arg->out_display_C_addr = (dec_arg->out_display_C_addr << 11);
-
 	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_EMPTY) {
 		dec_arg->out_display_status = 0;
 	} else if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) ==
@@ -1293,6 +1292,40 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 
 	frame_type = READL(S3C_FIMV_SI_FRAME_TYPE);
 	mfc_ctx->FrameType = (s3c_mfc_frame_type) (frame_type & 0x7);
+
+	if ((READL(S3C_FIMV_SI_DISPLAY_STATUS) & 0x3) == DECODING_ONLY) {
+		out_display_Y_addr = 0;
+		out_display_C_addr = 0;
+		mfc_debug("DECODING_ONLY frame decoded \n");
+	} else {
+		#if 1
+		if (mfc_ctx->IsPackedPB) {
+			if (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) {
+				out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
+				out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
+			} else {
+			 	out_display_Y_addr = mfc_ctx->pre_display_Y_addr;
+				out_display_C_addr = mfc_ctx->pre_display_C_addr;
+			}
+			// save the display addr
+			mfc_ctx->pre_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
+			mfc_ctx->pre_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
+			mfc_debug("(pre_Y_ADDR : 0x%08x  pre_C_ADDR : 0x%08x)\r\n",
+		  		(mfc_ctx->pre_display_Y_addr << 11),
+		  		(mfc_ctx->pre_display_C_addr << 11));
+		} else {
+			out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
+			out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
+		}
+		#else
+		out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
+		out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
+		#endif
+			
+	}
+
+	dec_arg->out_display_Y_addr = (out_display_Y_addr << 11);
+	dec_arg->out_display_C_addr = (out_display_C_addr << 11);
 
 	dec_arg->out_pic_time_top =
 	    (int)(READL_SHARED_MEM(shared_mem_vir_addr + 0x10));
@@ -1315,6 +1348,7 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 		    0xffff;
 	}
 
+	mfc_debug("(FrameType : %d)\r\n", mfc_ctx->FrameType);
 	mfc_debug("(Y_ADDR : 0x%08x  C_ADDR : 0x%08x)\r\n",
 		  dec_arg->out_display_Y_addr, dec_arg->out_display_C_addr);
 
@@ -1381,33 +1415,63 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_exe_decode(s3c_mfc_inst_ctx * mfc_ctx,
 	SSBSIP_MFC_ERROR_CODE ret;
 	s3c_mfc_dec_exe_arg_t *dec_arg;
 	int consumed_strm_size = 0;
+	int slice_no = 0;
+	int remained_size = 0;
 
 	/* 6. Decode Frame */
 	mfc_debug("++\n");
+	acc_consumed_size = 0;
 
 	dec_arg = (s3c_mfc_dec_exe_arg_t *) args;
+	mfc_debug("** Slice no : %d,input:%x\n",slice_no,dec_arg->in_strm_size);
+	in_strm_buf_base = dec_arg->in_strm_buf;
+	remained_size = dec_arg->in_strm_size;
 	ret = s3c_mfc_decode_one_frame(mfc_ctx, dec_arg, &consumed_strm_size);
-#if 0				// MFC fw 10/30
-	if ((mfc_ctx->IsPackedPB)
-	    && (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME)
-	    && (dec_arg->in_strm_size - consumed_strm_size > 4)) {
-#else // MFC fw 11/30
-	if ((mfc_ctx->MfcCodecType == H264_DEC) &&
-	    (mfc_ctx->FrameType >= 1) && (mfc_ctx->FrameType <= 3) &&
-	    (dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE) &&
-	    (is_vcl(dec_arg, consumed_strm_size)) ) {
-#endif
-		mfc_debug
-		    ("In case that two samples exist in the one stream buffer\n");
-		dec_arg->in_strm_buf +=
-		    Align(consumed_strm_size, 4 * BUF_L_UNIT) - 4 * BUF_L_UNIT;
-		dec_arg->in_strm_size -= consumed_strm_size;
+	mfc_debug("consumed size:%x\n",consumed_strm_size);
 
+	/* for Packed Stream */
+	if ((mfc_ctx->IsPackedPB)
+		&& (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME)
+		&& (dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE)){
+		mfc_debug
+			("In case that two samples exist in the one stream buffer\n");
+		dec_arg->in_strm_buf +=
+			Align(consumed_strm_size, 4 * BUF_L_UNIT) - 4 * BUF_L_UNIT;
 		ret =
-		    s3c_mfc_decode_one_frame(mfc_ctx, dec_arg,
-					     &consumed_strm_size);
+			s3c_mfc_decode_one_frame(mfc_ctx, dec_arg,
+					&consumed_strm_size);
 	}
 
+	/* for Multi-slice */
+	if ((mfc_ctx->MfcCodecType == H264_DEC) && !(mfc_ctx->IsPackedPB)
+			&& (mfc_ctx->FrameType >= 1) && (mfc_ctx->FrameType <= 3) 
+			&& (dec_arg->in_strm_size - consumed_strm_size > STUFF_BYTE_SIZE) 
+			&& is_vcl(dec_arg, consumed_strm_size)) {
+		do {
+			if(slice_no++ >= AVAILABLE_SLICES_MAX){
+				mfc_warn("It may slice parsing error!!\n");
+				break;
+			}
+			mfc_debug
+				("In case that two samples exist in the one stream buffer\n");
+			dec_arg->in_strm_buf +=
+				Align(consumed_strm_size, 4 * BUF_L_UNIT) 
+				- 4 * BUF_L_UNIT;
+			/*dec_arg->in_strm_size -= consumed_strm_size;*/
+			remained_size -= consumed_strm_size;
+			if((acc_consumed_size > dec_arg->in_strm_size) ||
+					(remained_size < STUFF_BYTE_SIZE)) break; 
+
+			mfc_debug("** Slice no : %d,input size:%x\n",
+					slice_no,dec_arg->in_strm_size);
+			ret =
+				s3c_mfc_decode_one_frame(mfc_ctx, dec_arg,
+						&consumed_strm_size);
+			mfc_debug("consumed size:%x\n",consumed_strm_size);
+		} while(is_vcl(dec_arg, consumed_strm_size));
+	}
+
+	acc_consumed_size = 0;
 	mfc_debug("--\n");
 
 	return ret;

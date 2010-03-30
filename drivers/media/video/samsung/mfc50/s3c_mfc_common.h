@@ -154,6 +154,8 @@ typedef struct tag_mfc_inst_ctx {
 	s3c_mfc_enc_vui_info vui_info;
 	s3c_mfc_dec_divx311_info divx311_info;
 	SSBSIP_MFC_CODEC_TYPE MfcCodecType;
+	int pre_display_Y_addr;
+	int pre_display_C_addr;
 	s3c_mfc_inst_state MfcState;
 } s3c_mfc_inst_ctx;
 
