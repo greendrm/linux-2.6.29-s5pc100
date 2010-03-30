@@ -1009,95 +1009,50 @@ int fimc_hwset_output_offset(struct fimc_control *ctrl, u32 pixelformat,
 		(bounds->height == crop->height))
 		return -EINVAL;
 
+	if (pdata->hw_ver != 0x50) {
+		if (crop->left % 8) {
+			fimc_err("%s: Output horizontal offset is multiple of 8\n", 
+					__func__);
+			return -EINVAL;
+		}
+	}
+
 	fimc_dbg("%s: left: %d, top: %d, width: %d, height: %d\n",
 		__func__, crop->left, crop->top, crop->width, crop->height);
 
 	switch (pixelformat) {
 	/* 1 plane, 32 bits per pixel */
-	case V4L2_PIX_FMT_RGB32:
-		if(pdata->hw_ver == 0x50)
-			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-		else
-			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 4);
-
-		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-		break;
-
-	/* 1 plane, 16 bits per pixel */
+	case V4L2_PIX_FMT_RGB32: /* fall through */
 	case V4L2_PIX_FMT_YUYV:	/* fall through */
 	case V4L2_PIX_FMT_UYVY:	/* fall through */
 	case V4L2_PIX_FMT_VYUY:	/* fall through */
 	case V4L2_PIX_FMT_YVYU:	/* fall through */
 	case V4L2_PIX_FMT_RGB565:
-		if (pdata->hw_ver == 0x50)
-			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-		else
-			cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left * 2);
-
+		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
 		break;
 
 	/* 2 planes, 16 bits per pixel */
-	case V4L2_PIX_FMT_NV16:	/* fall through */
-	case V4L2_PIX_FMT_NV61:
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-		if (pdata->hw_ver == 0x50) {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-		} else {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
-		}
-		break;
-
-	/* 2 planes, 12 bits per pixel */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
+	case V4L2_PIX_FMT_NV61:		/* fall through */
 	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:	/* fall through */		
 	case V4L2_PIX_FMT_NV21:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-		if (pdata->hw_ver == 0x50) {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-		} else {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
-		}
+		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
 		break;
 
 	/* 3 planes, 16 bits per pixel */
-	case V4L2_PIX_FMT_YUV422P:
-		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
-		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-		if (pdata->hw_ver == 0x50) {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
-			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
-		} else {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 2);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 2);
-			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 2);
-			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 2);
-		}
-		break;
-
-	/* 3 planes, 12 bits per pixel */
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
 	case V4L2_PIX_FMT_YUV420:
 		cfg_y |= S3C_CIOYOFF_HORIZONTAL(crop->left);
 		cfg_y |= S3C_CIOYOFF_VERTICAL(crop->top);
-		if (pdata->hw_ver == 0x50) {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
-			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
-			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
-		} else {
-			cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left / 4);
-			cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top / 4);
-			cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left / 4);
-			cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top / 4);
-		}
+		cfg_cb |= S3C_CIOCBOFF_HORIZONTAL(crop->left);
+		cfg_cb |= S3C_CIOCBOFF_VERTICAL(crop->top);
+		cfg_cr |= S3C_CIOCROFF_HORIZONTAL(crop->left);
+		cfg_cr |= S3C_CIOCROFF_VERTICAL(crop->top);
 		break;
 
 	default:
@@ -1118,6 +1073,14 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 	u32 cfg_y = 0, cfg_cb = 0, cfg_cr = 0;
 	struct s3c_platform_fimc *pdata = to_fimc_plat(ctrl->dev);
 
+	if (pdata->hw_ver != 0x50) {
+		if (crop->left % 8) {
+			fimc_err("%s: Input horizontal offset is multiple of 8\n", 
+					__func__);
+			return -EINVAL;
+		}
+	}
+
 	if (crop->left || crop->top ||
 		(bounds->width != crop->width) ||
 		(bounds->height != crop->height)) {
@@ -1125,47 +1088,24 @@ int fimc_hwset_input_offset(struct fimc_control *ctrl, u32 pixelformat,
 		case V4L2_PIX_FMT_YUYV:		/* fall through */
 		case V4L2_PIX_FMT_UYVY:		/* fall through */
 		case V4L2_PIX_FMT_RGB565:	/* fall through */
-			if (pdata->hw_ver == 0x50)
-				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
-			else
-				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 2);
-
-			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
-			break;			
 		case V4L2_PIX_FMT_RGB32:
-			if (pdata->hw_ver == 0x50)
-				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
-			else
-				cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left * 4);
-				cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
+			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
+			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			break;
 		case V4L2_PIX_FMT_NV12:		/* fall through */
 		case V4L2_PIX_FMT_NV12T:
 			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop->left);
-			if (pdata->hw_ver == 0x50)
-				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
-			else
-				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
-
+			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
 			break;
 		case V4L2_PIX_FMT_YUV420:
 			cfg_y |= S3C_CIIYOFF_HORIZONTAL(crop->left);
 			cfg_y |= S3C_CIIYOFF_VERTICAL(crop->top);
 			cfg_cb |= S3C_CIICBOFF_HORIZONTAL(crop->left);
-			if (pdata->hw_ver == 0x50)
-				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
-			else
-				cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top / 2);
-
+			cfg_cb |= S3C_CIICBOFF_VERTICAL(crop->top);
 			cfg_cr |= S3C_CIICROFF_HORIZONTAL(crop->left);
-			if (pdata->hw_ver == 0x50)
-				cfg_cr |= S3C_CIICROFF_VERTICAL(crop->top);
-			else
-				cfg_cr |= S3C_CIICROFF_VERTICAL(crop->top / 2);
-
-
+			cfg_cr |= S3C_CIICROFF_VERTICAL(crop->top);
 			break;
 
 		default: 
