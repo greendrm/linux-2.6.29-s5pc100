@@ -117,6 +117,7 @@ int s3cfb_display_on(struct s3cfb_global *ctrl)
 	cfg |= (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
+	ctrl->enabled = 1;	
 	dev_dbg(ctrl->dev, "global display is on\n");
 
 	return 0;
@@ -133,6 +134,7 @@ int s3cfb_display_off(struct s3cfb_global *ctrl)
 	cfg &= ~S3C_VIDCON0_ENVID_F_ENABLE;
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
+	ctrl->enabled = 0;
 	dev_dbg(ctrl->dev, "global display is off\n");
 
 	return 0;
