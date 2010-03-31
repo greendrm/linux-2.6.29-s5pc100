@@ -297,6 +297,14 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 #endif
 	}
 
+	/* ARM MCS value changed */
+	if (index != L3) {
+		reg = __raw_readl(S5P_ARM_MCS_CON);
+		reg &= ~0x3;
+		reg |= 0x1;
+		__raw_writel(reg, S5P_ARM_MCS_CON);
+	}
+
 	/* 5. Change divider */
 	reg = __raw_readl(S5P_CLK_DIV0);
 
@@ -320,31 +328,21 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		reg = __raw_readl(S5P_CLK_DIV_STAT0);
 	} while (reg & 0xff);
 
+	/* ARM MCS value changed */
+	if (index == L3) {
+		reg = __raw_readl(S5P_ARM_MCS_CON);
+		reg &= ~0x3;
+		reg |= 0x3;
+		__raw_writel(reg, S5P_ARM_MCS_CON);
+	}
+
 	if (pll_changing) {
-		/* 6. Turn off APLL 
-		 * 6-1. De-select the output of a PLL
-		 * 6-2. Power "OFF" the PLL
-		 **/
-		reg = __raw_readl(S5P_CLK_SRC0);
-		reg &= ~S5P_CLKSRC0_APLL_MASK;
-		__raw_writel(reg, S5P_CLK_SRC0);
-
-		do {
-			reg = __raw_readl(S5P_CLK_MUX_STAT0);
-		} while (reg & (1 << 2));
-
-		reg = __raw_readl(S5P_APLL_CON);
-		reg &= ~(1 << 31);
-		__raw_writel(reg, S5P_APLL_CON);
-
 		/* 7. Set Lock time = 300us*24Mhz = 7200(0x1c20) */
 		__raw_writel(0x1c20, S5P_APLL_LOCK);
 
 		/* 8. Turn on APLL
 		 * 8-1. Set PMS values
-		 * 8-2. Power "ON" the PLL
 		 * 8-3. Wait untile the PLL is locked
-		 * 8-4. Select the PLL output
 		 **/
 		
 		if (index == L0)
@@ -356,15 +354,6 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			reg = __raw_readl(S5P_APLL_CON);
 		} while (!(reg & (0x1 << 29)));
 
-		reg = __raw_readl(S5P_CLK_SRC0);
-		reg &= ~S5P_CLKSRC0_APLL_MASK;
-		reg |= (1 << S5P_CLKSRC0_APLL_SHIFT);
-		__raw_writel(reg, S5P_CLK_SRC0);
-
-		do {
-			reg = __raw_readl(S5P_CLK_MUX_STAT0);
-		} while (reg & (1 << 2));
-		
 		/* 9. Change souce clock from SCLKMPLL(667Mhz)
 		 * to SCLKA2M(200Mhz) in MFC_MUX and G3D MUX 
 		 * (667/4=166)->(200/4=50)Mhz
