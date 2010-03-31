@@ -44,6 +44,7 @@
 
 #define		STUFF_BYTE_SIZE		(4)
 #define 	NAL_START_CODE		(0x00000001)
+#define		AVAILABLE_SLICES_MAX	50
 
 int s3c_mfc_load_firmware(void);
 

@@ -18,7 +18,6 @@
 #include "s3c_mfc_interface.h"
 #include "s3c_mfc_memory.h"
 #include "s3c_mfc_logmsg.h"
-#include "s3c_mfc_fw.h"
 #include "s3c_mfc_errorno.h"
 
 static int s3c_mfc_mem_inst_no[MFC_MAX_INSTANCE_NUM];
