@@ -1199,6 +1199,28 @@ int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;	
 }
 
+int fimc_hwset_shadow_enable(struct fimc_control *ctrl)
+{       
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+	cfg &= ~S3C_CIGCTRL_SHADOW_DISABLE;
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);
+
+	return 0;
+}               
+
+int fimc_hwset_shadow_disable(struct fimc_control *ctrl)
+{
+	u32 cfg = readl(ctrl->regs + S3C_CIGCTRL);
+
+	cfg |= S3C_CIGCTRL_SHADOW_DISABLE;
+
+	writel(cfg, ctrl->regs + S3C_CIGCTRL);        
+
+	return 0;
+}
+
 int fimc_hw_wait_winoff(struct fimc_control *ctrl)
 {
 	u32 cfg = readl(ctrl->regs + S3C_CISTATUS);
