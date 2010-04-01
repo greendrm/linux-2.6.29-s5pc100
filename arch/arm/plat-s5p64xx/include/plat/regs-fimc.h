@@ -181,6 +181,7 @@
 #define S3C_CIGCTRL_IRQ_CLR			(1 << 19)
 #define S3C_CIGCTRL_IRQ_DISABLE			(0 << 16)
 #define S3C_CIGCTRL_IRQ_ENABLE			(1 << 16)
+#define S3C_CIGCTRL_SHADOW_DISABLE              (1 << 12)
 #define S3C_CIGCTRL_SELCAM_MIPI_B		(0 << 7)
 #define S3C_CIGCTRL_SELCAM_MIPI_A		(1 << 7)
 #define S3C_CIGCTRL_SELCAM_MIPI_MASK		(1 << 7)
