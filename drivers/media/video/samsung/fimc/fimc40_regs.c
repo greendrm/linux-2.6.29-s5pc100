@@ -1075,6 +1075,16 @@ int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat)
 	return 0;	
 }
 
+int fimc_hwset_shadow_enable(struct fimc_control *ctrl)
+{
+	return 0;
+}
+
+int fimc_hwset_shadow_disable(struct fimc_control *ctrl)
+{
+	return 0;
+}
+
 int fimc_hw_wait_winoff(struct fimc_control *ctrl)
 {
 	return 0;
