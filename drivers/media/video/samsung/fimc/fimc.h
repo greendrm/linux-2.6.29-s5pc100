@@ -515,6 +515,8 @@ extern int fimc_hwset_ext_output_size(struct fimc_control *ctrl, u32 width, u32 
 extern int fimc_hwset_input_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwset_output_addr_style(struct fimc_control *ctrl, u32 pixelformat);
 extern int fimc_hwget_frame_count(struct fimc_control *ctrl);
+extern int fimc_hwset_shadow_enable(struct fimc_control *ctrl);
+extern int fimc_hwset_shadow_disable(struct fimc_control *ctrl);
 extern int fimc_hw_wait_winoff(struct fimc_control *ctrl);
 extern int fimc_hw_wait_stop_input_dma(struct fimc_control *ctrl);
 extern int fimc_hw_reset_camera(struct fimc_control *ctrl);
