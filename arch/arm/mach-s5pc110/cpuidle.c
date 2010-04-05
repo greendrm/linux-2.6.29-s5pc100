@@ -78,13 +78,10 @@ static int check_fb_op(void)
 
 	val = __raw_readl(S5PC11X_VA_LCD + S3C_VIDCON0);
 
-	if (val & (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE)) {
-		printk("FB is working\n");
+	if (val & (S3C_VIDCON0_ENVID_ENABLE | S3C_VIDCON0_ENVID_F_ENABLE))
 		return 1;
-	} else {
-		printk("FB is stopping\n");
+	else
 		return 0;
-	}
 }
 
 /* If SD/MMC interface is working: return = 1 or not 0 */
@@ -236,7 +233,7 @@ static void s5pc110_enter_idle(void)
 	cpu_do_idle();
 }
 
-static void s5pc110_enter_deepidle(void)
+static void s5pc110_enter_deepidle(unsigned int top_on)
 {
 	unsigned long tmp;
 
@@ -247,41 +244,61 @@ static void s5pc110_enter_deepidle(void)
 	/* ensure INF_REG0  has the resume address */
 	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
-	/* Save current VIC_INT_ENABLE register*/
-	vic_regs[0] = __raw_readl(S5PC110_VIC0REG(VIC_INT_ENABLE));
-	vic_regs[1] = __raw_readl(S5PC110_VIC1REG(VIC_INT_ENABLE));
-	vic_regs[2] = __raw_readl(S5PC110_VIC2REG(VIC_INT_ENABLE));
-	vic_regs[3] = __raw_readl(S5PC110_VIC3REG(VIC_INT_ENABLE));
+	if (top_on == 0) {
+		/* Save current VIC_INT_ENABLE register*/
+		vic_regs[0] = __raw_readl(S5PC110_VIC0REG(VIC_INT_ENABLE));
+		vic_regs[1] = __raw_readl(S5PC110_VIC1REG(VIC_INT_ENABLE));
+		vic_regs[2] = __raw_readl(S5PC110_VIC2REG(VIC_INT_ENABLE));
+		vic_regs[3] = __raw_readl(S5PC110_VIC3REG(VIC_INT_ENABLE));
 
-	/* Disable all interrupt through VIC */
-	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
-	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
+		/* Disable all interrupt through VIC */
+		__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
+		__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
+		__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
+		__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
+
+		/* GPIO Power Down Control */
+		s5pc110_gpio_pdn_conf();
+
+		/* Wakeup source configuration for deep-idle */
+		tmp = __raw_readl(S5P_WAKEUP_MASK);
+		/* RTC TICK and I2S are enabled as wakeup sources */
+		tmp |= 0xffff;
+		tmp &= ~((1<<2) | (1<<13));
+		__raw_writel(tmp, S5P_WAKEUP_MASK);
 	
-	/* GPIO Power Down Control */
-	s5pc110_gpio_pdn_conf();
+		/* Clear wakeup status register */
+		tmp = __raw_readl(S5P_WAKEUP_STAT);
+		__raw_writel(tmp, S5P_WAKEUP_STAT);
 
-	/* Wakeup source configuration for deep-idle */
-	tmp = __raw_readl(S5P_WAKEUP_MASK);
-	/* RTC TICK and I2S are enabled as wakeup sources */
-	tmp |= 0xffff;
-	tmp &= ~((1<<2) | (1<<13));
-	__raw_writel(tmp, S5P_WAKEUP_MASK);
+		/* IDLE config register set */
+		/* TOP Memory retention off */
+		/* TOP Memory LP mode       */
+		/* ARM_L2_Cacheret on       */
+		tmp = __raw_readl(S5P_IDLE_CFG);
+		tmp &= ~(0x3f << 26);
+		tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
+		__raw_writel(tmp, S5P_IDLE_CFG);
+	} else {
+		/* Wakeup source configuration for deep-idle */
+		tmp = __raw_readl(S5P_WAKEUP_MASK);
+		/* All interrupts are enabled as wakeup sources */
+		tmp &= ~0xffff;
+		__raw_writel(tmp, S5P_WAKEUP_MASK);
+	
+		/* Clear wakeup status register */
+		tmp = __raw_readl(S5P_WAKEUP_STAT);
+		__raw_writel(tmp, S5P_WAKEUP_STAT);
 
-	/* Clear wakeup status register */
-	tmp = __raw_readl(S5P_WAKEUP_STAT);
-	__raw_writel(tmp, S5P_WAKEUP_STAT);
-
-	/* IDLE config register set */
-	/* TOP Memory retention off */
-	/* TOP Memory LP mode       */
-	/* ARM_L2_Cacheret on       */
-	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &= ~(0x3f << 26);
-	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
-	__raw_writel(tmp, S5P_IDLE_CFG);
-
+		/* IDLE config register set */
+		/* TOP Logic : on */
+		/* TOP Memory : on */
+		/* ARM_L2_Cache : Ret       */
+		tmp = __raw_readl(S5P_IDLE_CFG);
+		tmp &= ~(0x3f << 26);
+		tmp |= ((1<<31) | (1<<29) | (1<<26) | (1<<0));
+		__raw_writel(tmp, S5P_IDLE_CFG);
+	}
 	/* Entering deep-idle mode with WFI instruction */
 	if (s5pc110_cpu_save(regs_save) == 0)
 		s5pc110_deepidle();
@@ -290,17 +307,18 @@ static void s5pc110_enter_deepidle(void)
 	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));	// No DEEP IDLE
 	tmp |= ((2<<30)|(2<<28));			// TOP logic : ON
 	__raw_writel(tmp, S5P_IDLE_CFG);
-	
-	/* Release retention GPIO/MMC/UART IO */
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
-	__raw_writel(tmp, S5P_OTHERS);
 
-	__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
-	__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
-	__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
-	__raw_writel(vic_regs[3], S5PC110_VIC3REG(VIC_INT_ENABLE));
-	
+	if (top_on == 0) {
+		/* Release retention GPIO/MMC/UART IO */
+		tmp = __raw_readl(S5P_OTHERS);
+		tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
+		__raw_writel(tmp, S5P_OTHERS);
+
+		__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
+		__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
+		__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
+		__raw_writel(vic_regs[3], S5PC110_VIC3REG(VIC_INT_ENABLE));
+	}
 }	
 
 static struct cpuidle_driver s5pc110_idle_driver = {
@@ -329,34 +347,60 @@ static int s5pc110_enter_idle_normal(struct cpuidle_device *dev,
 	return idle_time;
 }
 
+static int s5pc110_idle_bm_check(void)
+{
+	if ( loop_sdmmc_check() || check_fb_op() ||
+			check_onenand_op() || check_dma_op() ||
+			check_usbotg_op() )
+		return 1;
+	else
+		return 0;
+
+}
+
 /* Actual code that puts the SoC in different idle states */
 static int s5pc110_enter_idle_lpaudio(struct cpuidle_device *dev,
 			       struct cpuidle_state *state)
 {
 	struct timeval before, after;
 	int idle_time;
+	unsigned int top = 0;
 
 	local_irq_disable();
 	do_gettimeofday(&before);
-	if (state == &dev->states[0]) {
-		/* Wait for interrupt state */
-		//printk(KERN_INFO "Normal idle\n");
-		s5pc110_enter_idle();	
 
-	} else {
-		//printk(KERN_INFO "Deep idle\n");
-		if ( loop_sdmmc_check() || check_fb_op() ||
-				check_onenand_op() || check_dma_op() ||
-				check_usbotg_op() )
-			s5pc110_enter_idle();
-		else
-			s5pc110_enter_deepidle();
-	}
+	if (state == &dev->states[2])
+		top = 0;
+	else 
+		top = 1;
+	
+	/* top (0) : TOP block retention
+	 * top (1) : TOP block on (safe state)
+	 * If there are bus transactions do not enter with
+	 * top block retention
+	 * */
+	s5pc110_enter_deepidle(top);
+	
 	do_gettimeofday(&after);
 	local_irq_enable();
 	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
 			(after.tv_usec - before.tv_usec);
 	return idle_time;
+}
+
+static int s5pc110_enter_idle_bm(struct cpuidle_device *dev,
+				struct cpuidle_state *state)
+{
+	struct cpuidle_state *new_state = state;
+
+	if (s5pc110_idle_bm_check()) {
+		BUG_ON(!dev->safe_state);
+		new_state = dev->safe_state;
+	}
+
+	dev->last_state = new_state;
+
+	return s5pc110_enter_idle_lpaudio(dev, new_state);
 }
 
 int s5pc110_setup_lpaudio(unsigned int mode)
@@ -381,23 +425,32 @@ int s5pc110_setup_lpaudio(unsigned int mode)
 		strcpy(device->states[0].desc, "ARM clock gating - WFI");
 		break;
 	case LPAUDIO_MODE: 	/* LP audio mode */		
-		device->state_count = 2;
+		device->state_count = 3;
 		/* Wait for interrupt state */
-		device->states[0].enter = s5pc110_enter_idle_lpaudio;
+		device->states[0].enter = s5pc110_enter_idle_normal;
 		device->states[0].exit_latency = 1;	/* uS */
 		device->states[0].target_residency = 10000;
 		device->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
 		strcpy(device->states[0].name, "NORMAL IDLE");
 		strcpy(device->states[0].desc, "S5PC110 normal idle");
-#if 1
-		/* Wait for interrupt and DDR self refresh state */
-		device->states[1].enter = s5pc110_enter_idle_lpaudio;
-		device->states[1].exit_latency = 300;	/* uS */
+		
+		/* Wait for interrupt and TOP block on */
+		device->states[1].enter = s5pc110_enter_idle_bm;
+		device->states[1].exit_latency = 10;	/* uS */
 		device->states[1].target_residency = 10000;
-		device->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
-		strcpy(device->states[1].name, "DEEP IDLE");
-		strcpy(device->states[1].desc, "S5PC110 deep idle");
-#endif
+		device->states[1].flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_CHECK_BM;
+		strcpy(device->states[1].name, "DEEP IDLE - TOP ON");
+		strcpy(device->states[1].desc, "S5PC110 deep idle with top on");
+		
+		/* Wait for interrupt and TOP block retention */
+		device->states[2].enter = s5pc110_enter_idle_bm;
+		device->states[2].exit_latency = 300;	/* uS */
+		device->states[2].target_residency = 10000;
+		device->states[2].flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_CHECK_BM;
+		strcpy(device->states[2].name, "DEEP IDLE - TOP RETENTION");
+		strcpy(device->states[2].desc, "S5PC110 deep idle with top retention");
+		
+		device->safe_state = &device->states[1];
 		break;
 	default:
 		printk(KERN_ERR "Can't find cpuidle mode %d\n", mode);
