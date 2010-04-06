@@ -1169,7 +1169,7 @@ static int s3cfb_probe(struct platform_device *pdev)
 
 	/* irq */
 	fbdev->irq = platform_get_irq(pdev, 0);
-	if (request_irq(fbdev->irq, s3cfb_irq_frame, IRQF_DISABLED,
+	if (request_irq(fbdev->irq, s3cfb_irq_frame, IRQF_SHARED,
 			pdev->name, fbdev)) {
 		dev_err(fbdev->dev, "request_irq failed\n");
 		ret = -EINVAL;
