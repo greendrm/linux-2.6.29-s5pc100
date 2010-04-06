@@ -268,27 +268,26 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 	/* ensure INF_REG0  has the resume address */
 	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
+	/* Save current VIC_INT_ENABLE register*/
+	vic_regs[0] = __raw_readl(S5PC110_VIC0REG(VIC_INT_ENABLE));
+	vic_regs[1] = __raw_readl(S5PC110_VIC1REG(VIC_INT_ENABLE));
+	vic_regs[2] = __raw_readl(S5PC110_VIC2REG(VIC_INT_ENABLE));
+	vic_regs[3] = __raw_readl(S5PC110_VIC3REG(VIC_INT_ENABLE));
+
+	/* Disable all interrupt through VIC */
+	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
+	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
+
 	if (top_on == 0) {
-		/* Save current VIC_INT_ENABLE register*/
-		vic_regs[0] = __raw_readl(S5PC110_VIC0REG(VIC_INT_ENABLE));
-		vic_regs[1] = __raw_readl(S5PC110_VIC1REG(VIC_INT_ENABLE));
-		vic_regs[2] = __raw_readl(S5PC110_VIC2REG(VIC_INT_ENABLE));
-		vic_regs[3] = __raw_readl(S5PC110_VIC3REG(VIC_INT_ENABLE));
-
-		/* Disable all interrupt through VIC */
-		__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
-		__raw_writel(0xffffffff, S5PC110_VIC1REG(VIC_INT_ENABLE_CLEAR));
-		__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
-		__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
-
 		/* GPIO Power Down Control */
 		s5pc110_gpio_pdn_conf();
 
 		/* Wakeup source configuration for deep-idle */
 		tmp = __raw_readl(S5P_WAKEUP_MASK);
 		/* Wakeup sources are all enable */
-		tmp |= 0xffff;
-		tmp &= ~((1<<13) | (1<<2));
+		tmp &= ~0xffff;
 		__raw_writel(tmp, S5P_WAKEUP_MASK);
 	
 		/* Clear wakeup status register */
@@ -325,7 +324,7 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 	}
 	/* Entering deep-idle mode with WFI instruction */
 	if (s5pc110_cpu_save(regs_save) == 0)
-		s5pc110_deepidle(top_on);
+		s5pc110_deepidle();
 
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));	// No DEEP IDLE
@@ -338,11 +337,11 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 		tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
 		__raw_writel(tmp, S5P_OTHERS);
 		
-		__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
-		__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
-		__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
-		__raw_writel(vic_regs[3], S5PC110_VIC3REG(VIC_INT_ENABLE));
 	}
+	__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
+	__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
+	__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
+	__raw_writel(vic_regs[3], S5PC110_VIC3REG(VIC_INT_ENABLE));
 }	
 
 static struct cpuidle_driver s5pc110_idle_driver = {

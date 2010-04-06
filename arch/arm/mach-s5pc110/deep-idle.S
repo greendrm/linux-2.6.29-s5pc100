@@ -79,13 +79,8 @@ ENDPROC(v7_flush_cache_for_deepidle)
 
 ENTRY(s5pc110_deepidle)
 	stmfd	sp!, {r4-r5, r7, r9-r11, lr}
-	
-	mov	r4, r1
-	
-	bl	v7_flush_cache_for_deepidle
 
-	cmp	r4, #0x1
-	beq	top_on
+	bl	v7_flush_cache_for_deepidle
 	
 	ldr	r0, =S5P_PWR_CFG
 	ldr	r1, [r0]
@@ -97,14 +92,7 @@ ENTRY(s5pc110_deepidle)
 	ldr	r1, [r0]
 	orr	r1, r1, #0x1
 	str	r1, [r0]
-	b	enter_deep
-top_on:	
-	ldr	r0, =S5P_PWR_CFG
-	ldr	r1, [r0]
-	bic	r1, r1, #(0x3<<8)
-	str	r1, [r0]
 
-enter_deep:
 	ldmfd	sp!, {r4-r5, r7, r9-r11, lr}
 	dmb
 	dsb
