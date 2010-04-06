@@ -66,6 +66,9 @@ static struct check_device_op chk_dev_op[] = {
 	{.base = 0, .pdev = &s3c_device_hsmmc2},
 	{.base = 0, .pdev = &s3c_device_hsmmc3},
 	{.base = 0, .pdev = &s3c_device_onenand},
+	{.base = 0, .pdev = &s3c_device_i2c0},
+	{.base = 0, .pdev = &s3c_device_i2c1},
+	{.base = 0, .pdev = &s3c_device_i2c2},
 	{.base = 0, .pdev = NULL},
 };
 
@@ -190,6 +193,27 @@ static int check_usbotg_op(void)
 	return 0;
 }
 
+/* Check I2C */
+static int check_i2c_op(void)
+{
+	unsigned int val, ch;
+	void __iomem *base_addr;
+	
+	for (ch = 0; ch < 3; ch++) {
+
+		base_addr = chk_dev_op[(5 + ch)].base;
+
+		val = __raw_readl(base_addr + 0x04);
+
+		if (val & (1<<5)) {
+			printk("I2C ch:%d is working\n", ch);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 /* Before entering, deep-idle mode GPIO Powe Down Mode
  * Configuration register has to be set with same state
  * in Normal Mode
@@ -262,9 +286,9 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 
 		/* Wakeup source configuration for deep-idle */
 		tmp = __raw_readl(S5P_WAKEUP_MASK);
-		/* RTC TICK and I2S are enabled as wakeup sources */
+		/* Wakeup sources are all enable */
 		tmp |= 0xffff;
-		tmp &= ~((1<<2) | (1<<13));
+		tmp &= ~((1<<13) | (1<<2));
 		__raw_writel(tmp, S5P_WAKEUP_MASK);
 	
 		/* Clear wakeup status register */
@@ -301,7 +325,7 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 	}
 	/* Entering deep-idle mode with WFI instruction */
 	if (s5pc110_cpu_save(regs_save) == 0)
-		s5pc110_deepidle();
+		s5pc110_deepidle(top_on);
 
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));	// No DEEP IDLE
@@ -313,7 +337,7 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 		tmp = __raw_readl(S5P_OTHERS);
 		tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
 		__raw_writel(tmp, S5P_OTHERS);
-
+		
 		__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
 		__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
 		__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
@@ -351,7 +375,7 @@ static int s5pc110_idle_bm_check(void)
 {
 	if ( loop_sdmmc_check() || check_fb_op() ||
 			check_onenand_op() || check_dma_op() ||
-			check_usbotg_op() )
+			check_usbotg_op() || check_i2c_op() )
 		return 1;
 	else
 		return 0;
@@ -399,8 +423,11 @@ static int s5pc110_enter_idle_bm(struct cpuidle_device *dev,
 	}
 
 	dev->last_state = new_state;
-
-	return s5pc110_enter_idle_lpaudio(dev, new_state);
+	
+	if (new_state == &dev->states[0])
+		return s5pc110_enter_idle_normal(dev, new_state);
+	else
+		return s5pc110_enter_idle_lpaudio(dev, new_state);
 }
 
 int s5pc110_setup_lpaudio(unsigned int mode)
@@ -449,8 +476,11 @@ int s5pc110_setup_lpaudio(unsigned int mode)
 		device->states[2].flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_CHECK_BM;
 		strcpy(device->states[2].name, "DEEP IDLE - TOP RETENTION");
 		strcpy(device->states[2].desc, "S5PC110 deep idle with top retention");
-		
+#if defined(CONFIG_DIDLE_TOP_ON)
 		device->safe_state = &device->states[1];
+#else
+		device->safe_state = &device->states[0];
+#endif
 		break;
 	default:
 		printk(KERN_ERR "Can't find cpuidle mode %d\n", mode);
