@@ -875,9 +875,11 @@ static void sdhci_send_command(struct sdhci_host *host, struct mmc_command *cmd)
 
 	host->cmd = cmd;
 
-	if (host->mmc->caps & MMC_CAP_CLOCK_GATING)
+	if (host->mmc->caps & MMC_CAP_CLOCK_GATING) {
+		del_timer(&host->clock_timer);
 		if(host->clock_to_restore != 0 && host->clock == 0)
 			sdhci_set_clock(host, host->clock_to_restore);
+	}
 
 	sdhci_prepare_data(host, cmd->data);
 
@@ -1282,8 +1284,8 @@ static void sdhci_tasklet_finish(unsigned long param)
 	if (host->mmc->caps & MMC_CAP_CLOCK_GATING) {
 		/* Disable the clock for power saving */
 		if (host->clock != 0) {
-			host->clock_to_restore = host->clock;
-			sdhci_set_clock(host, 0);
+			mod_timer(&host->clock_timer,
+				  jiffies + msecs_to_jiffies(10));
 		}
 	}
 
@@ -1329,6 +1331,27 @@ static void sdhci_timeout_timer(unsigned long data)
 	}
 
 	mmiowb();
+	spin_unlock_irqrestore(&host->lock, flags);
+}
+
+static void sdhci_clock_gate_timer(unsigned long data)
+{
+	struct sdhci_host *host;
+	unsigned long flags;
+	u32 mask;
+
+	host = (struct sdhci_host*)data;
+	mask = SDHCI_CMD_INHIBIT | SDHCI_DATA_INHIBIT;
+
+	spin_lock_irqsave(&host->lock, flags);
+
+	if (readl(host->ioaddr + SDHCI_PRESENT_STATE) & mask) {
+		mod_timer(&host->clock_timer, jiffies + msecs_to_jiffies(10));
+	} else {
+		host->clock_to_restore = host->clock;
+		sdhci_set_clock(host, 0);
+	}
+
 	spin_unlock_irqrestore(&host->lock, flags);
 }
 
@@ -1833,6 +1856,9 @@ int sdhci_add_host(struct sdhci_host *host)
 		sdhci_tasklet_finish, (unsigned long)host);
 
 	setup_timer(&host->timer, sdhci_timeout_timer, (unsigned long)host);
+	if (host->mmc->caps & MMC_CAP_CLOCK_GATING)
+		setup_timer(&host->clock_timer, sdhci_clock_gate_timer,
+			    (unsigned long)host);
 
 	ret = request_irq(host->irq, sdhci_irq, IRQF_SHARED,
 		mmc_hostname(mmc), host);
@@ -1915,6 +1941,9 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
 	free_irq(host->irq, host);
 
 	del_timer_sync(&host->timer);
+
+	if (host->mmc->caps & MMC_CAP_CLOCK_GATING)
+		del_timer_sync(&host->clock_timer);
 
 	tasklet_kill(&host->card_tasklet);
 	tasklet_kill(&host->finish_tasklet);
