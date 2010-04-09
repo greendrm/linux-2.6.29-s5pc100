@@ -290,7 +290,12 @@ static int s3cfb_set_alpha_info(struct fb_var_screeninfo *var,
 	else {
 		win->alpha.mode = PLANE_BLENDING;
 		win->alpha.channel = 0;
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+		win->alpha.avalue_h = S3CFB_AVALUE_H(0xff, 0xff, 0xff);
+		win->alpha.avalue_l = S3CFB_AVALUE_L(0xff, 0xff, 0xff);
+#else
 		win->alpha.value = S3CFB_AVALUE(0xf, 0xf, 0xf);
+#endif
 	}
 
 	return 0;
@@ -614,9 +619,18 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd, unsigned long arg)
 		else {
 			win->alpha.mode = PLANE_BLENDING;
 			win->alpha.channel = p.user_alpha.channel;
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+			win->alpha.avalue_h =
+			    S3CFB_AVALUE_H(p.user_alpha.red,
+					 p.user_alpha.green, p.user_alpha.blue);
+			win->alpha.avalue_l =
+			    S3CFB_AVALUE_L(p.user_alpha.red,
+					 p.user_alpha.green, p.user_alpha.blue);
+#else
 			win->alpha.value =
 			    S3CFB_AVALUE(p.user_alpha.red,
 					 p.user_alpha.green, p.user_alpha.blue);
+#endif
 
 			s3cfb_set_alpha_blending(fbdev, win->id);
 		}
