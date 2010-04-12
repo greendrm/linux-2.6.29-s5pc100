@@ -26,7 +26,12 @@
 */
 #define S3CFB_NAME		"s3cfb"
 
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+#define S3CFB_AVALUE_H(r, g, b)	(((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4))
+#define S3CFB_AVALUE_L(r, g, b)	(((r & 0xf) << 16) | ((g & 0xf) << 8) | ((b & 0xf) << 0))
+#else
 #define S3CFB_AVALUE(r, g, b)	(((r & 0xf) << 8) | ((g & 0xf) << 4) | ((b & 0xf) << 0))
+#endif
 #define S3CFB_CHROMA(r, g, b)	(((r & 0xff) << 16) | ((g & 0xff) << 8) | ((b & 0xff) << 0))
 
 
@@ -84,12 +89,20 @@ enum s3cfb_mem_owner_t {
  * @channel:		alpha channel (0/1)
  * @value:		alpha value (for plane blending)
 */
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+struct s3cfb_alpha {
+	enum 		s3cfb_alpha_t mode;
+	int		channel;
+	unsigned int	avalue_h;
+	unsigned int	avalue_l;
+};
+#else
 struct s3cfb_alpha {
 	enum 		s3cfb_alpha_t mode;
 	int		channel;
 	unsigned int	value;
 };
-
+#endif
 /*
  * struct s3cfb_chroma
  * @enabled:		if chroma key function enabled

@@ -587,7 +587,9 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 {
 	struct s3cfb_window *win = ctrl->fb[id]->par;
 	struct s3cfb_alpha *alpha = &win->alpha;
-	u32 avalue = 0, cfg;
+	u32 avalue_h = 0;
+	u32 avalue_l = 0;
+	u32 cfg;
 
 	if (id == 0) {
 		dev_err(ctrl->dev, "[fb%d] does not support alpha blending\n",
@@ -611,15 +613,24 @@ int s3cfb_set_alpha_blending(struct s3cfb_global *ctrl, int id)
 
 		if (alpha->channel == 0) {
 			cfg |= S3C_WINCON_ALPHA0_SEL;
-			avalue = (alpha->value << S3C_VIDOSD_ALPHA0_SHIFT);
+			avalue_h = (alpha->avalue_h << S3C_VIDOSD_ALPHA0_SHIFT);
+			avalue_l = alpha->avalue_l;
 		} else {
 			cfg |= S3C_WINCON_ALPHA1_SEL;
-			avalue = (alpha->value << S3C_VIDOSD_ALPHA1_SHIFT);
+			avalue_h = (alpha->avalue_h << S3C_VIDOSD_ALPHA1_SHIFT);
+			avalue_l = alpha->avalue_l;
+
 		}
 	}
 
 	writel(cfg, ctrl->regs + S3C_WINCON(id));
-	writel(avalue, ctrl->regs + S3C_VIDOSD_C(id));
+	if (alpha->channel == 0) {
+		writel(avalue_h, ctrl->regs + S3C_VIDOSD_C(id));
+		writel(avalue_l, ctrl->regs + S3C_ALPHA_0(id));
+	} else {
+		writel(avalue_h, ctrl->regs + S3C_VIDOSD_C(id));
+		writel(avalue_l, ctrl->regs + S3C_ALPHA_1(id));
+	}
 
 	return 0;
 }

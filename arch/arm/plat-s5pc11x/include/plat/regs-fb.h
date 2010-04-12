@@ -27,6 +27,8 @@
 #define S3C_KEYCON(x)		S3C_LCDREG(0x0140 + ((x - 1) * 0x08))
 #define S3C_KEYVAL(x)		S3C_LCDREG(0x0144 + ((x - 1) * 0x08))
 #define S3C_WINMAP(x)		S3C_LCDREG(0x0180 + (x * 0x04))
+#define S3C_ALPHA_0(x)		S3C_LCDREG(0x0200 + (x * 0x08))
+#define S3C_ALPHA_1(x)		S3C_LCDREG(0x0204 + (x * 0x08))
 
 /*
  * Register Map
@@ -120,17 +122,6 @@
 
 #define S3C_WPALCON_H		S3C_LCDREG(0x019C)	/* Window Palette control */
 #define S3C_WPALCON_L		S3C_LCDREG(0x01A0)	/* Window Palette control */
-
-#define S3C_VIDW0ALPHA0		S3C_LCDREG(0x0200)	/* Window 0 alpha value 0 */
-#define S3C_VIDW0ALPHA1		S3C_LCDREG(0x0204)	/* Window 0 alpha value 1 */
-#define S3C_VIDW1ALPHA0		S3C_LCDREG(0x0208)	/* Window 1 alpha value 0 */
-#define S3C_VIDW1ALPHA1		S3C_LCDREG(0x020C)	/* Window 1 alpha value 1 */
-#define S3C_VIDW2ALPHA0		S3C_LCDREG(0x0210)	/* Window 2 alpha value 0 */
-#define S3C_VIDW2ALPHA1		S3C_LCDREG(0x0214)	/* Window 2 alpha value 1 */
-#define S3C_VIDW3ALPHA0		S3C_LCDREG(0x0218)	/* Window 3 alpha value 0 */
-#define S3C_VIDW3ALPHA1		S3C_LCDREG(0x021C)	/* Window 3 alpha value 1 */
-#define S3C_VIDW4ALPHA0		S3C_LCDREG(0x0220)	/* Window 4 alpha value 0 */
-#define S3C_VIDW4ALPHA1		S3C_LCDREG(0x0224)	/* Window 4 alpha value 1 */
 
 #define S3C_BLENDEQ1		S3C_LCDREG(0x0244)	/* Window 1 blending equation control */
 #define S3C_BLENDEQ2		S3C_LCDREG(0x0248)	/* Window 2 blending equation control */
