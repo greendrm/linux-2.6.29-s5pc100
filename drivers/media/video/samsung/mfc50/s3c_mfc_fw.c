@@ -6,9 +6,6 @@
  *
  * S5PV210 - MFC fw binary (firmware version : 20100325)
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 unsigned char s3c_mfc_fw_code[] = {
