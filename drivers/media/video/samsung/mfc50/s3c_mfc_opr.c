@@ -1300,7 +1300,8 @@ static SSBSIP_MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx *
 	} else {
 		#if 1
 		if (mfc_ctx->IsPackedPB) {
-			if (mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) {
+			if ((mfc_ctx->FrameType == MFC_RET_FRAME_P_FRAME) ||
+				(mfc_ctx->FrameType == MFC_RET_FRAME_I_FRAME)) {
 				out_display_Y_addr = READL(S3C_FIMV_SI_DISPLAY_Y_ADR);
 				out_display_C_addr = READL(S3C_FIMV_SI_DISPLAY_C_ADR);
 			} else {
