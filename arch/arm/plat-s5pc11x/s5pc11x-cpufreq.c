@@ -337,8 +337,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	}
 
 	if (pll_changing) {
-		/* 7. Set Lock time = 300us*24Mhz = 7200(0x1c20) */
-		__raw_writel(0x1c20, S5P_APLL_LOCK);
+		/* 7. Set Lock time = 30us*24Mhz = 0x2cf */
+		__raw_writel(0x2cf, S5P_APLL_LOCK);
 
 		/* 8. Turn on APLL
 		 * 8-1. Set PMS values
@@ -455,7 +455,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 			__raw_writel(0x30c, S5P_VA_DMC1 + 0x30);
 			__raw_writel(0x287, S5P_VA_DMC0 + 0x30);
 		}
-
+#if 0
 		if (!pll_changing) {
 			/* Change divider for MFC and G3D */
 			reg = __raw_readl(S5P_CLK_DIV2);
@@ -468,6 +468,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 				reg = __raw_readl(S5P_CLK_DIV_STAT0);
 			} while (reg & ((1 << 16)|(1 << 17)));
 		}
+#endif
 	}
 
 	if (s3c_freqs.freqs.new < s3c_freqs.freqs.old) {
