@@ -1,5 +1,9 @@
 /*
- * arch/arm/mach-s5pc110/L1cache_flush.S 
+ * arch/arm/mach-s5pc110/deep-idle.S 
+ * 
+ * Copyright (c) Samsung Electronics Co. Ltd
+ *
+ * S5PC110 CPU driver helper functions
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
