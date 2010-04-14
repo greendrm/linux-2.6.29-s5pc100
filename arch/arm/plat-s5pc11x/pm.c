@@ -219,30 +219,6 @@ static struct sleep_save gpio_save[] = {
 	SAVE_ITEM(S5PC11X_GPG3DRV),
 	SAVE_ITEM(S5PC11X_GPG3CONPDN),
 	SAVE_ITEM(S5PC11X_GPG3PUDPDN),
-	SAVE_ITEM(S5PC11X_GPH0CON),
-	SAVE_ITEM(S5PC11X_GPH0DAT),
-	SAVE_ITEM(S5PC11X_GPH0PUD),
-	SAVE_ITEM(S5PC11X_GPH0DRV),
-	SAVE_ITEM(S5PC11X_GPH0CONPDN),
-	SAVE_ITEM(S5PC11X_GPH0PUDPDN),
-	SAVE_ITEM(S5PC11X_GPH1CON),
-	SAVE_ITEM(S5PC11X_GPH1DAT),
-	SAVE_ITEM(S5PC11X_GPH1PUD),
-	SAVE_ITEM(S5PC11X_GPH1DRV),
-	SAVE_ITEM(S5PC11X_GPH1CONPDN),
-	SAVE_ITEM(S5PC11X_GPH1PUDPDN),
-	SAVE_ITEM(S5PC11X_GPH2CON),
-	SAVE_ITEM(S5PC11X_GPH2DAT),
-	SAVE_ITEM(S5PC11X_GPH2PUD),
-	SAVE_ITEM(S5PC11X_GPH2DRV),
-	SAVE_ITEM(S5PC11X_GPH2CONPDN),
-	SAVE_ITEM(S5PC11X_GPH2PUDPDN),
-	SAVE_ITEM(S5PC11X_GPH3CON),
-	SAVE_ITEM(S5PC11X_GPH3DAT),
-	SAVE_ITEM(S5PC11X_GPH3PUD),
-	SAVE_ITEM(S5PC11X_GPH3DRV),
-	SAVE_ITEM(S5PC11X_GPH3CONPDN),
-	SAVE_ITEM(S5PC11X_GPH3PUDPDN),
 	SAVE_ITEM(S5PC11X_GPICON),
 	SAVE_ITEM(S5PC11X_GPIDAT),
 	SAVE_ITEM(S5PC11X_GPIPUD),
@@ -651,6 +627,9 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	tmp &= ~(S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
 	__raw_writel(tmp , S5P_SLEEP_CFG);
 #endif
+	tmp = __raw_readl(S5P_SLEEP_CFG);
+	tmp &= ~(S5P_SLEEP_CFG_OSC_EN | S5P_SLEEP_CFG_USBOSC_EN);
+	__raw_writel(tmp , S5P_SLEEP_CFG);
 
 #endif
 	/* Power mode Config setting */
@@ -684,6 +663,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 #endif
 	tmp = __raw_readl(S5P_WAKEUP_MASK);
 	tmp &= ~(1 << 1);
+	tmp |= (1 << 2);
 	__raw_writel(tmp, S5P_WAKEUP_MASK);
 
 	__raw_writel(0xffffffff, S5PC110_VIC0REG(VIC_INT_ENABLE_CLEAR));
@@ -780,12 +760,12 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	s5pc11x_pm_do_restore(uart_save, ARRAY_SIZE(uart_save));
 
 	DBG("post sleep, preparing to return\n");
-
+	
 	s5pc11x_pm_check_restore();
 
-	/* Release retention GPIO/MMC/UART IO */
+	/* Release retention GPIO/CF/MMC/UART IO */
 	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= ((1<<31) | (1<<29) | (1<<28));
+	tmp |= (0xf<<28);
 	__raw_writel(tmp, S5P_OTHERS);
 
 #ifdef DEBUG_S5P_PM
