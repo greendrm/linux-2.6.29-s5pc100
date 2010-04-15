@@ -115,11 +115,7 @@ static int s3cfb_enable_window(int id)
 		return -EFAULT;
 	} else {
 		win->enabled = 1;
-                if (fbdev->win_use >= 0)
-                        fbdev->win_use++;
-                else
-                        fbdev->win_use = 1;
-                return 0;
+		return 0;
 	}
 }
 
@@ -158,10 +154,6 @@ static int s3cfb_disable_window(int id)
 		return -EFAULT;
 	} else {
 		win->enabled = 0;
-                if (fbdev->win_use > 0)
-                        fbdev->win_use--;
-                else if (fbdev->win_use < 0)
-                        fbdev->win_use = 0;
                 return 0;
 	}
 }
@@ -382,34 +374,54 @@ static int s3cfb_set_par(struct fb_info *fb)
 	return 0;
 }
 
+static int s3cfb_check_win_status(void)
+{
+	struct s3c_platform_fb *pdata = to_fb_plat(fbdev->dev);
+	struct platform_device *pdev = to_platform_device(fbdev->dev);
+	struct fb_info *fb;
+	struct s3cfb_window *win;
+	int i;
+	int win_status = 0;
+
+	for (i = 0; i < pdata->nr_wins; i++) {
+		fb = fbdev->fb[i];
+		win = fb->par;
+		if (win->enabled) {
+			win_status++;
+		}
+	}
+
+	if(win_status > 0)
+		return 1;
+	else
+		return 0;
+}
+
 static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 {
 	struct s3cfb_window *win = fb->par;
 	struct s3c_platform_fb *pdata = to_fb_plat(fbdev->dev);
 	struct platform_device *pdev = to_platform_device(fbdev->dev);
+	int check_win;
 
 	dev_dbg(fbdev->dev, "change blank mode\n");
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
-		if (fb->fix.smem_start) {
-			if (fbdev->win_use == 0) {
-				pdata->clk_on(pdev, &fbdev->clock);
-				s3cfb_init_global();
-				s3cfb_set_clock(fbdev);
-				s3cfb_display_on(fbdev);
-				if (pdata->backlight_on)
-					pdata->backlight_on(pdev);
-				s3cfb_set_win_params(win->id);
-				s3cfb_enable_window(win->id);
-				if (fbdev->lcd->init_ldi)
-					fbdev->lcd->init_ldi();
-			} else if (fbdev->win_use > 0)
-				s3cfb_enable_window(win->id);
+		check_win = s3cfb_check_win_status();
+		if (check_win == 0) {
+			pdata->clk_on(pdev, &fbdev->clock);
+			s3cfb_init_global();
+			s3cfb_set_clock(fbdev);
+			s3cfb_display_on(fbdev);
+			if (pdata->backlight_on)
+				pdata->backlight_on(pdev);
+			s3cfb_set_win_params(win->id);
+			s3cfb_enable_window(win->id);
+			if (fbdev->lcd->init_ldi)
+				fbdev->lcd->init_ldi();
 		} else {
-			dev_info(fbdev->dev,
-					"[fb%d] no allocated memory for unblank\n",
-					win->id);
+			s3cfb_enable_window(win->id);
 		}
 
 		break;
@@ -421,17 +433,16 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 		break;
 		
 	case FB_BLANK_POWERDOWN:
-		if (fbdev->win_use == 1) {
-			s3cfb_disable_window(win->id);
+		s3cfb_disable_window(win->id);
+		check_win = s3cfb_check_win_status();
+		if (check_win == 0) {
 			if (fbdev->lcd->deinit_ldi)
 				fbdev->lcd->deinit_ldi();
 			if (pdata->backlight_off)
 				pdata->backlight_off(pdev);
 			s3cfb_display_off(fbdev);
 			pdata->clk_off(pdev, &fbdev->clock);
-		} else if (fbdev->win_use > 1) {
-			s3cfb_disable_window(win->id);
-		}
+		} 
 		break;
 
 	case FB_BLANK_VSYNC_SUSPEND:	/* fall through */
