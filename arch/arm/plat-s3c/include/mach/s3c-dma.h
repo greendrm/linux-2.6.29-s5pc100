@@ -14,6 +14,9 @@
 #include <mach/dma-pl330.h>
 #endif
 
+#define S3C2410_DMAF_AUTOSTART	(1 << 0)
+#define S3C2410_DMAF_CIRCULAR	(1 << 1)
+
 /* We use `virtual` dma channels to hide the fact we have only a limited
  * number of DMA channels, and not of all of them (dependant on the device)
  * can be attached to any DMA source. We therefore let the DMA core handle
@@ -302,6 +305,11 @@ struct s3c_sg_list {
 };
 
 /* functions --------------------------------------------------------------- */
+
+static inline bool s3c_dma_has_circular(void)
+{
+	return false;
+}
 
 /* s3c2410_dma_request
  *
