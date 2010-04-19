@@ -162,8 +162,9 @@ static int s3cfb_init_global(void)
 {
 	fbdev->output = OUTPUT_RGB;
 	fbdev->rgb_mode = MODE_RGB_P;
-
+	
 	fbdev->wq_count = 0;
+	fbdev->fb_off = 0;
 	init_waitqueue_head(&fbdev->wq);
 	mutex_init(&fbdev->lock);
 
@@ -435,13 +436,14 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 	case FB_BLANK_POWERDOWN:
 		s3cfb_disable_window(win->id);
 		check_win = s3cfb_check_win_status();
-		if (check_win == 0) {
+		if ((check_win == 0) && (fbdev->fb_off == 0)) {
 			if (fbdev->lcd->deinit_ldi)
 				fbdev->lcd->deinit_ldi();
 			if (pdata->backlight_off)
 				pdata->backlight_off(pdev);
 			s3cfb_display_off(fbdev);
 			pdata->clk_off(pdev, &fbdev->clock);
+			fbdev->fb_off = 1;
 		} 
 		break;
 
@@ -1293,12 +1295,14 @@ static int s3cfb_remove(struct platform_device *pdev)
 int s3cfb_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct s3c_platform_fb *pdata = to_fb_plat(&pdev->dev);
+	
+	if (fbdev->fb_off != 1) {
+		if (fbdev->lcd->deinit_ldi)
+			fbdev->lcd->deinit_ldi();
 
-	if (fbdev->lcd->deinit_ldi)
-		fbdev->lcd->deinit_ldi();
-
-	s3cfb_display_off(fbdev);
-	pdata->clk_off(pdev, &fbdev->clock);
+		s3cfb_display_off(fbdev);
+		pdata->clk_off(pdev, &fbdev->clock);
+	}
 
 	return 0;
 }
@@ -1329,11 +1333,11 @@ int s3cfb_resume(struct platform_device *pdev)
 	if (pdata->cfg_gpio)
 		pdata->cfg_gpio(pdev);
 
-	if (pdata->backlight_on)
-		pdata->backlight_on(pdev);
-
 	if (pdata->reset_lcd)
 		pdata->reset_lcd(pdev);
+
+	if (pdata->backlight_on)
+		pdata->backlight_on(pdev);
 
 	if (fbdev->lcd->init_ldi)
 		fbdev->lcd->init_ldi();

@@ -235,6 +235,7 @@ struct s3cfb_global {
 	int			enabled;
 	int			dsi;
 	int			interlace;
+	int			fb_off;
 	enum s3cfb_output_t 	output;
 	enum s3cfb_rgb_mode_t	rgb_mode;
 	struct s3cfb_lcd 	*lcd;
