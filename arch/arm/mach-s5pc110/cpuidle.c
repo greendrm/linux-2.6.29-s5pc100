@@ -1,16 +1,13 @@
 /*
  * arch/arm/mach-s5pc110/cpuidle.c
+ * 
+ * Copyright (c) Samsung Electronics Co. Ltd
  *
  * CPU idle driver for S5PC110
  *
  * This file is licensed under the terms of the GNU General Public
  * License version 2.  This program is licensed "as is" without any
  * warranty of any kind, whether express or implied.
- *
- * S5PC110 has several power mode to reduce power consumption.
- * CPU idle driver supports two power mode.
- * #1 Idle mode : WFI(ARM core clock-gating)
- * #2 Deep idle mode : WFI(ARM core power-gating, SDRAM self-refresh)
  */
 
 #include <linux/kernel.h>
@@ -39,7 +36,7 @@
 
 #define S5PC110_MAX_STATES	1
 
-extern void s5pc110_deepidle();
+extern void s5pc110_deepidle(void);
 
 /* For saving & restoring VIC register before entering
  * deep-idle mode
@@ -90,7 +87,7 @@ static int check_fb_op(void)
 /* If SD/MMC interface is working: return = 1 or not 0 */
 static int check_sdmmc_op(unsigned int ch)
 {
-	unsigned int reg;
+	unsigned int reg1, reg2;
 	void __iomem *base_addr;
 
 	if (unlikely(ch > 3)) {
@@ -99,37 +96,27 @@ static int check_sdmmc_op(unsigned int ch)
 	}
 
 	base_addr = chk_dev_op[ch].base;
-#if 0
 	/* Check CMDINHDAT[1] and CMDINHCMD [0] */
-	reg = readl(base_addr + S3C_HSMMC_PRNSTS);	
-	
-	if ( reg & (S3C_HSMMC_CMD_INHIBIT | S3C_HSMMC_DATA_INHIBIT)) {
+	reg1 = readl(base_addr + S3C_HSMMC_PRNSTS);
+	/* Check CLKCON [2]: ENSDCLK */
+	reg2 = readl(base_addr + S3C_HSMMC_CLKCON);
+
+	if ((reg1 & (S3C_HSMMC_CMD_INHIBIT | S3C_HSMMC_DATA_INHIBIT)) ||
+			(reg2 & (S3C_HSMMC_CLOCK_CARD_EN))) {
 		printk(KERN_INFO "sdmmc[%d] is working\n", ch);
 		return 1;
 	} else {
 		return 0;
 	}
-#else
-	/* Check CLKCON [2]: ENSDCLK */
-	reg = readl(base_addr + S3C_HSMMC_CLKCON);	
-	
-	if ( reg & (S3C_HSMMC_CLOCK_CARD_EN)) {
-		printk(KERN_INFO "sdmmc[%d] is working 0x%x\n", ch, reg);
-		return 1;
-	} else {
-		return 0;
-	}
-
-#endif
 }
 
 /* Check all sdmmc controller */
 static int loop_sdmmc_check(void)
 {
 	unsigned int iter;
-	
-	for (iter = 0; iter < 4; iter ++) {
-		if ( check_sdmmc_op(iter))
+
+	for (iter = 0; iter < 4; iter++) {
+		if (check_sdmmc_op(iter))
 			return 1;
 	}
 	return 0;
@@ -166,11 +153,11 @@ static int check_dma_op(void)
 	unsigned int val;
 
 	for (i = 0 ; i < S3C_DMA_CONTROLLERS ; i++) {
-		
+
 		for (j = 0 ; j < S3C_CHANNELS_PER_DMA ; j++) {
 			val = __raw_readl(dma_base[i] + S3C_DMAC_CS(j));
 			if (val & 0xf) {
-				printk(KERN_INFO "DMA[%d][%d] is working\n",i,j);
+				printk(KERN_INFO "DMA[%d][%d] is working\n", i, j);
 				return 1;
 			}
 		}
@@ -198,7 +185,7 @@ static int check_i2c_op(void)
 {
 	unsigned int val, ch;
 	void __iomem *base_addr;
-	
+
 	for (ch = 0; ch < 3; ch++) {
 
 		base_addr = chk_dev_op[(5 + ch)].base;
@@ -206,7 +193,7 @@ static int check_i2c_op(void)
 		val = __raw_readl(base_addr + 0x04);
 
 		if (val & (1<<5)) {
-			printk("I2C ch:%d is working\n", ch);
+			printk(KERN_INFO "I2C ch:%d is working\n", ch);
 			return 1;
 		}
 	}
@@ -220,7 +207,7 @@ static int check_i2c_op(void)
  **/
 #define GPIO_OFFSET		0x20
 #define GPIO_CON_PDN_OFFSET	0x10
-#define GPIO_PUD_PDN_OFFSET	0x14	
+#define GPIO_PUD_PDN_OFFSET	0x14
 #define GPIO_PUD_OFFSET		0x08
 
 static void s5pc110_gpio_pdn_conf(void)
@@ -231,7 +218,7 @@ static void s5pc110_gpio_pdn_conf(void)
 	do {
 		/* Keep the previous state in deep-idle mode */
 		__raw_writel(0xffff, gpio_base + GPIO_CON_PDN_OFFSET);
-		
+
 		/* Pull up-down state in deep-idle is same as normal */
 		val = __raw_readl(gpio_base + GPIO_PUD_OFFSET);
 		__raw_writel(val, gpio_base + GPIO_PUD_PDN_OFFSET);
@@ -246,8 +233,8 @@ static void s5pc110_enter_idle(void)
 	unsigned long tmp;
 
 	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &=~ ((3<<30)|(3<<28)|(1<<0));	// No DEEP IDLE
-	tmp |= ((2<<30)|(2<<28));		// TOP logic : ON
+	tmp &= ~((3<<30)|(3<<28)|(1<<0));
+	tmp |= ((2<<30)|(2<<28));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
 	tmp = __raw_readl(S5P_PWR_CFG);
@@ -257,14 +244,14 @@ static void s5pc110_enter_idle(void)
 	cpu_do_idle();
 }
 
-static void s5pc110_enter_deepidle(unsigned int top_on)
+static void s5pc110_enter_deepidle(void)
 {
 	unsigned long tmp;
 
 	/* store the physical address of the register recovery block */
 	__raw_writel(phy_regs_save, S5P_INFORM2);
-	
-	__raw_writel(DEEPIDLE_MODE, S5P_INFORM1);		
+
+	__raw_writel(DEEPIDLE_MODE, S5P_INFORM1);
 	/* ensure INF_REG0  has the resume address */
 	__raw_writel(virt_to_phys(s5pc110_cpu_resume), S5P_INFORM0);
 
@@ -280,69 +267,47 @@ static void s5pc110_enter_deepidle(unsigned int top_on)
 	__raw_writel(0xffffffff, S5PC110_VIC2REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5PC110_VIC3REG(VIC_INT_ENABLE_CLEAR));
 
-	if (top_on == 0) {
-		/* GPIO Power Down Control */
-		s5pc110_gpio_pdn_conf();
+	/* GPIO Power Down Control */
+	s5pc110_gpio_pdn_conf();
 
-		/* Wakeup source configuration for deep-idle */
-		tmp = __raw_readl(S5P_WAKEUP_MASK);
-		/* Wakeup sources are all enable */
-		tmp &= ~0xffff;
-		__raw_writel(tmp, S5P_WAKEUP_MASK);
-	
-		/* Clear wakeup status register */
-		tmp = __raw_readl(S5P_WAKEUP_STAT);
-		__raw_writel(tmp, S5P_WAKEUP_STAT);
+	/* Wakeup source configuration for deep-idle */
+	tmp = __raw_readl(S5P_WAKEUP_MASK);
+	/* Wakeup sources are all enable */
+	tmp &= ~0xffff;
+	__raw_writel(tmp, S5P_WAKEUP_MASK);
 
-		/* IDLE config register set */
-		/* TOP Memory retention off */
-		/* TOP Memory LP mode       */
-		/* ARM_L2_Cacheret on       */
-		tmp = __raw_readl(S5P_IDLE_CFG);
-		tmp &= ~(0x3f << 26);
-		tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
-		__raw_writel(tmp, S5P_IDLE_CFG);
-	} else {
-		/* Wakeup source configuration for deep-idle */
-		tmp = __raw_readl(S5P_WAKEUP_MASK);
-		/* All interrupts are enabled as wakeup sources */
-		tmp &= ~0xffff;
-		__raw_writel(tmp, S5P_WAKEUP_MASK);
-	
-		/* Clear wakeup status register */
-		tmp = __raw_readl(S5P_WAKEUP_STAT);
-		__raw_writel(tmp, S5P_WAKEUP_STAT);
+	/* Clear wakeup status register */
+	tmp = __raw_readl(S5P_WAKEUP_STAT);
+	__raw_writel(tmp, S5P_WAKEUP_STAT);
 
-		/* IDLE config register set */
-		/* TOP Logic : on */
-		/* TOP Memory : on */
-		/* ARM_L2_Cache : Ret       */
-		tmp = __raw_readl(S5P_IDLE_CFG);
-		tmp &= ~(0x3f << 26);
-		tmp |= ((1<<31) | (1<<29) | (1<<26) | (1<<0));
-		__raw_writel(tmp, S5P_IDLE_CFG);
-	}
+	/* IDLE config register set */
+	/* TOP Memory retention off */
+	/* TOP Memory LP mode       */
+	/* ARM_L2_Cacheret on       */
+	tmp = __raw_readl(S5P_IDLE_CFG);
+	tmp &= ~(0x3f << 26);
+	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
+	__raw_writel(tmp, S5P_IDLE_CFG);
+
 	/* Entering deep-idle mode with WFI instruction */
 	if (s5pc110_cpu_save(regs_save) == 0)
 		s5pc110_deepidle();
 
 	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));	// No DEEP IDLE
-	tmp |= ((2<<30)|(2<<28));			// TOP logic : ON
+	tmp &= ~((3<<30)|(3<<28)|(3<<26)|(1<<0));
+	tmp |= ((2<<30)|(2<<28));
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
-	if (top_on == 0) {
-		/* Release retention GPIO/MMC/UART IO */
-		tmp = __raw_readl(S5P_OTHERS);
-		tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
-		__raw_writel(tmp, S5P_OTHERS);
-		
-	}
+	/* Release retention GPIO/MMC/UART IO */
+	tmp = __raw_readl(S5P_OTHERS);
+	tmp |= ((1<<31) | (1<<30) | (1<<29) | (1<<28));
+	__raw_writel(tmp, S5P_OTHERS);
+
 	__raw_writel(vic_regs[0], S5PC110_VIC0REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[1], S5PC110_VIC1REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[2], S5PC110_VIC2REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[3], S5PC110_VIC3REG(VIC_INT_ENABLE));
-}	
+}
 
 static struct cpuidle_driver s5pc110_idle_driver = {
 	.name =         "s5pc110_idle",
@@ -360,7 +325,7 @@ static int s5pc110_enter_idle_normal(struct cpuidle_device *dev,
 
 	local_irq_disable();
 	do_gettimeofday(&before);
-	
+
 	s5pc110_enter_idle();
 
 	do_gettimeofday(&after);
@@ -372,9 +337,9 @@ static int s5pc110_enter_idle_normal(struct cpuidle_device *dev,
 
 static int s5pc110_idle_bm_check(void)
 {
-	if ( loop_sdmmc_check() || check_fb_op() ||
+	if (loop_sdmmc_check() || check_fb_op() ||
 			check_onenand_op() || check_dma_op() ||
-			check_usbotg_op() || check_i2c_op() )
+			check_usbotg_op() || check_i2c_op())
 		return 1;
 	else
 		return 0;
@@ -387,23 +352,12 @@ static int s5pc110_enter_idle_lpaudio(struct cpuidle_device *dev,
 {
 	struct timeval before, after;
 	int idle_time;
-	unsigned int top = 0;
 
 	local_irq_disable();
 	do_gettimeofday(&before);
 
-	if (state == &dev->states[2])
-		top = 0;
-	else 
-		top = 1;
-	
-	/* top (0) : TOP block retention
-	 * top (1) : TOP block on (safe state)
-	 * If there are bus transactions do not enter with
-	 * top block retention
-	 * */
-	s5pc110_enter_deepidle(top);
-	
+	s5pc110_enter_deepidle();
+
 	do_gettimeofday(&after);
 	local_irq_enable();
 	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
@@ -422,7 +376,7 @@ static int s5pc110_enter_idle_bm(struct cpuidle_device *dev,
 	}
 
 	dev->last_state = new_state;
-	
+
 	if (new_state == &dev->states[0])
 		return s5pc110_enter_idle_normal(dev, new_state);
 	else
@@ -432,7 +386,7 @@ static int s5pc110_enter_idle_bm(struct cpuidle_device *dev,
 int s5pc110_setup_lpaudio(unsigned int mode)
 {
 	struct cpuidle_device *device;
-	
+
 	int ret = 0;
 
 	cpuidle_pause_and_lock();
@@ -440,7 +394,7 @@ int s5pc110_setup_lpaudio(unsigned int mode)
 	cpuidle_disable_device(device);
 
 	switch (mode) {
-	case NORMAL_MODE:	/* Normal mode */
+	case NORMAL_MODE:
 		device->state_count = 1;
 		/* Wait for interrupt state */
 		device->states[0].enter = s5pc110_enter_idle_normal;
@@ -450,36 +404,28 @@ int s5pc110_setup_lpaudio(unsigned int mode)
 		strcpy(device->states[0].name, "IDLE");
 		strcpy(device->states[0].desc, "ARM clock gating - WFI");
 		break;
-	case LPAUDIO_MODE: 	/* LP audio mode */		
-		device->state_count = 3;
+	case LPAUDIO_MODE:
+		device->state_count = 2;
 		/* Wait for interrupt state */
 		device->states[0].enter = s5pc110_enter_idle_normal;
 		device->states[0].exit_latency = 1;	/* uS */
 		device->states[0].target_residency = 10000;
 		device->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
-		strcpy(device->states[0].name, "NORMAL IDLE");
+		strcpy(device->states[0].name, "IDLE");
 		strcpy(device->states[0].desc, "S5PC110 normal idle");
-		
-		/* Wait for interrupt and TOP block on */
-		device->states[1].enter = s5pc110_enter_idle_bm;
-		device->states[1].exit_latency = 10;	/* uS */
-		device->states[1].target_residency = 10000;
-		device->states[1].flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_CHECK_BM;
-		strcpy(device->states[1].name, "DEEP IDLE - TOP ON");
-		strcpy(device->states[1].desc, "S5PC110 deep idle with top on");
-		
+
 		/* Wait for interrupt and TOP block retention */
-		device->states[2].enter = s5pc110_enter_idle_bm;
-		device->states[2].exit_latency = 300;	/* uS */
-		device->states[2].target_residency = 10000;
-		device->states[2].flags = CPUIDLE_FLAG_TIME_VALID | CPUIDLE_FLAG_CHECK_BM;
-		strcpy(device->states[2].name, "DEEP IDLE - TOP RETENTION");
-		strcpy(device->states[2].desc, "S5PC110 deep idle with top retention");
-#if defined(CONFIG_DIDLE_TOP_ON)
-		device->safe_state = &device->states[1];
-#else
+		device->states[1].enter = s5pc110_enter_idle_bm;
+		device->states[1].exit_latency = 30;	/* uS */
+		device->states[1].target_residency = 10000;
+		device->states[1].flags = CPUIDLE_FLAG_TIME_VALID |
+						CPUIDLE_FLAG_CHECK_BM;
+		strcpy(device->states[1].name, "DEEP IDLE");
+		strcpy(device->states[1].desc, "S5PC110 deep idle");
+
+		/* Set safe_state of second idle */
 		device->safe_state = &device->states[0];
-#endif
+
 		break;
 	default:
 		printk(KERN_ERR "Can't find cpuidle mode %d\n", mode);
@@ -521,7 +467,7 @@ static int s5pc110_init_cpuidle(void)
 	device->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
 	strcpy(device->states[0].name, "IDLE");
 	strcpy(device->states[0].desc, "ARM clock gating - WFI");
-	
+
 	if (cpuidle_register_device(device)) {
 		printk(KERN_ERR "s5pc110_init_cpuidle: Failed registering\n");
 		return -EIO;
@@ -529,41 +475,50 @@ static int s5pc110_init_cpuidle(void)
 	regs_save = dma_alloc_coherent(NULL, 4096, &phy_regs_save, GFP_KERNEL);
 	if (regs_save == NULL) {
 		printk(KERN_ERR "DMA alloc error\n");
-		return -1;
+		return -ENOMEM;
 	}
-	printk("cpuidle: phy_regs_save:0x%x\n", phy_regs_save);
+	printk(KERN_INFO "cpuidle: phy_regs_save:0x%x\n", phy_regs_save);
 
 	/* Allocate memory region to access IP's directly */
-	for (i ; i < MAX_CHK_DEV ; i++) {
-		
+	for (i = 0 ; i < MAX_CHK_DEV ; i++) {
+
 		pdev = chk_dev_op[i].pdev;
-		
+
 		if (pdev == NULL)
 			break;
 
 		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-		if (!res)
+		if (!res) {
 			printk(KERN_ERR "failed to get io memory region\n");
-
+			return -EINVAL;
+		}
 		/* ioremap for register block */
 		chk_dev_op[i].base = ioremap(res->start, 4096);
-	
-		if (!chk_dev_op[i].base)
+
+		if (!chk_dev_op[i].base) {
 			printk(KERN_ERR "failed to remap io region\n");
+			return -EINVAL;
+		}
 	}
 
 	/* M,PDMA0,1 controller memory region allocation */
 	dma_base[0] = ioremap(S3C_PA_DMA, 4096);
-	if (dma_base[0] == NULL)
+	if (dma_base[0] == NULL) {
 		printk(KERN_ERR "M2M-DMA ioremap failed\n");
+		return -EINVAL;
+	}
 
 	dma_base[1] = ioremap(S3C_PA_PDMA, 4096);
-	if (dma_base[1] == NULL)
+	if (dma_base[1] == NULL) {
 		printk(KERN_ERR "PDMA0 ioremap failed\n");
+		return -EINVAL;
+	}
 
 	dma_base[2] = ioremap(S3C_PA_PDMA + 0x100000, 4096);
-	if (dma_base[2] == NULL)
+	if (dma_base[2] == NULL) {
 		printk(KERN_ERR "PDMA1 ioremap failed\n");
+		return -EINVAL;
+	}
 
 	return 0;
 }

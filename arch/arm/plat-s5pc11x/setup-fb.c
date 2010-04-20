@@ -192,10 +192,13 @@ err_clk1:
 
 int s3cfb_clk_off(struct platform_device *pdev, struct clk **clk)
 {
+	struct clk *hclk = NULL;
 	clk_disable(*clk);
 	clk_put(*clk);
-
 	*clk = NULL;
+
+	hclk = clk_get(&pdev->dev, "fimd");
+	clk_disable(hclk);
 	
 	return 0;
 }

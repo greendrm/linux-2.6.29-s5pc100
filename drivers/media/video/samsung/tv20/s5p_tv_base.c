@@ -673,10 +673,8 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 	
 #ifdef CONFIG_CPU_S5PC100	
 	TVOUT_IRQ_INIT(irq_num, ret, pdev, 3, out_hpd_irq, __s5p_hpd_irq, "hpd");
-#endif
-
 	set_irq_type(IRQ_EINT5, IRQ_TYPE_LEVEL_LOW);
-
+#endif
 	/* v4l2 video device registration */
 	for (i = 0;i < S5P_TVMAX_CTRLS;i++) {
 		s5ptv_status.video_dev[i] = &s5p_tvout[i];

@@ -145,9 +145,3 @@ config DM9000_16BIT
 	help
 		Some SMDKC110 board have 16bit data bus for DM9000 ethernet controller..
 
-config DIDLE_TOP_ON
-	bool "Support TOP ON mode in deep-idle (experimental)"
-	depends on MACH_SMDKC110 && CPU_IDLE
-	default n
-	help
-		Support additional CPU state between idle and deep-idle(top off)
