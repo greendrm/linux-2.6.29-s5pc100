@@ -1,27 +1,15 @@
-/*
- * linux/arch/arm/plat-s5pc11x/hr-time.c
+/* linux/arch/arm/plat-s5pc11x/hr-time.c
  *
- * S5PC11X Timers
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
- * Copyright (c) 2006 Samsung Electronics
- *
- *
- * S5PC11X (and compatible) Power Manager (Suspend-To-RAM) support
+ * S5PC11X (and compatible)  HRT support
+ * PWM 2/4 is used for this feature
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -89,6 +77,7 @@ static void s5pc11x_tick_timer_start(unsigned long load_val,
 	unsigned long tcfg1;
 	unsigned long tcfg0;
 	unsigned long tcstat;
+	unsigned long tcfg1_shift = S3C2410_TCFG1_SHIFT(4);
 
 	tcon  = __raw_readl(S3C2410_TCON);
 	tcfg1 = __raw_readl(S3C2410_TCFG1);
@@ -102,8 +91,8 @@ static void s5pc11x_tick_timer_start(unsigned long load_val,
 	tcnt--;
 	__raw_writel(tcnt, S3C2410_TCNTB(4));
 
-	tcfg1 &= ~S3C2410_TCFG1_MUX4_MASK;
-	tcfg1 |= S3C2410_TCFG1_MUX4_DIV2;
+	tcfg1 &= ~(S3C64XX_TCFG1_MUX_MASK << tcfg1_shift);
+	tcfg1 |= (S3C64XX_TCFG1_MUX_DIV1 << tcfg1_shift);
 
 	tcfg0 &= ~S3C2410_TCFG_PRESCALER1_MASK;
 	tcfg0 |= (0) << S3C2410_TCFG_PRESCALER1_SHIFT;
@@ -307,11 +296,9 @@ unsigned long long sched_clock(void)
 			increment = (overflow_cnt - 1) *
 					(cyc2ns(&clocksource_s5pc11x,
 					clocksource_s5pc11x.mask));
-			elapsed_ticks = (clocksource_s5pc11x.mask - last_ticks) + ticks;
-		} else {
-			elapsed_ticks = (ticks - last_ticks);
 		}
-
+		elapsed_ticks = (ticks - last_ticks) & clocksource_s5pc11x.mask;
+		
 		time_stamp += (cyc2ns(&clocksource_s5pc11x, elapsed_ticks) + increment);
 
 		old_overflows = s5pc11x_mpu_timer2_overflows;
