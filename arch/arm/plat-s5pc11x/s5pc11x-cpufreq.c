@@ -1,11 +1,9 @@
-/*
- *  linux/arch/arm/plat-s5pc11x/s5pc11x-cpufreq.c
+/*  linux/arch/arm/plat-s5pc11x/s5pc11x-cpufreq.c
+ *
+ *  Copyright (c) 2010 Samsung Electronics Co., Ltd.
  *
  *  CPU frequency scaling for S5PC110
- *
- *  Copyright (C) 2008 Samsung Electronics
- *
- *  Based on cpu-sa1110.c, Copyright (C) 2001 Russell King
+ *  Based on cpu-sa1110.c
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
