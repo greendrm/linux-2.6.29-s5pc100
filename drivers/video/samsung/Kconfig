@@ -29,11 +29,11 @@ config FB_S3C_DEFAULT_WINDOW
 	  This indicates the default window number, and which is used as console framebuffer
 
 config FB_S3C_YPANSTEP
-	int "Vertical Panning Step (0-2)"
+	int "Number of Frame buffers (1-2)"
 	depends on FB_S3C
 	default "1"
 	---help---
-	  This indicates the number of vertical steps for pan display, 0 means no pan display and
+	  This indicates the number of Frame buffers for pan display, 0 means no pan display and
 	  1 means the double size of video buffer will be allocated for default window
 
 choice
