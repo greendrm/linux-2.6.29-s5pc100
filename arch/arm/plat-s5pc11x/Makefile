@@ -32,7 +32,7 @@ obj-y				+= bootmem.o
 # CPU support
 
 obj-$(CONFIG_CPU_S5PC110_INIT)	+= s5pc110-init.o
-obj-$(CONFIG_CPU_S5PC110_CLOCK)	+= s5pc110-clock.o changediv.o
+obj-$(CONFIG_CPU_S5PC110_CLOCK)	+= s5pc110-clock.o
 obj-$(CONFIG_PM)                += pm.o
 obj-$(CONFIG_PM)                += sleep.o
 obj-$(CONFIG_CPU_FREQ)		+= s5pc11x-cpufreq.o
