@@ -1,7 +1,9 @@
-/* linux/include/asm-arm/plat-s3c24xx/pm.h
+/* arch/arm/plat-s5pc11x/include/plat/pm.h
  *
- * Copyright (c) 2004 Simtec Electronics
- *	Written by Ben Dooks, <ben@simtec.co.uk>
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on plat-s3c24xx/include/plat/pm.h
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

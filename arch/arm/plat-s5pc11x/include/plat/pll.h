@@ -1,11 +1,11 @@
-/* arch/arm/plat-s5pc1xx/include/plat/pll.h
+/* arch/arm/plat-s5pc11x/include/plat/pll.h
  *
- * Copyright 2008 Samsung Electronics
- * Copyright 2008 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
- *	http://armlinux.simtec.co.uk/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
- * S5PC1XX PLL code
+ * S5PC11X PLL code
+ *
+ * Based on plat-s3c24xx/include/plat/pll.h
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
