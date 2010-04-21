@@ -1,46 +1,12 @@
 /* linux/drivers/mtd/nand/s3c_nand.c
  *
- * Copyright (c) 2007 Samsung Electronics
- *
- * Samsung S3C NAND driver
- *
- * $Id: s3c_nand.c,v 1.3 2008/11/19 10:07:24 jsgood Exp $
+ * Copyright (c) 2009 Samsung Electronics Co., Ltd.
+ *		http://www.samsung.com/
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * Based on nand driver from Ben Dooks <ben@simtec.co.uk>
- * modified by scsuh. based on au1550nd.c
- *
- * Many functions for hardware ecc are implemented by jsgood.
- */
-
-/* Simple H/W Table for Implementation of S3C nand driver
- * by scsuh
- * ------------------------------------------------------------------
- * |    En/Dis CE           |  required  |                          |
- * |    En/Dis ALE          |      X     | * nand controller does   |
- * |    En/Dis CLE          |      X     | * nand controller does   |
- * |    Wait/Ready          |  required  |                          |
- * |    Write Command       |  required  |                          |
- * |    Write Address       |  required  |                          |
- * |    Write Data          |  required  |                          |
- * |    Read Data           |  required  |                          |
- * |    WP on/off           |  required  | * board specific         |
- * |    AP Specific Init    |  required  |                          |
- * ------------------------------------------------------------------
- */
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #include <linux/module.h>
 #include <linux/delay.h>
