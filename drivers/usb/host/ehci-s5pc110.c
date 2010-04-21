@@ -1,18 +1,17 @@
-/*
- * EHCI HCD (Host Controller Driver) for USB.
+/* ehci-s5pc110.c - Driver for USB HOST on Samsung S5PC110 processor
  *
- * Bus Glue for SAMSUNG S5PC110
+ * Bus Glue for SAMSUNG S5PC110 USB HOST EHCI Controller
  *
- * Based on "ohci-au1xxx.c" by Matt Porter <mporter@kernel.crashing.org>
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * Author: Jingoo Han <jg1.han@samsung.com>
  *
- * Modified for AMD Alchemy Au1200 EHC
- *  by K.Boge <karsten.boge@amd.com>
+ * Based on "ehci-au1xxx.c" by by K.Boge <karsten.boge@amd.com>
+ * Modified for SAMSUNG s5pc110 EHCI by Jingoo Han <jg1.han@samsung.com>
  *
- * Modified for SAMSUNG s5pc110 EHCI
- *  by Jingoo Han <jg1.han@samsung.com>
- *
- * This file is licenced under the GPL.
- */
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #include <linux/clk.h>
 #include <linux/platform_device.h>
