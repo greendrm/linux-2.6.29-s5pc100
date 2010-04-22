@@ -209,6 +209,19 @@ config S3C_DMA_PL330
 	help
 	  PL330 DMA supported
 
+choice
+	prompt "Select PL330 DMA Driver"
+	depends on S3C_DMA_PL330
+
+config OLD_DMA_PL330
+	bool "OLD S3C DMA Driver"
+
+config NEW_DMA_PL330
+	bool "NEW S3C DMA Driver"
+	select PL330
+
+endchoice
+
 config S3C_DEV_FB
 	bool
 	help

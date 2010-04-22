@@ -350,7 +350,11 @@ struct s3c_sg_list {
 
 static inline bool s3c_dma_has_circular(void)
 {
+#ifdef CONFIG_NEW_DMA_PL330
+	return true;
+#else
 	return false;
+#endif
 }
 
 /* s3c2410_dma_request
