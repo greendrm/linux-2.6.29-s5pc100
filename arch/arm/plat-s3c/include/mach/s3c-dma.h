@@ -362,7 +362,7 @@ extern int s3c2410_dma_config(unsigned int channel, int xferunit, int dcon);
  * configure the device we're talking to
 */
 
-extern int s3c2410_dma_devconfig(int channel, enum s3c2410_dmasrc source,
+extern int s3c2410_dma_devconfig(unsigned int channel, enum s3c2410_dmasrc source,
 				 int hwcfg, unsigned long devaddr);
 
 /* s3c2410_dma_getposition
