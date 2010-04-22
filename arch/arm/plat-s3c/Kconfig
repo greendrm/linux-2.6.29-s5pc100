@@ -222,6 +222,12 @@ config NEW_DMA_PL330
 
 endchoice
 
+config DMA_M2M_TEST
+	tristate "S3C DMA API Test client"
+	help
+	  Samsung DMA API test client. Say N unless you're debugging a
+	  DMA Device driver.
+
 config S3C_DEV_FB
 	bool
 	help
