@@ -104,6 +104,10 @@ int s3cfb_set_display_mode(struct s3cfb_global *ctrl)
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
 	cfg &= ~S3C_VIDCON0_PNRMODE_MASK;
 	cfg |= (ctrl->rgb_mode << S3C_VIDCON0_PNRMODE_SHIFT);
+#if defined (CONFIG_CPU_S5PC110_EVT1)
+	cfg |= S3C_VIDCON2_RGBORDER_E_RGB;
+	cfg |= S3C_VIDCON2_RGBORDER_O_RGB;
+#endif
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
 	return 0;
