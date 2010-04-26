@@ -7,12 +7,6 @@
 
 #define DMACH_LOW_LEVEL			(1<<28)	/* use this to specifiy hardware ch no */
 
-
-/* flags */
-#define S3C2410_DMAF_SLOW         	(1<<0)   /* slow, so don't worry about */
-#define S3C2410_DMAF_AUTOSTART    	(1<<1)   /* auto-start if buffer queued */
-#define S3C2410_DMAF_CIRCULAR		(1<<2)   /* set buffer queue as circular */
-
 /*=================================================*/
 /*   DMA Register Definitions for PL330 DMAC       */
 
@@ -110,11 +104,6 @@
 #define S3C_DMACONTROL_ES_SIZE_16	(1<<28)
 #define S3C_DMACONTROL_ES_SIZE_32	(2<<28)
 #define S3C_DMACONTROL_ES_SIZE_64	(3<<28)
-
-static inline bool s3c_dma_has_circular(void)
-{
-	return false; /* Circular buffers not yet supported */
-}
 
 #endif /* __ARM_MACH_DMA_PL330_H */
 

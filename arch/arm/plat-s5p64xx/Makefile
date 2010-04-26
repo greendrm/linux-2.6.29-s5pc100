@@ -43,6 +43,7 @@ obj-$(CONFIG_CPU_FREQ)		+= s5p64xx-cpufreq.o changediv.o
 # ltc3714.o
 obj-$(CONFIG_PM)                += pm.o
 obj-$(CONFIG_PM)                += sleep.o
+obj-$(CONFIG_NEW_DMA_PL330)	 += dev-dma.o
 
 # Device setup
 

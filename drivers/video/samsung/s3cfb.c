@@ -470,7 +470,7 @@ static int s3cfb_pan_display(struct fb_var_screeninfo *var, struct fb_info *fb)
 
 	dev_dbg(fbdev->dev, "[fb%d] yoffset for pan display: %d\n", win->id,
 		var->yoffset);
-
+	
 	s3cfb_set_buffer_address(fbdev, win->id);
 
 	return 0;
@@ -876,6 +876,10 @@ int s3cfb_direct_ioctl(int id, unsigned int cmd, unsigned long arg)
 
 	case S3CFB_GET_VSYNC_INT_STATUS:
 		ret = s3cfb_get_vsync_interrupt(fbdev);
+		break;
+
+	case S3CFB_PAN_DISPLAY:
+		ret = s3cfb_pan_display(argp, fbdev->fb[id]);
 		break;
 
 	default:

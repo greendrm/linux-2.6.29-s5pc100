@@ -72,6 +72,17 @@ extern struct platform_device s5pc11x_device_spi0;
 extern struct platform_device s5pc11x_device_spi1;
 extern struct platform_device s5pc11x_device_spi2;
 
+extern struct platform_device s5pc11x_device_mdma;
+extern struct platform_device s5pc11x_device_pdma0;
+extern struct platform_device s5pc11x_device_pdma1;
+
+extern struct platform_device s5pc1xx_device_mdma;
+extern struct platform_device s5pc1xx_device_pdma0;
+extern struct platform_device s5pc1xx_device_pdma1;
+
+extern struct platform_device s5p6442_device_mdma;
+extern struct platform_device s5p6442_device_pdma;
+
 extern struct platform_device s3c_device_nand;
 extern struct platform_device s3c_device_onenand;
 extern struct platform_device s3c_device_cfcon;

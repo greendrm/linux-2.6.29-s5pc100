@@ -20,11 +20,6 @@
 #define S3C_CANDIDATE_CHANNELS_PER_DMA  (16)
 #define S3C_DMA_CHANNELS		(S3C_DMA_CONTROLLERS*S3C_CHANNELS_PER_DMA)
 
-/* flags */
-#define S3C2410_DMAF_SLOW         	(1<<0)   /* slow, so don't worry about */
-#define S3C2410_DMAF_AUTOSTART    	(1<<1)   /* auto-start if buffer queued */
-#define S3C2410_DMAF_CIRCULAR		(1<<2)   /* set buffer queue as circular */
-
 /* DMA Register definitions */
 #define S3C2410_DCON_AUTORELOAD 	(0<<22)
 #define S3C2410_DCON_NORELOAD   	(1<<22)
@@ -178,10 +173,5 @@
 #define S3C_DMAC_CCONTROL0(ch)   	(S3C_DMAC_C0CONTROL0+ch*0x20)
 #define S3C_DMAC_CCONTROL1(ch)   	(S3C_DMAC_C0CONTROL1+ch*0x20)
 #define S3C_DMAC_CCONFIGURATION(ch)   	(S3C_DMAC_C0CONFIGURATION+ch*0x20)
-
-static inline bool s3c_dma_has_circular(void)
-{
-	return false; /* Circular buffers not yet supported */
-}
 
 #endif //__ARM_MACH_DMA_PL080_H

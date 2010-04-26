@@ -34,6 +34,7 @@ obj-$(CONFIG_S5PC1XX_SETUP_I2C0) += setup-i2c0.o
 obj-$(CONFIG_S5PC1XX_SETUP_I2C1) += setup-i2c1.o
 obj-$(CONFIG_S5PC1XX_ADC)        += adc.o
 obj-$(CONFIG_HAVE_PWM)		 += pwm.o
+obj-$(CONFIG_NEW_DMA_PL330)	 += dev-dma.o
 
 obj-$(CONFIG_SPI_S3C64XX)   += dev-spi.o
 

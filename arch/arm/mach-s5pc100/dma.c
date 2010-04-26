@@ -22,6 +22,7 @@
 #include <plat/dma.h>
 #include <plat/cpu.h>
 
+#ifdef CONFIG_OLD_DMA_PL330
 /* M2M DMAC */
 #ifndef DMA_CTRLCH
 #define MAP0(x) { \
@@ -429,11 +430,26 @@ static struct sysdev_driver s5pc100_dma_driver = {
 	.add	= s5pc100_dma_add,
 };
 
+#else
+
+#include <linux/platform_device.h>
+#include <plat/devs.h>
+
+static struct platform_device *s5pc100_dmacs[] __initdata = {
+	&s5pc1xx_device_mdma,
+	&s5pc1xx_device_pdma0,
+	&s5pc1xx_device_pdma1,
+};
+#endif
+
 static int __init s5pc100_dma_init(void)
 {
+#ifdef CONFIG_OLD_DMA_PL330
 	return sysdev_driver_register(&s5pc100_sysclass, &s5pc100_dma_driver);
+#else
+	platform_add_devices(s5pc100_dmacs, ARRAY_SIZE(s5pc100_dmacs));
+	return 0;
+#endif
 }
 
 arch_initcall(s5pc100_dma_init);
-
-

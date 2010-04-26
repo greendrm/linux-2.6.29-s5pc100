@@ -14,6 +14,9 @@
 #include <mach/dma-pl330.h>
 #endif
 
+#define S3C2410_DMAF_AUTOSTART	(1 << 0)
+#define S3C2410_DMAF_CIRCULAR	(1 << 1)
+
 /* We use `virtual` dma channels to hide the fact we have only a limited
  * number of DMA channels, and not of all of them (dependant on the device)
  * can be attached to any DMA source. We therefore let the DMA core handle
@@ -63,19 +66,61 @@ enum dma_ch {
 	DMACH_AC97_PCMIN,
 	DMACH_AC97_MICIN,
 	DMACH_ONENAND_IN,
-	DMACH_3D_M2M0,
-	DMACH_3D_M2M1,
-	DMACH_3D_M2M2,
-	DMACH_3D_M2M3,
-	DMACH_3D_M2M4,
-	DMACH_3D_M2M5,
-	DMACH_3D_M2M6,
-	DMACH_3D_M2M7,
-	DMACH_SPDIF_OUT,		
-	DMACH_MAX,		/* the end entry */
+	DMACH_SPDIF_OUT,
+	DMACH_UART0_RX,
+	DMACH_UART0_TX,
+	DMACH_UART1_RX,
+	DMACH_UART1_TX,
+	DMACH_UART2_RX,
+	DMACH_UART2_TX,
+	DMACH_UART3_RX,
+	DMACH_UART3_TX,
+	DMACH_IRDA,
+	DMACH_MSM_REQ0,
+	DMACH_MSM_REQ1,
+	DMACH_MSM_REQ2,
+	DMACH_MSM_REQ3,
+	DMACH_EXTGPIO,
+	DMACH_PWM,
+	DMACH_HSI_RX,
+	DMACH_HSI_TX,
+	/* Keep these M->M channels contiguous and at the end */
+	DMACH_MTOM_0,
+	DMACH_MTOM_1,
+	DMACH_MTOM_2,
+	DMACH_MTOM_3,
+	DMACH_MTOM_4,
+	DMACH_MTOM_5,
+	DMACH_MTOM_6,
+	DMACH_MTOM_7,
+	DMACH_MTOM_8,
+	DMACH_MTOM_9,
+	DMACH_MTOM_10,
+	DMACH_MTOM_11,
+	DMACH_MTOM_12,
+	DMACH_MTOM_13,
+	DMACH_MTOM_14,
+	DMACH_MTOM_15,
+	DMACH_MTOM_16,
+	DMACH_MTOM_17,
+	DMACH_MTOM_18,
+	DMACH_MAX,	/* the end entry */
 };
 
-#define DMACH_3D_M2M	DMACH_3D_M2M0
+#define DMACH_3D_M2M	DMACH_MTOM_0
+
+/*
+ * There's nothing 3D about Mem->Mem transfers.
+ * Still keep them for backward compatibility.
+ */
+#define DMACH_3D_M2M0	DMACH_MTOM_0
+#define DMACH_3D_M2M1	DMACH_MTOM_1
+#define DMACH_3D_M2M2	DMACH_MTOM_2
+#define DMACH_3D_M2M3	DMACH_MTOM_3
+#define DMACH_3D_M2M4	DMACH_MTOM_4
+#define DMACH_3D_M2M5	DMACH_MTOM_5
+#define DMACH_3D_M2M6	DMACH_MTOM_6
+#define DMACH_3D_M2M7	DMACH_MTOM_7
 
 /* types */
 
@@ -303,6 +348,15 @@ struct s3c_sg_list {
 
 /* functions --------------------------------------------------------------- */
 
+static inline bool s3c_dma_has_circular(void)
+{
+#ifdef CONFIG_NEW_DMA_PL330
+	return true;
+#else
+	return false;
+#endif
+}
+
 /* s3c2410_dma_request
  *
  * request a dma channel exclusivley
@@ -362,7 +416,7 @@ extern int s3c2410_dma_config(unsigned int channel, int xferunit, int dcon);
  * configure the device we're talking to
 */
 
-extern int s3c2410_dma_devconfig(int channel, enum s3c2410_dmasrc source,
+extern int s3c2410_dma_devconfig(unsigned int channel, enum s3c2410_dmasrc source,
 				 int hwcfg, unsigned long devaddr);
 
 /* s3c2410_dma_getposition

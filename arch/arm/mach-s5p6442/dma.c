@@ -24,6 +24,7 @@
 #include <plat/cpu.h>
 
 
+#ifdef CONFIG_OLD_DMA_PL330
 /* DMAC */
 #define MAP0(x) { \
 		[0]	= (x) | DMA_CH_VALID,	\
@@ -164,11 +165,24 @@ static struct sysdev_driver s5p6442_dma_driver = {
 	.add	= s5p6442_dma_add,
 };
 
+#else
+
+#include <linux/platform_device.h>
+#include <plat/devs.h>
+
+static struct platform_device *s5p6442_dmacs[] __initdata = {
+	&s5p6442_device_mdma,
+	&s5p6442_device_pdma,
+};
+#endif
+
 static int __init s5p6442_dma_init(void)
 {
+#ifdef CONFIG_OLD_DMA_PL330
 	return sysdev_driver_register(&s5p6442_sysclass, &s5p6442_dma_driver);
+#else
+	platform_add_devices(s5p6442_dmacs, ARRAY_SIZE(s5p6442_dmacs));
+	return 0;
+#endif
 }
-
 arch_initcall(s5p6442_dma_init);
-
-

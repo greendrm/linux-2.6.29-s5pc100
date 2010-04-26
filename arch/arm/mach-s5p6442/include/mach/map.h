@@ -101,6 +101,9 @@
 //These are not changed to support for s5p6442
 
 /* DMA controller */
+#define S5P6442_PA_MDMA		(0xE8000000)
+#define S5P6442_PA_PDMA		(0xE9000000)
+
 #define S5P64XX_PA_DMA		(0xE9000000)
 
 #define S5P64XX_PA_SMC9115	(0xA8000000)

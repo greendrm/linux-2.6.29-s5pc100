@@ -32,7 +32,7 @@ obj-y				+= bootmem.o
 # CPU support
 
 obj-$(CONFIG_CPU_S5PC110_INIT)	+= s5pc110-init.o
-obj-$(CONFIG_CPU_S5PC110_CLOCK)	+= s5pc110-clock.o changediv.o
+obj-$(CONFIG_CPU_S5PC110_CLOCK)	+= s5pc110-clock.o
 obj-$(CONFIG_PM)                += pm.o
 obj-$(CONFIG_PM)                += sleep.o
 obj-$(CONFIG_CPU_FREQ)		+= s5pc11x-cpufreq.o
@@ -43,6 +43,7 @@ obj-$(CONFIG_S5PC11X_SETUP_I2C1) += setup-i2c1.o
 obj-$(CONFIG_S5PC11X_SETUP_I2C2) += setup-i2c2.o
 obj-$(CONFIG_S5PC11X_ADC)        += adc.o
 obj-$(CONFIG_HAVE_PWM)		 += pwm.o
+obj-$(CONFIG_NEW_DMA_PL330)	 += dev-dma.o
 
 obj-$(CONFIG_SPI_S3C64XX)   += dev-spi.o
 

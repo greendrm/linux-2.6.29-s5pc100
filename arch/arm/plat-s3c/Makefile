@@ -25,7 +25,9 @@ obj-y				+= pwm-clock.o
 obj-y				+= gpio.o
 obj-y				+= gpio-config.o
 obj-$(CONFIG_S3C_DMA_PL080)	+= dma-pl080.o
-obj-$(CONFIG_S3C_DMA_PL330)	+= dma-pl330.o 
+obj-$(CONFIG_OLD_DMA_PL330)	+= dma-pl330.o
+obj-$(CONFIG_NEW_DMA_PL330)	+= s3c-pl330.o
+obj-$(CONFIG_DMA_M2M_TEST)	+= dma_m2m_test.o
 
 # devices
 

@@ -429,6 +429,7 @@ static inline int fimc_mmap_out_src(struct file *filp, struct vm_area_struct *vm
 	buf_length = ctrl->out->src[idx].length[FIMC_ADDR_Y] + \
 				ctrl->out->src[idx].length[FIMC_ADDR_CB] + \
 				ctrl->out->src[idx].length[FIMC_ADDR_CR];
+	buf_length = PAGE_ALIGN(buf_length);	/*FOR YUV420 3Plane */
 	if (size > buf_length) {
 		fimc_err("Requested mmap size is too big\n");
 		return -EINVAL;
