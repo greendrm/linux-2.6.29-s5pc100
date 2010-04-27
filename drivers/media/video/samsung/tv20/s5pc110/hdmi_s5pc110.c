@@ -1185,7 +1185,7 @@ static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_2) & ~(0xff<<0)) | (0<<0),
 		hdmi_base + S5P_HDMI_I2S_CH_ST_2);
 	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_3) & ~(3<<4 | 0xf<<0)) 
-			| (1<<4 | sample_frq<<0),
+			| (sample_frq<<0),
 		hdmi_base + S5P_HDMI_I2S_CH_ST_3);
 	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_4) & ~(0xf<<4 | 7<<1 | 1<<0)) 
 			| (0xf<<4 | 5<<1 | 1<<0),
@@ -1194,7 +1194,7 @@ static void __s5p_hdmi_audio_i2s_config(s5p_tv_audio_codec_type audio_codec,
 	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_0);
 	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_1);
 	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_2);
-	writel(0x02, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_3);
+	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_3);
 	writel(0x00, hdmi_base + S5P_HDMI_I2S_CH_ST_SH_4);
 
 	writel((readl(hdmi_base + S5P_HDMI_I2S_CH_ST_CON) & ~(1<<0)) | (1<<0),
