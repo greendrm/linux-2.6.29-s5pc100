@@ -39,6 +39,8 @@
 #define S5P_HDCP_AUTH_DEBUG 1
 #endif
 
+#define S5P_HDCP_DEBUG 1
+
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
 	printk("\t\t[HDCP] %s: " fmt, __FUNCTION__ , ## args)
@@ -196,6 +198,7 @@ static struct s5p_hdcp_info hdcp_info = {
 
 /* must be checked */
 extern u8 hdcp_protocol_status; // 0 - hdcp stopped, 1 - hdcp started, 2 - hdcp reset
+static bool sw_reset;
 
 /*
  * 1st Authentication step func.
@@ -571,6 +574,7 @@ void reset_authentication(void)
 	reg = s5p_hdmi_get_interrupts();
 	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
 
+	sw_reset = true;
 	s5p_hdmi_disable_interrupts(reg);
 
 	/* 2. Enable software HPD */
@@ -587,6 +591,8 @@ void reset_authentication(void)
 
 	/* 6. Unmask HPD plug and unplug interrupt */
 	s5p_hdmi_enable_interrupts(reg);
+
+	sw_reset = false;
 
 
 	/* clear result */
@@ -708,19 +714,24 @@ static int hdcp_loadkey(void)
  */
 static void start_encryption(void)
 {
-	u32  hdcp_status;
+	u32 hdcp_status;
+	u32 time_out = 100;
 
 	if (readl(hdmi_base + S5P_HDCP_CHECK_RESULT ) ==
 		Ri_MATCH_RESULT__YES) {
 
-		do {
-			hdcp_status = readl(hdmi_base + S5P_STATUS);
-			/* Wait for STATUS[7] to '1'*/
-		} while ((hdcp_status & AUTHENTICATED) != AUTHENTICATED);
+		while (time_out) {
 
-		/* Start encryption */
-		writel(HDCP_ENC_ENABLE, hdmi_base + S5P_ENC_EN);
-		HDCPPRINTK("Encryption start!!\n");
+			if (readl(hdmi_base + S5P_STATUS) & AUTHENTICATED) {
+				writel(HDCP_ENC_ENABLE,
+					hdmi_base + S5P_ENC_EN);
+				HDCPPRINTK("Encryption start!!\n");
+				break;
+			} else {
+				time_out--;
+				msleep(1);
+			}
+		}
 	} else {
 		writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
 		HDCPPRINTK("Encryption stop!!\n");
@@ -1081,6 +1092,7 @@ bool __s5p_start_hdcp(void)
 	reg = s5p_hdmi_get_interrupts();
 	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
 
+	sw_reset = true;
 	s5p_hdmi_disable_interrupts(reg);
 
 	/* 2. Enable software HPD */
@@ -1097,6 +1109,8 @@ bool __s5p_start_hdcp(void)
 
 	/* 6. Unmask HPD plug and unplug interrupt */
 	s5p_hdmi_enable_interrupts(reg);
+
+	sw_reset = false;
 
 	HDCPPRINTK("Stop Encryption by Start!!\n");
 
@@ -1586,8 +1600,10 @@ int __s5p_hdcp_init(void)
 }
 
 /* called by hpd */
-int s5p_hdcp_encrypt_stop(void)
+int s5p_hdcp_encrypt_stop(bool on)
 {
+	u32 reg;
+
 	/* clear interrupt pending all */
 	writeb(0x0, hdmi_base + S5P_HDCP_I2C_INT);
 	writeb(0x0, hdmi_base + S5P_HDCP_AN_INT);
@@ -1595,6 +1611,17 @@ int s5p_hdcp_encrypt_stop(void)
 	writeb(0x0, hdmi_base + S5P_HDCP_WDT_INT);
 
 	writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+
+	if (hdcp_info.hdcp_enable && !sw_reset) {
+		reg = readl(hdmi_base + S5P_HDCP_CTRL1);
+
+		if (on)
+			reg |= CP_DESIRED_EN;
+		else
+			reg &= ~CP_DESIRED_EN;
+
+		writel(reg, hdmi_base + S5P_HDCP_CTRL1);
+	}
 
 	HDCPPRINTK("Stop Encryption by HPD Event!!\n");
 

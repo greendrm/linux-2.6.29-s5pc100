@@ -206,8 +206,6 @@ int irq_hdmi(int irq)
 
 	if (flag & (1 << HDMI_IRQ_HPD_PLUG)) {
 
-		s5p_hdcp_encrypt_stop();
-
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 
 		atomic_set(&hpd_struct.state, HPD_HI);
@@ -216,11 +214,13 @@ int irq_hdmi(int irq)
 		last_hpd_state = HPD_HI;
 		wake_up_interruptible(&hpd_struct.waitq);
 
+		s5p_hdcp_encrypt_stop(true);
+
 		HPDIFPRINTK("HPD_HI\n");
 
 	} else if (flag & (1 << HDMI_IRQ_HPD_UNPLUG)) {
 
-		s5p_hdcp_encrypt_stop();
+		s5p_hdcp_encrypt_stop(false);
 
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
 
