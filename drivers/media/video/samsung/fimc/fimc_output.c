@@ -281,6 +281,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	u32 format = ctrl->out->pix.pixelformat;
 	u32 y_size = width * height;
 	u32 c_size = (width * height >> 1) + (width * height >> 4);
+	u32 uv_size = (width * height >> 1);
 	u32 cb_size = (width * height >> 2);
 	u32 cr_size = (width * height >> 2);
 	u32 i, size;
@@ -291,6 +292,7 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 		size = PAGE_ALIGN(width * height * 4);
 		break;
 	case V4L2_PIX_FMT_YUV420:	/* fall through */
+	case V4L2_PIX_FMT_NV12:		/* fall through */
 		size = PAGE_ALIGN((width * height) + (width * height >> 1));
 		break;
 	case V4L2_PIX_FMT_YUYV:		/* fall through */
@@ -298,7 +300,6 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 	case V4L2_PIX_FMT_RGB565:	/* fall through */
 		size = PAGE_ALIGN(width * height * 2);
 		break;
-	case V4L2_PIX_FMT_NV12:		/* fall through */
 	case V4L2_PIX_FMT_NV12T:
 		size = PAGE_ALIGN(y_size + c_size);
 		break;
@@ -331,6 +332,18 @@ int fimc_outdev_set_src_buf(struct fimc_control *ctrl)
 
 		break;
 	case V4L2_PIX_FMT_NV12:		/* fall through */
+		for (i = 0; i < FIMC_OUTBUFS; i++) {
+			ctrl->out->src[i].base[FIMC_ADDR_Y] = *curr;
+			ctrl->out->src[i].base[FIMC_ADDR_CB] = *curr + y_size;
+			ctrl->out->src[i].length[FIMC_ADDR_Y] = y_size;
+			ctrl->out->src[i].length[FIMC_ADDR_CB] = uv_size;
+			ctrl->out->src[i].base[FIMC_ADDR_CR] = 0;
+			ctrl->out->src[i].length[FIMC_ADDR_CR] = 0;
+			*curr += size;
+		}
+
+		break;
+
 	case V4L2_PIX_FMT_NV12T:
 		for (i = 0; i < FIMC_OUTBUFS; i++) {
 			ctrl->out->src[i].base[FIMC_ADDR_Y] = *curr;
@@ -662,6 +675,12 @@ static int fimc_outdev_check_src_size(struct fimc_control *ctrl, \
 				}
 			}
 		}	 
+
+		if (org->width % 16) {
+			fimc_err("SRC Org_W: multiple of 16\n");
+			return -EINVAL;
+		}
+
 	} else {
 		if (ctrl->sc.pre_vratio) {
 			if (real->height % ctrl->sc.pre_vratio) {
