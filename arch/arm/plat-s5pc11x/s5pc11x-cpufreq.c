@@ -39,6 +39,17 @@ struct s3c_cpufreq_freqs s3c_freqs;
 
 static enum perf_level bootup_level;
 
+/* Based on MAX8698C 
+ * RAMP time : 10mV/us
+ **/
+#define PMIC_RAMP_UP	10
+static unsigned long previous_arm_volt;
+
+/* If you don't need to wait exact ramp up delay
+ * you can use fixed delay time
+ **/
+//#define USE_FIXED_RAMP_UP_DELAY
+
 /* frequency */
 static struct cpufreq_frequency_table s5pc110_freq_table[] = {
 	{L0, 1000*1000},	/* OVerclocked */
@@ -165,6 +176,8 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	unsigned int index, reg, arm_volt, int_volt;
 	unsigned int pll_changing = 0;
 	unsigned int bus_speed_changing = 0;
+	int ramp_req_delay, ramp_real_delay;
+	struct timeval start, end;
 
 	s3c_freqs.freqs.old = s5pc110_getspeed(0);
 
@@ -197,6 +210,12 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 				arm_volt);
 		regulator_set_voltage(internal_regulator, int_volt,
 				int_volt);
+#if defined(USE_FIXED_RAMP_UP_DELAY)
+		ramp_req_delay = (((arm_volt - previous_arm_volt) / 1000) / PMIC_RAMP_UP);
+		udelay(ramp_req_delay);
+#else
+		do_gettimeofday(&start);
+#endif
 	}
 
 	/* Check if there need to change PLL */
@@ -303,6 +322,26 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 		__raw_writel(reg, S5P_ARM_MCS_CON);
 	}
 
+#if !defined(USE_FIXED_RAMP_UP_DELAY)
+	if (s3c_freqs.freqs.new > s3c_freqs.freqs.old) {
+		do_gettimeofday(&end);
+
+		/* Based on 10mV/usec ramp up speed
+		 * Requried ramp up delay time (usec) for this voltage change
+		 **/
+		ramp_req_delay = (((arm_volt - previous_arm_volt) / 1000) / PMIC_RAMP_UP);
+
+		ramp_real_delay = ramp_req_delay -
+			((end.tv_sec - start.tv_sec) * USEC_PER_SEC +
+			(end.tv_usec - start.tv_usec));
+
+		if (ramp_real_delay > 0) {
+			udelay(ramp_real_delay);
+		} else {
+			printk(KERN_INFO "Ramp up delay already consumed [%d]\n", ramp_real_delay);
+		}
+	}
+#endif
 	/* 5. Change divider */
 	reg = __raw_readl(S5P_CLK_DIV0);
 
@@ -482,6 +521,7 @@ static int s5pc110_target(struct cpufreq_policy *policy,
 	memcpy(&s3c_freqs.old, &s3c_freqs.new, sizeof(struct s3c_freq));
 	printk(KERN_INFO "Perf changed[L%d]\n", index);
 
+	previous_arm_volt = s5pc110_dvs_conf[index].arm_volt;
 out:
 	return ret;
 }
@@ -501,6 +541,7 @@ static int s5pc110_cpufreq_resume(struct cpufreq_policy *policy)
 	/* Clock inforamtion update with wakeup value */
 	memcpy(&s3c_freqs.old, &s5pc110_clk_info[bootup_level],
 			sizeof(struct s3c_freq));
+	previous_arm_volt = s5pc110_dvs_conf[bootup_level].arm_volt;
 	return ret;
 }
 #endif
@@ -558,7 +599,9 @@ static int __init s5pc110_cpu_init(struct cpufreq_policy *policy)
 	}
 	memcpy(&s3c_freqs.old, &s5pc110_clk_info[bootup_level],
 			sizeof(struct s3c_freq));
-
+	
+	previous_arm_volt = s5pc110_dvs_conf[bootup_level].arm_volt;
+	
 	return cpufreq_frequency_table_cpuinfo(policy, s5pc110_freq_table);
 }
 
