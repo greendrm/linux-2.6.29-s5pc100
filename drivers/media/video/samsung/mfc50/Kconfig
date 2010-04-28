@@ -15,6 +15,11 @@ config VIDEO_MFC_MAX_INSTANCE
 	depends on VIDEO_MFC50 && ARCH_S5PC11X
 	default 1
 
+config VIDEO_MFC_FRAME_CLK_GATING
+	bool "Frame based clock gating for power saving"
+	depends on VIDEO_MFC50 && ARCH_S5PC11X
+	default y
+
 config VIDEO_MFC50_DEBUG
 	bool "print MFC debug message"
 	depends on VIDEO_MFC50

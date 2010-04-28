@@ -32,6 +32,8 @@
 #include <plat/media.h>
 #include <plat/clock.h>
 #include <plat/mfc.h>
+#include <plat/map.h>
+#include <plat/regs-clock.h>
 
 #include "s3c_mfc_interface.h"
 #include "s3c_mfc_common.h"
@@ -122,6 +124,9 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 	ret = 0;
 
 out_open:
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 	mutex_unlock(&s3c_mfc_mutex);
 	return ret;
 }
@@ -136,6 +141,10 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 
 	mfc_debug("MFC Release..\n");
 	mutex_lock(&s3c_mfc_mutex);
+
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+		s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
+#endif
 
 	mfc_ctx = (s3c_mfc_inst_ctx *) file->private_data;
 	if (mfc_ctx == NULL) {
@@ -176,6 +185,9 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 #endif
 
 out_release:
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 	mutex_unlock(&s3c_mfc_mutex);
 	return ret;
 }
@@ -194,6 +206,10 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
 	//int size;
 
 	mutex_lock(&s3c_mfc_mutex);
+
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
+#endif
 
 	ret =
 	    copy_from_user(&in_param, (s3c_mfc_common_args *) arg,
@@ -479,6 +495,11 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
 	}
 
 out_ioctl:
+
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
+
 	ex_ret =
 	    copy_to_user((s3c_mfc_common_args *) arg, &in_param,
 			 sizeof(s3c_mfc_common_args));
@@ -812,10 +833,17 @@ static int s3c_mfc_resume(struct platform_device *pdev)
 		mutex_unlock(&s3c_mfc_mutex);
 		return 0;
 	}
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
+#endif
 
 	ret = s3c_mfc_set_wakeup();
 	if (ret != MFC_RET_OK)
 		return ret;
+
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 
 	mutex_unlock(&s3c_mfc_mutex);
 
