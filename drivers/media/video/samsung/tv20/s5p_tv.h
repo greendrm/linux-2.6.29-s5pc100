@@ -839,7 +839,7 @@ extern int s5p_tv_clk_gate( bool on);
 extern int s5p_hpd_get_state(void);
 extern void s5p_tv_kobject_uevent(void);
 
-extern int s5p_hdcp_encrypt_stop(void);
+extern int s5p_hdcp_encrypt_stop(bool on);
 #endif
 
 
