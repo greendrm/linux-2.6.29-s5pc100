@@ -779,7 +779,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 			cap->fmt.width * cap->fmt.height, SZ_64K, bpp);
 		break;
 	case V4L2_PIX_FMT_YUV422P:	/* fall through */
-	case V4L2_PIX_FMT_YUV420:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:
 		ret = fimc_alloc_buffers(ctrl, 3,
 			cap->fmt.width * cap->fmt.height, 0, bpp);
 		break;
@@ -807,6 +807,7 @@ int fimc_reqbufs_capture(void *fh, struct v4l2_requestbuffers *b)
 int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = fh;
+	struct fimc_capinfo *cap = ctrl->cap;
 
 	if (ctrl->status != FIMC_STREAMOFF) {
 		fimc_err("fimc is running\n");
@@ -815,7 +816,36 @@ int fimc_querybuf_capture(void *fh, struct v4l2_buffer *b)
 
 	mutex_lock(&ctrl->v4l2_lock);
 
-	b->length = ctrl->cap->bufs[b->index].length[0];
+	switch (cap->fmt.pixelformat) {
+	case V4L2_PIX_FMT_JPEG:		/* fall through */
+	case V4L2_PIX_FMT_RGB32:	/* fall through */
+	case V4L2_PIX_FMT_RGB565:	/* fall through */
+	case V4L2_PIX_FMT_YUYV:		/* fall through */
+	case V4L2_PIX_FMT_UYVY:		/* fall through */
+	case V4L2_PIX_FMT_VYUY:		/* fall through */
+	case V4L2_PIX_FMT_YVYU:		/* fall through */
+	case V4L2_PIX_FMT_NV16:		/* fall through */
+	case V4L2_PIX_FMT_NV61:		/* fall through */
+	case V4L2_PIX_FMT_NV21:
+		b->length = cap->bufs[b->index].length[0];
+		break;
+
+	case V4L2_PIX_FMT_NV12:		/* fall through */
+	case V4L2_PIX_FMT_NV12T:
+		b->length = ALIGN(ctrl->cap->bufs[b->index].length[0], SZ_64K)
+			+ ALIGN(ctrl->cap->bufs[b->index].length[1], SZ_64K);
+		break;
+	case V4L2_PIX_FMT_YUV422P:	/* fall through */
+	case V4L2_PIX_FMT_YUV420:
+		b->length = ctrl->cap->bufs[b->index].length[0]
+			+ ctrl->cap->bufs[b->index].length[1]
+			+ ctrl->cap->bufs[b->index].length[2];
+		break;
+
+	default:
+		b->length = cap->bufs[b->index].length[0];
+		break;
+	}
 	b->m.offset = b->index * PAGE_SIZE;
 
 	ctrl->cap->bufs[b->index].state = VIDEOBUF_IDLE;
@@ -983,7 +1013,7 @@ static int fimc_capture_crop_size_check(struct fimc_control *ctrl,
 	/* check YUV420 output */
 	switch (cap->fmt.pixelformat) {
 		case V4L2_PIX_FMT_YUV420:       /* fall through */
-		case V4L2_PIX_FMT_NV12:         /* fall through */
+		case V4L2_PIX_FMT_NV12:
 			if ((cropVsize % 2) || (cropVsize < 8)) {
 				fimc_err("cropVsize error!\n");
 				return -1;
