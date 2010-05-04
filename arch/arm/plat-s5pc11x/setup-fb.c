@@ -158,10 +158,10 @@ int s3cfb_clk_on(struct platform_device *pdev, struct clk **s3cfb_clk)
 		}
 
 		if (sclk->round_rate)
-			rate = sclk->round_rate(sclk, 700000000);
+			rate = sclk->round_rate(sclk, 170000000);
 
 		if (!rate)
-			rate = 667000000;
+			rate = 166700000;
 		
 		if (sclk->set_rate) {
 			sclk->set_rate(sclk, rate);
