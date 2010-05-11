@@ -332,7 +332,11 @@
 #define S3C_FIMV_ENC_INT_MASK		S3C_FIMVREG(0xc528) /* interrupt mask */
 
 #define S3C_FIMV_ENC_RC_CONFIG		S3C_FIMVREG(0xc5a0) /* RC config */
+#if 0 /* changed for FW 2010.04.09 */
 #define S3C_FIMV_ENC_RC_FRAME_RATE	S3C_FIMVREG(0xc5a4) /* frame rate */
+#else
+#define S3C_FIMV_ENC_RC_FRAME_RATE	S3C_FIMVREG(0xd0d0) /* frame rate */
+#endif
 #define S3C_FIMV_ENC_RC_BIT_RATE	S3C_FIMVREG(0xc5a8) /* bit rate */
 #define S3C_FIMV_ENC_RC_QBOUND		S3C_FIMVREG(0xc5ac) /* max/min QP */
 #define S3C_FIMV_ENC_RC_RPARA		S3C_FIMVREG(0xc5b0) /* rate control reaction coeff. */

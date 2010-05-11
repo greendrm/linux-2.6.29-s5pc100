@@ -46,6 +46,8 @@
 #define 	NAL_START_CODE		(0x00000001)
 #define		AVAILABLE_SLICES_MAX	50
 
+#define MPEG4_TIME_RES 1000
+
 int s3c_mfc_load_firmware(void);
 
 SSBSIP_MFC_ERROR_CODE s3c_mfc_init_hw(void);
