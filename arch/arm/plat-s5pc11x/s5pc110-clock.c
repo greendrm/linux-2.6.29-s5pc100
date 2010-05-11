@@ -1241,7 +1241,7 @@ static struct clksrc_clk clk_audio2 = {
 };
 
 static struct clk *clkset_i2smain_list[] = {
-	NULL, /* XXTI */
+	&clk_ext_xtal_mux,
 	&clk_fout_epll,
 };
 
@@ -1537,11 +1537,15 @@ void __init_or_cpufreq s5pc110_setup_clocks(void)
 	clk_set_parent(&clk_spi1.clk, &clk_mout_epll.clk);
 	clk_set_parent(&clk_spi2.clk, &clk_mout_epll.clk);
 
+#ifdef CONFIG_SND_WM8580_MASTER
+	clk_set_parent(&clk_i2smain.clk, &clk_ext_xtal_mux);
+#else
 	clk_set_parent(&clk_i2smain.clk, &clk_fout_epll);
 	clk_set_parent(&clk_i2sclk.clk, &clk_i2smain.clk);
 	clk_set_parent(&clk_audio0.clk, &clk_mout_epll.clk);
 	clk_set_parent(&clk_audio1.clk, &clk_mout_epll.clk);
 	clk_set_parent(&clk_audio2.clk, &clk_mout_epll.clk);
+#endif
 
 	clk_set_parent(&clk_g2d.clk, &clk_mout_mpll.clk);
 
