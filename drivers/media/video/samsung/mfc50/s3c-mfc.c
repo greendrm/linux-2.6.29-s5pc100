@@ -808,12 +808,23 @@ static int s3c_mfc_suspend(struct platform_device *pdev, pm_message_t state)
 		return 0;
 	}
 
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
+#endif
 	ret = s3c_mfc_set_sleep();
-	if (ret != MFC_RET_OK)
+	if (ret != MFC_RET_OK){
+		mutex_unlock(&s3c_mfc_mutex);
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+		s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 		return ret;
+	}
 
 	//clk_disable(ctrl->clock);
 
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 	mutex_unlock(&s3c_mfc_mutex);
 
 	return 0;
@@ -838,8 +849,13 @@ static int s3c_mfc_resume(struct platform_device *pdev)
 #endif
 
 	ret = s3c_mfc_set_wakeup();
-	if (ret != MFC_RET_OK)
+	if (ret != MFC_RET_OK){
+		mutex_unlock(&s3c_mfc_mutex);
+#if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
+		s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
+#endif
 		return ret;
+	}
 
 #if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
 	s5pc11x_clk_ip0_ctrl(ctrl->clock, 0);
