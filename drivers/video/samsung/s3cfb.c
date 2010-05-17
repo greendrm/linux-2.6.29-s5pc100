@@ -283,7 +283,7 @@ static int s3cfb_set_alpha_info(struct fb_var_screeninfo *var,
 	else {
 		win->alpha.mode = PLANE_BLENDING;
 		win->alpha.channel = 0;
-#if defined (CONFIG_CPU_S5PC110_EVT1)
+#if defined (CONFIG_CPU_S5PC110)
 		win->alpha.avalue_h = S3CFB_AVALUE_H(0xff, 0xff, 0xff);
 		win->alpha.avalue_l = S3CFB_AVALUE_L(0xff, 0xff, 0xff);
 #else
@@ -632,7 +632,7 @@ static int s3cfb_ioctl(struct fb_info *fb, unsigned int cmd, unsigned long arg)
 		else {
 			win->alpha.mode = PLANE_BLENDING;
 			win->alpha.channel = p.user_alpha.channel;
-#if defined (CONFIG_CPU_S5PC110_EVT1)
+#if defined (CONFIG_CPU_S5PC110)
 			win->alpha.avalue_h =
 			    S3CFB_AVALUE_H(p.user_alpha.red,
 					 p.user_alpha.green, p.user_alpha.blue);

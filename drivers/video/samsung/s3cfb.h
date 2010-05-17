@@ -26,7 +26,7 @@
 */
 #define S3CFB_NAME		"s3cfb"
 
-#if defined (CONFIG_CPU_S5PC110_EVT1)
+#if defined (CONFIG_CPU_S5PC110)
 #define S3CFB_AVALUE_H(r, g, b)	(((r & 0xf0) << 4) | (g & 0xf0) | ((b & 0xf0) >> 4))
 #define S3CFB_AVALUE_L(r, g, b)	(((r & 0xf) << 16) | ((g & 0xf) << 8) | ((b & 0xf) << 0))
 #else
@@ -89,7 +89,7 @@ enum s3cfb_mem_owner_t {
  * @channel:		alpha channel (0/1)
  * @value:		alpha value (for plane blending)
 */
-#if defined (CONFIG_CPU_S5PC110_EVT1)
+#if defined (CONFIG_CPU_S5PC110)
 struct s3cfb_alpha {
 	enum 		s3cfb_alpha_t mode;
 	int		channel;
