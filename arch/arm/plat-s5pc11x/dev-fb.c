@@ -80,7 +80,7 @@ void __init s3cfb_set_platdata(struct s3c_platform_fb *pd)
 	else {
 		for (i = 0; i < npd->nr_wins; i++)
 			npd->nr_buffers[i] = 1;
-#if defined (CONFIG_CPU_S5PC110_EVT1)
+#if defined (CONFIG_CPU_S5PC110)
 		npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP;
 #else
 		npd->nr_buffers[npd->default_win] = CONFIG_FB_S3C_YPANSTEP + 1;
