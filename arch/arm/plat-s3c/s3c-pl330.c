@@ -1110,7 +1110,7 @@ static int pl330_probe(struct platform_device *pdev)
 	/* No busy channels */
 	s3c_pl330_dmac->busy_chan = 0;
 
-	s3c_pl330_dmac->kmcache = kmem_cache_create(pdev->name,
+	s3c_pl330_dmac->kmcache = kmem_cache_create(dev_name(&pdev->dev),
 				sizeof(struct s3c_pl330_xfer), 0, 0, NULL);
 
 	if (!s3c_pl330_dmac->kmcache) {
