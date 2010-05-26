@@ -569,6 +569,7 @@ int s3cfb_set_buffer_address(struct s3cfb_global *ctrl, int id)
 	struct fb_fix_screeninfo *fix = &ctrl->fb[id]->fix;
 	struct fb_var_screeninfo *var = &ctrl->fb[id]->var;
 	dma_addr_t start_addr = 0, end_addr = 0;
+	u32 shw;
 
 	if (fix->smem_start) {
 		start_addr = fix->smem_start + (var->xres_virtual *
@@ -578,8 +579,16 @@ int s3cfb_set_buffer_address(struct s3cfb_global *ctrl, int id)
 				(var->bits_per_pixel / 8) * var->yres);
 	}
 
+	shw = readl(ctrl->regs + S3C_WINSHMAP);
+        shw |= S3C_WINSHMAP_PROTECT(id);
+        writel(shw, ctrl->regs + S3C_WINSHMAP);
+
 	writel(start_addr, ctrl->regs + S3C_VIDADDR_START0(id));
 	writel(end_addr, ctrl->regs + S3C_VIDADDR_END0(id));
+
+	shw = readl(ctrl->regs + S3C_WINSHMAP);
+        shw &= ~(S3C_WINSHMAP_PROTECT(id));
+        writel(shw, ctrl->regs + S3C_WINSHMAP);
 
 	dev_dbg(ctrl->dev, "[fb%d] start_addr: 0x%08x, end_addr: 0x%08x\n",
 		id, start_addr, end_addr);
