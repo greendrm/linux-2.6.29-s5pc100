@@ -24,7 +24,8 @@
 #define S3C_MDEV_MFC		4
 #define S3C_MDEV_JPEG		5
 #define S3C_MDEV_CMM		6
-#define S3C_MDEV_MAX		7
+#define S3C_MDEV_PMEM		7
+#define S3C_MDEV_MAX		8
 
 struct s3c_media_device {
 	int		id;

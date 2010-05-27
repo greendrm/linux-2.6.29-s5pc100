@@ -27,6 +27,7 @@
 #include <linux/tty.h>
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/cacheflush.h>
 
 #include <asm/uaccess.h>
 #include <linux/mman.h>
@@ -390,6 +391,7 @@ int s3c_mem_mmap(struct file* filp, struct vm_area_struct *vma)
 		DEBUG("MMAP_KMALLOC : virt addr = 0x%08x, size = %d, %d\n", virt_addr, size, __LINE__);
 
 #ifndef USE_DMA_ALLOC
+		dmac_inv_range(virt_addr, virt_addr + (size / sizeof(unsigned long)));
 		phys_addr = virt_to_phys((unsigned long *)virt_addr);
 #endif
 		physical_address = (unsigned int)phys_addr;

@@ -1,3 +1,15 @@
+/* linux/drivers/media/video/samsung/g2d/fimg2d3x.c
+ *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ *		http://www.samsung.com/
+ *
+ * Samsung Graphics 2D driver
+ *
+ * This	program	is free	software; you can redistribute it and/or modify
+ * it under the	terms of the GNU General Public	License	version	2 as
+ * published by	the Free Software Foundation.
+*/
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -11,11 +23,14 @@
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <linux/dma-mapping.h>
+#include <linux/io.h>
+#include <linux/sched.h>
 
-#include <asm/io.h>
 #include <asm/atomic.h>
+#include <asm/cacheflush.h>
 #include <mach/map.h>
 
+#include <plat/cpu.h>
 #include <plat/regs-g2d.h>
 
 #define G2D_MMAP_SIZE		0x1000
@@ -45,7 +60,7 @@ struct g2d_dma_info {
 
 static struct g2d_info *g2d;
 
-irqreturn_t g2d_irq(int irq, void *dev_id)
+static irqreturn_t g2d_irq(int irq, void *dev_id)
 {
 	if (readl(g2d->base + G2D_INTC_PEND_REG) & G2D_INTP_CMD_FIN) {
 		writel(0, g2d->base + G2D_INTEN_REG);
@@ -114,33 +129,36 @@ static unsigned int g2d_poll(struct file *file, struct poll_table_struct *wait)
 	return mask;
 }
 
-static int g2d_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+static int g2d_ioctl(struct inode *inode, struct file *file,
+		     unsigned int cmd, unsigned long arg)
 {
 	struct g2d_dma_info dma_info;
 	void *vaddr;
 
 	if (cmd == G2D_WAIT_FOR_IRQ) {
-		wait_event_timeout(g2d->wq, (atomic_read(&g2d->in_use) == 1), 10000);
+		wait_event_timeout(g2d->wq,
+				(atomic_read(&g2d->in_use) == 1), 10000);
 		atomic_set(&g2d->in_use, 0);
 		return 0;
 	}
 
-	if (copy_from_user(&dma_info, (struct g2d_dma_info *)arg, sizeof(dma_info)))
+	if (copy_from_user(&dma_info, (struct g2d_dma_info *)arg,
+				sizeof(dma_info)))
 		return -EFAULT;
 
 	vaddr = phys_to_virt(dma_info.addr);
 
 	switch (cmd) {
 	case G2D_DMA_CACHE_INVAL:
-		dma_cache_maint(vaddr, dma_info.size, DMA_FROM_DEVICE);
+		dmac_inv_range(vaddr, vaddr + dma_info.size);
 		break;
 
 	case G2D_DMA_CACHE_CLEAN:
-		dma_cache_maint(vaddr, dma_info.size, DMA_TO_DEVICE);
+		dmac_clean_range(vaddr, vaddr + dma_info.size);
 		break;
 
 	case G2D_DMA_CACHE_FLUSH:
-		dma_cache_maint(vaddr, dma_info.size, DMA_BIDIRECTIONAL);
+		dmac_flush_range(vaddr, vaddr + dma_info.size);
 		break;
 
 	default:
@@ -168,6 +186,7 @@ static struct miscdevice g2d_dev = {
 static int g2d_probe(struct platform_device *pdev)
 {
 	struct resource *res;
+	struct clk *parent, *sclk;
 	int ret;
 
 	/* global structure */
@@ -183,7 +202,7 @@ static int g2d_probe(struct platform_device *pdev)
 	if (!res) {
 		dev_err(&pdev->dev, "failed to get resource\n");
 		ret = -ENOENT;
-		goto err_res;
+		goto err_get_res;
 	}
 
 	g2d->mem = request_mem_region(res->start,
@@ -191,7 +210,7 @@ static int g2d_probe(struct platform_device *pdev)
 	if (!g2d->mem) {
 		dev_err(&pdev->dev, "failed to request memory region\n");
 		ret = -ENOMEM;
-		goto err_res;
+		goto err_req_region;
 	}
 
 	/* ioremap */
@@ -214,15 +233,33 @@ static int g2d_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err(&pdev->dev, "failed to request_irq(g2d)\n");
 		ret = -ENOENT;
-		goto err_res;
+		goto err_req_irq;
 	}
 
-	/* clock */
+	/* clock for setting parent and rate */
+	parent = clk_get(&pdev->dev, "mout_mpll");
+	if (IS_ERR(parent)) {
+		dev_err(&pdev->dev, "failed to get parent clock\n");
+		ret = -ENOENT;
+		goto err_clk1;
+	}
+
+	sclk = clk_get(&pdev->dev, "sclk_g2d");
+	if (IS_ERR(sclk)) {
+		dev_err(&pdev->dev, "failed to get sclk_g2d clock\n");
+		ret = -ENOENT;
+		goto err_clk2;
+	}
+
+	clk_set_parent(sclk, parent);
+	clk_set_rate(sclk, 250 * MHZ);
+
+	/* clock for gating */
 	g2d->clock = clk_get(&pdev->dev, "g2d");
 	if (IS_ERR(g2d->clock)) {
-		dev_err(&pdev->dev, "failed to enable clock\n");
+		dev_err(&pdev->dev, "failed to get clock\n");
 		ret = -ENOENT;
-		goto err_clk;
+		goto err_clk3;
 	}
 
 	/* blocking I/O */
@@ -239,7 +276,7 @@ static int g2d_probe(struct platform_device *pdev)
 	}
 
 	/* mutex */
-	g2d->lock = (struct mutex *) kmalloc(sizeof(*g2d->lock), GFP_KERNEL);
+	g2d->lock = kmalloc(sizeof(*g2d->lock), GFP_KERNEL);
 	if (IS_ERR(g2d->lock)) {
 		dev_err(&pdev->dev, "failed to initialize mutex\n");
 		ret = -ENOENT;
@@ -260,18 +297,29 @@ err_lock:
 
 err_reg:
 	clk_put(g2d->clock);
-err_clk:
+
+err_clk3:
+	clk_put(sclk);
+
+err_clk2:
+	clk_put(parent);
+
+err_clk1:
+	free_irq(g2d->irq, NULL);
+
+err_req_irq:
 	iounmap(g2d->base);
 
 err_map:
-	release_resource(g2d->mem);
 	kfree(g2d->mem);
 
-err_res:
-	free_irq(g2d->irq, NULL);
+err_req_region:
+	release_resource(g2d->mem);
+
+err_get_res:
+	kfree(g2d);
 
 err_no_mem:
-	kfree(g2d);
 	return ret;
 }
 
@@ -331,6 +379,5 @@ module_exit(g2d_unregister);
 
 MODULE_AUTHOR("Jinhee Hyeon <jh0722.hyen@samsung.com>");
 MODULE_AUTHOR("Jinsung Yang <jsgood.yang@samsung.com>");
-MODULE_DESCRIPTION("Samsung FIMG-2D v3.0 Device Driver");
+MODULE_DESCRIPTION("Samsung Graphics 2D (FIMG2D v3.0) Device Driver");
 MODULE_LICENSE("GPL");
-

@@ -99,6 +99,16 @@ static struct s3c_media_device media_devs[] = {
 		.paddr = 0,
 	},
 #endif
+
+#ifdef CONFIG_S3C_PMEM_MEMSIZE_PMEM
+        {
+                .id = S3C_MDEV_PMEM,
+                .name = "pmem",
+                .node = 1,
+                .memsize = CONFIG_S3C_PMEM_MEMSIZE_PMEM * SZ_1K,
+                .paddr = 0,
+        },
+#endif
 };
 
 static struct s3c_media_device *s3c_get_media_device(int dev_id, int node)

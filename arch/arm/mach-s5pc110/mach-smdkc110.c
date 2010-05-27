@@ -86,6 +86,11 @@
 #define OTGH_PHY_CLK_VALUE      (0x22)  /* UTMI Interface, otg_phy input clk 12Mhz Oscillator */
 #endif
 
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+#include <linux/android_pmem.h>
+#include <plat/media.h>
+#endif
+
 #if defined(CONFIG_PM)
 #include <plat/pm.h>
 #endif
@@ -469,6 +474,23 @@ static struct i2c_board_info i2c_devs2[] __initdata = {
 
 struct map_desc smdkc110_iodesc[] = {};
 
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+static struct android_pmem_platform_data pmem_pdata = {
+        .name = "s3c-pmem",
+        .no_allocator = 0,
+        .cached = 0,
+        .buffered = 0,
+        .start = 0, /* will be set during proving pmem driver */
+        .size = 0 /* will be set during proving pmem driver */
+};
+
+static struct platform_device s3c_pmem_device = {
+        .name = "s3c-pmem",
+        .id = 0,
+        .dev = { .platform_data = &pmem_pdata },
+};
+#endif
+
 static struct platform_device *smdkc110_devices[] __initdata = {
 #ifdef CONFIG_FB_S3C
 	&s3c_device_fb,
@@ -546,7 +568,14 @@ static struct platform_device *smdkc110_devices[] __initdata = {
 	&s5p_device_cec,
 	&s5p_device_hpd,
 	&s3c_device_test,
+
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+	&s3c_pmem_device,
+#endif
+
+#ifdef CONFIG_VIDEO_G2D
 	&s3c_device_g2d,
+#endif
 };
 
 static void __init smdkc110_i2c_gpio_init(void)
@@ -968,6 +997,14 @@ static void smdkc110_power_off(void)
 	__raw_writel(reg, S5P_PS_HOLD_CONTROL);
 }
 
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+static void __init s3c_pmem_set_platdata(void)
+{
+        pmem_pdata.start = s3c_get_media_memory_node(S3C_MDEV_PMEM, 1);
+        pmem_pdata.size = s3c_get_media_memsize_node(S3C_MDEV_PMEM, 1);
+}
+#endif
+
 static void __init smdkc110_map_io(void)
 {
 	s3c_device_nand.name = "s5pc100-nand";
@@ -1046,6 +1083,10 @@ static void __init smdkc110_machine_init(void)
 	}
 
 	smdkc110_dm9000_set();
+
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+        s3c_pmem_set_platdata();
+#endif
 
 	/* i2c */
 	smdkc110_i2c_gpio_init();
