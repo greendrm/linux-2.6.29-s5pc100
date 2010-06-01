@@ -409,6 +409,7 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 
 	switch (blank_mode) {
 	case FB_BLANK_UNBLANK:
+		s3cfb_win_map_off(fbdev, win->id);
 		check_win = s3cfb_check_win_status();
 		if (check_win == 0) {
 			pdata->clk_on(pdev, &fbdev->clock);
@@ -435,6 +436,7 @@ static int s3cfb_blank(int blank_mode, struct fb_info *fb)
 		
 	case FB_BLANK_POWERDOWN:
 		s3cfb_disable_window(win->id);
+		s3cfb_win_map_off(fbdev, win->id);
 		check_win = s3cfb_check_win_status();
 		if ((check_win == 0) && (fbdev->fb_off == 0)) {
 			if (fbdev->lcd->deinit_ldi)
