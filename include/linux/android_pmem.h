@@ -40,19 +40,26 @@
 #define HW3D_GRANT_GPU		_IOW(PMEM_IOCTL_MAGIC, 9, unsigned int)
 #define HW3D_WAIT_FOR_INTERRUPT	_IOW(PMEM_IOCTL_MAGIC, 10, unsigned int)
 
-#define PMEM_GET_MEM_INFO	_IOW(PMEM_IOCTL_MAGIC, 11, unsigned int)
-#define PMEM_FREE		_IOW(PMEM_IOCTL_MAGIC, 12, unsigned int)
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+#define PMEM_FREE		_IOW(PMEM_IOCTL_MAGIC, 11, unsigned int)
+#define PMEM_GET_ALLOC_INFO	_IOW(PMEM_IOCTL_MAGIC, 12, unsigned int)
+#define PMEM_GET_BUDDY_INFO	_IOW(PMEM_IOCTL_MAGIC, 13, unsigned int)
+#define PMEM_INSERT_ADDRINFO    _IOW(PMEM_IOCTL_MAGIC, 14, unsigned int)
+#define PMEM_DELETE_ADDRINFO    _IOW(PMEM_IOCTL_MAGIC, 15, unsigned int)
+#define PMEM_GET_ADDRINFO       _IOW(PMEM_IOCTL_MAGIC, 16, unsigned int)
+#define PMEM_GET_CACHE_INFO     _IOW(PMEM_IOCTL_MAGIC, 17, unsigned int)
+#endif
+
 
 int get_pmem_file(int fd, unsigned long *start, unsigned long *vstart,
 		  unsigned long *end, struct file **filp);
 int get_pmem_user_addr(struct file *file, unsigned long *start,
 		       unsigned long *end);
-void put_pmem_file(struct file* file);
+void put_pmem_file(struct file *file);
 void flush_pmem_file(struct file *file, unsigned long start, unsigned long len);
 
-struct android_pmem_platform_data
-{
-	const char* name;
+struct android_pmem_platform_data {
+	const char *name;
 	/* starting physical address of memory region */
 	unsigned long start;
 	/* size of memory region */
@@ -72,11 +79,25 @@ struct pmem_region {
 	unsigned long len;
 };
 
-struct pmem_addr_info {
-	unsigned long paddr;
-	unsigned long vaddr;
-	unsigned long len;
+#ifdef CONFIG_S3C_SAMSUNG_PMEM
+struct pmem_alloc_info {
+	int  	      buddy_index;
+	unsigned long phy_addr;
+	unsigned long phy_len;
 };
+
+struct pmem_addr_info {
+	unsigned long index;
+	unsigned long paddr;
+};
+
+struct pmem_buddyinfo {
+	unsigned long total_pmem_size;
+	unsigned long total_alloc_size;
+	unsigned long total_free_size;
+	unsigned int  alloc_num[32];
+};
+#endif
 
 int pmem_setup(struct android_pmem_platform_data *pdata,
 	       long (*ioctl)(struct file *, unsigned int, unsigned long),
@@ -85,5 +106,5 @@ int pmem_setup(struct android_pmem_platform_data *pdata,
 int pmem_remap(struct pmem_region *region, struct file *file,
 	       unsigned operation);
 
-#endif //_ANDROID_PPP_H_
+#endif /*_ANDROID_PPP_H_ */
 
