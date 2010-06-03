@@ -38,13 +38,11 @@ static struct resource *s3c_rtc_mem;
 
 static void __iomem *s3c_rtc_base;
 static int s3c_rtc_alarmno = NO_IRQ;
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 static int s3c_rtc_tickno  = NO_IRQ;
-#endif
 static int s3c_rtc_freq    = 1;
 
 static DEFINE_SPINLOCK(s3c_rtc_pie_lock);
-//static unsigned int tick_count;
+static unsigned int tick_count;
 
 /* 
  * bcd2bin/bin2bcd paramater type is char.
@@ -61,31 +59,7 @@ static unsigned long s3c_bin2bcd(unsigned long val)
 	return (((val / 100) << 8) + (((val % 100) / 10) << 4) + (val % 10));
 }
 
-
-
-
-#if 1
-static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm);
-unsigned long current_rtc_seconds(void)
-{
-	unsigned long sec = 0;
-	struct rtc_time tm;
-
-	s3c_rtc_gettime(NULL, &tm);
-	rtc_tm_to_time(&tm, &sec);
-
-	return sec;
-}
-EXPORT_SYMBOL(current_rtc_seconds);
-#endif
-
-
-
 /* IRQ Handlers */
-#if 1 /*workround for external interrupt*/
-extern unsigned long irq_last_activity_jiffies;
-extern int irq_last_activity_irq;
-#endif
 
 static irqreturn_t s3c_rtc_alarmirq(int irq, void *id)
 {
@@ -95,25 +69,9 @@ static irqreturn_t s3c_rtc_alarmirq(int irq, void *id)
 
 	writeb(S3C_INTP_ALM, s3c_rtc_base + S3C_INTP);
 
-	{
-		struct rtc_time tm;
-		s3c_rtc_gettime(&rdev->dev, &tm);
-#if defined (CONFIG_CPU_S5PC110)
-		printk("[%s] %04d.%02d.%02d %02d:%02d:%02d\n", __func__, tm.tm_year+1600, tm.tm_mon+1, tm.tm_mday,
-				tm.tm_hour, tm.tm_min, tm.tm_sec);
-#else
-		printk("[%s] %04d.%02d.%02d %02d:%02d:%02d\n", __func__, tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
-				tm.tm_hour, tm.tm_min, tm.tm_sec);
-#endif
-	}
-#if 1
-	irq_last_activity_jiffies=jiffies;
-	irq_last_activity_irq=irq;
-#endif
 	return IRQ_HANDLED;
 }
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 static irqreturn_t s3c_rtc_tickirq(int irq, void *id)
 {
 	struct rtc_device *rdev = id;
@@ -124,14 +82,13 @@ static irqreturn_t s3c_rtc_tickirq(int irq, void *id)
 
 	return IRQ_HANDLED;
 }
-#endif
 
 /* Update control registers */
 static void s3c_rtc_setaie(int to)
 {
 	unsigned int tmp;
 
-	printk(KERN_DEBUG"[%s] aie=%d\n", __func__, to);
+	pr_debug("%s: aie=%d\n", __func__, to);
 
 	tmp = readb(s3c_rtc_base + S3C2410_RTCALM) & ~S3C2410_RTCALM_ALMEN;
 
@@ -141,12 +98,11 @@ static void s3c_rtc_setaie(int to)
 	writeb(tmp, s3c_rtc_base + S3C2410_RTCALM);
 }
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 static int s3c_rtc_setpie(struct device *dev, int enabled)
 {
 	unsigned int tmp;
 
-	printk("%s: pie=%d\n", __func__, enabled);
+	pr_debug("%s: pie=%d\n", __func__, enabled);
 
 	spin_lock_irq(&s3c_rtc_pie_lock);
 	tmp = readw(s3c_rtc_base + S3C2410_RTCCON) & ~S3C_RTCCON_TICEN;
@@ -159,7 +115,7 @@ static int s3c_rtc_setpie(struct device *dev, int enabled)
 
 	return 0;
 }
-#endif
+
 static int s3c_rtc_setfreq(struct device *dev, int freq)
 {
 	unsigned int tmp;
@@ -212,6 +168,9 @@ static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm)
 		goto retry_get_time;
 	}
 
+	pr_debug("read time %02x.%02x.%02x %02x/%02x/%02x\n",
+		 rtc_tm->tm_year, rtc_tm->tm_mon, rtc_tm->tm_mday,
+		 rtc_tm->tm_hour, rtc_tm->tm_min, rtc_tm->tm_sec);
 
 	rtc_tm->tm_sec = s3c_bcd2bin(rtc_tm->tm_sec);
 	rtc_tm->tm_min = s3c_bcd2bin(rtc_tm->tm_min);
@@ -244,10 +203,7 @@ static int s3c_rtc_gettime(struct device *dev, struct rtc_time *rtc_tm)
 
 
 	rtc_tm->tm_mon -= 1;
-#if 0
-	printk("[%s] %04d.%02d.%02d %02d:%02d:%02d\n", __func__, rtc_tm->tm_year+1900, rtc_tm->tm_mon+1, rtc_tm->tm_mday,
-		 																rtc_tm->tm_hour, rtc_tm->tm_min, rtc_tm->tm_sec);
-#endif
+
 	return 0;
 }
 
@@ -430,8 +386,11 @@ static int s3c_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 #endif
 
 	
-	printk("[%s] %04d.%02d.%02d %02d:%02d:%02d\n", __func__, tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
-		 															tm->tm_hour, tm->tm_min, tm->tm_sec);
+	pr_debug("s3c_rtc_setalarm: %d, %02x/%02x/%02x %02x.%02x.%02x\n",
+		 alrm->enabled,
+		 tm->tm_mday & 0xff, tm->tm_mon & 0xff, tm->tm_year & 0xff,
+		 tm->tm_hour & 0xff, tm->tm_min & 0xff, tm->tm_sec);
+
 
 	alrm_en = readb(base + S3C2410_RTCALM) & S3C2410_RTCALM_ALMEN;
 	writeb(0x00, base + S3C2410_RTCALM);
@@ -486,10 +445,6 @@ static int s3c_rtc_ioctl(struct device *dev,
 			 unsigned int cmd, unsigned long arg)
 {
 	unsigned int ret = -ENOIOCTLCMD;
-	int retcopy;
-	struct rtc_time tm;
-	struct rtc_wkalrm wkalrm;
-	void __user *uarg = (void __user *)arg;
 
 	switch (cmd) {
 	case RTC_AIE_OFF:
@@ -497,14 +452,14 @@ static int s3c_rtc_ioctl(struct device *dev,
 		s3c_rtc_setaie((cmd == RTC_AIE_ON) ? 1 : 0);
 		ret = 0;
 		break;
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
+
 	case RTC_PIE_OFF:
 	case RTC_PIE_ON:
-		//tick_count = 0;
+		tick_count = 0;
 		s3c_rtc_setpie(dev,(cmd == RTC_PIE_ON) ? 1 : 0);
 		ret = 0;
 		break;
-#endif
+
 	case RTC_IRQP_READ:
 		ret = put_user(s3c_rtc_freq, (unsigned long __user *)arg);
 		break;
@@ -526,31 +481,6 @@ static int s3c_rtc_ioctl(struct device *dev,
 	case RTC_UIE_ON:
 	case RTC_UIE_OFF:
 		ret = -EINVAL;
-		break;
-	case RTC_RD_TIME:
-		ret = s3c_rtc_gettime(dev, &tm);
-		retcopy = copy_to_user(uarg, &tm, sizeof(tm));
-		if (retcopy)
-			return -EFAULT;
-		break;
-	case RTC_SET_TIME:
-		retcopy = copy_from_user(&tm, uarg, sizeof(tm));
-		if (retcopy)
-			return -EFAULT;
-		ret = s3c_rtc_settime(dev, &tm);
-		break;
-	case RTC_ALM_READ:
-		ret = s3c_rtc_getalarm(dev, &wkalrm);
-		retcopy = copy_to_user(uarg, &wkalrm, sizeof(wkalrm));
-		if (retcopy)
-			return -EFAULT;
-		break;
-	case RTC_ALM_SET:
-		retcopy = copy_from_user(&wkalrm, uarg, sizeof(wkalrm));
-		if (retcopy)
-			return -EFAULT;
-		ret = s3c_rtc_setalarm(dev, &wkalrm);
-		break;
 	}
 
  exit:
@@ -567,22 +497,18 @@ static int s3c_rtc_proc(struct device *dev, struct seq_file *seq)
 
 static int s3c_rtc_open(struct device *dev)
 {
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	struct platform_device *pdev = to_platform_device(dev);
 	struct rtc_device *rtc_dev = platform_get_drvdata(pdev);
-#endif
-	int ret=0;
+	int ret;
 
-#if 0
-	ret = request_irq(s3c_rtc_alarmno, s3c_rtc_alarmirq, IRQF_DISABLED,  "s3c2410-rtc alarm", rtc_dev);
+	ret = request_irq(s3c_rtc_alarmno, s3c_rtc_alarmirq,
+			  IRQF_DISABLED,  "s3c2410-rtc alarm", rtc_dev);
 
 	if (ret) {
 		dev_err(dev, "IRQ%d error %d\n", s3c_rtc_alarmno, ret);
 		return ret;
 	}
-#endif
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	ret = request_irq(s3c_rtc_tickno, s3c_rtc_tickirq,
 			  IRQF_DISABLED,  "s3c2410-rtc tick", rtc_dev);
 
@@ -590,34 +516,24 @@ static int s3c_rtc_open(struct device *dev)
 		dev_err(dev, "IRQ%d error %d\n", s3c_rtc_tickno, ret);
 		goto tick_err;
 	}
-#endif
+
 	return ret;
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
  tick_err:
 	free_irq(s3c_rtc_alarmno, rtc_dev);
-#endif
 	return ret;
 }
 
 static void s3c_rtc_release(struct device *dev)
 {
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	struct platform_device *pdev = to_platform_device(dev);
 	struct rtc_device *rtc_dev = platform_get_drvdata(pdev);
-#endif
 
 	/* do not clear AIE here, it may be needed for wake */
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	s3c_rtc_setpie(dev, 0);
-#endif
-#if 0
 	free_irq(s3c_rtc_alarmno, rtc_dev);
-#endif
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	free_irq(s3c_rtc_tickno, rtc_dev);
-#endif
 }
 
 static const struct rtc_class_ops s3c_rtcops = {
@@ -629,13 +545,10 @@ static const struct rtc_class_ops s3c_rtcops = {
 	.read_alarm	= s3c_rtc_getalarm,
 	.set_alarm	= s3c_rtc_setalarm,
 	.irq_set_freq	= s3c_rtc_setfreq,
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	.irq_set_state	= s3c_rtc_setpie,
-#endif
 	.proc	        = s3c_rtc_proc,
 };
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 static void s3c_rtc_enable(struct platform_device *pdev, int en)
 {
 	void __iomem *base = s3c_rtc_base;
@@ -650,21 +563,21 @@ static void s3c_rtc_enable(struct platform_device *pdev, int en)
 	} else {
 		/* re-enable the device, and check it is ok */
 
-		if ((readb(base+S3C2410_RTCCON) & S3C2410_RTCCON_RTCEN) == 0){
+		if ((readw(base+S3C2410_RTCCON) & S3C2410_RTCCON_RTCEN) == 0){
 			dev_dbg(&pdev->dev, "rtc disabled, re-enabling\n");
 
 			tmp = readw(base + S3C2410_RTCCON);
 			writew(tmp|S3C2410_RTCCON_RTCEN, base+S3C2410_RTCCON);
 		}
 
-		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CNTSEL)){
+		if ((readw(base + S3C2410_RTCCON) & S3C2410_RTCCON_CNTSEL)){
 			dev_dbg(&pdev->dev, "removing RTCCON_CNTSEL\n");
 
 			tmp = readw(base + S3C2410_RTCCON);
 			writew(tmp& ~S3C2410_RTCCON_CNTSEL, base+S3C2410_RTCCON);
 		}
 
-		if ((readb(base + S3C2410_RTCCON) & S3C2410_RTCCON_CLKRST)){
+		if ((readw(base + S3C2410_RTCCON) & S3C2410_RTCCON_CLKRST)){
 			dev_dbg(&pdev->dev, "removing RTCCON_CLKRST\n");
 
 			tmp = readw(base + S3C2410_RTCCON);
@@ -672,24 +585,15 @@ static void s3c_rtc_enable(struct platform_device *pdev, int en)
 		}
 	}
 }
-#endif
+
 static int __devexit s3c_rtc_remove(struct platform_device *dev)
 {
 	struct rtc_device *rtc = platform_get_drvdata(dev);
-	void __iomem *base = s3c_rtc_base;
-	unsigned int tmp;
-
-	/* Turn off RTCEN to prevent inadvertent write to BCD counters */
-	tmp = readw(base + S3C2410_RTCCON);
-	tmp &= ~(S3C2410_RTCCON_RTCEN);
-	writew(tmp, base + S3C2410_RTCCON);
 
 	platform_set_drvdata(dev, NULL);
 	rtc_device_unregister(rtc);
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	s3c_rtc_setpie(&dev->dev, 0);
-#endif
 	s3c_rtc_setaie(0);
 
 	iounmap(s3c_rtc_base);
@@ -709,20 +613,21 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 	pr_debug("%s: probe=%p\n", __func__, pdev);
 
 	/* find the IRQs */
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
+
 	s3c_rtc_tickno = platform_get_irq(pdev, 1);
 	if (s3c_rtc_tickno < 0) {
 		dev_err(&pdev->dev, "no irq for rtc tick\n");
 		return -ENOENT;
 	}
-#endif
+
 	s3c_rtc_alarmno = platform_get_irq(pdev, 0);
 	if (s3c_rtc_alarmno < 0) {
 		dev_err(&pdev->dev, "no irq for alarm\n");
 		return -ENOENT;
 	}
 
-	pr_debug("s3c2410_rtc: alarm irq %d\n", s3c_rtc_alarmno);
+	pr_debug("s3c2410_rtc: tick irq %d, alarm irq %d\n",
+		 s3c_rtc_tickno, s3c_rtc_alarmno);
 
 	/* get the memory region */
 
@@ -751,11 +656,10 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 
 	/* check to see if everything is setup correctly */
 
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	s3c_rtc_enable(pdev, 1);
-#endif
 
- 	printk("s3c2410_rtc: RTCCON=%02x\n", readw(s3c_rtc_base + S3C2410_RTCCON));
+ 	pr_debug("s3c2410_rtc: RTCCON=%02x\n",
+		 readw(s3c_rtc_base + S3C2410_RTCCON));
 
 	s3c_rtc_setfreq(&pdev->dev, 1);
 
@@ -783,21 +687,10 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, rtc);
-
-#if 1
-	ret = request_irq(s3c_rtc_alarmno, s3c_rtc_alarmirq, IRQF_DISABLED,  "s3c2410-rtc alarm", rtc);
-
-	if (ret) {
-		dev_err(pdev, "IRQ%d error %d\n", s3c_rtc_alarmno, ret);
-		goto err_nortc;
-	}
-#endif
 	return 0;
 
  err_nortc:
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	s3c_rtc_enable(pdev, 0);
-#endif
 	iounmap(s3c_rtc_base);
 
  err_nomap:
@@ -811,14 +704,11 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 
 /* RTC Power management control */
 
-//static struct timespec s3c_rtc_delta;
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
+static struct timespec s3c_rtc_delta;
 static int ticnt_save;
-#endif
 
 static int s3c_rtc_suspend(struct platform_device *pdev, pm_message_t state)
 {
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	struct rtc_time tm;
 	struct timespec time;
 
@@ -828,26 +718,24 @@ static int s3c_rtc_suspend(struct platform_device *pdev, pm_message_t state)
 
 	s3c_rtc_gettime(&pdev->dev, &tm);
 	rtc_tm_to_time(&tm, &time.tv_sec);
-	//save_time_delta(&s3c_rtc_delta, &time);
+	save_time_delta(&s3c_rtc_delta, &time);
 
 	s3c_rtc_enable(pdev, 0);
-#endif
 	return 0;
 }
 
 static int s3c_rtc_resume(struct platform_device *pdev)
 {
-#ifndef CONFIG_S5PC11X_HIGH_RES_TIMERS
 	struct rtc_time tm;
 	struct timespec time;
+
 	time.tv_nsec = 0;
 
 	s3c_rtc_enable(pdev, 1);
 	s3c_rtc_gettime(&pdev->dev, &tm);
 	rtc_tm_to_time(&tm, &time.tv_sec);
-	//restore_time_delta(&s3c_rtc_delta, &time);
+	restore_time_delta(&s3c_rtc_delta, &time);
 	writeb(ticnt_save, s3c_rtc_base + S3C2410_TICNT);
-#endif
 	return 0;
 }
 #else
@@ -876,47 +764,11 @@ static int __init s3c_rtc_init(void)
 
 static void __exit s3c_rtc_exit(void)
 {
-
-	free_irq(s3c_rtc_alarmno, 0);
 	platform_driver_unregister(&s3c2410_rtc_driver);
 }
 
 module_init(s3c_rtc_init);
 module_exit(s3c_rtc_exit);
-
-int s3c_rtc_get_tick_current(void)
-{
-	unsigned int curr = readl(s3c_rtc_base + S3C2410_CURTICCNT);
-	return curr/4;
-}
-
-EXPORT_SYMBOL_GPL(s3c_rtc_get_tick_current);
-
-void s3c_rtc_tick_setup(unsigned int seconds)
-{
-	unsigned int rtccon = readl(s3c_rtc_base + S3C2410_RTCCON);
-	int duration = seconds * (32768) - 1;
-	rtccon &= ~( (0xF << 4) | (0x1 << 8) );
-	writel(rtccon, s3c_rtc_base + S3C2410_RTCCON);
-
-	if (duration < 1)
-		duration = 1;
-	writel(duration, s3c_rtc_base + S3C2410_TICNT);
-
-	rtccon |= (0x0 << 4) | (0x1 << 8);
-	writel(rtccon, s3c_rtc_base + S3C2410_RTCCON);
-//	printk("[%s] rtccon=0x%x, ticnt=0x%x\n", __func__, readl(s3c_rtc_base + S3C2410_RTCCON), readl(s3c_rtc_base + S3C2410_TICNT));
-}
-EXPORT_SYMBOL_GPL(s3c_rtc_tick_setup);
-
-void s3c_rtc_tick_cancel(void)
-{
-	unsigned int rtccon = readl(s3c_rtc_base + S3C2410_RTCCON);
-	rtccon &= ~( (0xF << 4) | (0x1 << 8) );
-	rtccon |= (0x0 << 4) | (0x0 << 8);
-	writel(rtccon, s3c_rtc_base + S3C2410_RTCCON);
-}
-EXPORT_SYMBOL_GPL(s3c_rtc_tick_cancel);
 
 MODULE_DESCRIPTION("Samsung S3C RTC Driver");
 MODULE_AUTHOR("Ben Dooks <ben@simtec.co.uk>");
