@@ -1,3 +1,15 @@
+/* linux/drivers/media/video/samsung/tv20/ddc.c
+ *
+ * ddc i2c client driver file for Samsung TVOut driver
+ *
+ * Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/i2c.h>
