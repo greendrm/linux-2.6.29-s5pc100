@@ -56,6 +56,9 @@ extern MFC_ERROR_CODE s3c_mfc_set_sleep(void);
 extern MFC_ERROR_CODE s3c_mfc_set_wakeup(void);
 extern void s3c_mfc_backup_init_param(int inst_no, s3c_mfc_args *args);
 extern void s3c_mfc_restore_init_param(int inst_no, s3c_mfc_args *args);
+extern void s3c_mfc_backup_decode_init(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args);
+extern void s3c_mfc_backup_decode_start(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args);
+extern MFC_ERROR_CODE s3c_mfc_restore_decode(s3c_mfc_inst_ctx	*MfcCtx);
 
 #endif /* _S3C_MFC_OPR_H_ */
 
