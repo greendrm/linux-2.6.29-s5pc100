@@ -1,10 +1,8 @@
 /* linux/arch/arm/mach-s5pc110/include/mach/map.h
  *
- * Copyright 2008 Samsung Electronics Co.
- * Copyright 2008 Simtec Electronics
- *	http://armlinux.simtec.co.uk/
- *	Ben Dooks <ben@simtec.co.uk>
- *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ * 
  * S5PC11X - Memory map definitions
  *
  * This program is free software; you can redistribute it and/or modify
