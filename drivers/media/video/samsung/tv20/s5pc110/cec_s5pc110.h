@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc110/cec_s5pc110.h
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * cec ftn header for Samsung TVOut driver
  *

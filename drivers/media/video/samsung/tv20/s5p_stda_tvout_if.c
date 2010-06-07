@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5p_stda_tvout_if.c
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * TVOut interface ftn. file for Samsung TVOut driver
  *

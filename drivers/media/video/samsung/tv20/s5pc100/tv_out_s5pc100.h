@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc100/tv_out_s5pc100.h
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * tv out header file for Samsung TVOut driver
  *
