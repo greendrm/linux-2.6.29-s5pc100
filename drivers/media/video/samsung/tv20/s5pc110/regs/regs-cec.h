@@ -1,24 +1,14 @@
-//-------------------------------------------------------------------
-// Copyright SAMSUNG Electronics Co., Ltd
-// All right reserved.
-//
-// This software is the confidential and proprietary information
-// of Samsung Electronics, Inc. ("Confidential Information").  You
-// shall not disclose such Confidential Information and shall use
-// it only in accordance with the terms of the license agreement
-// you entered into with Samsung Electronics.
-//-------------------------------------------------------------------
-/**
- * @file  regs-cec.h
- * @brief This file defines addresses of CEC registers and corresponding bit values.
+/* linux/drivers/media/video/samsung/tv20/s5pc110/regs/regs-cec.h
  *
- * @author   Digital IP Development Team (mrkim@samsung.com) \n
- *           SystemLSI, Samsung Electronics
- * @version  1.1
+ * CEC register header file for Samsung TVOut driver
  *
- * @remarks  09-30-2008 1.0 Initial version\n
- *           01-09-2009 1.1 Support HDMI_TX13_REV_05\n
- */
+ * Copyright (c) 2009 Samsung Electronics
+ * 	http://www.samsungsemi.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #ifndef __REGS_CEC_H
 #define __REGS_CEC_H
