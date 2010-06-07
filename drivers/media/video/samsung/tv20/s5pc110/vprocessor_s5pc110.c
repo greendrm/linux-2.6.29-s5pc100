@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc110/vprocessor_s5pc110.c
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * Video Processor raw ftn  file for Samsung TVOut driver
  *

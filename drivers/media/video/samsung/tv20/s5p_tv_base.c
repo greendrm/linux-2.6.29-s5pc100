@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5p_tv_base.c
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * Entry file for Samsung TVOut driver
  *

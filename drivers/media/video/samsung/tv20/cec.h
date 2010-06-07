@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/cec.h
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * cec interface header for Samsung TVOut driver
  *

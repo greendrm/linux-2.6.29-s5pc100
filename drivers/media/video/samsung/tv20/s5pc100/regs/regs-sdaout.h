@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc100/regs/regs-sdout.h
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * TV Encoder register header file for Samsung TVOut driver
  *

@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/ddc.h
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * ddc i2c client driver header file for Samsung TVOut driver
  *

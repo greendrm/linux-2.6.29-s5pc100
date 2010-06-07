@@ -1,7 +1,7 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc110/hdcp_s5pc110.c
  *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
  *
  * hdcp raw ftn  file for Samsung TVOut driver
  *
