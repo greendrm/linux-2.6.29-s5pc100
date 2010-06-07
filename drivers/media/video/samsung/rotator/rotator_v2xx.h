@@ -1,3 +1,15 @@
+/* linux/drivers/media/video/samsung/rotator/rotator_v2xx.h
+ *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com/
+ *
+ * Header file for Samsung Image Rotator
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
+
 #ifndef	_S5P_ROTATOR_V2XX_H_
 #define	_S5P_ROTATOR_V2XX_H_
 

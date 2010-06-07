@@ -1,9 +1,7 @@
 /* arch/arm/plat-s5pc11x/include/plat/s5pc110.h
  *
- * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
- *	http://armlinux.simtec.co.uk/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
  * Header file for s5pc110 cpu support
  *

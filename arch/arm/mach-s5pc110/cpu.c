@@ -1,9 +1,7 @@
-/* linux/arch/arm/mach-s5pc100/cpu.c
+/* linux/arch/arm/mach-s5pc110/cpu.c
  *
- * Copyright 2008 Samsung Electronics
- * Copyright 2008 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
- *	http://armlinux.simtec.co.uk/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

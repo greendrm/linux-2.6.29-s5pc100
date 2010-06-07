@@ -1,3 +1,15 @@
+/* linux/drivers/media/video/samsung/rotator/s3c_rotator_common.h
+ *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com/
+ *
+ * Common Header file for Samsung Image Rotator
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
+
 #ifndef _S3C_ROTATOR_COMMON_H_
 #define _S3C_ROTATOR_COMMON_H_
 

@@ -1,9 +1,9 @@
 /* linux/drivers/media/video/samsung/tv20/s5pc110/cec_s5pc110.c
  *
- * cec ftn file for Samsung TVOut driver
- *
  * Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
+ * 	http://www.samsung.com/
+ *
+ * cec ftn file for Samsung TVOut driver
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

@@ -1,14 +1,14 @@
-/*
- * drivers/char/s3c_mem.c
+/* linux/drivers/char/s3c_mem.c
  *
- * Revision 1.0
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
- * This file is subject to the terms and conditions of the GNU General Public
- * License.  See the file COPYING in the main directory of this archive for
- * more details.
+ * S3C MEM driver for /dev/mem
  *
- *	    S3C MEM driver for /dev/mem
- */
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #include <linux/init.h>
 #include <linux/module.h>

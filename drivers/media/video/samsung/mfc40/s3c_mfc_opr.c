@@ -15,6 +15,8 @@
 #include <linux/mm.h>
 #include <linux/io.h>
 #include <plat/regs-mfc.h>
+#include <linux/dma-mapping.h>
+
 
 #include "s3c_mfc_common.h"
 #include "s3c_mfc_opr.h"
@@ -47,6 +49,7 @@ static MFC_ERROR_CODE s3c_mfc_set_vsp_buffer(int InstNo);
 static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_dec_exe_arg_t *DecArg, unsigned int *consumedStrmSize);
 
 static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *start_pos, u32* slice_type);
+static BOOL get_h264_header(u8 *in, s32 in_size, s32 *pre_start_pos );
 static u32 u_e(u32 *pre_bit_pos, u8 *in);
 
 static void s3c_mfc_cmd_reset(void)
@@ -956,8 +959,11 @@ MFC_ERROR_CODE s3c_mfc_set_wakeup(void)
 	return MFCINST_RET_OK;
 }
 
-
+#define MAX_BACKUP_STREM_SIZE 1024
 static s3c_mfc_args s3c_mfc_saved_args[MFC_MAX_INSTANCE_NUM];
+static s3c_mfc_args s3c_mfc_saved_args2[MFC_MAX_INSTANCE_NUM];
+static int s3c_mfc_backup_buf[MFC_MAX_INSTANCE_NUM][MAX_BACKUP_STREM_SIZE];
+static int s3c_mfc_backup_buf_size[MFC_MAX_INSTANCE_NUM];
 
 void s3c_mfc_backup_init_param(int inst_no, s3c_mfc_args *args)
 {
@@ -969,6 +975,91 @@ void s3c_mfc_restore_init_param(int inst_no, s3c_mfc_args *args)
 	memcpy((void*)args,(void*)&s3c_mfc_saved_args[inst_no], sizeof(s3c_mfc_args));
 }
 
+void s3c_mfc_backup_decode_stream(int inst_no, MFC_CODEC_TYPE codec_type ,int stream_buffer)
+{
+	int pos;
+	
+	dma_cache_maint((void *)stream_buffer, MAX_BACKUP_STREM_SIZE, DMA_FROM_DEVICE);
+
+	s3c_mfc_backup_buf_size[inst_no] = MAX_BACKUP_STREM_SIZE;
+	
+	if (codec_type == H264_DEC) {
+		if (get_h264_header((unsigned char *)stream_buffer, MAX_BACKUP_STREM_SIZE, &pos ))
+			s3c_mfc_backup_buf_size[inst_no] = pos;
+	}
+	
+	memcpy((void*)s3c_mfc_backup_buf[inst_no], (unsigned char *)stream_buffer,s3c_mfc_backup_buf_size[inst_no]);
+
+}
+
+void s3c_mfc_restore_decode_stream(int inst_no, int stream_buffer)
+{
+	memcpy((unsigned char *)stream_buffer,s3c_mfc_backup_buf[inst_no],s3c_mfc_backup_buf_size[inst_no]);
+	dma_cache_maint((void *)stream_buffer, MAX_BACKUP_STREM_SIZE, DMA_TO_DEVICE);
+}
+
+void s3c_mfc_backup_decode_init(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args)
+{
+	memcpy((void*)&s3c_mfc_saved_args[MfcCtx->InstNo],(void*)args, sizeof(s3c_mfc_args));	
+	s3c_mfc_backup_decode_stream(MfcCtx->InstNo,MfcCtx->MfcCodecType ,MfcCtx->virt_stream_buffer);
+}
+void s3c_mfc_backup_decode_start(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args)
+{
+	memcpy((void*)&s3c_mfc_saved_args2[MfcCtx->InstNo],(void*)args, sizeof(s3c_mfc_args));	
+}
+
+MFC_ERROR_CODE s3c_mfc_restore_decode(s3c_mfc_inst_ctx  *MfcCtx)
+{
+	s3c_mfc_args local_param, init_param, start_param;
+	MFC_ERROR_CODE	ret_code;
+	static int mfc_temp_buf[MAX_BACKUP_STREM_SIZE];
+
+
+	dma_cache_maint((void *)MfcCtx->virt_stream_buffer, MAX_BACKUP_STREM_SIZE, DMA_FROM_DEVICE);
+	memcpy((void *)mfc_temp_buf,(void *)MfcCtx->virt_stream_buffer,MAX_BACKUP_STREM_SIZE);
+	
+	memcpy((void *)&init_param,(void*)&s3c_mfc_saved_args[MfcCtx->InstNo],sizeof(s3c_mfc_args));	
+	memcpy((void *)&start_param,(void*)&s3c_mfc_saved_args2[MfcCtx->InstNo],sizeof(s3c_mfc_args));	
+	
+	s3c_mfc_restore_decode_stream(MfcCtx->InstNo,MfcCtx->virt_stream_buffer);
+
+
+	local_param.dec_init.in_codec_type = init_param.dec_super_init.in_codec_type;
+	local_param.dec_init.in_strm_size = init_param.dec_super_init.in_strm_size;		
+	local_param.dec_init.in_strm_buf = init_param.dec_super_init.in_strm_buf;
+	local_param.dec_init.in_packed_PB = init_param.dec_super_init.in_packed_PB;
+
+	/* MFC decode init */
+	ret_code = s3c_mfc_init_decode(MfcCtx, &local_param);
+	if (ret_code < 0) {
+		mfc_err("!restore_decode-s3c_mfc_init_decode faile inst_no=%d\n",MfcCtx->InstNo);
+		return MFCINST_ERR_DEC_RESET_FAIL;
+	}
+
+	memset(&local_param, 0, sizeof(local_param));
+
+	local_param.dec_seq_start.in_codec_type = start_param.dec_seq_start.in_codec_type;
+	local_param.dec_seq_start.in_frm_buf = start_param.dec_seq_start.in_frm_buf;
+	local_param.dec_seq_start.in_frm_size = start_param.dec_seq_start.in_frm_size;
+	local_param.dec_seq_start.in_strm_buf = start_param.dec_seq_start.in_strm_buf;
+	local_param.dec_seq_start.in_strm_size = start_param.dec_seq_start.in_strm_size;
+
+	ret_code = s3c_mfc_start_decode_seq(MfcCtx, &local_param);
+	if (ret_code < 0) {
+		mfc_err("!restore_decode-s3c_mfc_start_decode_seq faile inst_no=%d\n",MfcCtx->InstNo);
+		return MFCINST_ERR_DEC_RESET_FAIL;
+	}
+
+	if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
+		mfc_err("MFCINST_ERR_STATE_INVALID %d\n",MfcCtx->InstNo);
+		return MFCINST_ERR_STATE_INVALID;
+	}	
+
+	memcpy((void *)MfcCtx->virt_stream_buffer,(void *)mfc_temp_buf,MAX_BACKUP_STREM_SIZE);
+	dma_cache_maint((void *)MfcCtx->virt_stream_buffer, MAX_BACKUP_STREM_SIZE, DMA_TO_DEVICE);
+
+	return MFCINST_ERR_DEC_RESET_WAITING;
+}
 static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *pre_start_pos, u32* slice_type)
 {
 	BOOL islice = FALSE;
@@ -1035,6 +1126,56 @@ static BOOL is_idr_or_islice(u8 *in, s32 in_size, BOOL *is_idr, s32 *pre_start_p
 		*pre_start_pos = start_pos;
 	
 	return islice;
+}
+
+static BOOL get_h264_header(u8 *in, s32 in_size, s32 *pre_start_pos )
+{
+	u32 start_code = 0xFFFFFFFF;
+	s32 i;
+	BOOL sc_found = FALSE;
+	u32 nal_type;
+	u32 start_pos;
+    
+
+
+	if (pre_start_pos)
+		*pre_start_pos = 0;
+
+	for (i=0; i < in_size; i++) {
+		if (sc_found) {
+			nal_type = in[i] & 0x1F;
+
+			mfc_debug("--- uiNalType : %d \n", nal_type);
+			
+			if ((nal_type == 1)||(nal_type == 5)) { 
+				if (pre_start_pos)
+					*pre_start_pos = start_pos;
+				mfc_debug("\n&&&&&&& H.264 Header end Pos =%d\n",start_pos);
+				return TRUE;
+			}
+			
+			sc_found = FALSE;
+			start_code = 0xFFFFFFFF;
+		}
+
+		if (in[i] == 1 && (start_code == 0xFF000000 || start_code == 0xFFFF0000))
+		{
+			if (start_code == 0xFF000000)
+				start_pos = i - 3;
+			else if (start_code == 0xFFFF0000)
+				start_pos = i -2;
+
+			sc_found = TRUE;
+			start_code = (start_code << 8) | in[i];
+			continue;
+		} else if (in[i] == 0) {
+			start_code = start_code << 8;
+		} else {
+			start_code = 0xFFFFFFFF;
+		}
+	}
+	
+	return FALSE;
 }
 
 static u32 u_e(u32 *pre_bit_pos, u8 *in)
