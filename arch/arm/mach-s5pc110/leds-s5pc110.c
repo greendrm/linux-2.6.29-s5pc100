@@ -1,13 +1,18 @@
 /*
  * linux/arch/arm/mach-s5pc110/leds-s5pc110.c
  *
- * Copyright 2008 by Samsung Electronics Incorporated
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
  * There are 16 LEDs on the debug board (all green); four may be used
  * for logical 'green', 'amber', 'red', and 'blue' (after "claiming").
  *
  * The "surfer" expansion board and H2 sample board also have two-color
  * green+red LEDs (in parallel), used here for timer and idle indicators.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  */
 #include <linux/init.h>
 #include <linux/kernel_stat.h>

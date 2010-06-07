@@ -1,4 +1,4 @@
-/* arch/arm/plat-s5pc1xx/include/plat/s5pc110.h
+/* arch/arm/plat-s5pc11x/include/plat/s5pc110.h
  *
  * Copyright 2008 Openmoko, Inc.
  * Copyright 2008 Simtec Electronics

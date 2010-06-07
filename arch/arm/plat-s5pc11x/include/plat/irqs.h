@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/irqs.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/irqs.h
  *
  * Copyright 2008 Openmoko, Inc.
  * Copyright 2008 Simtec Electronics
