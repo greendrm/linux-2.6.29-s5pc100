@@ -1,8 +1,10 @@
-/*
+/* linux/include/linux/videodev2_samsung.h
+ *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com/
+ *
  * Video for Linux Two header file for samsung
  * 
- * Copyright (C) 2009, Dongsoo Nathaniel Kim<dongsoo45.kim@samsung.com>
- *
  * This header file contains several v4l2 APIs to be proposed to v4l2
  * community and until bein accepted, will be used restrictly in Samsung's
  * camera interface driver FIMC.
