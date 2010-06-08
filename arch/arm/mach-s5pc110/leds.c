@@ -1,7 +1,15 @@
-/*
- * linux/arch/arm/mach-s5pc110/leds.c
+/* linux/arch/arm/mach-s5pc110/leds.c
  *
- * S5PC100 LEDs dispatcher
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on mach-sa1100/leds.c
+ * 
+ * S5PC110 LEDs dispatcher
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
  */
 #include <linux/errno.h>
 #include <linux/kernel.h>

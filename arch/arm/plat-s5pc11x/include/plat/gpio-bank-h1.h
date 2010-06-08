@@ -1,9 +1,5 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/gpio-bank-h1.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/gpio-bank-h1.h
  *
- * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
- * 	Ben Dooks <ben@simtec.co.uk>
- * 	http://armlinux.simtec.co.uk/
  *
  * GPIO Bank H1 register and configuration definitions
  *

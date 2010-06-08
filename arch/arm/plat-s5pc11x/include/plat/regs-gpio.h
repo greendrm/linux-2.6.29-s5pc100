@@ -1,9 +1,9 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-gpio.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/regs-gpio.h
  *
- * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
- *      Ben Dooks <ben@simtec.co.uk>
- *      http://armlinux.simtec.co.uk/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on plat-s3c64xx/include/plat/regs-gpio.h
  *
  * S5PC11X - GPIO register definitions
  */

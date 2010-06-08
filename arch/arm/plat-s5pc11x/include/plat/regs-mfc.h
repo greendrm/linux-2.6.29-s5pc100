@@ -1,4 +1,4 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/regs-mfc.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/regs-mfc.h
  *
  * Register definition file for Samsung MFC V4.0 & V5.0 Interface (FIMV) driver
  *

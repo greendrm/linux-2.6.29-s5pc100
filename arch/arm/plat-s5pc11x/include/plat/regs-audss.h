@@ -1,4 +1,4 @@
-/* arch/arm/plat-s5pc1xx/include/plat/regs-clock.h
+/* arch/arm/plat-s5pc11x/include/plat/regs-clock.h
  *
  * Copyright 2008 Samsung Electronics
  *

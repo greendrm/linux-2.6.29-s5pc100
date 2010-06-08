@@ -1,10 +1,9 @@
 /* linux/arch/arm/plat-s3c/dma-pl080.c
  *
  * Copyright (c) 2003-2005,2006 Samsung Electronics
+ *		http://www.samsung.com/
  *
  * S3C6400/S3C6410 DMA core
- *
- * http://www.samsung.com/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

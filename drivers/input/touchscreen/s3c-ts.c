@@ -14,6 +14,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
  * Copyright (c) 2004 Arnaud Patard <arnaud.patard@rtp-net.org>
  * iPAQ H1940 touchscreen support
  *
