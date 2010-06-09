@@ -3,6 +3,8 @@
  * Copyright (c) 2010 Samsung Electronics Co., Ltd.
  * 		http://www.samsung.com
  *
+ * Based on arch/arm/plat-s3c24xx/dma.c
+ *
  * S5PC1XX DMAC core (PL330 DMAC)
  *
  * This program is free software; you can redistribute it and/or modify

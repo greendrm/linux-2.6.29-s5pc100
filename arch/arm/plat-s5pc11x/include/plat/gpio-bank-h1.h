@@ -1,5 +1,9 @@
 /* linux/arch/arm/plat-s5pc11x/include/plat/gpio-bank-h1.h
  *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on plat-s3c64xx/include/plat/gpio-bank-*.h
  *
  * GPIO Bank H1 register and configuration definitions
  *

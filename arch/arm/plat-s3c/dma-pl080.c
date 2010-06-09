@@ -3,6 +3,8 @@
  * Copyright (c) 2003-2005,2006 Samsung Electronics
  *		http://www.samsung.com/
  *
+ * Based on arch/arm/plat-s3c24xx/dma.c
+ *
  * S3C6400/S3C6410 DMA core
  *
  * This program is free software; you can redistribute it and/or modify
