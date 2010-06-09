@@ -54,7 +54,7 @@ static int s3c_mfc_wait_polling(unsigned int PollingRegAddress)
 int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command, s3c_mfc_inst_ctx *MfcCtx)
 {
 	u32 ret = 1;
-	u32 timeout_val = 1000;
+	u32 timeout_val = 200;
 	
 	switch (command) {
 	case MFC_POLLING_DMA_DONE :
@@ -76,11 +76,11 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command, s3c_mfc_inst_ctx *MfcC
 	case MFC_INTR_FRAME_DONE :
 	case MFC_INTR_FRAME_FW_DONE:
 		if(MfcCtx->img_width * MfcCtx->img_height < 800*576)
-			timeout_val = 300;
+			timeout_val = 50;
 		else if(MfcCtx->img_width * MfcCtx->img_height > 1000*600)
-			timeout_val = 800;
+			timeout_val = 150;
 		else
-			timeout_val = 500;
+			timeout_val = 90;
 		
 	case MFC_INTR_DMA_DONE :
 	case MFC_INTR_FW_DONE :
