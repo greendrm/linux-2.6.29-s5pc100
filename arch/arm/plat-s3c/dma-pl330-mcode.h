@@ -1,5 +1,8 @@
 /* linux/arch/arm/plat-s3c/dma-pl330-mcode.h
  *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
  * DMA PL330 microcode
  *
  * This program is free software; you can redistribute it and/or modify

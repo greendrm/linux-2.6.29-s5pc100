@@ -1,16 +1,16 @@
-/* linux/arch/arm/mach-s5pc110/include/mach/regs-irq.h
+/* arch/arm/mach-s5pc110/include/mach/regs-irq.h
  *
- * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
- *	http://armlinux.simtec.co.uk/
- *	Ben Dooks <ben@simtec.co.uk>
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on mach-s3c2410/include/mach/regs-irq.h
  *
  * S5PC11X - IRQ register definitions
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-*/
+ */
 
 #ifndef __ASM_ARCH_REGS_IRQ_H
 #define __ASM_ARCH_REGS_IRQ_H __FILE__

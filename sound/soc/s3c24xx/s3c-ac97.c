@@ -7,6 +7,12 @@
  * 	Author: Jaswinder Singh <jassi.brar@samsung.com>
  * 	Credits: Graeme Gregory, Sean Choi
  *
+ * (c) 2007 Wolfson Microelectronics PLC.
+ * Graeme Gregory graeme.gregory@wolfsonmicro.com or linux@wolfsonmicro.com
+ *
+ * Copyright (C) 2005, Sean Choi <sh428.choi@samsung.com>
+ * All rights reserved.
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.

@@ -1,19 +1,13 @@
-/* linux/arch/arm/plat-s5pc1xx/pwm-S5PC11X.c
+/* linux/arch/arm/plat-s5pc11x/pwm-s5pc110.c
  *
- * (c) 2003-2005 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
  * S5PC11X PWM core
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *
- * Changelog:
- * This file is based on the Sangwook Lee/Samsung patches, re-written due
- * to various ommisions from the code (such as flexible pwm configuration)
- * for use with the BAST system board.
- *
  *
  */
 #include <linux/errno.h>

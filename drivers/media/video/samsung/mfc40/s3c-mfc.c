@@ -233,6 +233,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			break;
 		}
 
+		s3c_mfc_backup_decode_init(MfcCtx,&local_param);
+
 		InParm.args.dec_super_init.out_img_width = local_param.dec_init.out_img_width;
 		InParm.args.dec_super_init.out_img_height = local_param.dec_init.out_img_height;
 		InParm.args.dec_super_init.out_buf_width = local_param.dec_init.out_buf_width;
@@ -300,7 +302,7 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			ret = InParm.ret_code;
 			break;
 		}
-		
+		s3c_mfc_backup_decode_start(MfcCtx,&local_param);		
 		
 		break;
 
@@ -326,24 +328,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			s3c_mfc_clear_reset_state(MfcCtx->InstNo);
 		}		
 	        if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
-			mfc_warn("MFCINST_STATE_RESET\n");   
-			if((InParm.ret_code
-			= s3c_mfc_init_decode(MfcCtx, &(InParm.args)))
-			!= MFCINST_RET_OK) {
-			    	break;
-			}
-
-			if((InParm.ret_code
-			= s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args)))
-			!= MFCINST_RET_OK) {
+			mfc_warn("MFCINST_STATE_RESET-inst =%d\n",MfcCtx->InstNo);
+			InParm.ret_code = s3c_mfc_restore_decode(MfcCtx);
+			if (InParm.ret_code != MFCINST_ERR_DEC_RESET_WAITING) {
+				ret = -EINVAL;
 				break;
-			}
-		    
-			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
-				mfc_err("MFCINST_ERR_STATE_INVALID\n");
-				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
-		                break;
-			}
+			} 
 	        }
 
 		if (MfcCtx->MfcState != MFCINST_STATE_RESET_WAIT) {
@@ -360,25 +350,12 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file, unsigned int cm
 
 
 		if (MfcCtx->MfcState == MFCINST_STATE_RESET) {
-			mfc_warn("--- MFCINST_STATE_RESET Inst_no=%d \n",MfcCtx->InstNo);	
-			if((InParm.ret_code
-			= s3c_mfc_init_decode(MfcCtx, &(InParm.args)))
-			!= MFCINST_RET_OK) {
-				break;
-			}
-		
-			if((InParm.ret_code
-			= s3c_mfc_start_decode_seq(MfcCtx, &(InParm.args)))
-			!= MFCINST_RET_OK) {
-				break;
-			}
-		    
-			if (!s3c_mfc_set_state(MfcCtx, MFCINST_STATE_RESET_WAIT)) {
-				mfc_err("MFCINST_ERR_STATE_INVALID\n");
-				InParm.ret_code = MFCINST_ERR_STATE_INVALID;
-				break;
-			}
-			InParm.ret_code = ret;
+			mfc_warn("--- MFCINST_STATE_RESET Inst_no=%d \n",MfcCtx->InstNo);		
+			InParm.ret_code = s3c_mfc_restore_decode(MfcCtx);
+			if (InParm.ret_code != MFCINST_ERR_DEC_RESET_WAITING)
+				ret = -EINVAL;
+			else
+				InParm.ret_code = ret;
 		}
 		break;
 

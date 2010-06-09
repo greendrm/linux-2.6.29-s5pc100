@@ -1,9 +1,9 @@
-/* linux/arch/arm/plat-s5pc1xx/include/plat/gpio-bank-mp14.h
+/* linux/arch/arm/plat-s5pc11x/include/plat/gpio-bank-mp14.h
  *
- * Copyright 2008 Openmoko, Inc.
- * Copyright 2008 Simtec Electronics
- * 	Ben Dooks <ben@simtec.co.uk>
- * 	http://armlinux.simtec.co.uk/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on plat-s3c64xx/include/plat/gpio-bank-*.h
  *
  * GPIO Bank MP14 register and configuration definitions
  *

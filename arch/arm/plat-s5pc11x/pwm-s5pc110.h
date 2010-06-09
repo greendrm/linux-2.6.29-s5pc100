@@ -1,19 +1,14 @@
-/* arch/arm/plat-s5pc1xx/pwm-s5pc100.h
+/* arch/arm/plat-s5pc11x/pwm-s5pc110.h
  *
- * Copyright (C) 2003,2004 Simtec Electronics
- *	Ben Dooks <ben@simtec.co.uk>
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
  *
- * Samsung S5PC1XX PWM support
+ * Samsung S5PC11X PWM support
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *
- * Changelog:
- *  ??-May-2003 BJD   Created file
- *  ??-Jun-2003 BJD   Added more dma functionality to go with arch
- *  10-Nov-2004 BJD   Added sys_device support
-*/
+ */
 
 #ifndef __ASM_ARCH_DMA_H
 #define __ASM_ARCH_DMA_H __FILE__

@@ -1,9 +1,9 @@
-/* linux/drivers/media/video/samsung/jpeg_v2/jpg-conf.h
+/* linux/drivers/media/video/samsung/jpeg_v2/jpg_conf.h
+ *
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ *		http://www.samsungsemi.com/
  *
  * Configuration file for Samsung JPEG Encoder/Decoder
- *
- * Peter Oh, Hyunmin kwak, Copyright (c) 2009 Samsung Electronics
- * 	http://www.samsungsemi.com/
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

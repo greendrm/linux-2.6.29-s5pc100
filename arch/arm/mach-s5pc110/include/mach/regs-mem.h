@@ -1,13 +1,16 @@
 /* arch/arm/mach-s5pc110/include/mach/regs-mem.h
  *
- * Copyright (c) 2004 Simtec Electronics <linux@simtec.co.uk>
- *		http://www.simtec.co.uk/products/SWLINUX/
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ * 		http://www.samsung.com
+ *
+ * Based on mach-s3c2410/include/mach/regs-mem.h
+ *
+ * S5PC110 - Memory Control register definitions
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * S5PC100 Memory Control register definitions
 */
 
 #ifndef __ASM_ARM_MEMREGS_H
