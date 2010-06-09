@@ -3,6 +3,10 @@
  * Copyright (c) 2010 Samsung Electronics Co., Ltd.
  * 		http://www.samsung.com
  *
+ * Copyright (c) 2003-2005,2006 Simtec Electronics
+ *	Ben Dooks <ben@simtec.co.uk>
+ * http://armlinux.simtec.co.uk/
+ *
  * Based on arch/arm/plat-s3c24xx/dma.c
  *
  * S5PC1XX DMAC core (PL330 DMAC)
