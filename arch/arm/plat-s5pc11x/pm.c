@@ -2,6 +2,8 @@
  *
  * Copyright (c) 2010 Samsung Electronics Co., Ltd.
  * 		http://www.samsung.com
+ * Copyright (c) 2004,2006 Simtec Electronics
+ *	Ben Dooks <ben@simtec.co.uk>
  *
  * S5PC11X Power Manager (Suspend-To-RAM) support
  *
