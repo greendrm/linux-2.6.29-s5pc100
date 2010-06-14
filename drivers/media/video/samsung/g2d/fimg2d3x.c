@@ -41,6 +41,7 @@
 #define G2D_DMA_CACHE_CLEAN	_IOWR(G2D_IOCTL_MAGIC, 1, struct g2d_dma_info)
 #define G2D_DMA_CACHE_FLUSH	_IOWR(G2D_IOCTL_MAGIC, 2, struct g2d_dma_info)
 #define G2D_WAIT_FOR_IRQ	_IO(G2D_IOCTL_MAGIC, 3)
+#define G2D_DMA_CACHE_FLUSH_ALL	_IO(G2D_IOCTL_MAGIC, 4)
 
 struct g2d_info {
 	struct clk *clock;
@@ -159,6 +160,10 @@ static int g2d_ioctl(struct inode *inode, struct file *file,
 
 	case G2D_DMA_CACHE_FLUSH:
 		dmac_flush_range(vaddr, vaddr + dma_info.size);
+		break;
+
+	case G2D_DMA_CACHE_FLUSH_ALL:
+		__cpuc_flush_kern_all();
 		break;
 
 	default:
