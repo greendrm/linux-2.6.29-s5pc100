@@ -133,7 +133,7 @@ static MFC_ERROR_CODE s3c_mfc_set_dec_frame_buffer(s3c_mfc_inst_ctx  *MfcCtx, in
 	if((MfcCtx->MfcCodecType == MPEG4_DEC) 
 			||(MfcCtx->MfcCodecType == MPEG2_DEC) 
 			||(MfcCtx->MfcCodecType == XVID_DEC) 
-			||(MfcCtx->MfcCodecType == DIVX_DEC) ) {
+			||(MfcCtx->MfcCodecType == FIMV_DEC) ) {
 		dec_dpb_addr = READL(S3C_FIMV_DEC_DPB_ADR);
 		WRITEL(Align(dec_dpb_addr + ((3*FrameSize*MfcCtx->DPBCnt)>>1), BUF_ALIGN_UNIT), S3C_FIMV_POST_ADR);
 	}
@@ -559,7 +559,7 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 
 	case MPEG4_DEC:
 	case MPEG2_DEC: 
-	case DIVX_DEC: 
+	case FIMV_DEC: 
 	case XVID_DEC:
 		MfcCtx->totalDPBCnt = ((NUM_MPEG4_DPB*3)>>1) + NUM_POST_DPB + MfcCtx->extraDPB;
 		MfcCtx->DPBCnt = NUM_MPEG4_DPB;
