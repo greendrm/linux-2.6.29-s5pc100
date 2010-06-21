@@ -16,7 +16,7 @@
 
 #include "s3c_mfc_common.h"
 
-#define MFC_TIMEOUT	5000
+#define MFC_TIMEOUT	400
 
 extern unsigned int s3c_mfc_int_type;
 extern unsigned int s3c_mfc_err_type;

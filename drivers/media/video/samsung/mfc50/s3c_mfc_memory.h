@@ -36,7 +36,7 @@
 
 #define CPB_BUF_SIZE		(0x400000)	/* 4MB : 4x1024x1024 for decoder */
 
-#define STREAM_BUF_SIZE		(0x200000)	/* 2MB : 2x1024x1024 for encoder */
+#define STREAM_BUF_SIZE		(0x300000)	/* 3MB : 3x1024x1024 for encoder */
 
 #define ENC_UP_INTRA_PRED_SIZE	(0x10000)	/* 64KB : 64x1024 for encoder */
 
