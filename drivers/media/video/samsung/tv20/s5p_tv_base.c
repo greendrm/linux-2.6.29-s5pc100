@@ -602,11 +602,11 @@ void s5p_tv_kobject_uevent(void)
        int hpd_state = s5p_hpd_get_state();
 
        if(hpd_state) {
-               printk(KERN_ERR "Event] Send UEvent = %d\n", hpd_state);
+               BASEPRINTK(KERN_ERR "Event] Send UEvent = %d\n", hpd_state);
                kobject_uevent(&(s5p_tvout[0].dev.kobj), KOBJ_ADD);
                kobject_uevent(&(s5p_tvout[1].dev.kobj), KOBJ_ADD);
        } else {
-               printk(KERN_ERR "Event] Send UEvent = %d\n", hpd_state);
+               BASEPRINTK(KERN_ERR "Event] Send UEvent = %d\n", hpd_state);
                kobject_uevent(&(s5p_tvout[0].dev.kobj), KOBJ_REMOVE);
                kobject_uevent(&(s5p_tvout[1].dev.kobj), KOBJ_REMOVE);
        }
