@@ -30,7 +30,7 @@
 #include "s5p_tv.h"
 #include "hpd.h"
 
-#define HPDDEBUG
+//#define HPDDEBUG
 
 #ifdef HPDDEBUG
 #define HPDIFPRINTK(fmt, args...) \
@@ -113,7 +113,9 @@ int s5p_hpd_set_hdmiint(void)
 	atomic_set(&hdmi_status, HDMI_ON);
 
 	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_HDMI_HPD);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_DOWN);
+
+	writel(readl(S5PC11X_GPH1DRV)|0x3<<10, S5PC11X_GPH1DRV);
 
 	s5p_hdmi_hpd_gen();
 
@@ -136,7 +138,9 @@ int s5p_hpd_set_eint(void)
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 
 	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_DOWN);
+
+	writel(readl(S5PC11X_GPH1DRV)|0x3<<10, S5PC11X_GPH1DRV);
 
 	return 0;
 }
@@ -159,9 +163,9 @@ int irq_eint(int irq)
 	}
 
 	if (atomic_read(&hpd_struct.state))
-		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_LOW);
+		set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_FALLING);
 	else
-		set_irq_type(IRQ_EINT13, IRQ_TYPE_LEVEL_HIGH);
+		set_irq_type(IRQ_EINT13, IRQ_TYPE_EDGE_RISING);
 
 	schedule_work(&hpd_work);
 
@@ -283,7 +287,8 @@ static int __init s5p_hpd_probe(struct platform_device *pdev)
 	atomic_set(&hdmi_status, HDMI_OFF);
 
 	s3c_gpio_cfgpin(S5PC11X_GPH1(5), S5PC11X_GPH1_5_EXT_INT31_5);
-	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_UP);
+	s3c_gpio_setpull(S5PC11X_GPH1(5), S3C_GPIO_PULL_DOWN);
+	writel(readl(S5PC11X_GPH1DRV)|0x3<<10, S5PC11X_GPH1DRV);
 
 	if (gpio_get_value(S5PC11X_GPH1(5))) {
 		atomic_set(&hpd_struct.state, HPD_HI);
