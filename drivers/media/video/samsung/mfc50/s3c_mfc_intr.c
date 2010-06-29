@@ -24,6 +24,7 @@
 #include "s3c_mfc_common.h"
 #include "s3c_mfc_types.h"
 #include "s3c_mfc_memory.h"
+#include "s3c_mfc_opr.h"
 
 extern wait_queue_head_t s3c_mfc_wait_queue;
 extern unsigned int s3c_mfc_int_type;
@@ -76,6 +77,7 @@ int s3c_mfc_wait_for_done(s3c_mfc_wait_done_type command)
 						   MFC_TIMEOUT) == 0) {
 			ret_val = 0;
 			mfc_err("Interrupt Time Out(%d)\n", command);
+			dump_sfrs();
 			break;
 		}
 

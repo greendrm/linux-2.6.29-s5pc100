@@ -67,6 +67,10 @@ extern s3c_mfc_alloc_mem_t *s3c_mfc_alloc_mem_tail[MFC_MAX_PORT_NUM];
 
 DECLARE_WAIT_QUEUE_HEAD(s3c_mfc_wait_queue);
 
+#ifdef DETECT_FRMAE_DROP
+extern	unsigned long long mfc_mid;
+#endif
+
 static int s3c_mfc_open(struct inode *inode, struct file *file)
 {
 	s3c_mfc_inst_ctx *mfc_ctx;
@@ -82,7 +86,7 @@ static int s3c_mfc_open(struct inode *inode, struct file *file)
 		clk_enable(mfc_sys->clock);
 
 		/* MFC Hardware Initialization */
-		if (s3c_mfc_init_hw() == FALSE){
+		if (s3c_mfc_init_hw() < 0){
 			ret = -ENODEV;
 			goto out_open;
 		}
@@ -143,7 +147,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	mutex_lock(&s3c_mfc_mutex);
 
 #if	defined(CONFIG_VIDEO_MFC_FRAME_CLK_GATING)
-		s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
+	s5pc11x_clk_ip0_ctrl(ctrl->clock, 1);
 #endif
 
 	mfc_ctx = (s3c_mfc_inst_ctx *) file->private_data;
@@ -154,8 +158,8 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	}
 	for (port_no = 0; port_no < MFC_MAX_PORT_NUM; port_no++) {
 		for (node = s3c_mfc_alloc_mem_head[port_no];
-		     node != s3c_mfc_alloc_mem_tail[port_no];
-		     node = node->next) {
+				node != s3c_mfc_alloc_mem_tail[port_no];
+				node = node->next) {
 			if (node->inst_no == mfc_ctx->mem_inst_no) {
 				tmp_node = node;
 				node = node->prev;
@@ -169,7 +173,7 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 	s3c_mfc_return_mem_inst_no(mfc_ctx->mem_inst_no);
 
 	if ((mfc_ctx->MfcState >= MFCINST_STATE_DEC_INITIALIZE) ||
-		(mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE))
+			(mfc_ctx->MfcState >= MFCINST_STATE_ENC_INITIALIZE))
 		s3c_mfc_return_inst_no(mfc_ctx->InstNo, mfc_ctx->MfcCodecType);
 
 	s3c_mfc_openhandle_count--;
@@ -193,7 +197,7 @@ out_release:
 }
 
 static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
-			 unsigned int cmd, unsigned long arg)
+		unsigned int cmd, unsigned long arg)
 {
 	int ret, ex_ret;
 	s3c_mfc_frame_buf_arg_t frame_buf_size;
@@ -212,8 +216,8 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
 #endif
 
 	ret =
-	    copy_from_user(&in_param, (s3c_mfc_common_args *) arg,
-			   sizeof(s3c_mfc_common_args));
+		copy_from_user(&in_param, (s3c_mfc_common_args *) arg,
+				sizeof(s3c_mfc_common_args));
 	if (ret < 0) {
 		mfc_err("Inparm copy error\n");
 		ret = -EIO;
@@ -225,273 +229,273 @@ static int s3c_mfc_ioctl(struct inode *inode, struct file *file,
 	mutex_unlock(&s3c_mfc_mutex);
 
 	switch (cmd) {
-	case IOCTL_MFC_ENC_INIT:
+		case IOCTL_MFC_ENC_INIT:
 
-		mutex_lock(&s3c_mfc_mutex);
-		mfc_debug("IOCTL_MFC_ENC_INIT\n");
-		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE) <
-		    0) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* MFC encode init */
-		in_param.ret_code =
-		    s3c_mfc_init_encode(mfc_ctx, &(in_param.args));
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* Allocate MFC buffer(stream, refYC, MV) */
-		in_param.ret_code =
-		    s3c_mfc_allocate_stream_ref_buf(mfc_ctx, &(in_param.args));
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* cache clean */
-
-		/* Set Ref YC0~3 & MV */
-		in_param.ret_code =
-		    s3c_mfc_set_enc_ref_buffer(mfc_ctx, &(in_param.args));
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		in_param.ret_code =
-		    s3c_mfc_encode_header(mfc_ctx, &(in_param.args));
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_ENC_EXE:
-
-		mutex_lock(&s3c_mfc_mutex);
-		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE) < 0) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		in_param.ret_code =
-		    s3c_mfc_exe_encode(mfc_ctx, &(in_param.args));
-		//mfc_debug("InParm->ret_code : %d\n", in_param.ret_code);
-		ret = in_param.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_DEC_INIT:
-
-		mutex_lock(&s3c_mfc_mutex);
-		mfc_debug("IOCTL_MFC_DEC_INIT\n");
-		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE) <
-		    0) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* MFC decode init */
-		in_param.ret_code =
-		    s3c_mfc_init_decode(mfc_ctx, &(in_param.args));
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		if (in_param.args.dec_init.out_dpb_cnt <= 0) {
-			mfc_err("MFC out_dpb_cnt error\n");
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* Get frame buf size */
-		frame_buf_size =
-		    s3c_mfc_get_frame_buf_size(mfc_ctx, &(in_param.args));
-
-		/* Allocate MFC buffer(Y, C, MV) */
-		in_param.ret_code =
-		    s3c_mfc_allocate_frame_buf(mfc_ctx, &(in_param.args),
-					       frame_buf_size);
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		/* Set DPB buffer */
-		in_param.ret_code =
-		    s3c_mfc_set_dec_frame_buffer(mfc_ctx, &(in_param.args));
-		//s3c_mfc_set_dec_frame_buffer(mfc_ctx, dec_arg->in_frm_buf, dec_arg->in_frm_size);
-		if (in_param.ret_code < 0) {
-			ret = in_param.ret_code;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_DEC_EXE:
-
-		mutex_lock(&s3c_mfc_mutex);
-		mfc_debug("IOCTL_MFC_DEC_EXE\n");
-		if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE) < 0) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		in_param.ret_code =
-		    s3c_mfc_exe_decode(mfc_ctx, &(in_param.args));
-		ret = in_param.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_GET_CONFIG:
-
-		mutex_lock(&s3c_mfc_mutex);
-		if (mfc_ctx->MfcState < MFCINST_STATE_DEC_INITIALIZE) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			mutex_unlock(&s3c_mfc_mutex);
-			break;
-		}
-
-		in_param.ret_code =
-		    s3c_mfc_get_config(mfc_ctx, &(in_param.args));
-		ret = in_param.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_SET_CONFIG:
-
-		mutex_lock(&s3c_mfc_mutex);
-		in_param.ret_code =
-		    s3c_mfc_set_config(mfc_ctx, &(in_param.args));
-		ret = in_param.ret_code;
-		mutex_unlock(&s3c_mfc_mutex);
-		break;
-
-	case IOCTL_MFC_GET_IN_BUF:
-
-		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			break;
-		}
-		/* allocate stream buf for decoder & current YC buf for encoder */
-		if (in_param.args.mem_alloc.dec_enc_type == ENCODER)
-			mfc_ctx->port_no = 1;
-		else
-			mfc_ctx->port_no = 0;
-
-		in_param.args.mem_alloc.buff_size =
-		    Align(in_param.args.mem_alloc.buff_size, 2 * BUF_L_UNIT);
-		in_param.ret_code =
-		    s3c_mfc_get_virt_addr(mfc_ctx, &(in_param.args));
-
-		ret = in_param.ret_code;
-
-		break;
-
-	case IOCTL_MFC_FREE_BUF:
-
-		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
-			break;
-		}
-
-		for (port_no = 0; port_no < MFC_MAX_PORT_NUM; port_no++) {
-			for (node = s3c_mfc_alloc_mem_head[port_no];
-			     node != s3c_mfc_alloc_mem_tail[port_no];
-			     node = node->next) {
-				if (node->u_addr ==
-				    (unsigned char *)in_param.args.mem_free.
-				    u_addr) {
-					matched_u_addr = 1;
-					break;
-				}
-			}
-			if (matched_u_addr)
+			mutex_lock(&s3c_mfc_mutex);
+			mfc_debug("IOCTL_MFC_ENC_INIT\n");
+			if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_INITIALIZE) <
+					0) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
 				break;
-		}
-		if (node == s3c_mfc_alloc_mem_tail[port_no]) {
-			mfc_err("invalid virtual address(0x%x)\r\n",
-				in_param.args.mem_free.u_addr);
-			ret = MFC_RET_MEM_INVALID_ADDR_FAIL;
-		}
-		mfc_ctx->port_no = port_no;
+			}
 
-		in_param.ret_code = s3c_mfc_release_alloc_mem(mfc_ctx, node);
-		ret = in_param.ret_code;
+			/* MFC encode init */
+			in_param.ret_code =
+				s3c_mfc_init_encode(mfc_ctx, &(in_param.args));
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
 
-		break;
+			/* Allocate MFC buffer(stream, refYC, MV) */
+			in_param.ret_code =
+				s3c_mfc_allocate_stream_ref_buf(mfc_ctx, &(in_param.args));
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
 
-	case IOCTL_MFC_GET_PHYS_ADDR:
+			/* cache clean */
 
-		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
+			/* Set Ref YC0~3 & MV */
+			in_param.ret_code =
+				s3c_mfc_set_enc_ref_buffer(mfc_ctx, &(in_param.args));
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			in_param.ret_code =
+				s3c_mfc_encode_header(mfc_ctx, &(in_param.args));
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_ENC_EXE:
+
+			mutex_lock(&s3c_mfc_mutex);
+			if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_ENC_EXE) < 0) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			in_param.ret_code =
+				s3c_mfc_exe_encode(mfc_ctx, &(in_param.args));
+			//mfc_debug("InParm->ret_code : %d\n", in_param.ret_code);
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_DEC_INIT:
+
+			mutex_lock(&s3c_mfc_mutex);
+			mfc_debug("IOCTL_MFC_DEC_INIT\n");
+			if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_INITIALIZE) <
+					0) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			/* MFC decode init */
+			in_param.ret_code =
+				s3c_mfc_init_decode(mfc_ctx, &(in_param.args));
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			if (in_param.args.dec_init.out_dpb_cnt <= 0) {
+				mfc_err("MFC out_dpb_cnt error\n");
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			/* Get frame buf size */
+			frame_buf_size =
+				s3c_mfc_get_frame_buf_size(mfc_ctx, &(in_param.args));
+
+			/* Allocate MFC buffer(Y, C, MV) */
+			in_param.ret_code =
+				s3c_mfc_allocate_frame_buf(mfc_ctx, &(in_param.args),
+						frame_buf_size);
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			/* Set DPB buffer */
+			in_param.ret_code =
+				s3c_mfc_set_dec_frame_buffer(mfc_ctx, &(in_param.args));
+			//s3c_mfc_set_dec_frame_buffer(mfc_ctx, dec_arg->in_frm_buf, dec_arg->in_frm_size);
+			if (in_param.ret_code < 0) {
+				ret = in_param.ret_code;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_DEC_EXE:
+
+			mutex_lock(&s3c_mfc_mutex);
+			mfc_debug("IOCTL_MFC_DEC_EXE\n");
+			if (s3c_mfc_set_state(mfc_ctx, MFCINST_STATE_DEC_EXE) < 0) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			in_param.ret_code =
+				s3c_mfc_exe_decode(mfc_ctx, &(in_param.args));
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_GET_CONFIG:
+
+			mutex_lock(&s3c_mfc_mutex);
+			if (mfc_ctx->MfcState < MFCINST_STATE_DEC_INITIALIZE) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				mutex_unlock(&s3c_mfc_mutex);
+				break;
+			}
+
+			in_param.ret_code =
+				s3c_mfc_get_config(mfc_ctx, &(in_param.args));
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_SET_CONFIG:
+
+			mutex_lock(&s3c_mfc_mutex);
+			in_param.ret_code =
+				s3c_mfc_set_config(mfc_ctx, &(in_param.args));
+			ret = in_param.ret_code;
+			mutex_unlock(&s3c_mfc_mutex);
+			break;
+
+		case IOCTL_MFC_GET_IN_BUF:
+
+			if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				break;
+			}
+			/* allocate stream buf for decoder & current YC buf for encoder */
+			if (in_param.args.mem_alloc.dec_enc_type == ENCODER)
+				mfc_ctx->port_no = 1;
+			else
+				mfc_ctx->port_no = 0;
+
+			in_param.args.mem_alloc.buff_size =
+				Align(in_param.args.mem_alloc.buff_size, 2 * BUF_L_UNIT);
+			in_param.ret_code =
+				s3c_mfc_get_virt_addr(mfc_ctx, &(in_param.args));
+
+			ret = in_param.ret_code;
 
 			break;
-		}
 
-		in_param.ret_code =
-		    s3c_mfc_get_phys_addr(mfc_ctx, &(in_param.args));
-		ret = in_param.ret_code;
+		case IOCTL_MFC_FREE_BUF:
 
-		break;
+			if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+				break;
+			}
 
-	case IOCTL_MFC_GET_MMAP_SIZE:
+			for (port_no = 0; port_no < MFC_MAX_PORT_NUM; port_no++) {
+				for (node = s3c_mfc_alloc_mem_head[port_no];
+						node != s3c_mfc_alloc_mem_tail[port_no];
+						node = node->next) {
+					if (node->u_addr ==
+							(unsigned char *)in_param.args.mem_free.
+							u_addr) {
+						matched_u_addr = 1;
+						break;
+					}
+				}
+				if (matched_u_addr)
+					break;
+			}
+			if (node == s3c_mfc_alloc_mem_tail[port_no]) {
+				mfc_err("invalid virtual address(0x%x)\r\n",
+						in_param.args.mem_free.u_addr);
+				ret = MFC_RET_MEM_INVALID_ADDR_FAIL;
+			}
+			mfc_ctx->port_no = port_no;
 
-		if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
-			mfc_err("MFC_RET_STATE_INVALID\n");
-			in_param.ret_code = MFC_RET_STATE_INVALID;
-			ret = -EINVAL;
+			in_param.ret_code = s3c_mfc_release_alloc_mem(mfc_ctx, node);
+			ret = in_param.ret_code;
 
 			break;
-		}
 
-		in_param.ret_code = MFC_RET_OK;
-		ret = s3c_mfc_get_data_buf_phys_size()
-		    + s3c_mfc_get_dpb_luma_buf_phys_size();
+		case IOCTL_MFC_GET_PHYS_ADDR:
 
-		break;
+			if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
 
-	default:
+				break;
+			}
 
-		mfc_err
-		    ("Requested ioctl command is not defined. (ioctl cmd=0x%08x)\n",
-		     cmd);
-		in_param.ret_code = MFC_RET_INVALID_PARAM_FAIL;
-		ret = -EINVAL;
+			in_param.ret_code =
+				s3c_mfc_get_phys_addr(mfc_ctx, &(in_param.args));
+			ret = in_param.ret_code;
+
+			break;
+
+		case IOCTL_MFC_GET_MMAP_SIZE:
+
+			if (mfc_ctx->MfcState < MFCINST_STATE_OPENED) {
+				mfc_err("MFC_RET_STATE_INVALID\n");
+				in_param.ret_code = MFC_RET_STATE_INVALID;
+				ret = -EINVAL;
+
+				break;
+			}
+
+			in_param.ret_code = MFC_RET_OK;
+			ret = s3c_mfc_get_data_buf_phys_size()
+				+ s3c_mfc_get_dpb_luma_buf_phys_size();
+
+			break;
+
+		default:
+
+			mfc_err
+				("Requested ioctl command is not defined. (ioctl cmd=0x%08x)\n",
+				 cmd);
+			in_param.ret_code = MFC_RET_INVALID_PARAM_FAIL;
+			ret = -EINVAL;
 	}
 
 out_ioctl:
@@ -501,8 +505,8 @@ out_ioctl:
 #endif
 
 	ex_ret =
-	    copy_to_user((s3c_mfc_common_args *) arg, &in_param,
-			 sizeof(s3c_mfc_common_args));
+		copy_to_user((s3c_mfc_common_args *) arg, &in_param,
+				sizeof(s3c_mfc_common_args));
 	if (ex_ret < 0) {
 		mfc_err("Outparm copy to user error\n");
 		ret = -EIO;
@@ -522,13 +526,13 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	unsigned long remap_offset, remap_size;
 
 	mfc_debug("vm_start= 0x%08lx, vm_end= 0x%08lx, size= %ld(%ldMB)\n",
-		vma->vm_start, vma->vm_end, vir_size, (vir_size >> 20));
+			vma->vm_start, vma->vm_end, vir_size, (vir_size >> 20));
 
 	offset = s3c_mfc_get_data_buf_phys_addr() - s3c_mfc_phys_buf;
 
 	phy_size =
-	    (unsigned long)(s3c_mfc_buf_size + s3c_mfc_dpb_luma_buf_size -
-			    offset);
+		(unsigned long)(s3c_mfc_buf_size + s3c_mfc_dpb_luma_buf_size -
+				offset);
 
 	/*
 	 * if memory size required from appl. mmap() is bigger than max data memory
@@ -536,7 +540,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	 */
 	if (vir_size > phy_size) {
 		mfc_err("virtual requested mem(%ld) is bigger than physical mem(%ld)\n",
-			vir_size, phy_size);
+				vir_size, phy_size);
 		return -EINVAL;
 	}
 
@@ -551,7 +555,7 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	 */
 	pfn = __phys_to_pfn(s3c_mfc_get_data_buf_phys_addr());
 	if (remap_pfn_range(vma, vma->vm_start + remap_offset, pfn,
-		remap_size, vma->vm_page_prot)) {
+				remap_size, vma->vm_page_prot)) {
 
 		mfc_err("mfc remap port 0 error\n");
 
@@ -569,16 +573,16 @@ static int s3c_mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 	 */
 	pfn = __phys_to_pfn(s3c_mfc_get_dpb_luma_buf_phys_addr());
 	if (remap_pfn_range(vma, vma->vm_start + remap_offset, pfn,
-		remap_size, vma->vm_page_prot)) {
+				remap_size, vma->vm_page_prot)) {
 		mfc_err("mfc remap port 1 error\n");
 		return -EAGAIN;
 	}
 	mfc_debug("virtual requested mem = %ld, physical reserved data mem = %ld\n",
-		  vir_size, phy_size);
+			vir_size, phy_size);
 
 	if ((remap_offset + remap_size) < phy_size)
 		mfc_warn("The MFC reserved memory dose not mmap fully [%ld: %ld]\n",
-		  phy_size, (remap_offset + remap_size));
+				phy_size, (remap_offset + remap_size));
 
 	return 0;
 
@@ -604,17 +608,17 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 	unsigned int error_reason;
 
 	int_reason =
-	    readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD) & 0x1FFFF;
+		readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_CMD) & 0x1FFFF;
 	mfc_debug("Interrupt !! : %d\n", int_reason);
 
 	error_reason =
-	    readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_ARG2) & 0xFFFF;
+		readl(s3c_mfc_sfr_virt_base + S3C_FIMV_RISC2HOST_ARG2) & 0xFFFF;
 
 	if ((error_reason >= MFC_ERR_START_NO) &&
-	    (error_reason < MFC_WARN_START_NO))
-		mfc_debug("MFC fw error code : %d\n", error_reason);
+			(error_reason < MFC_WARN_START_NO))
+		printk("MFC fw error code : %d\n", error_reason);
 	else if (error_reason >= MFC_WARN_START_NO)
-		mfc_info("MFC fw warning code : %d\n", error_reason);
+		printk("MFC fw warning code : %d\n", error_reason);
 
 	if ((int_reason >= R2H_CMD_EMPTY) && (int_reason <= R2H_CMD_ERR_RET)) {
 		s3c_mfc_clear_int();
@@ -623,6 +627,10 @@ static irqreturn_t s3c_mfc_irq(int irq, void *dev_id)
 		wake_up_interruptible(&s3c_mfc_wait_queue);
 	}
 	s3c_mfc_clear_ch_id(int_reason);
+
+#ifdef DETECT_FRMAE_DROP
+	mfc_mid = sched_clock();
+#endif
 
 	return IRQ_HANDLED;
 }
@@ -690,8 +698,8 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	}
 
 	s3c_mfc_sfr_virt_base =
-	    ioremap(s3c_mfc_mem->start,
-		    s3c_mfc_mem->end - s3c_mfc_mem->start + 1);
+		ioremap(s3c_mfc_mem->start,
+				s3c_mfc_mem->end - s3c_mfc_mem->start + 1);
 	if (s3c_mfc_sfr_virt_base == NULL) {
 		dev_err(&pdev->dev, "failed to ioremap address region\n");
 		ret = -ENOENT;
@@ -706,8 +714,8 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	}
 
 	ret =
-	    request_irq(res->start, s3c_mfc_irq, IRQF_DISABLED, pdev->name,
-			pdev);
+		request_irq(res->start, s3c_mfc_irq, IRQF_DISABLED, pdev->name,
+				pdev);
 	if (ret != 0) {
 		dev_err(&pdev->dev, "failed to install irq (%d)\n", ret);
 		goto probe_out;
@@ -731,7 +739,7 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 
 	s3c_mfc_phys_dpb_luma_buf = pdata->buf_phy_base[1];
 	s3c_mfc_phys_dpb_luma_buf =
-	    Align(s3c_mfc_phys_dpb_luma_buf, 128 * BUF_L_UNIT);
+		Align(s3c_mfc_phys_dpb_luma_buf, 128 * BUF_L_UNIT);
 	s3c_mfc_virt_dpb_luma_buf = phys_to_virt(s3c_mfc_phys_dpb_luma_buf);
 	if (s3c_mfc_virt_dpb_luma_buf == NULL) {
 		mfc_err("fail to mapping port1 buffer\n");
@@ -741,12 +749,12 @@ static int s3c_mfc_probe(struct platform_device *pdev)
 	s3c_mfc_dpb_luma_buf_size = pdata->buf_size[1];
 
 	printk
-	    ("s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n",
-	     s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf);
+		("s3c_mfc_phys_buf = 0x%08x, s3c_mfc_phys_dpb_luma_buf = 0x%08x <<\n",
+		 s3c_mfc_phys_buf, s3c_mfc_phys_dpb_luma_buf);
 	printk
-	    ("s3c_mfc_virt_buf = 0x%08x, s3c_mfc_virt_dpb_luma_buf = 0x%08x <<\n",
-	     (unsigned int)s3c_mfc_virt_buf,
-	     (unsigned int)s3c_mfc_virt_dpb_luma_buf);
+		("s3c_mfc_virt_buf = 0x%08x, s3c_mfc_virt_dpb_luma_buf = 0x%08x <<\n",
+		 (unsigned int)s3c_mfc_virt_buf,
+		 (unsigned int)s3c_mfc_virt_dpb_luma_buf);
 
 	/*
 	 * MFC FW downloading
@@ -874,14 +882,14 @@ static struct platform_driver s3c_mfc_driver = {
 	.resume = s3c_mfc_resume,
 
 	.driver = {
-		   .owner = THIS_MODULE,
-		   .name = "s3c-mfc",
-		   },
+		.owner = THIS_MODULE,
+		.name = "s3c-mfc",
+	},
 };
 
 static char banner[] __initdata
-    = KERN_INFO "S3C MFC (Multi Function Codec - FIMV5.0)"
-    "Device Driver, (c) 2009 Samsung Electronics\n";
+= KERN_INFO "S3C MFC (Multi Function Codec - FIMV5.0)"
+"Device Driver, (c) 2009 Samsung Electronics\n";
 
 static int __init s3c_mfc_init(void)
 {
@@ -899,7 +907,7 @@ static void __exit s3c_mfc_exit(void)
 {
 	platform_driver_unregister(&s3c_mfc_driver);
 	mfc_info
-	    ("S3C MFC (Multi Function Codec - FIMV5.0) Device Driver exit.\n");
+		("S3C MFC (Multi Function Codec - FIMV5.0) Device Driver exit.\n");
 }
 
 module_init(s3c_mfc_init);

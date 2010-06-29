@@ -29,7 +29,7 @@ unsigned int s3c_mfc_get_codec_type(MFC_CODEC_TYPE codec_type)
 
 	switch(codec_type) {
 	case MPEG4_DEC: 
-	case DIVX_DEC:
+	case FIMV_DEC:
 	case XVID_DEC:
 		standardSel = ((0 << 4) | (0 << 0)); 
 		break;
@@ -77,7 +77,7 @@ int s3c_mfc_get_fw_buf_offset(MFC_CODEC_TYPE codecType)
 		offset = 0; 
 		break;
 
-	case DIVX_DEC:
+	case FIMV_DEC:
 	case XVID_DEC:
 	case MPEG4_DEC:
 		offset = FIRMWARE_CODE_SIZE; 
@@ -125,7 +125,7 @@ int s3c_mfc_get_fw_buf_size(MFC_CODEC_TYPE codecType)
 		bufSize = sizeof(mp4_enc_mc_fw); 
 		break;
 
-	case DIVX_DEC:
+	case FIMV_DEC:
 	case XVID_DEC:
 	case MPEG4_DEC: 
 		bufSize = sizeof(mp4_dec_mc_fw); 

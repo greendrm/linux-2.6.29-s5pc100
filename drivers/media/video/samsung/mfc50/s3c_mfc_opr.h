@@ -75,5 +75,6 @@ SSBSIP_MFC_ERROR_CODE s3c_mfc_set_wakeup(void);
 
 void s3c_mfc_clear_int(void);
 void s3c_mfc_clear_ch_id(unsigned int int_type);
+void dump_sfrs(void);
 
 #endif /* _S3C_MFC_OPR_H_ */
