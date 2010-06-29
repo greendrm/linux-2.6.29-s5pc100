@@ -14,6 +14,8 @@
 #include <linux/kernel.h>
 #include <linux/i2c.h>
 
+#include "s5p_tv.h"
+
 #define I2C_DRIVERID_S5P_HDCP		510
 #define S5P_HDCP_I2C_ADDR		0x74
 
@@ -57,6 +59,12 @@ int ddc_read(u8 subaddr, u8 *data, u16 len)
 		}
 	};
 
+	if (!s5p_hpd_get_state())
+		return -EIO;
+
+	if (s5p_hdcp_is_reset())
+		return -EIO;
+
 	if (i2c_transfer(ddc_port->adapter, msg, 2) != 2)
 		ret = -EIO;
 
@@ -71,6 +79,12 @@ EXPORT_SYMBOL(ddc_read);
 int ddc_write(u8 *data, u16 len)
 {
 	int ret = 0;
+
+	if (!s5p_hpd_get_state())
+		return -EIO;
+
+	if (s5p_hdcp_is_reset())
+		return -EIO;
 
 	if (i2c_master_send(ddc_port, (const char *) data, len) != len)
 		ret = -EIO;

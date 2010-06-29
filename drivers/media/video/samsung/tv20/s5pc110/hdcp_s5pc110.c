@@ -137,6 +137,7 @@ struct s5p_hdcp_info {
 	u32	hdcp_enable;
 
 	spinlock_t 	lock;
+	spinlock_t 	reset_lock;
 	
 	struct i2c_client 	*client;
 
@@ -199,6 +200,16 @@ static struct s5p_hdcp_info hdcp_info = {
 /* must be checked */
 extern u8 hdcp_protocol_status; // 0 - hdcp stopped, 1 - hdcp started, 2 - hdcp reset
 static bool sw_reset;
+
+int s5p_hdcp_is_reset(void)
+{
+	int ret = 0;
+
+	if (spin_is_locked(&hdcp_info.reset_lock))
+		return 1;
+
+	return ret;
+}
 
 /*
  * 1st Authentication step func.
@@ -539,6 +550,8 @@ void reset_authentication(void)
 {
 	u8 reg;
 
+	spin_lock_irq(&hdcp_info.reset_lock);
+
 	hdcp_info.time_out 	= INFINITE;
 	hdcp_info.event 	= HDCP_EVENT_STOP;
 	hdcp_info.auth_status 	= NOT_AUTHENTICATED;
@@ -614,6 +627,7 @@ void reset_authentication(void)
 	/* HDCP Enable */
 	writeb(CP_DESIRED_EN, hdmi_base + S5P_HDCP_CTRL1);
 
+	spin_unlock_irq(&hdcp_info.reset_lock);
 }
 
 /*
@@ -1593,6 +1607,7 @@ int __s5p_hdcp_init(void)
 
 	/* for dev_dbg err. */
 	spin_lock_init(&hdcp_info.lock);
+	spin_lock_init(&hdcp_info.reset_lock);
 	
 	s5p_hdmi_register_isr(__s5p_hdcp_irq_handler, (u8)HDMI_IRQ_HDCP);
 	
