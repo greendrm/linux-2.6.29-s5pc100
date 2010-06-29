@@ -16,6 +16,7 @@
 #include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -180,6 +181,7 @@ bool _s5p_tv_if_init_param(void)
 	st->hdmi_spd_info_frame.spd_data = st->spd_data;
 	memset((void *)(st->spd_header), 0, 3);
 	memset((void *)(st->spd_data), 0, 8);
+
 	st->hdcp_en = false;
 	st->hdmi_audio_type = HDMI_AUDIO_NO;
 
@@ -563,96 +565,6 @@ bool _s5p_tv_if_init_sd_reg(void)
 	return true;
 }
 
-bool _s5p_tv_if_init_hd_video_reg(void)
-{
-	s5p_tv_hdmi_err herr = 0;
-	s5p_tv_hdmi_csc_type cscType;
-	s5p_tv_status *st = &s5ptv_status;
-
-	bool blue_enable = st->hdmi_video_blue_screen.enable;
-	u8 cb_b = st->hdmi_video_blue_screen.cb_b;
-	u8 y_g = st->hdmi_video_blue_screen.y_g;
-	u8 cr_r = st->hdmi_video_blue_screen.cr_r;
-	
-	u8 y_min = st->hdmi_color_range.y_min;
-	u8 y_max = st->hdmi_color_range.y_max;
-	u8 c_min = st->hdmi_color_range.c_min;
-	u8 c_max = st->hdmi_color_range.c_max;
-
-	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
-	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
-
-	s5p_hdmi_transmit a_trans_type = st->hdmi_av_info_frame.trans_type;
-	u8 a_check_sum = st->hdmi_av_info_frame.check_sum;
-	u8 *a_data = st->hdmi_av_info_frame.data;
-
-	s5p_hdmi_transmit m_trans_type = st->hdmi_mpg_info_frame.trans_type;
-	u8 m_check_sum = st->hdmi_mpg_info_frame.check_sum;
-	u8 *m_data = st->hdmi_mpg_info_frame.data;
-
-	s5p_hdmi_transmit s_trans_type = st->hdmi_spd_info_frame.trans_type;
-	u8 *spd_header = st->hdmi_spd_info_frame.spd_header;
-	u8 *spd_data = st->hdmi_spd_info_frame.spd_data;
-	
-	herr = __s5p_hdmi_video_init_display_mode(disp_mode,out_mode);
-
-	if (herr != HDMI_NO_ERROR) {
-		return false;
-	}
-
-	__s5p_hdmi_video_init_bluescreen(blue_enable,cb_b,y_g,cr_r);
-
-
-	__s5p_hdmi_video_init_color_range(y_min,y_max,c_min,c_max);
-
-	switch (out_mode) {
-
-	case TVOUT_OUTPUT_HDMI_RGB:
-	case TVOUT_OUTPUT_HDMI:
-		cscType = HDMI_BYPASS;
-		break;
-		
-	case TVOUT_OUTPUT_DVI:
-		cscType = HDMI_CSC_YUV601_TO_RGB_LR;
-		break;
-
-	default:
-		TVOUTIFPRINTK("invalid out_mode parameter(%d)\n\r",
-				out_mode);
-		return false;
-		break;
-	}
-
-	herr = __s5p_hdmi_video_init_csc(cscType);
-
-	if (herr != HDMI_NO_ERROR) {
-		return false;
-	}
-
-	herr =  __s5p_hdmi_video_init_avi_infoframe(a_trans_type,
-					a_check_sum,a_data);
-
-	if (herr != HDMI_NO_ERROR) {
-		return false;
-	}
-
-	herr = __s5p_hdmi_video_init_mpg_infoframe(m_trans_type,
-					m_check_sum,m_data);
-
-	if (herr != HDMI_NO_ERROR) {
-		return false;
-	}
-
-	herr = __s5p_hdmi_init_spd_infoframe(s_trans_type,
-					spd_header,spd_data);
-
-	if (herr != HDMI_NO_ERROR) {
-		return false;
-	}
-
-	return true;
-}
-
 unsigned char _s5p_tv_if_video_avi_checksum(void)
 {
 	u8 i;
@@ -682,27 +594,27 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 	case TVOUT_480P_59:
 #endif
 	case TVOUT_480P_60_16_9:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU601;
 		st->avi_byte[3] = AVI_VIC_3;
 		break;
 
 	case TVOUT_480P_60_4_3:
-		st->avi_byte[1] |= AVI_PAR_4_3;
+		st->avi_byte[1] = AVI_PAR_4_3 | AVI_ITU601;
 		st->avi_byte[3] = AVI_VIC_2;
 		break;
 
 	case TVOUT_576P_50_16_9:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU601;
 		st->avi_byte[3] = AVI_VIC_18;
 		break;
 
 	case TVOUT_576P_50_4_3:
-		st->avi_byte[1] |= AVI_PAR_4_3;
+		st->avi_byte[1] = AVI_PAR_4_3 | AVI_ITU601;
 		st->avi_byte[3] = AVI_VIC_17;
 		break;
 
 	case TVOUT_720P_50:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_19;
 		break;
 
@@ -710,34 +622,34 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 #ifdef CONFIG_CPU_S5PC110
 	case TVOUT_720P_59:
 #endif			
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_4;
 		break;
 
 #ifdef CONFIG_CPU_S5PC110
 	case TVOUT_1080I_50:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_20;
 		break;
 
 	case TVOUT_1080I_59:
 	case TVOUT_1080I_60:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_5;
 		break;
 		
 	case TVOUT_1080P_50:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_31;
 		break;
 
 	case TVOUT_1080P_30:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_34;		
 
 	case TVOUT_1080P_59:
 	case TVOUT_1080P_60:
-		st->avi_byte[1] |= AVI_PAR_16_9;
+		st->avi_byte[1] = AVI_PAR_16_9 | AVI_ITU709;
 		st->avi_byte[3] = AVI_VIC_16;
 		break;		
 #endif
@@ -753,19 +665,16 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 	case TVOUT_OUTPUT_DVI:
 		st->hdmi_av_info_frame.trans_type = HDMI_DO_NOT_TANS;		
 		st->avi_byte[0] = AVI_RGB_IF;
-		st->avi_byte[1] = AVI_ITU601;
 		break;
 		
 	case TVOUT_OUTPUT_HDMI_RGB:		
 		st->hdmi_av_info_frame.trans_type = HDMI_TRANS_EVERY_SYNC;
 		st->avi_byte[0] = AVI_RGB_IF;
-		st->avi_byte[1] = AVI_ITU601;
 		break;
 
 	case TVOUT_OUTPUT_HDMI:
 		st->hdmi_av_info_frame.trans_type = HDMI_TRANS_EVERY_SYNC;
 		st->avi_byte[0] = AVI_YCBCR444_IF;
-		st->avi_byte[1] = AVI_ITU709;
 		break;
 
 	default:
@@ -775,12 +684,112 @@ bool _s5p_tv_if_init_avi_frame(tvout_output_if* tvout_if)
 		break;
 	}
 
-	st->hdmi_av_info_frame.check_sum = _s5p_tv_if_video_avi_checksum();
+
 
 	TVOUTIFPRINTK("()\n\r");
 	return true;
 }
 
+
+bool _s5p_tv_if_init_hd_video_reg(void)
+{
+	s5p_tv_hdmi_err herr = 0;
+	s5p_tv_hdmi_csc_type cscType;
+	s5p_tv_status *st = &s5ptv_status;
+
+	bool blue_enable = st->hdmi_video_blue_screen.enable;
+	u8 cb_b = st->hdmi_video_blue_screen.cb_b;
+	u8 y_g = st->hdmi_video_blue_screen.y_g;
+	u8 cr_r = st->hdmi_video_blue_screen.cr_r;
+
+	u8 y_min = st->hdmi_color_range.y_min;
+	u8 y_max = st->hdmi_color_range.y_max;
+	u8 c_min = st->hdmi_color_range.c_min;
+	u8 c_max = st->hdmi_color_range.c_max;
+
+	s5p_tv_disp_mode disp_mode = st->tvout_param.disp_mode;
+	s5p_tv_o_mode out_mode = st->tvout_param.out_mode;
+
+	s5p_hdmi_transmit *a_trans_type = &st->hdmi_av_info_frame.trans_type;
+	u8 *a_check_sum = &st->hdmi_av_info_frame.check_sum;
+	u8 *a_data = st->hdmi_av_info_frame.data;
+
+	s5p_hdmi_transmit m_trans_type = st->hdmi_mpg_info_frame.trans_type;
+	u8 m_check_sum = st->hdmi_mpg_info_frame.check_sum;
+	u8 *m_data = st->hdmi_mpg_info_frame.data;
+
+	s5p_hdmi_transmit s_trans_type = st->hdmi_spd_info_frame.trans_type;
+	u8 *spd_header = st->hdmi_spd_info_frame.spd_header;
+	u8 *spd_data = st->hdmi_spd_info_frame.spd_data;
+
+	if (!_s5p_tv_if_init_avi_frame(&st->tvout_param)) {
+		st->tvout_param_available = false;
+		return false;
+	}
+
+	herr = __s5p_hdmi_video_init_display_mode(disp_mode,out_mode, a_data);
+
+	if (herr != HDMI_NO_ERROR) {
+		return false;
+	}
+
+	st->hdmi_av_info_frame.check_sum = _s5p_tv_if_video_avi_checksum();
+
+	if (!st->hdcp_en)
+		__s5p_hdmi_video_init_bluescreen(st->hdmi_video_blue_screen.enable,cb_b,y_g,cr_r);
+
+
+	__s5p_hdmi_video_init_color_range(y_min,y_max,c_min,c_max);
+
+	switch (out_mode) {
+
+	case TVOUT_OUTPUT_HDMI_RGB:
+	case TVOUT_OUTPUT_HDMI:
+		cscType = HDMI_BYPASS;
+		break;
+
+	case TVOUT_OUTPUT_DVI:
+		cscType = HDMI_CSC_YUV601_TO_RGB_LR;
+		s_trans_type = HDMI_DO_NOT_TANS;
+		break;
+
+	default:
+		TVOUTIFPRINTK("invalid out_mode parameter(%d)\n\r",
+				out_mode);
+		return false;
+		break;
+	}
+
+	herr = __s5p_hdmi_video_init_csc(cscType);
+
+	if (herr != HDMI_NO_ERROR) {
+		return false;
+	}
+
+
+	herr =  __s5p_hdmi_video_init_avi_infoframe(*a_trans_type,
+					*a_check_sum,a_data);
+
+	if (herr != HDMI_NO_ERROR) {
+		return false;
+	}
+
+	herr = __s5p_hdmi_video_init_mpg_infoframe(m_trans_type,
+					m_check_sum,m_data);
+
+	if (herr != HDMI_NO_ERROR) {
+		return false;
+	}
+
+	herr = __s5p_hdmi_init_spd_infoframe(s_trans_type,
+					spd_header,spd_data);
+
+	if (herr != HDMI_NO_ERROR) {
+		return false;
+	}
+
+	return true;
+}
 
 bool _s5p_tv_if_init_hd_reg(void)
 {
@@ -1149,11 +1158,11 @@ bool _s5p_tv_if_set_disp(void)
 
 	case TVOUT_1080P_59:		
 #endif		
-		if (!_s5p_tv_if_init_avi_frame(&st->tvout_param)) {
+/*		if (!_s5p_tv_if_init_avi_frame(&st->tvout_param)) {
 			st->tvout_param_available = false;
 			return false;
 		}
-
+*/
 		break;
 
 	default:

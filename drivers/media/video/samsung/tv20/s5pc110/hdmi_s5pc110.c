@@ -608,7 +608,7 @@ static s32 hdmi_set_clr_depth(s5p_hdmi_color_depth cd)
 }
 
 s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd, 
-	s5p_tv_hdmi_pxl_aspect pxl_ratio)
+	s5p_tv_hdmi_pxl_aspect pxl_ratio, u8 *avidata)
 {
 	u8  temp_reg8;
 	u16 temp_reg16;
@@ -699,20 +699,27 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd,
 		/* set pixel repetition */
 		temp_reg8 |= HDMI_DOUBLE_PIXEL_REPETITION;
 		/* AVI Packet */
-		writeb(AVI_PIXEL_REPETITION_DOUBLE, hdmi_base + S5P_AVI_BYTE5);
+//		writeb(AVI_PIXEL_REPETITION_DOUBLE, hdmi_base + S5P_AVI_BYTE5);
+		avidata[4] = AVI_PIXEL_REPETITION_DOUBLE;
 	} else { /* clear pixel repetition */
 		/* AVI Packet */
-		writeb(0x00, hdmi_base + S5P_AVI_BYTE5);
+//		writeb(0x00, hdmi_base + S5P_AVI_BYTE5);
+		avidata[4] = 0;
 	}
 	
 	/* set pixel repetition */
 	writeb(temp_reg8, hdmi_base + S5P_HDMI_CON_1 );
 
 	/* set AVI packet VIC */
+
 	if (pxl_ratio == HDMI_PIXEL_RATIO_16_9)
-		writeb(video_params[mode].avi_vic_16_9, hdmi_base + S5P_AVI_BYTE4);
+//		writeb(video_params[mode].avi_vic_16_9, hdmi_base + S5P_AVI_BYTE4);
+		avidata[3] = video_params[mode].avi_vic_16_9;
+
 	else
-		writeb(video_params[mode].avi_vic, hdmi_base + S5P_AVI_BYTE4);
+//		writeb(video_params[mode].avi_vic, hdmi_base + S5P_AVI_BYTE4);
+		avidata[3] = video_params[mode].avi_vic;
+
 
 	/* clear */
 	temp_reg8 = readb(hdmi_base + S5P_AVI_BYTE2) &
@@ -725,7 +732,7 @@ s32 hdmi_set_video_mode(s5p_hdmi_v_fmt mode, s5p_hdmi_color_depth cd,
 	}
 
 	/* set AVI packet MM */
-	writeb(temp_reg8, hdmi_base + S5P_AVI_BYTE2);
+//	writeb(temp_reg8, hdmi_base + S5P_AVI_BYTE2);
 
 	/* set color depth */
 	if (hdmi_set_clr_depth(cd) != 0) {
@@ -1260,7 +1267,8 @@ s5p_tv_hdmi_err __s5p_hdmi_audio_init(s5p_tv_audio_codec_type audio_codec,
 }
 
 s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
-						s5p_tv_o_mode out_mode)
+						s5p_tv_o_mode out_mode,
+						u8 *avidata)
 {
 	s5p_hdmi_v_fmt hdmi_v_fmt;
 
@@ -1378,7 +1386,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	}
 
 // TODO: C110 - color mode check
-	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, HDMI_PIXEL_RATIO_16_9);
+	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, HDMI_PIXEL_RATIO_16_9, avidata);
 	
 	return HDMI_NO_ERROR;
 }
