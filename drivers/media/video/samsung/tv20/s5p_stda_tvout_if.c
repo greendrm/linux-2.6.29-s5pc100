@@ -176,11 +176,13 @@ bool _s5p_tv_if_init_param(void)
 	st->hdmi_tg_cmd.tg_en = false;
 
 	// Initialize HDMI Parameters to Default Values
-	st->hdmi_spd_info_frame.trans_type = HDMI_DO_NOT_TANS;
-	st->hdmi_spd_info_frame.spd_header = st->spd_header;
-	st->hdmi_spd_info_frame.spd_data = st->spd_data;
-	memset((void *)(st->spd_header), 0, 3);
-	memset((void *)(st->spd_data), 0, 8);
+	st->hdmi_spd_info_frame.trans_type = HDMI_TRANS_EVERY_SYNC;
+	st->hdmi_spd_info_frame.spd_header = NULL;
+	st->hdmi_spd_info_frame.spd_data = NULL;
+//	st->hdmi_spd_info_frame.spd_header = st->spd_header;
+//	st->hdmi_spd_info_frame.spd_data = st->spd_data;
+//	memset((void *)(st->spd_header), 0, 3);
+//	memset((void *)(st->spd_data), 0, 8);
 
 	st->hdcp_en = false;
 	st->hdmi_audio_type = HDMI_AUDIO_NO;

@@ -1024,39 +1024,83 @@ s5p_tv_hdmi_err __s5p_hdmi_init_spd_infoframe(s5p_hdmi_transmit trans_type,
 		break;
 	}
 
-	writel(SET_SPD_HEADER(*(spd_header)), hdmi_base + S5P_SPD_HEADER0);
+	/*
+	 * spd_data, spd_header be specified by Vendor's specific
+	 * data. below codes is sample usage
+	 */
 
-	writel(SET_SPD_HEADER(*(spd_header + 1)) , hdmi_base + S5P_SPD_HEADER1);
-	writel(SET_SPD_HEADER(*(spd_header + 2)) , hdmi_base + S5P_SPD_HEADER2);
+	if (spd_data == NULL || spd_header == NULL)
+	{
+		HDMIPRINTK("Set default SPD\n");
+		writel(SET_SPD_HEADER(0x83), hdmi_base + S5P_SPD_HEADER0);
+		writel(SET_SPD_HEADER(0x01), hdmi_base + S5P_SPD_HEADER1);
+		writel(SET_SPD_HEADER(0x19), hdmi_base + S5P_SPD_HEADER2);
 
-	writel(SET_SPD_DATA(*(spd_data)), hdmi_base + S5P_SPD_DATA0);
-	writel(SET_SPD_DATA(*(spd_data + 1)) , hdmi_base + S5P_SPD_DATA1);
-	writel(SET_SPD_DATA(*(spd_data + 2)) , hdmi_base + S5P_SPD_DATA2);
-	writel(SET_SPD_DATA(*(spd_data + 3)) , hdmi_base + S5P_SPD_DATA3);
-	writel(SET_SPD_DATA(*(spd_data + 4)) , hdmi_base + S5P_SPD_DATA4);
-	writel(SET_SPD_DATA(*(spd_data + 5)) , hdmi_base + S5P_SPD_DATA5);
-	writel(SET_SPD_DATA(*(spd_data + 6)) , hdmi_base + S5P_SPD_DATA6);
-	writel(SET_SPD_DATA(*(spd_data + 7)) , hdmi_base + S5P_SPD_DATA7);
-	writel(SET_SPD_DATA(*(spd_data + 8)) , hdmi_base + S5P_SPD_DATA8);
-	writel(SET_SPD_DATA(*(spd_data + 9)) , hdmi_base + S5P_SPD_DATA9);
-	writel(SET_SPD_DATA(*(spd_data + 10)) , hdmi_base + S5P_SPD_DATA10);
-	writel(SET_SPD_DATA(*(spd_data + 11)) , hdmi_base + S5P_SPD_DATA11);
-	writel(SET_SPD_DATA(*(spd_data + 12)) , hdmi_base + S5P_SPD_DATA12);
-	writel(SET_SPD_DATA(*(spd_data + 13)) , hdmi_base + S5P_SPD_DATA13);
-	writel(SET_SPD_DATA(*(spd_data + 14)) , hdmi_base + S5P_SPD_DATA14);
-	writel(SET_SPD_DATA(*(spd_data + 15)) , hdmi_base + S5P_SPD_DATA15);
-	writel(SET_SPD_DATA(*(spd_data + 16)) , hdmi_base + S5P_SPD_DATA16);
-	writel(SET_SPD_DATA(*(spd_data + 17)) , hdmi_base + S5P_SPD_DATA17);
-	writel(SET_SPD_DATA(*(spd_data + 18)) , hdmi_base + S5P_SPD_DATA18);
-	writel(SET_SPD_DATA(*(spd_data + 19)) , hdmi_base + S5P_SPD_DATA19);
-	writel(SET_SPD_DATA(*(spd_data + 20)) , hdmi_base + S5P_SPD_DATA20);
-	writel(SET_SPD_DATA(*(spd_data + 21)) , hdmi_base + S5P_SPD_DATA21);
-	writel(SET_SPD_DATA(*(spd_data + 22)) , hdmi_base + S5P_SPD_DATA22);
-	writel(SET_SPD_DATA(*(spd_data + 23)) , hdmi_base + S5P_SPD_DATA23);
-	writel(SET_SPD_DATA(*(spd_data + 24)) , hdmi_base + S5P_SPD_DATA24);
-	writel(SET_SPD_DATA(*(spd_data + 25)) , hdmi_base + S5P_SPD_DATA25);
-	writel(SET_SPD_DATA(*(spd_data + 26)) , hdmi_base + S5P_SPD_DATA26);
-	writel(SET_SPD_DATA(*(spd_data + 27)) , hdmi_base + S5P_SPD_DATA27);
+		writel(0x0, hdmi_base + S5P_SPD_DATA0);
+		writel(SET_SPD_DATA('S'), hdmi_base + S5P_SPD_DATA1);
+		writel(SET_SPD_DATA('A'), hdmi_base + S5P_SPD_DATA2);
+		writel(SET_SPD_DATA('M'), hdmi_base + S5P_SPD_DATA3);
+		writel(SET_SPD_DATA('S'), hdmi_base + S5P_SPD_DATA4);
+		writel(SET_SPD_DATA('U'), hdmi_base + S5P_SPD_DATA5);
+		writel(SET_SPD_DATA('N'), hdmi_base + S5P_SPD_DATA6);
+		writel(SET_SPD_DATA('G'), hdmi_base + S5P_SPD_DATA7);
+
+		writel(0x0, hdmi_base + S5P_SPD_DATA8);
+		writel(SET_SPD_DATA('S'), hdmi_base + S5P_SPD_DATA9);
+		writel(SET_SPD_DATA('5'), hdmi_base + S5P_SPD_DATA10);
+		writel(SET_SPD_DATA('P'), hdmi_base + S5P_SPD_DATA11);
+		writel(SET_SPD_DATA('C'), hdmi_base + S5P_SPD_DATA12);
+		writel(SET_SPD_DATA('1'), hdmi_base + S5P_SPD_DATA13);
+		writel(SET_SPD_DATA('1'), hdmi_base + S5P_SPD_DATA14);
+		writel(SET_SPD_DATA('0'), hdmi_base + S5P_SPD_DATA15);
+		writel(0x0, hdmi_base + S5P_SPD_DATA16);
+		writel(0x0, hdmi_base + S5P_SPD_DATA17);
+		writel(0x0, hdmi_base + S5P_SPD_DATA18);
+		writel(0x0, hdmi_base + S5P_SPD_DATA19);
+		writel(0x0, hdmi_base + S5P_SPD_DATA20);
+		writel(0x0, hdmi_base + S5P_SPD_DATA21);
+		writel(0x0, hdmi_base + S5P_SPD_DATA22);
+		writel(0x0, hdmi_base + S5P_SPD_DATA23);
+		writel(0x0, hdmi_base + S5P_SPD_DATA24);
+		writel(0x0, hdmi_base + S5P_SPD_DATA25);
+		writel(SET_SPD_DATA(0x2), hdmi_base + S5P_SPD_DATA26);
+		writel(0x0, hdmi_base + S5P_SPD_DATA27);
+	} else {
+
+		writel(SET_SPD_HEADER(*(spd_header)), hdmi_base + S5P_SPD_HEADER0);
+
+		writel(SET_SPD_HEADER(*(spd_header + 1)) , hdmi_base + S5P_SPD_HEADER1);
+		writel(SET_SPD_HEADER(*(spd_header + 2)) , hdmi_base + S5P_SPD_HEADER2);
+
+		writel(SET_SPD_DATA(*(spd_data)), hdmi_base + S5P_SPD_DATA0);
+		writel(SET_SPD_DATA(*(spd_data + 1)) , hdmi_base + S5P_SPD_DATA1);
+		writel(SET_SPD_DATA(*(spd_data + 2)) , hdmi_base + S5P_SPD_DATA2);
+		writel(SET_SPD_DATA(*(spd_data + 3)) , hdmi_base + S5P_SPD_DATA3);
+		writel(SET_SPD_DATA(*(spd_data + 4)) , hdmi_base + S5P_SPD_DATA4);
+		writel(SET_SPD_DATA(*(spd_data + 5)) , hdmi_base + S5P_SPD_DATA5);
+		writel(SET_SPD_DATA(*(spd_data + 6)) , hdmi_base + S5P_SPD_DATA6);
+		writel(SET_SPD_DATA(*(spd_data + 7)) , hdmi_base + S5P_SPD_DATA7);
+		writel(SET_SPD_DATA(*(spd_data + 8)) , hdmi_base + S5P_SPD_DATA8);
+		writel(SET_SPD_DATA(*(spd_data + 9)) , hdmi_base + S5P_SPD_DATA9);
+		writel(SET_SPD_DATA(*(spd_data + 10)) , hdmi_base + S5P_SPD_DATA10);
+		writel(SET_SPD_DATA(*(spd_data + 11)) , hdmi_base + S5P_SPD_DATA11);
+		writel(SET_SPD_DATA(*(spd_data + 12)) , hdmi_base + S5P_SPD_DATA12);
+		writel(SET_SPD_DATA(*(spd_data + 13)) , hdmi_base + S5P_SPD_DATA13);
+		writel(SET_SPD_DATA(*(spd_data + 14)) , hdmi_base + S5P_SPD_DATA14);
+		writel(SET_SPD_DATA(*(spd_data + 15)) , hdmi_base + S5P_SPD_DATA15);
+		writel(SET_SPD_DATA(*(spd_data + 16)) , hdmi_base + S5P_SPD_DATA16);
+		writel(SET_SPD_DATA(*(spd_data + 17)) , hdmi_base + S5P_SPD_DATA17);
+		writel(SET_SPD_DATA(*(spd_data + 18)) , hdmi_base + S5P_SPD_DATA18);
+		writel(SET_SPD_DATA(*(spd_data + 19)) , hdmi_base + S5P_SPD_DATA19);
+		writel(SET_SPD_DATA(*(spd_data + 20)) , hdmi_base + S5P_SPD_DATA20);
+		writel(SET_SPD_DATA(*(spd_data + 21)) , hdmi_base + S5P_SPD_DATA21);
+		writel(SET_SPD_DATA(*(spd_data + 22)) , hdmi_base + S5P_SPD_DATA22);
+		writel(SET_SPD_DATA(*(spd_data + 23)) , hdmi_base + S5P_SPD_DATA23);
+		writel(SET_SPD_DATA(*(spd_data + 24)) , hdmi_base + S5P_SPD_DATA24);
+		writel(SET_SPD_DATA(*(spd_data + 25)) , hdmi_base + S5P_SPD_DATA25);
+		writel(SET_SPD_DATA(*(spd_data + 26)) , hdmi_base + S5P_SPD_DATA26);
+		writel(SET_SPD_DATA(*(spd_data + 27)) , hdmi_base + S5P_SPD_DATA27);
+	}
 
 	HDMIPRINTK("SPD_CON = 0x%08x \n\r", 
 		readl(hdmi_base + S5P_SPD_CON));
