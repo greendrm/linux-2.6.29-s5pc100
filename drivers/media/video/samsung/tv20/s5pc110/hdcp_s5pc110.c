@@ -200,6 +200,9 @@ static struct s5p_hdcp_info hdcp_info = {
 /* must be checked */
 extern u8 hdcp_protocol_status; // 0 - hdcp stopped, 1 - hdcp started, 2 - hdcp reset
 static bool sw_reset;
+static bool is_dvi = false;
+static bool av_mute = false;
+static bool audio_en = true;
 
 int s5p_hdcp_is_reset(void)
 {
@@ -209,6 +212,41 @@ int s5p_hdcp_is_reset(void)
 		return 1;
 
 	return ret;
+}
+
+int s5p_hdmi_audio_enable(bool en)
+{
+	u8 reg;
+
+	if (!is_dvi) {
+		reg = readl(hdmi_base + S5P_HDMI_CON_0);
+
+		if (en) {
+			reg |= ASP_EN;
+			writel(HDMI_TRANS_EVERY_SYNC , hdmi_base + S5P_AUI_CON);
+		} else {
+			reg &= ~ASP_EN;
+			writel(HDMI_DO_NOT_TANS , hdmi_base + S5P_AUI_CON);
+		}
+
+		writel(reg, hdmi_base + S5P_HDMI_CON_0);
+	}
+
+	return 0;
+}
+
+void s5p_hdmi_mute_en(bool en)
+{
+	if (!av_mute) {
+		if (en) {
+			__s5p_hdmi_video_set_bluescreen(true, 0, 0, 0);
+			s5p_hdmi_audio_enable(false);
+		} else {
+			__s5p_hdmi_video_set_bluescreen(false, 0, 0, 0);
+			if (audio_en)
+				s5p_hdmi_audio_enable(true);
+		}
+	}
 }
 
 /*
@@ -561,6 +599,8 @@ void reset_authentication(void)
 	/* clear all result */
 	writeb(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
 
+	s5p_hdmi_mute_en(true);
+
 	/* disable hdmi status enable reg. */
 	reg = readb(hdmi_base + S5P_STATUS_EN);
 	reg &= HDCP_STATUS_DIS_ALL;
@@ -740,6 +780,7 @@ static void start_encryption(void)
 				writel(HDCP_ENC_ENABLE,
 					hdmi_base + S5P_ENC_EN);
 				HDCPPRINTK("Encryption start!!\n");
+				s5p_hdmi_mute_en(false);
 				break;
 			} else {
 				time_out--;
@@ -748,6 +789,7 @@ static void start_encryption(void)
 		}
 	} else {
 		writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+		s5p_hdmi_mute_en(true);
 		HDCPPRINTK("Encryption stop!!\n");
 	}
 }
@@ -984,6 +1026,8 @@ static bool try_read_receiver(void)
 	u8 i = 0;
 	bool ret = false;
 
+	s5p_hdmi_mute_en(true);
+
 	for(i = 0; i < 40; i++)	{
 		
 		mdelay(250);
@@ -1058,6 +1102,7 @@ bool __s5p_stop_hdcp(void)
 	/* disable encryption */
 	HDCPPRINTK("Stop Encryption by Stop!!\n");
 	writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+	s5p_hdmi_mute_en(true);
 
 	/* clear result */
 	writel(Ri_MATCH_RESULT__NO, hdmi_base + S5P_HDCP_CHECK_RESULT);
@@ -1129,6 +1174,7 @@ bool __s5p_start_hdcp(void)
 	HDCPPRINTK("Stop Encryption by Start!!\n");
 
 	writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+	s5p_hdmi_mute_en(true);
 
 	hdcp_protocol_status = 1;
 
@@ -1626,6 +1672,7 @@ int s5p_hdcp_encrypt_stop(bool on)
 	writeb(0x0, hdmi_base + S5P_HDCP_WDT_INT);
 
 	writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+	s5p_hdmi_mute_en(true);
 
 	if (hdcp_info.hdcp_enable && !sw_reset) {
 		reg = readl(hdmi_base + S5P_HDCP_CTRL1);

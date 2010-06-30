@@ -52,6 +52,7 @@ void __iomem		*i2c_hdmi_phy_base;
 extern bool __s5p_start_hdcp(void);
 extern void __s5p_stop_hdcp(void);
 extern void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port);
+extern void s5p_hdmi_mute_en(bool en);
 
 spinlock_t 	lock_hdmi;
 
@@ -1879,6 +1880,12 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 		return false;
 		break;
 	}
+
+	if (hdcp_en) {
+		writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+		s5p_hdmi_mute_en(true);
+	}
+
 
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | temp_reg,
 	       hdmi_base + S5P_HDMI_CON_0);

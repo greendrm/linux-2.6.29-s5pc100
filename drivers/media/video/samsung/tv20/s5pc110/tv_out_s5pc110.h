@@ -590,3 +590,4 @@ typedef enum {
 
 typedef int (*hdmi_isr)(int irq);
 
+void 	__s5p_hdmi_video_set_bluescreen(bool en, u8 cb, u8 y_g, u8 cr_r);
