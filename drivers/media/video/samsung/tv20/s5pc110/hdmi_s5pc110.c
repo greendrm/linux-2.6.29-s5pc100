@@ -1315,25 +1315,35 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 						u8 *avidata)
 {
 	s5p_hdmi_v_fmt hdmi_v_fmt;
+	s5p_tv_hdmi_pxl_aspect aspect;
 
 	HDMIPRINTK("disp mode %d, output mode%d\n\r", disp_mode, out_mode);
+
+	aspect = HDMI_PIXEL_RATIO_16_9;
 
 	switch (disp_mode) {
 	/* 480p */
 	case TVOUT_480P_60_16_9:
+		hdmi_v_fmt = v720x480p_60Hz;
+		break;
 
 	case TVOUT_480P_60_4_3:
 		hdmi_v_fmt = v720x480p_60Hz;
+		aspect = HDMI_PIXEL_RATIO_4_3;
 		break;
+
 	case TVOUT_480P_59:
 		hdmi_v_fmt = v720x480p_59Hz;
 		break;		
 
 	/* 576p */
 	case TVOUT_576P_50_16_9:
+		hdmi_v_fmt = v720x576p_50Hz;
+		break;
 
 	case TVOUT_576P_50_4_3:
 		hdmi_v_fmt = v720x576p_50Hz;
+		aspect = HDMI_PIXEL_RATIO_4_3;
 		break;
 
 	/* 720p */		
@@ -1430,7 +1440,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 	}
 
 // TODO: C110 - color mode check
-	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, HDMI_PIXEL_RATIO_16_9, avidata);
+	hdmi_set_video_mode(hdmi_v_fmt, HDMI_CD_24, aspect, avidata);
 	
 	return HDMI_NO_ERROR;
 }
