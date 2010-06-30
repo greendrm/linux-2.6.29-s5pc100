@@ -449,6 +449,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_480P_59:
 		temp_reg = S5P_MXR_SD | S5P_MXR_NTSC;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg |= RGB601_16_235<<9;
 		break;
 
 	case TVOUT_576P_50_16_9:
@@ -456,6 +457,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_576P_50_4_3:
 		temp_reg = S5P_MXR_SD | S5P_MXR_PAL;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg |= RGB601_16_235<<9;
 		break;
 
 	case TVOUT_720P_50:
@@ -465,6 +467,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_720P_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_720P_MODE;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg |= RGB709_16_235<<9;
 		break;
 
 	case TVOUT_1080I_50:
@@ -474,6 +477,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_1080I_60:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080I_MODE;
 		temp_reg &= S5P_MXR_INTERLACE_MODE;
+		temp_reg |= RGB709_16_235<<9;
 		break;
 
 // C110
@@ -486,6 +490,7 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_1080P_30:
 		temp_reg = S5P_MXR_HD | S5P_MXR_HD_1080P_MODE;
 		temp_reg |= S5P_MXR_PROGRESSVE_MODE;
+		temp_reg |= RGB709_16_235<<9;
 		break;		
 
 	default:
@@ -508,15 +513,15 @@ s5p_tv_vmx_err __s5p_vm_init_display_mode(s5p_tv_disp_mode mode, s5p_tv_o_mode o
 	case TVOUT_OUTPUT_DVI:
 // DVI:
 		temp_reg |= S5P_MXR_DST_SEL_HDMI;
-		temp_reg &= ~(0x7<<8);
-		temp_reg |= RGB709_16_235<<9 | MX_RGB888<<8;
+		temp_reg &= ~(0x1<<8);
+		temp_reg |= MX_RGB888<<8;
 					
 		break;
 	
 	case TVOUT_OUTPUT_HDMI:
 		temp_reg |= S5P_MXR_DST_SEL_HDMI;
-		temp_reg &= ~(0x7<<8);
-		temp_reg |= RGB601_16_235<<9 | MX_YUV444<<8;
+		temp_reg &= ~(0x1<<8);
+		temp_reg |= MX_YUV444<<8;
 		break;
 
 	default:
