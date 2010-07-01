@@ -1726,27 +1726,36 @@ int s5p_hdcp_encrypt_stop(bool on)
 {
 	u32 reg;
 
-	/* clear interrupt pending all */
-	writeb(0x0, hdmi_base + S5P_HDCP_I2C_INT);
-	writeb(0x0, hdmi_base + S5P_HDCP_AN_INT);
-	writeb(0x0, hdmi_base + S5P_HDCP_RI_INT);
-	writeb(0x0, hdmi_base + S5P_HDCP_WDT_INT);
+	if (hdcp_info.hdcp_enable) {
+		/* clear interrupt pending all */
+		writeb(0x0, hdmi_base + S5P_HDCP_I2C_INT);
+		writeb(0x0, hdmi_base + S5P_HDCP_AN_INT);
+		writeb(0x0, hdmi_base + S5P_HDCP_RI_INT);
+		writeb(0x0, hdmi_base + S5P_HDCP_WDT_INT);
 
-	writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
-	s5p_hdmi_mute_en(true);
+		writel(HDCP_ENC_DISABLE, hdmi_base + S5P_ENC_EN);
+		s5p_hdmi_mute_en(true);
 
-	if (hdcp_info.hdcp_enable && !sw_reset) {
-		reg = readl(hdmi_base + S5P_HDCP_CTRL1);
+		if (!sw_reset) {
+			reg = readl(hdmi_base + S5P_HDCP_CTRL1);
 
-		if (on)
-			reg |= CP_DESIRED_EN;
-		else
-			reg &= ~CP_DESIRED_EN;
+			if (on) {
+				writel(reg | CP_DESIRED_EN,
+					hdmi_base + S5P_HDCP_CTRL1);
+				s5p_hdmi_enable_interrupts(HDMI_IRQ_HDCP);
+			} else {
+				hdcp_info.event
+					= HDCP_EVENT_STOP;
+				hdcp_info.auth_status
+					= NOT_AUTHENTICATED;
+				writel(reg & ~CP_DESIRED_EN,
+					hdmi_base + S5P_HDCP_CTRL1);
+				s5p_hdmi_disable_interrupts(HDMI_IRQ_HDCP);
+			}
+		}
 
-		writel(reg, hdmi_base + S5P_HDCP_CTRL1);
+		HDCPPRINTK("Stop Encryption by HPD Event!!\n");
 	}
-
-	HDCPPRINTK("Stop Encryption by HPD Event!!\n");
 
 	return 0;
 }
