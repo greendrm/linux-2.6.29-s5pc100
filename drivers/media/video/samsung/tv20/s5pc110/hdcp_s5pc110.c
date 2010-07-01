@@ -1435,19 +1435,19 @@ static bool write_aksv_start_bh(void)
 		return false;
 	}
 
-	ret = write_ainfo();
-	if(!ret)
-		return false;
+//	ret = write_ainfo();
+//	if(!ret)
+//		return false;
 
-	HDCPPRINTK("ainfo write done!!\n");	
-	
+//	HDCPPRINTK("ainfo write done!!\n");
+
 	ret = write_an();
 	if(!ret)
 		return false;
 	
 	hdcp_info.auth_status = AN_WRITE_DONE;
 	
-	HDCPPRINTK("an write done!!\n");			
+	HDCPPRINTK("an write done!!\n");
 	
 	ret = write_aksv();
 	if(!ret)
