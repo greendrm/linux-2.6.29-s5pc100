@@ -23,6 +23,7 @@
 #include <linux/mman.h>
 #include <plat/media.h>
 #include <linux/clk.h>
+#include <asm/cacheflush.h>
 
 #include "fimc.h"
 #include "fimc-ipc.h"
@@ -1919,8 +1920,11 @@ static int fimc_qbuf_output_dma_auto(struct fimc_control *ctrl)
 static int fimc_qbuf_output_dma_manual(struct fimc_control *ctrl)
 {
 	struct fimc_buf_set buf_set;
-	u32 index = 0, i = 0;
+	struct fimc_overlay_buf *buf;
+	u32 index = 0, i = 0, size;
 	int ret = -1;
+	buf = &ctrl->out->overlay.buf;
+	size = (ctrl->out->win.w.width * ctrl->out->win.w.height) << 2;
 
 	switch (ctrl->status) {
 	case FIMC_READY_ON:		/* fall through */
@@ -1944,7 +1948,10 @@ static int fimc_qbuf_output_dma_manual(struct fimc_control *ctrl)
 			fimc_err("Fail: fimc_start_camif\n");
 			return -EINVAL;
 		}
-
+		
+		dmac_inv_range((void *)buf->vir_addr[index], \
+				(void *)(buf->vir_addr[index] + size));
+		
 		ctrl->out->idx.active = index;
 		ctrl->status = FIMC_STREAMON;
 
@@ -2006,7 +2013,9 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 {
 	struct fimc_control *ctrl = (struct fimc_control *) fh;
 	struct fimc_buf *buf = (struct fimc_buf *)b->m.userptr;
+	struct fimc_overlay_buf *cbuf;
 	int ret = -1;
+	u32 size;
 
 	fimc_info2("%s: queued idx = %d\n", __func__, b->index);
 
@@ -2044,7 +2053,14 @@ int fimc_qbuf_output(void *fh, struct v4l2_buffer *b)
 
 		break;
 	case FIMC_OVERLAY_DMA_MANUAL:
-		ret = fimc_qbuf_output_dma_manual(ctrl);
+		if (ctrl->status == FIMC_STREAMON) {
+			cbuf = &ctrl->out->overlay.buf;
+			size = (ctrl->out->win.w.width * ctrl->out->win.w.height) << 2;
+			dmac_inv_range((void *)cbuf->vir_addr[b->index], \
+					(void *)(cbuf->vir_addr[b->index] + size));
+		} else {
+			ret = fimc_qbuf_output_dma_manual(ctrl);
+		}
 
 		break;
 

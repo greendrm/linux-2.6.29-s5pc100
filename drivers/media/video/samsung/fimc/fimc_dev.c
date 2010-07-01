@@ -469,7 +469,6 @@ static inline int fimc_mmap_out_dst(struct file *filp, struct vm_area_struct *vm
 
 	size = vma->vm_end - vma->vm_start;
 
-	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	vma->vm_flags |= VM_RESERVED;
 
 	pfn = __phys_to_pfn(ctrl->out->dst[idx].base[0]);
