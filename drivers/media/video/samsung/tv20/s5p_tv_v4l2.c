@@ -1448,6 +1448,9 @@ static int s5p_tv_v4l2_s_hw_freq_seek(struct file *file, void *fh, struct v4l2_h
 #define VIDIOC_HDCP_ENABLE _IOWR('V', 100, unsigned int)
 #define VIDIOC_HDCP_STATUS _IOR('V', 101, unsigned int)
 #define VIDIOC_HDCP_PROT_STATUS _IOR('V', 102, unsigned int)
+#define VIDIOC_INIT_AUDIO _IOR('V', 103, unsigned int)
+#define VIDIOC_AV_MUTE _IOR('V', 104, unsigned int)
+#define VIDIOC_G_AVMUTE _IOR('V', 105, unsigned int)
 
 long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -1455,6 +1458,42 @@ long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	const struct v4l2_ioctl_ops *ops = vfd->ioctl_ops;
 		
 	switch (cmd) {
+	case VIDIOC_INIT_AUDIO:
+		s5ptv_status.hdmi_audio_type = (unsigned int) arg;
+
+		if (arg) {
+			s5p_hdmi_set_audio(true);
+			if (s5ptv_status.tvout_output_enable)
+				s5p_hdmi_audio_enable(true);
+		} else {
+			s5p_hdmi_set_audio(false);
+			if (s5ptv_status.tvout_output_enable)
+				s5p_hdmi_audio_enable(false);
+
+		}
+
+		return 0;
+
+	case VIDIOC_AV_MUTE:
+		printk("%s: called\n", __func__);
+		if (arg) {
+			s5ptv_status.hdmi_audio_type = HDMI_AUDIO_NO;
+			if (s5ptv_status.tvout_output_enable) {
+				s5p_hdmi_audio_enable(false);
+				__s5p_hdmi_video_set_bluescreen(true, 0, 0, 0);
+			}
+			s5p_hdmi_set_mute(true);
+		} else {
+			s5ptv_status.hdmi_audio_type = HDMI_AUDIO_PCM;
+			if (s5ptv_status.tvout_output_enable) {
+				s5p_hdmi_audio_enable(true);
+				__s5p_hdmi_video_set_bluescreen(false, 0, 0, 0);
+			}
+			s5p_hdmi_set_mute(false);
+		}
+		return 0;
+	case VIDIOC_G_AVMUTE:
+		return s5p_hdmi_get_mute();
 
 	case VIDIOC_S_FMT: {
 		struct v4l2_format *f = (struct v4l2_format *)arg;

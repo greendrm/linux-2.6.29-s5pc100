@@ -205,6 +205,14 @@ static bool is_dvi = false;
 static bool av_mute = false;
 static bool audio_en = true;
 
+void s5p_hdmi_set_audio(bool en)
+{
+	if (en)
+		audio_en = true;
+	else
+		audio_en = false;
+}
+
 int s5p_hdcp_is_reset(void)
 {
 	int ret = 0;
@@ -213,6 +221,22 @@ int s5p_hdcp_is_reset(void)
 		return 1;
 
 	return ret;
+}
+
+
+int s5p_hdmi_set_mute(bool en)
+{
+	if (en)
+		av_mute = true;
+	else
+		av_mute = false;
+
+	return 0;
+}
+
+int s5p_hdmi_get_mute(void)
+{
+	return av_mute ? true : false;
 }
 
 int s5p_hdmi_audio_enable(bool en)
