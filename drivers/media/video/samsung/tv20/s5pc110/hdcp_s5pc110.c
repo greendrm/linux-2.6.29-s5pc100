@@ -223,6 +223,15 @@ int s5p_hdcp_is_reset(void)
 	return ret;
 }
 
+int s5p_hdmi_set_dvi(bool en)
+{
+	if (en)
+		is_dvi = true;
+	else
+		is_dvi = false;
+
+	return 0;
+}
 
 int s5p_hdmi_set_mute(bool en)
 {

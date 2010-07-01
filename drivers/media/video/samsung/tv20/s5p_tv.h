@@ -842,6 +842,7 @@ extern void s5p_tv_kobject_uevent(void);
 extern int s5p_hdcp_encrypt_stop(bool on);
 extern int s5p_hdcp_is_reset(void);
 
+extern int s5p_hdmi_set_dvi(bool en);
 extern int s5p_hdmi_set_mute(bool en);
 extern int s5p_hdmi_get_mute(void);
 extern int s5p_hdmi_audio_enable(bool en);

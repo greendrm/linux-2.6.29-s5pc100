@@ -52,6 +52,7 @@ void __iomem		*i2c_hdmi_phy_base;
 extern bool __s5p_start_hdcp(void);
 extern void __s5p_stop_hdcp(void);
 extern void __s5p_init_hdcp(bool hpd_status, struct i2c_client *ddc_port);
+extern int s5p_hdmi_set_dvi(bool en);
 extern void s5p_hdmi_mute_en(bool en);
 
 spinlock_t 	lock_hdmi;
@@ -1417,6 +1418,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 
 	switch (out_mode) {
 	case TVOUT_OUTPUT_HDMI_RGB:
+		s5p_hdmi_set_dvi(false);
 		writel(PX_LMT_CTRL_RGB, hdmi_base + S5P_HDMI_CON_1);
 		writel(VID_PREAMBLE_EN | GUARD_BAND_EN, hdmi_base + S5P_HDMI_CON_2);
 		writel(HDMI_MODE_EN | DVI_MODE_DIS, hdmi_base + S5P_MODE_SEL);
@@ -1427,6 +1429,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 		
 		break;		
 	case TVOUT_OUTPUT_HDMI:
+		s5p_hdmi_set_dvi(false);
 		writel(PX_LMT_CTRL_BYPASS, hdmi_base + S5P_HDMI_CON_1);
 		writel(VID_PREAMBLE_EN | GUARD_BAND_EN, hdmi_base + S5P_HDMI_CON_2);
 		writel(HDMI_MODE_EN | DVI_MODE_DIS, hdmi_base + S5P_MODE_SEL);
@@ -1439,6 +1442,7 @@ s5p_tv_hdmi_err __s5p_hdmi_video_init_display_mode(s5p_tv_disp_mode disp_mode,
 
 // DVI:
 	case TVOUT_OUTPUT_DVI:
+		s5p_hdmi_set_dvi(true);
 		/* disable ACP & Audio Info.frame packet */
 		writel(HDMI_DO_NOT_TANS , hdmi_base + S5P_ACP_CON);
 		writel(HDMI_DO_NOT_TANS , hdmi_base + S5P_AUI_CON);
