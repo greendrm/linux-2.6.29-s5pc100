@@ -355,6 +355,14 @@ static bool write_aksv(void)
 	aksv[4] = readb(hdmi_base + S5P_HDCP_AKSV_0_3);
 	aksv[5] = readb(hdmi_base + S5P_HDCP_AKSV_1);
 
+	if (aksv[1] == 0 &&
+	    aksv[2] == 0 &&
+	    aksv[3] == 0 &&
+	    aksv[4] == 0 &&
+	    aksv[5] == 0)
+	    return false;
+
+
 	ret = ddc_write(  aksv, AKSV_SIZE + 1);
 	if(ret < 0)
 		HDCPPRINTK("Can't write aksv data through i2c bus\n");
