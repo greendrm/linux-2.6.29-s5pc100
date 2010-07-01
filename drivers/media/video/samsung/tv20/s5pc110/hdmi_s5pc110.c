@@ -2134,6 +2134,12 @@ irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
+u8 s5p_hdmi_get_enabled_interrupt(void)
+{
+	u8 reg;
+	reg = readb(hdmi_base+S5P_HDMI_CTRL_INTC_CON);
+	return reg;
+}
 
 void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr)
 {

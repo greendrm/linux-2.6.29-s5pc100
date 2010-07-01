@@ -60,6 +60,7 @@ extern u8 s5p_hdmi_get_interrupts(void);
 extern int s5p_hdmi_register_isr(hdmi_isr isr, u8 irq_num);
 extern void s5p_hdmi_enable_interrupts(s5p_tv_hdmi_interrrupt intr);
 extern void s5p_hdmi_disable_interrupts(s5p_tv_hdmi_interrrupt intr);
+extern u8 s5p_hdmi_get_enabled_interrupt(void);
 extern void s5p_hdmi_hpd_gen(void);
 
 extern void __iomem		*hdmi_base;
@@ -624,11 +625,11 @@ void reset_authentication(void)
          * disable HPD INT
          */
 
-	reg = s5p_hdmi_get_interrupts();
-	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
-
 	sw_reset = true;
-	s5p_hdmi_disable_interrupts(reg);
+	reg = s5p_hdmi_get_enabled_interrupt();
+
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 
 	/* 2. Enable software HPD */
         sw_hpd_enable(true);
@@ -643,7 +644,11 @@ void reset_authentication(void)
         sw_hpd_enable(false);	
 
 	/* 6. Unmask HPD plug and unplug interrupt */
-	s5p_hdmi_enable_interrupts(reg);
+	if (reg & 1<<HDMI_IRQ_HPD_PLUG)
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
+	if (reg & 1<<HDMI_IRQ_HPD_UNPLUG)
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+
 
 	sw_reset = false;
 
@@ -1152,8 +1157,11 @@ bool __s5p_start_hdcp(void)
 	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
 
 	sw_reset = true;
-	s5p_hdmi_disable_interrupts(reg);
+	reg = s5p_hdmi_get_enabled_interrupt();
 
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
+	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
+ 
 	/* 2. Enable software HPD */
         sw_hpd_enable(true);
 	
@@ -1167,7 +1175,10 @@ bool __s5p_start_hdcp(void)
         sw_hpd_enable(false);	
 
 	/* 6. Unmask HPD plug and unplug interrupt */
-	s5p_hdmi_enable_interrupts(reg);
+	if (reg & 1<<HDMI_IRQ_HPD_PLUG)
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
+	if (reg & 1<<HDMI_IRQ_HPD_UNPLUG)
+		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 
 	sw_reset = false;
 
