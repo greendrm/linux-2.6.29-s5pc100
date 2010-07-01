@@ -172,6 +172,7 @@ static struct s5p_hdcp_info hdcp_info = {
 #define MAX_CASCADE_EXCEEDED_ERROR 	(-1)
 #define MAX_DEVS_EXCEEDED_ERROR    	(-2)
 #define REPEATER_ILLEGAL_DEVICE_ERROR	(-3)
+#define REPEATER_TIMEOUT_ERROR		(-4)
 
 #define AINFO_SIZE		1
 #define BCAPS_SIZE		1
@@ -873,7 +874,7 @@ static int check_repeater(void)
 	memset(rx_v, 0x0, SHA_1_HASH_SIZE);
 	memset(ksv_list, 0x0, HDCP_MAX_DEVS*HDCP_KSV_SIZE);
 	
-	while(j <= 500) {
+	while(j <= 50) {
 		ret = ddc_read( HDCP_Bcaps, 
 				bcaps, BCAPS_SIZE);
 
@@ -890,23 +891,15 @@ static int check_repeater(void)
 		}else{
 			HDCPPRINTK("ksv fifo is not ready\n");
 			ksv_fifo_ready = false;
-			mdelay(10);
+			mdelay(100);
 			j++;
 		}
-	
-	}
 
-	if (j == 500) {
-		HDCPPRINTK("ksv fifo check timeout occurred!!\n");
-		return false;
+		bcaps[0] = 0;
 	}
 	
-	if (ksv_fifo_ready) {
-		hdcp_ctrl = readl(hdmi_base + S5P_HDCP_CTRL1);
-		hdcp_ctrl &= CLEAR_REPEATER_TIMEOUT;
-		writel(hdcp_ctrl, hdmi_base + S5P_HDCP_CTRL1);
-	} else
-		return false;
+	if (!ksv_fifo_ready)
+		return REPEATER_TIMEOUT_ERROR;
 
 	/*
 	 * Check MAX_CASCADE_EXCEEDED 
@@ -933,7 +926,7 @@ static int check_repeater(void)
 	writel(status[1], hdmi_base + S5P_HDCP_BSTATUS_1);
 		 
 	/* Read KSV list */
-	dev_cnt = (*status) & 0x7f;
+	dev_cnt = status[0] & 0x7f;
 
 	HDCPPRINTK("status[0] :0x%08x, status[1] :0x%08x!!\n",
 		status[0],status[1]);
@@ -951,19 +944,29 @@ static int check_repeater(void)
 		}
 
 		/* write ksv */
-		for (i = 0; i < dev_cnt; i++) {
+		for (i = 0; i < dev_cnt - 1; i++) {
 			
 			writel(ksv_list[(i*5) + 0], hdmi_base + S5P_HDCP_RX_KSV_0_0);
 			writel(ksv_list[(i*5) + 1], hdmi_base + S5P_HDCP_RX_KSV_0_1);
 			writel(ksv_list[(i*5) + 2], hdmi_base + S5P_HDCP_RX_KSV_0_2);
 			writel(ksv_list[(i*5) + 3], hdmi_base + S5P_HDCP_RX_KSV_0_3);
 			writel(ksv_list[(i*5) + 4], hdmi_base + S5P_HDCP_RX_KSV_0_4);
+
+			mdelay(1);
+			writel(SET_HDCP_KSV_WRITE_DONE, hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);			
+			mdelay(1);
+
+			stat = readl(hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);
+
+			if (!(stat & SET_HDCP_KSV_READ))
+				return false;
 			
+#if 0			
 			if ( i != (dev_cnt - 1)) { /* if it's not end */
 				/* it's not in manual */
-				writel(SET_HDCP_KSV_WRITE_DONE, S5P_HDCP_RX_KSV_LIST_CTRL);
+				writel(SET_HDCP_KSV_WRITE_DONE, hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);
 				
-				mdelay(20);
+				mdelay(10);
 
 				/* check ksv readed */
 				do
@@ -979,15 +982,23 @@ static int check_repeater(void)
 				HDCPPRINTK("read complete\n");
 
 			}	
-
+#endif
 			HDCPPRINTK("HDCP_RX_KSV_1 = 0x%x\n\r",
 				readl(hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL));
 			HDCPPRINTK("i : %d, dev_cnt : %d, val = 0x%08x\n",i,dev_cnt,val);
 		}
 
+		writel(ksv_list[(i*5) + 0], hdmi_base + S5P_HDCP_RX_KSV_0_0);
+		writel(ksv_list[(i*5) + 1], hdmi_base + S5P_HDCP_RX_KSV_0_1);
+		writel(ksv_list[(i*5) + 2], hdmi_base + S5P_HDCP_RX_KSV_0_2);
+		writel(ksv_list[(i*5) + 3], hdmi_base + S5P_HDCP_RX_KSV_0_3);
+		writel(ksv_list[(i*5) + 4], hdmi_base + S5P_HDCP_RX_KSV_0_4);
+
+		mdelay(1);
+
 		/* end of ksv */
-		val = readl(hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);
-		val |= SET_HDCP_KSV_END|SET_HDCP_KSV_WRITE_DONE;
+//		val = readl(hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);
+		val = SET_HDCP_KSV_END|SET_HDCP_KSV_WRITE_DONE;
 		writel(val, hdmi_base + S5P_HDCP_RX_KSV_LIST_CTRL);
 
 		HDCPPRINTK("HDCP_RX_KSV_1 = 0x%x\n\r",
@@ -1011,54 +1022,59 @@ static int check_repeater(void)
 		HDCPPRINTK("Can't read sha_1_hash data from i2c bus\n");
 		return false;
 	}
-
+#ifdef S5P_HDCP_DEBUG
 	for(i = 0; i < SHA_1_HASH_SIZE; i++) {
 		HDCPPRINTK("SHA_1 rx :: %x\n",rx_v[i]);
 	}
+#endif
 
 	/* write SHA-1 to register */
-	writel(rx_v[0], hdmi_base + S5P_HDCP_RX_SHA1_0_0);
-	writel(rx_v[1], hdmi_base + S5P_HDCP_RX_SHA1_0_1); 
-	writel(rx_v[2], hdmi_base + S5P_HDCP_RX_SHA1_0_2);
-	writel(rx_v[3], hdmi_base + S5P_HDCP_RX_SHA1_0_3);
-	writel(rx_v[4], hdmi_base + S5P_HDCP_RX_SHA1_1_0); 
-	writel(rx_v[5], hdmi_base + S5P_HDCP_RX_SHA1_1_1); 
-	writel(rx_v[6], hdmi_base + S5P_HDCP_RX_SHA1_1_2); 
-	writel(rx_v[7], hdmi_base + S5P_HDCP_RX_SHA1_1_3);  
-	writel(rx_v[8], hdmi_base + S5P_HDCP_RX_SHA1_2_0); 
-	writel(rx_v[9], hdmi_base + S5P_HDCP_RX_SHA1_2_1); 
-	writel(rx_v[10], hdmi_base + S5P_HDCP_RX_SHA1_2_2);  
-	writel(rx_v[11], hdmi_base + S5P_HDCP_RX_SHA1_2_3);  
-	writel(rx_v[12], hdmi_base + S5P_HDCP_RX_SHA1_3_0); 
-	writel(rx_v[13], hdmi_base + S5P_HDCP_RX_SHA1_3_1);  
-	writel(rx_v[14], hdmi_base + S5P_HDCP_RX_SHA1_3_2); 
-	writel(rx_v[15], hdmi_base + S5P_HDCP_RX_SHA1_3_3); 
-	writel(rx_v[16], hdmi_base + S5P_HDCP_RX_SHA1_4_0);  
-	writel(rx_v[17], hdmi_base + S5P_HDCP_RX_SHA1_4_1);  
-	writel(rx_v[18], hdmi_base + S5P_HDCP_RX_SHA1_4_2); 
-	writel(rx_v[19], hdmi_base + S5P_HDCP_RX_SHA1_4_3);  
+	writeb(rx_v[0], hdmi_base + S5P_HDCP_RX_SHA1_0_0);
+	writeb(rx_v[1], hdmi_base + S5P_HDCP_RX_SHA1_0_1); 
+	writeb(rx_v[2], hdmi_base + S5P_HDCP_RX_SHA1_0_2);
+	writeb(rx_v[3], hdmi_base + S5P_HDCP_RX_SHA1_0_3);
+	writeb(rx_v[4], hdmi_base + S5P_HDCP_RX_SHA1_1_0); 
+	writeb(rx_v[5], hdmi_base + S5P_HDCP_RX_SHA1_1_1); 
+	writeb(rx_v[6], hdmi_base + S5P_HDCP_RX_SHA1_1_2); 
+	writeb(rx_v[7], hdmi_base + S5P_HDCP_RX_SHA1_1_3);  
+	writeb(rx_v[8], hdmi_base + S5P_HDCP_RX_SHA1_2_0); 
+	writeb(rx_v[9], hdmi_base + S5P_HDCP_RX_SHA1_2_1); 
+	writeb(rx_v[10], hdmi_base + S5P_HDCP_RX_SHA1_2_2);  
+	writeb(rx_v[11], hdmi_base + S5P_HDCP_RX_SHA1_2_3);  
+	writeb(rx_v[12], hdmi_base + S5P_HDCP_RX_SHA1_3_0); 
+	writeb(rx_v[13], hdmi_base + S5P_HDCP_RX_SHA1_3_1);  
+	writeb(rx_v[14], hdmi_base + S5P_HDCP_RX_SHA1_3_2); 
+	writeb(rx_v[15], hdmi_base + S5P_HDCP_RX_SHA1_3_3); 
+	writeb(rx_v[16], hdmi_base + S5P_HDCP_RX_SHA1_4_0);  
+	writeb(rx_v[17], hdmi_base + S5P_HDCP_RX_SHA1_4_1);  
+	writeb(rx_v[18], hdmi_base + S5P_HDCP_RX_SHA1_4_2); 
+	writeb(rx_v[19], hdmi_base + S5P_HDCP_RX_SHA1_4_3);  
 
 	/* SHA write done, and wait for SHA computation being done */
 	mdelay(1);
 	
 	/* check authentication success or not */
-	stat = readl(hdmi_base + S5P_HDCP_AUTH_STATUS);
+	stat = readb(hdmi_base + S5P_HDCP_AUTH_STATUS);
+#if 0
+	if (stat == (SET_HDCP_SHA_VALID_READY|SET_HDCP_SHA_VALID))
+		ret = true;
+	else
+		ret = false;
+#endif	
 		
-	HDCPPRINTK("auth status %d\n",stat);
-
 	if (stat & SET_HDCP_SHA_VALID_READY) {
 
-		HDCPPRINTK("SHA valid ready 0x%x \n\r",stat);
+//		HDCPPRINTK("SHA valid ready 0x%x \n\r",stat);
 
-		stat = readl(hdmi_base + S5P_HDCP_AUTH_STATUS);
+		stat = readb(hdmi_base + S5P_HDCP_AUTH_STATUS);
 
 		if (stat & SET_HDCP_SHA_VALID) {
 
-			HDCPPRINTK("SHA valid 0x%x \n\r",stat);
+//			HDCPPRINTK("SHA valid 0x%x \n\r",stat);
 		
 			ret = true;
 		} else {
-			HDCPPRINTK("SHA valid ready, but not valid 0x%x \n\r",stat);
+//			HDCPPRINTK("SHA valid ready, but not valid 0x%x \n\r",stat);
 			ret = false;
 		}
 		
@@ -1067,10 +1083,10 @@ static int check_repeater(void)
 		HDCPPRINTK("SHA not ready 0x%x \n\r",stat);
 		ret = false;
 	}
-		
+	
 
 	/* clear all validate bit */
-	writel(0x0, hdmi_base + S5P_HDCP_AUTH_STATUS);
+	writeb(0x0, hdmi_base + S5P_HDCP_AUTH_STATUS);
 
 	return ret;
 
