@@ -636,12 +636,18 @@ void reset_authentication(void)
 	hdcp_info.event 	= HDCP_EVENT_STOP;
 	hdcp_info.auth_status 	= NOT_AUTHENTICATED;
 
-	HDCPPRINTK("Now reset authentication\n");
 
-	/* clear all result */
-	writeb(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
+	/* Disable hdcp */
+	writeb(0x0, hdmi_base + S5P_HDCP_CTRL1);
+	writeb(0x0, hdmi_base + S5P_HDCP_CTRL2);
 
 	s5p_hdmi_mute_en(true);
+
+	/* Disable encryption */
+	HDCPPRINTK("Stop Encryption by reset!!\n");
+	writeb(HDCP_ENC_DIS, hdmi_base + S5P_ENC_EN);
+
+	HDCPPRINTK("Now reset authentication\n");
 
 	/* disable hdmi status enable reg. */
 	reg = readb(hdmi_base + S5P_STATUS_EN);
@@ -649,23 +655,23 @@ void reset_authentication(void)
  	writeb(reg, hdmi_base + S5P_STATUS_EN);
 
 	/* clear all status pending */
-	reg = readb(hdmi_base + S5P_STATUS);
-	reg |= HDCP_STATUS_EN_ALL;
-	writeb(reg, hdmi_base + S5P_STATUS);
+	//reg = readb(hdmi_base + S5P_STATUS);
+	//reg |= HDCP_STATUS_EN_ALL;
+	//writeb(reg, hdmi_base + S5P_STATUS);
 
-	/* Disable encryption */
-	HDCPPRINTK("Stop Encryption by reset!!\n");
-	writeb(HDCP_ENC_DIS, hdmi_base + S5P_ENC_EN);
 
-	/* Disable hdcp */
-	writeb(0x0, hdmi_base + S5P_HDCP_CTRL1);
-	writeb(0x0, hdmi_base + S5P_HDCP_CTRL2);
-	
+	/* clear all result */
+
+	writeb(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
+
 	/*
 	 * 1. Mask HPD plug and unplug interrupt
          * disable HPD INT
          */
-
+/*
+	reg = s5p_hdmi_get_interrupts();
+	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
+*/
 	sw_reset = true;
 	reg = s5p_hdmi_get_enabled_interrupt();
 
@@ -682,24 +688,27 @@ void reset_authentication(void)
 	set_sw_hpd(true);
 
 	/* 5. Disable software HPD */
-        sw_hpd_enable(false);	
+        sw_hpd_enable(false);
+
+	set_sw_hpd(false);
 
 	/* 6. Unmask HPD plug and unplug interrupt */
+
 	if (reg & 1<<HDMI_IRQ_HPD_PLUG)
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
 	if (reg & 1<<HDMI_IRQ_HPD_UNPLUG)
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_UNPLUG);
 
-
 	sw_reset = false;
 
-
 	/* clear result */
+#if 0
 	writel(Ri_MATCH_RESULT__NO, hdmi_base + S5P_HDCP_CHECK_RESULT);
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) & HDMI_DIS,
 		hdmi_base + S5P_HDMI_CON_0);
 	writel(readl(hdmi_base + S5P_HDMI_CON_0) | HDMI_EN,
 		hdmi_base + S5P_HDMI_CON_0);
+#endif
 	writel(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
 
 	/* set hdcp_int enable */
