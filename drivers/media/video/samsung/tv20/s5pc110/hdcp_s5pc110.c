@@ -39,8 +39,6 @@
 #define S5P_HDCP_AUTH_DEBUG 1
 #endif
 
-#define S5P_HDCP_DEBUG 1
-
 #ifdef S5P_HDCP_DEBUG
 #define HDCPPRINTK(fmt, args...) \
 	printk("\t\t[HDCP] %s: " fmt, __FUNCTION__ , ## args)

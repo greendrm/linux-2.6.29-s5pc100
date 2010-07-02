@@ -1482,7 +1482,6 @@ long s5p_tv_v_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return 0;
 
 	case VIDIOC_AV_MUTE:
-		printk("%s: called\n", __func__);
 		if (arg) {
 			s5ptv_status.hdmi_audio_type = HDMI_AUDIO_NO;
 			if (s5ptv_status.tvout_output_enable) {
