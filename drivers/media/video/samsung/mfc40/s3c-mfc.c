@@ -127,6 +127,8 @@ static int s3c_mfc_release(struct inode *inode, struct file *file)
 		goto out_release;
 	}
 
+	s3c_mfc_clear_reset_state(MfcCtx->InstNo);
+
 	s3c_mfc_merge_frag(MfcCtx->InstNo);
 	
 	s3c_mfc_return_inst_no(MfcCtx->InstNo);
