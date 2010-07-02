@@ -1899,6 +1899,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 
 	s5p_hpd_set_hdmiint();
 
+#if 0
 	if (hdcp_en) {
 //		__s5p_init_hdcp(true, ddc_port);
 		
@@ -1906,7 +1907,7 @@ bool __s5p_hdmi_start(s5p_hdmi_audio_type hdmi_audio_type,
 			HDMIPRINTK("HDCP start failed\n");
 		}
 	}
-
+#endif
 	HDMIPRINTK("HPD : 0x%08x, HDMI_CON_0 : 0x%08x\n\r",
 	//	   readl(hdmi_base + S5P_HDCP_CTRL),
 		   readl(hdmi_base + S5P_HPD),

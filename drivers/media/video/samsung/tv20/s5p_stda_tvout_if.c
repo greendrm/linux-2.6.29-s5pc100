@@ -836,10 +836,9 @@ bool _s5p_tv_if_init_hd_reg(void)
 		break;
 	}
 
-/* C110_HDCP: */ st->hpd_status = 1;
 
 	if (!__s5p_hdmi_start(st->hdmi_audio_type,
-			      (st->hdcp_en && st->hpd_status),
+			      st->hdcp_en,
 			      st->hdcp_i2c_client)) {
 		return false;
 	}

@@ -655,7 +655,7 @@ bool 	__s5p_is_occurred_hdcp_event(void);
 irqreturn_t __s5p_hdmi_irq(int irq, void *dev_id);
 bool 	__s5p_is_decrypting_done(void);
 void 	__s5p_set_hpd_detection(u32 detection_type, bool hdcp_enabled, struct i2c_client *client);
-bool 	__s5p_start_hdcp(struct i2c_client *ddc_port);
+bool 	__s5p_start_hdcp(void);
 void __s5p_stop_hdcp(void);
 void __s5p_hdcp_reset(void);
 

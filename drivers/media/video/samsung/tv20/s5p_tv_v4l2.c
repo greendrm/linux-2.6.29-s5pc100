@@ -14,6 +14,7 @@
 #include <linux/stddef.h>
 #include <linux/string.h>
 #include <linux/version.h>
+#include <linux/delay.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -734,6 +735,12 @@ static int s5p_tv_v4l2_streamon(struct file *file, void *fh, enum v4l2_buf_type 
 		_s5p_vlayer_init_param(0);
 		_s5p_vlayer_start();
 		s5ptv_status.vp_layer_enable = true;
+
+		mdelay(50);
+
+		if (s5ptv_status.hdcp_en)
+			__s5p_start_hdcp();
+
 		break;
 		// GRP0/1
 
