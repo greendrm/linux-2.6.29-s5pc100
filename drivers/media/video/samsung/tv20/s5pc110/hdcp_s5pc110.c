@@ -529,9 +529,9 @@ static bool read_bksv(void)
 			
 			count ++;
 			
-			mdelay(20);
+			mdelay(200);
 
-			if(count == 140)
+			if(count == 14)
 				return false;
 		}		
 	}
@@ -550,6 +550,12 @@ static bool compare_r_val(void)
 	u16 i;
 
 	for (i = 0; i < R_VAL_RETRY_CNT; i++) {
+
+		if (hdcp_info.auth_status < AKSV_WRITE_DONE ) {
+			ret = false;
+			break;
+		}
+
 		/* Read R value from Tx */
 		ri[0] = readl(hdmi_base + S5P_HDCP_Ri_0);
 		ri[1] = readl(hdmi_base + S5P_HDCP_Ri_1);
@@ -582,7 +588,17 @@ static bool compare_r_val(void)
 			HDCPPRINTK("R0, R0' is not matched!!\n");
 			ret = false;
 		}
-		
+
+		ri[0] = 0;
+		ri[1] = 0;
+		rj[0] = 0;
+		rj[1] = 0;
+
+	}
+
+	if (!ret) {
+		hdcp_info.event 	= HDCP_EVENT_STOP;
+		hdcp_info.auth_status 	= NOT_AUTHENTICATED;
 	}
 
 	return ret ? true:false;
@@ -840,7 +856,7 @@ static void start_encryption(void)
 				break;
 			} else {
 				time_out--;
-				msleep(1);
+				mdelay(1);
 			}
 		}
 	} else {
@@ -1099,7 +1115,7 @@ static bool try_read_receiver(void)
 
 	s5p_hdmi_mute_en(true);
 
-	for(i = 0; i < 40; i++)	{
+	for(i = 0; i < 400; i++) {
 		
 		mdelay(250);
 
@@ -1177,10 +1193,6 @@ bool __s5p_stop_hdcp(void)
 
 	/* clear result */
 	writel(Ri_MATCH_RESULT__NO, hdmi_base + S5P_HDCP_CHECK_RESULT);
-	writel(readl(hdmi_base + S5P_HDMI_CON_0) & HDMI_DIS, 
-		hdmi_base + S5P_HDMI_CON_0);	
-	writel(readl(hdmi_base + S5P_HDMI_CON_0) | HDMI_EN, 
-		hdmi_base + S5P_HDMI_CON_0);	
 	writel(CLEAR_ALL_RESULTS, hdmi_base + S5P_HDCP_CHECK_RESULT);
 
 	/* hdmi disable */
@@ -1334,6 +1346,7 @@ static void bksv_start_bh(void)
 static void second_auth_start_bh(void)
 {
 	u8 count = 0;
+	int reg;
 	bool ret = false;
 
 	int ret_err;
@@ -1445,8 +1458,22 @@ static void second_auth_start_bh(void)
 			 * in case of invalid KSV (revocation case)
 			 */
 			HDCPPRINTK("illegal dev. error!!\n");	
+			reg = readl(hdmi_base + S5P_HDCP_CTRL2);
+			reg = 0x1;
+			writel(reg, hdmi_base + S5P_HDCP_CTRL2);
+			reg = 0x0;
+			writel(reg, hdmi_base + S5P_HDCP_CTRL2);
 
-			reset_authentication();
+			hdcp_info.auth_status = NOT_AUTHENTICATED;
+			
+		} else if (ret_err == REPEATER_TIMEOUT_ERROR) {
+			reg = readl(hdmi_base + S5P_HDCP_CTRL1);
+			reg |= SET_REPEATER_TIMEOUT;
+			writel(reg, hdmi_base + S5P_HDCP_CTRL1);
+			reg &= ~SET_REPEATER_TIMEOUT;
+			writel(reg, hdmi_base + S5P_HDCP_CTRL1);
+
+			hdcp_info.auth_status = NOT_AUTHENTICATED;
 		} else {
 			/* 
 			 * MAX_CASCADE_EXCEEDED_ERROR
@@ -1543,7 +1570,8 @@ static bool check_ri_start_bh(void)
 
 		
 		return true;
-	}
+	} else
+		reset_authentication();
 
 	HDCPPRINTK("aksv_write or first/second" 
 		" authentication is not done\n");
