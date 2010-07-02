@@ -1217,20 +1217,15 @@ bool __s5p_start_hdcp(void)
 
 	HDCPPRINTK("HDCP ftn. Start!!\n");
 
-	s5p_hdmi_enable_interrupts(HDMI_IRQ_HDCP);
-
-	reg = s5p_hdmi_get_interrupts();
-	reg &= ((1<<HDMI_IRQ_HPD_PLUG)|(1<<HDMI_IRQ_HPD_UNPLUG));
-
 	sw_reset = true;
 	reg = s5p_hdmi_get_enabled_interrupt();
 
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_PLUG);
 	s5p_hdmi_disable_interrupts(HDMI_IRQ_HPD_UNPLUG);
- 
+
 	/* 2. Enable software HPD */
         sw_hpd_enable(true);
-	
+
 	/* 3. Make software HPD logical ¡®0¡¯*/
         set_sw_hpd(false);
 
@@ -1238,9 +1233,12 @@ bool __s5p_start_hdcp(void)
         set_sw_hpd(true);
 
 	/* 5. Disable software HPD */
-        sw_hpd_enable(false);	
+        sw_hpd_enable(false);
+
+	set_sw_hpd(false);
 
 	/* 6. Unmask HPD plug and unplug interrupt */
+
 	if (reg & 1<<HDMI_IRQ_HPD_PLUG)
 		s5p_hdmi_enable_interrupts(HDMI_IRQ_HPD_PLUG);
 	if (reg & 1<<HDMI_IRQ_HPD_UNPLUG)
@@ -1255,11 +1253,9 @@ bool __s5p_start_hdcp(void)
 
 	hdcp_protocol_status = 1;
 
-	if ( !read_bcaps()) {
-		HDCPPRINTK("can't read ddc port!\n");
-		reset_authentication();
-	}
-	
+	if (hdcp_loadkey() < 0 )
+		return false;
+
 	/* for av mute */
 	writel(DO_NOT_TRANSMIT, hdmi_base + S5P_GCP_CON);
 
@@ -1270,8 +1266,6 @@ bool __s5p_start_hdcp(void)
 	 */
 	writel(HDCP_STATUS_EN_ALL, hdmi_base + S5P_STATUS_EN);
 	
-	if (hdcp_loadkey() < 0 )
-		return false;
 	
 	/* 
 	 * 3. set hdcp control reg.
@@ -1282,6 +1276,13 @@ bool __s5p_start_hdcp(void)
 	sfr_val = 0;
 	sfr_val |= CP_DESIRED_EN;
 	writel(sfr_val, hdmi_base + S5P_HDCP_CTRL1);
+
+	s5p_hdmi_enable_interrupts(HDMI_IRQ_HDCP);
+
+	if ( !read_bcaps()) {
+		HDCPPRINTK("can't read ddc port!\n");
+		reset_authentication();
+	}
 	
 	hdcp_info.hdcp_enable = true;
 
