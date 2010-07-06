@@ -540,6 +540,15 @@ MFC_ERROR_CODE s3c_mfc_init_decode(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *arg
 		mfc_err("MFCINST_ERR_DEC_HEADER_DECODE_FAIL\n");
 		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
 	}
+	/* Header decode error check*/	
+	if (READL(S3C_FIMV_ERROR_STATUS) == 256) {
+		mfc_err("MFCINST_ERR_DEC_HEADER_DECODE_FAIL\n");
+		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
+	}
+	if (READL(S3C_FIMV_ERROR_STATUS) == 128) {
+		mfc_err("Unsupported stream type\n");
+		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
+	}
 
 	/* out param & context setting from header decoding result */
 	MfcCtx->img_width = READL(S3C_FIMV_IMG_SIZE_X);
@@ -689,6 +698,9 @@ static MFC_ERROR_CODE s3c_mfc_decode_one_frame(s3c_mfc_inst_ctx  *MfcCtx,  s3c_m
 		MfcCtx->MfcState = MFCINST_STATE_RESET;
 		s3c_mfc_set_reset_state();
 		return MFCINST_ERR_DEC_DECODE_DONE_FAIL;
+	} else if (READL(S3C_FIMV_ERROR_STATUS) == 128) {
+		mfc_err("Unsupported stream type\n");
+		return MFCINST_ERR_DEC_HEADER_DECODE_FAIL;
 	}
 
 	if ((READL(S3C_FIMV_DISPLAY_STATUS) & 0x3) == DECODING_ONLY) {
