@@ -850,7 +850,8 @@ MFC_ERROR_CODE s3c_mfc_set_config(s3c_mfc_inst_ctx  *MfcCtx,  s3c_mfc_args *args
 		break;
 		
 	case MFC_DEC_SETCONF_IS_LAST_FRAME:
-		if (MfcCtx->MfcState != MFCINST_STATE_DEC_EXE) {
+		if ((MfcCtx->MfcState != MFCINST_STATE_DEC_EXE) &&
+			(MfcCtx->MfcState != MFCINST_STATE_RESET_WAIT))	{
 			mfc_err("MFC_DEC_SETCONF_IS_LAST_FRAME : state is invalid\n");
 			return MFCINST_ERR_STATE_INVALID;
 		}
