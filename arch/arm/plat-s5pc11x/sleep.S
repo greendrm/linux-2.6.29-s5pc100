@@ -106,7 +106,7 @@ deepidle_save:
 	stmia	r0!, {r2, sp, lr }
 
  	/* Save IRQ mode register */
-	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | IRQ_MODE
 	msr	cpsr_c, r1
 	mrs	r2, spsr
 	stmia	r0!, {r2, sp, lr }
@@ -266,7 +266,7 @@ common_restore_1:
 	ldmia	r0!, { sp, lr }
 
  	/* Restore IRQ mode register */
-	mov	r1, #PSR_I_BIT | PSR_F_BIT | ABT_MODE
+	mov	r1, #PSR_I_BIT | PSR_F_BIT | IRQ_MODE
 	msr	cpsr_c, r1
 	ldr	r2, [r0], #4
 	msr	spsr, r2
