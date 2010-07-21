@@ -21,7 +21,7 @@ config S3C_SAMSUNG_PMEM
 config S3C_PMEM_MEMSIZE_PMEM
         int "Memory size in kbytes for PMEM"
         depends on S3C_SAMSUNG_PMEM
-        default "102400"
+        default "32768"
 	help
 	  This option set default reserved physical memory to be used by pmem driver
 
