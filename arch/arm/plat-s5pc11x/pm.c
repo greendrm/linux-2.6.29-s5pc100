@@ -581,7 +581,7 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 #if !defined(USE_DMA_ALLOC)
 	unsigned long regs_save[64];
 #endif	
-	unsigned int tmp;
+	unsigned int tmp, flag = 0;
 
 #ifdef DEBUG_S5P_PM
 	char buf[128];
@@ -766,10 +766,38 @@ static int s5pc11x_pm_enter(suspend_state_t state)
 	
 	s5pc11x_pm_check_restore();
 
+	/* Check Audio SS block power status
+	 * if this block is off status, there may be a leakage in next
+	 * sleep mode. To remove this, Turn on Audio block if the block is
+	 * off state, and turn off the block after release GPIO retention.
+	 * jc.lee@samsung.com
+	 */
+	tmp = __raw_readl(S5P_NORMAL_CFG);
+	
+	if (!(tmp & (0x1 << 7))) {
+		tmp |= (0x1 << 7);
+		__raw_writel(tmp, S5P_NORMAL_CFG);
+		
+	/* Set the flag var to find out Audio block is
+	 * turned on manuallyi.
+	 */	
+		flag = 1;
+		
+		do {
+			tmp = __raw_readl(S5P_BLK_PWR_STAT);
+		} while (!(tmp & (0x1 << 7)));
+	}
+		
 	/* Release retention GPIO/CF/MMC/UART IO */
 	tmp = __raw_readl(S5P_OTHERS);
 	tmp |= (0xf<<28);
 	__raw_writel(tmp, S5P_OTHERS);
+
+	if (flag == 1) {
+		tmp = __raw_readl(S5P_NORMAL_CFG);
+		tmp &= ~(0x1 << 7);
+		__raw_writel(tmp, S5P_NORMAL_CFG);
+	}
 
 #ifdef DEBUG_S5P_PM
 	s5p_low_lvl_debug(buf, "WAKEUP_STAT_AFTER", S5P_WAKEUP_STAT);
