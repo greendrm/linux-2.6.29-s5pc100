@@ -92,6 +92,11 @@ static int s5pc1xx_gpiolib_output(struct gpio_chip *chip,
 	return 0;
 }
 
+static int s5pc1xx_gpiolib_to_irq(struct gpio_chip *chip, unsigned int offset)
+{
+	return S3C_IRQ_GPIO(chip->base + offset);
+}
+
 static struct s3c_gpio_cfg gpio_cfg = {
 	.cfg_eint	= 0xf,
 	.set_config	= s3c_gpio_setcfg_s5pc1xx,
@@ -385,10 +390,29 @@ static struct s3c_gpio_chip gpio_chips[] = {
 	}, 
 };
 
+/* FIXME: move from irq-gpio.c */
+extern struct irq_chip s5pc1xx_gpioint;
+extern void s5pc1xx_irq_gpioint_handler(unsigned int irq, struct irq_desc *desc);
+
 static __init void s5pc1xx_gpiolib_link(struct s3c_gpio_chip *chip)
 {
 	chip->chip.direction_input = s5pc1xx_gpiolib_input;
 	chip->chip.direction_output = s5pc1xx_gpiolib_output;
+
+	/* Interrupt */
+	if (chip->config == &gpio_cfg) {
+		int i, irq;
+
+		chip->chip.to_irq = s5pc1xx_gpiolib_to_irq;
+
+		for (i = 0; i < chip->chip.ngpio; i++) {
+			irq = S3C_IRQ_GPIO_BASE + chip->chip.base + i;
+			set_irq_chip(irq, &s5pc1xx_gpioint);
+			set_irq_data(irq, &chip->chip);
+			set_irq_handler(irq, handle_level_irq);
+			set_irq_flags(irq, IRQF_VALID);
+		}
+	}
 }
 
 static __init void s5pc1xx_gpiolib_add(struct s3c_gpio_chip *chips,
@@ -407,6 +431,9 @@ static __init int s5pc1xx_gpiolib_init(void)
 	printk("S5PC1XX GPIO Driver Init\n");
 	s5pc1xx_gpiolib_add(gpio_chips, ARRAY_SIZE(gpio_chips),
 			    s5pc1xx_gpiolib_link);
+
+	/* Interrupt */
+	set_irq_chained_handler(IRQ_GPIOINT, s5pc1xx_irq_gpioint_handler);
 
 	return 0;
 }
