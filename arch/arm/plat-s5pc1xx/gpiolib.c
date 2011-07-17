@@ -97,7 +97,33 @@ static int s5pc1xx_gpiolib_to_irq(struct gpio_chip *chip, unsigned int offset)
 	return S3C_IRQ_GPIO(chip->base + offset);
 }
 
+static int s5pc1xx_gpiolib_to_eint(struct gpio_chip *chip, unsigned int offset)
+{
+	int base;
+
+	base = chip->base - S5PC1XX_GPH0(0);
+	if (base == 0)
+		return IRQ_EINT(offset);
+	base = chip->base - S5PC1XX_GPH1(0);
+	if (base == 0)
+		return IRQ_EINT(8 + offset);
+	base = chip->base - S5PC1XX_GPH2(0);
+	if (base == 0)
+		return IRQ_EINT(16 + offset);
+	base = chip->base - S5PC1XX_GPH3(0);
+	if (base == 0)
+		return IRQ_EINT(24 + offset);
+	return -EINVAL;
+}
+
 static struct s3c_gpio_cfg gpio_cfg = {
+	.set_config	= s3c_gpio_setcfg_s5pc1xx,
+	.set_pull	= s3c_gpio_setpull_updown,
+	.get_pull	= s3c_gpio_getpull_updown,
+	.set_pin	= s3c_gpio_setpin_updown,
+};
+
+static struct s3c_gpio_cfg gpio_cfg_eint = {
 	.cfg_eint	= 0xf,
 	.set_config	= s3c_gpio_setcfg_s5pc1xx,
 	.set_pull	= s3c_gpio_setpull_updown,
@@ -237,7 +263,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 		},
 	}, {
 		.base	= S5PC1XX_GPH0_BASE,
-		.config	= &gpio_cfg_noint,
+		.config	= &gpio_cfg_eint,
 		.chip	= {
 			.base	= S5PC1XX_GPH0(0),
 			.ngpio	= S5PC1XX_GPIO_H0_NR,
@@ -245,7 +271,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 		},
 	}, {
 		.base	= S5PC1XX_GPH1_BASE,
-		.config	= &gpio_cfg_noint,
+		.config	= &gpio_cfg_eint,
 		.chip	= {
 			.base	= S5PC1XX_GPH1(0),
 			.ngpio	= S5PC1XX_GPIO_H1_NR,
@@ -253,7 +279,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 		},
 	}, {
 		.base	= S5PC1XX_GPH2_BASE,
-		.config	= &gpio_cfg_noint,
+		.config	= &gpio_cfg_eint,
 		.chip	= {
 			.base	= S5PC1XX_GPH2(0),
 			.ngpio	= S5PC1XX_GPIO_H2_NR,
@@ -261,7 +287,7 @@ static struct s3c_gpio_chip gpio_chips[] = {
 		},
 	}, {
 		.base	= S5PC1XX_GPH3_BASE,
-		.config	= &gpio_cfg_noint,
+		.config	= &gpio_cfg_eint,
 		.chip	= {
 			.base	= S5PC1XX_GPH3(0),
 			.ngpio	= S5PC1XX_GPIO_H3_NR,
@@ -412,6 +438,9 @@ static __init void s5pc1xx_gpiolib_link(struct s3c_gpio_chip *chip)
 			set_irq_handler(irq, handle_level_irq);
 			set_irq_flags(irq, IRQF_VALID);
 		}
+	}
+	else if (chip->config == &gpio_cfg_eint) {
+		chip->chip.to_irq = s5pc1xx_gpiolib_to_eint;
 	}
 }
 
