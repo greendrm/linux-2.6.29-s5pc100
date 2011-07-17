@@ -514,6 +514,9 @@ static void __init smdkc100_smc911x_set(void)
 			S5PC1XX_SROM_BCn_PMC_NORMAL, S5PC1XX_SROM_BC3);
 }
 
+/* pb206x i2c */
+extern int pb206x_i2c_add_bus(int master_id);
+
 static void __init smdkc100_machine_init(void)
 {
 	/* spi */
@@ -549,6 +552,14 @@ static void __init smdkc100_machine_init(void)
 	s3c_i2c1_set_platdata(NULL);
 	i2c_register_board_info(0, i2c_devs0, ARRAY_SIZE(i2c_devs0));
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
+
+	/* pb206x i2c */
+	pb206x_i2c_add_bus(0);
+	pb206x_i2c_add_bus(1);
+	pb206x_i2c_add_bus(2);
+	pb206x_i2c_add_bus(3);
+	pb206x_i2c_add_bus(4);
+	pb206x_i2c_add_bus(5);
 
 	/* fimc */
 	s3c_fimc0_set_platdata(&fimc_plat);
