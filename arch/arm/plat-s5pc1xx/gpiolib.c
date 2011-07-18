@@ -103,10 +103,10 @@ static int s5pc1xx_gpiolib_to_eint(struct gpio_chip *chip, unsigned int offset)
 
 	base = chip->base - S5PC1XX_GPH0(0);
 	if (base == 0)
-		return IRQ_EINT(offset);
+		return IRQ_EINT0 + offset;
 	base = chip->base - S5PC1XX_GPH1(0);
 	if (base == 0)
-		return IRQ_EINT(8 + offset);
+		return IRQ_EINT8 + offset;
 	base = chip->base - S5PC1XX_GPH2(0);
 	if (base == 0)
 		return IRQ_EINT(16 + offset);
