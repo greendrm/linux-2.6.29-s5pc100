@@ -6,6 +6,7 @@ struct i2c_pb206x_platform_data {
 				     * You should define the pin config
 				     * and the init ebi at here if needed
 				     */
+	u32 iomem;
 	u32 speed;
 	int gpio_pdn;               /* power down pin */
 	int gpio_reset;             /* hw reset (optional) */

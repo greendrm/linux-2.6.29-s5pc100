@@ -189,7 +189,7 @@ static int find_device_id(struct pb206x_i2c_dev *dev)
 	struct i2c_device_info *info = pb206x_i2c_device_info;
 
 	for (i = 0; i < ARRAY_SIZE(pb206x_i2c_device_info); i++) {
-		if (info[i].base == (u32)dev->base)
+		if (info[i].base == ((u32)(dev->base) & ~PAGE_MASK))
 			return info[i].id;
 	}
 
@@ -384,34 +384,19 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	struct pb206x_i2c_dev *dev;
 	struct i2c_pb206x_platform_data *pdata = NULL;
 	struct i2c_adapter    *adap;
-	struct resource       *mem, *irq, *ioarea = NULL;
+	struct resource       *irq, *ioarea = NULL;
 	int ret;
 	u32 speed = 0;
 
-	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!mem) {
-		dev_err(&pdev->dev, "no mem resource\n");
-		return -ENODEV;
-	}
 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	if (!irq) {
 		dev_err(&pdev->dev, "no irq resource\n");
 		return -ENODEV;
 	}
 
-	if (atomic_read(&pb206x_i2c_ref_count) == 0) {
-		ioarea = request_mem_region(mem->start & ~PAGE_MASK, PAGE_SIZE,
-				pdev->name);
-		if (!ioarea) {
-			dev_err(&pdev->dev, "I2C region already claimed\n");
-			return -EBUSY;
-		}
-	}
-
 	dev = kzalloc(sizeof(struct pb206x_i2c_dev), GFP_KERNEL);
 	if (!dev) {
-		ret = -ENOMEM;
-		goto err_kzalloc;
+		return -ENOMEM;
 	}
 
 	if (pdev->dev.platform_data != NULL)
@@ -419,8 +404,10 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 
 	if (pdata && pdata->platform_init) {
 		ret = pdata->platform_init();
-		dev_err(&pdev->dev, "failure platform_init\n");
-		goto err_platform_init;
+		if (ret < 0) {
+			dev_err(&pdev->dev, "failure platform_init\n");
+			goto err_platform_init;
+		}
 	}
 
 	if (pdata && pdata->speed)
@@ -436,16 +423,27 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	dev->speed = speed;
 	dev->dev = &pdev->dev;
 	dev->irq = irq->start;
-	if (atomic_read(&pb206x_i2c_ref_count) == 0) {
-		pb206x_i2c_base = ioremap(mem->start & ~PAGE_MASK, PAGE_SIZE);
+
+	if (pdata && atomic_read(&pb206x_i2c_ref_count) == 0) {
+		ioarea = request_mem_region(pdata->iomem & PAGE_MASK, 
+				PAGE_SIZE, pdev->name);
+		if (!ioarea) {
+			dev_err(&pdev->dev, "I2C region already claimed\n");
+			ret = -EBUSY;
+			goto err_request_mem;
+		}
+
+
+		pb206x_i2c_base = ioremap(pdata->iomem & PAGE_MASK, PAGE_SIZE);
 		if (!pb206x_i2c_base) {
-			ret = -ENOMEM;
 			dev_err(dev->dev, "failure ioremap\n");
+			ret = -ENOMEM;
 			goto err_ioremap;
 		}
 	}
-	dev->base = pb206x_i2c_base + (mem->start & PAGE_MASK);
+	dev->base = pb206x_i2c_base + (pdata->iomem & ~PAGE_MASK);
 
+	dev_warn(dev->dev, "dev->base %x\n", dev->base);
 	dev->id = find_device_id(dev);
 	if (dev->id < 0) {
 		ret = -ENODEV;
@@ -461,7 +459,8 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 
 	ret = request_irq(dev->irq, pb206x_i2c_isr, 0, pdev->name, dev);
 	if (ret) {
-		dev_err(dev->dev, "failure requesting irq %d\n", dev->irq);
+		dev_err(dev->dev, "failure requesting irq %d (error %d)\n", 
+				dev->irq, ret);
 		goto err_request_irq;
 	}
 
@@ -495,20 +494,19 @@ err_request_irq:
 err_find_device_id:
 	iounmap(pb206x_i2c_base);
 err_ioremap:
+	if (ioarea)
+		release_mem_region(pdata->iomem & PAGE_MASK, PAGE_SIZE);
+err_request_mem:
 err_platform_init:
 	kfree(dev);
-err_kzalloc:
-	if (!ioarea)
-		release_mem_region(mem->start & ~PAGE_MASK, PAGE_SIZE);
 
 	return ret;
 }
 
-
 static int __devexit pb206x_i2c_remove(struct platform_device *pdev)
 {
 	struct pb206x_i2c_dev *dev = platform_get_drvdata(pdev);
-	struct resource       *mem;
+	struct i2c_pb206x_platform_data *pdata = pdev->dev.platform_data;
 
 	platform_set_drvdata(pdev, NULL);
 
@@ -521,8 +519,9 @@ static int __devexit pb206x_i2c_remove(struct platform_device *pdev)
 
 	if (atomic_dec_and_test(&pb206x_i2c_ref_count)) {
 		iounmap(pb206x_i2c_base);
-		mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-		release_mem_region(mem->start & ~PAGE_MASK, PAGE_SIZE);
+		if (pdata)
+			release_mem_region(pdata->iomem & PAGE_MASK,
+					PAGE_SIZE);
 	}
 
 	return 0;
