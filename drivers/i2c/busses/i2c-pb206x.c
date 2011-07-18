@@ -214,9 +214,10 @@ static int pb206x_i2c_wait_for_bb(struct pb206x_i2c_dev *dev)
 	return 0;
 }
 
-static int pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
+static int __pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 		unsigned short flags, char read_write,
-		u8 command, int size, union i2c_smbus_data *data)
+		u8 high_command, u8 low_command, 
+		int size, union i2c_smbus_data *data)
 {
 	struct pb206x_i2c_dev *dev = i2c_get_adapdata(adap);
 	int i;
@@ -262,8 +263,8 @@ static int pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 	
 
 	/* command */
-	pb206x_i2c_write_reg(dev, PB206X_I2C_SSAH_REG, 0);
-	pb206x_i2c_write_reg(dev, PB206X_I2C_SSAL_REG, command);
+	pb206x_i2c_write_reg(dev, PB206X_I2C_SSAH_REG, high_command);
+	pb206x_i2c_write_reg(dev, PB206X_I2C_SSAL_REG, low_command);
 
 	/* set the byte count (real transfer byte = this value + 1) */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_BC_REG, dev->buf_len - 1);
@@ -316,6 +317,14 @@ out:
 			PB206X_I2C_MC_TXFIFO_CLR);
 
 	return ret;
+}
+
+static int pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
+		unsigned short flags, char read_write,
+		u8 command, int size, union i2c_smbus_data *data)
+{
+	return __pb206x_smbus_xfer(adap, addr, flags, read_write,
+			0, command, size, data);
 }
 
 static u32 pb206x_i2c_func(struct i2c_adapter *adap)
@@ -560,3 +569,78 @@ MODULE_AUTHOR("Pointchips, Inc.");
 MODULE_DESCRIPTION("Pointchips pb206x i2c adapter");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:i2c-pb206x");
+
+/* pb206x specific smbus helper functions */
+s32 i2c_smbus_read_byte_data_2(struct i2c_client *client, u16 command)
+{
+        union i2c_smbus_data data;
+        int status;
+
+        status = __pb206x_smbus_xfer(client->adapter, client->addr, client->flags,
+                                I2C_SMBUS_READ, command >> 8, command & 0xff,
+                                I2C_SMBUS_BYTE_DATA, &data);
+        return (status < 0) ? status : data.byte;
+}
+
+s32 i2c_smbus_write_byte_data_2(struct i2c_client *client, u16 command, u8 value)
+{
+        union i2c_smbus_data data;
+        data.byte = value;
+        return __pb206x_smbus_xfer(client->adapter,client->addr,client->flags,
+                              I2C_SMBUS_WRITE,command >> 8, command & 0xff,
+                              I2C_SMBUS_BYTE_DATA,&data);
+}
+
+s32 i2c_smbus_read_word_data_2(struct i2c_client *client, u16 command)
+{
+        union i2c_smbus_data data;
+        int status;
+
+        status = __pb206x_smbus_xfer(client->adapter, client->addr, client->flags,
+                                I2C_SMBUS_READ, command >> 8, command & 0xff,
+                                I2C_SMBUS_WORD_DATA, &data);
+        return (status < 0) ? status : data.word;
+}
+
+s32 i2c_smbus_write_word_data_2(struct i2c_client *client, u16 command, u16 value)
+{
+        union i2c_smbus_data data;
+        data.word = value;
+        return __pb206x_smbus_xfer(client->adapter,client->addr,client->flags,
+                              I2C_SMBUS_WRITE,command >> 8, command & 0xff,
+                              I2C_SMBUS_WORD_DATA,&data);
+}
+
+s32 i2c_smbus_read_i2c_block_data_2(struct i2c_client *client, u16 command,
+		                                  u8 length, u8 *values)
+{
+        union i2c_smbus_data data;
+        int status;
+
+        if (length > I2C_SMBUS_BLOCK_MAX)
+                length = I2C_SMBUS_BLOCK_MAX;
+        data.block[0] = length;
+        status = __pb206x_smbus_xfer(client->adapter, client->addr, client->flags,
+                                I2C_SMBUS_READ, command >> 8, command & 0xff,
+                                I2C_SMBUS_I2C_BLOCK_DATA, &data);
+        if (status < 0)
+                return status;
+
+        memcpy(values, &data.block[1], data.block[0]);
+        return data.block[0];
+}
+
+
+s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client, u16 command,
+		                                   u8 length, const u8 *values)
+{
+        union i2c_smbus_data data;
+
+        if (length > I2C_SMBUS_BLOCK_MAX)
+                length = I2C_SMBUS_BLOCK_MAX;
+        data.block[0] = length;
+        memcpy(data.block + 1, values, length);
+        return __pb206x_smbus_xfer(client->adapter, client->addr, client->flags,
+                              I2C_SMBUS_WRITE, command >> 8, command & 0xff,
+                              I2C_SMBUS_I2C_BLOCK_DATA, &data);
+}
