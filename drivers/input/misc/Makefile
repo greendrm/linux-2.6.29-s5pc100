@@ -23,3 +23,4 @@ obj-$(CONFIG_INPUT_APANEL)		+= apanel.o
 obj-$(CONFIG_INPUT_SGI_BTNS)		+= sgi_btns.o
 obj-$(CONFIG_INPUT_PCF50633_PMU)	+= pcf50633-input.o
 obj-$(CONFIG_SMDK_POWER_BTNS)		+= smdk_power_btns.o
+obj-$(CONFIG_INPUT_PP876AX)		+= ppa876ax.o
