@@ -443,7 +443,6 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	}
 	dev->base = pb206x_i2c_base + (pdata->iomem & ~PAGE_MASK);
 
-	dev_warn(dev->dev, "dev->base %x\n", dev->base);
 	dev->id = find_device_id(dev);
 	if (dev->id < 0) {
 		ret = -ENODEV;
@@ -457,7 +456,8 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 			
 	pb206x_i2c_init(dev);
 
-	ret = request_irq(dev->irq, pb206x_i2c_isr, 0, pdev->name, dev);
+	ret = request_irq(dev->irq, pb206x_i2c_isr, IRQF_TRIGGER_FALLING, 
+			pdev->name, dev);
 	if (ret) {
 		dev_err(dev->dev, "failure requesting irq %d (error %d)\n", 
 				dev->irq, ret);
