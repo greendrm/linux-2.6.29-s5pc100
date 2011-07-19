@@ -37,7 +37,7 @@
 /* I2C controller info */
 struct i2c_device_info {
 	int id;
-	u32 base;
+	u32 offset;
 	int tx_fifo_size;
 	int rx_fifo_size;
 };
@@ -180,19 +180,6 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 	pb206x_i2c_write_reg(dev, PB206X_I2C_CDL_REG, (u8)(div >> 8));
 
 	return 0;
-}
-
-static int find_device_id(struct pb206x_i2c_dev *dev)
-{
-	int i;
-	struct i2c_device_info *info = pb206x_i2c_device_info;
-
-	for (i = 0; i < ARRAY_SIZE(pb206x_i2c_device_info); i++) {
-		if (info[i].base == ((u32)(dev->base) & ~PAGE_MASK))
-			return info[i].id;
-	}
-
-	return -ENODEV;
 }
 
 /* waiting for bus busy */
@@ -398,27 +385,38 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 
 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	if (!irq) {
-		dev_err(&pdev->dev, "no irq resource\n");
+		dev_err(&pdev->dev, "%s: no irq resource\n", __func__);
 		return -ENODEV;
 	}
 
 	dev = kzalloc(sizeof(struct pb206x_i2c_dev), GFP_KERNEL);
 	if (!dev) {
+		dev_err(&pdev->dev, "%s: memory allocation failed\n", __func__);
 		return -ENOMEM;
 	}
 
-	if (pdev->dev.platform_data != NULL)
-		pdata = pdev->dev.platform_data;
+	if (pdev->dev.platform_data == NULL) {
+		dev_err(&pdev->dev, "%s: no platform data\n", __func__);
+		return -ENODEV;
+	}
 
-	if (pdata && pdata->platform_init) {
+	pdata = pdev->dev.platform_data;
+	if (pdata->master_id < 0 || pdata->master_id > 5) {
+		dev_err(&pdev->dev, "%s: wrong master id(%d)\n", __func__,
+				pdata->master_id);
+		return -EINVAL;
+	}
+
+	if (pdata->platform_init) {
 		ret = pdata->platform_init();
 		if (ret < 0) {
-			dev_err(&pdev->dev, "failure platform_init\n");
+			dev_err(&pdev->dev, "%s: platform_init failed\n",
+					__func__);
 			goto err_platform_init;
 		}
 	}
 
-	if (pdata && pdata->speed)
+	if (pdata->speed)
 		speed = pdata->speed;
 	else
 		speed = 100; /* default speed */
@@ -432,11 +430,12 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	dev->dev = &pdev->dev;
 	dev->irq = irq->start;
 
-	if (pdata && atomic_read(&pb206x_i2c_ref_count) == 0) {
+	if (atomic_read(&pb206x_i2c_ref_count) == 0) {
 		ioarea = request_mem_region(pdata->iomem & PAGE_MASK, 
 				PAGE_SIZE, pdev->name);
 		if (!ioarea) {
-			dev_err(&pdev->dev, "I2C region already claimed\n");
+			dev_err(&pdev->dev, "%s: I2C region already claimed\n",
+					__func__);
 			ret = -EBUSY;
 			goto err_request_mem;
 		}
@@ -444,19 +443,13 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 
 		pb206x_i2c_base = ioremap(pdata->iomem & PAGE_MASK, PAGE_SIZE);
 		if (!pb206x_i2c_base) {
-			dev_err(dev->dev, "failure ioremap\n");
+			dev_err(dev->dev, "%s: failure ioremap\n", __func__);
 			ret = -ENOMEM;
 			goto err_ioremap;
 		}
 	}
-	dev->base = pb206x_i2c_base + (pdata->iomem & ~PAGE_MASK);
-
-	dev->id = find_device_id(dev);
-	if (dev->id < 0) {
-		ret = -ENODEV;
-		dev_err(dev->dev, "no device\n");
-		goto err_find_device_id;
-	}
+	dev->id = pdata->master_id;
+	dev->base = pb206x_i2c_base + pb206x_i2c_device_info[dev->id].offset;
 	dev->tx_fifo_size = pb206x_i2c_device_info[dev->id].tx_fifo_size;
 	dev->rx_fifo_size = pb206x_i2c_device_info[dev->id].rx_fifo_size;
 	
@@ -467,8 +460,8 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	ret = request_irq(dev->irq, pb206x_i2c_isr, IRQF_TRIGGER_FALLING, 
 			pdev->name, dev);
 	if (ret) {
-		dev_err(dev->dev, "failure requesting irq %d (error %d)\n", 
-				dev->irq, ret);
+		dev_err(dev->dev, "%s: failure requesting irq %d (error %d)\n", 
+				__func__, dev->irq, ret);
 		goto err_request_irq;
 	}
 
@@ -486,7 +479,7 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	adap->nr = pdev->id;
 	ret = i2c_add_numbered_adapter(adap);
 	if (ret) {
-		dev_err(dev->dev, "failure adding adaptuer\n");
+		dev_err(dev->dev, "%s: failure adding adapter\n", __func__);
 		goto err_i2c_add_numbered_adapter;
 	}
 
@@ -499,7 +492,6 @@ err_i2c_add_numbered_adapter:
 	free_irq(dev->irq, dev);
 err_request_irq:
 	platform_set_drvdata(pdev, NULL);
-err_find_device_id:
 	iounmap(pb206x_i2c_base);
 err_ioremap:
 	if (ioarea)

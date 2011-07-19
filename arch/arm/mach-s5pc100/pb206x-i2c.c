@@ -74,10 +74,11 @@ static struct resource i2c_resources[][2] = {
 	{ I2C_RESOURCE_BUILDER(I2C_5_IRQ) },
 };
 
-#define I2C_DEV_DATA_BUILDER(func, offset, spd, pdn, reset, clock)	\
+#define I2C_DEV_DATA_BUILDER(id, func, spd, pdn, reset, clock)	\
 	{							\
 		.platform_init = func,				\
-		.iomem = (SMC_PHY_BASE + offset),		\
+		.master_id = id,				\
+		.iomem = SMC_PHY_BASE,				\
 		.speed = (spd),					\
 		.gpio_pdn = pdn,				\
 		.gpio_reset = reset,				\
@@ -216,12 +217,12 @@ static int platform_init(void)
 }
 
 static struct i2c_pb206x_platform_data platform_data[] = {
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_0_OFFSET, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_1_OFFSET, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_2_OFFSET, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_3_OFFSET, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_4_OFFSET, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(platform_init, I2C_5_OFFSET, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(0, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(1, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(2, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(3, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(4, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(5, platform_init, 400, -1, -1, -1),
 };
 
 /* 
