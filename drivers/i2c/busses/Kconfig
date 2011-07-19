@@ -720,4 +720,10 @@ config PB206X_I2C
 	help
 	  Say yes if you want to support the PB206x I2C Controller.
 
+config PB206X_I2C_SMBUS_2
+	bool "Extended SMBUS API"
+	depends on PB206X_I2C
+	help
+	  Say yes if you want to support the SMBUS APIs with 2 bytes command
+
 endmenu

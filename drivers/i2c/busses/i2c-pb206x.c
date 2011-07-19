@@ -570,6 +570,7 @@ MODULE_DESCRIPTION("Pointchips pb206x i2c adapter");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:i2c-pb206x");
 
+#ifdef CONFIG_PB206X_I2C_SMBUS_2
 /* pb206x specific smbus helper functions */
 s32 i2c_smbus_read_byte_data_2(struct i2c_client *client, u16 command)
 {
@@ -581,6 +582,7 @@ s32 i2c_smbus_read_byte_data_2(struct i2c_client *client, u16 command)
                                 I2C_SMBUS_BYTE_DATA, &data);
         return (status < 0) ? status : data.byte;
 }
+EXPORT_SYMBOL(i2c_smbus_read_byte_data_2);
 
 s32 i2c_smbus_write_byte_data_2(struct i2c_client *client, u16 command, u8 value)
 {
@@ -590,6 +592,7 @@ s32 i2c_smbus_write_byte_data_2(struct i2c_client *client, u16 command, u8 value
                               I2C_SMBUS_WRITE,command >> 8, command & 0xff,
                               I2C_SMBUS_BYTE_DATA,&data);
 }
+EXPORT_SYMBOL(i2c_smbus_write_byte_data_2);
 
 s32 i2c_smbus_read_word_data_2(struct i2c_client *client, u16 command)
 {
@@ -601,6 +604,7 @@ s32 i2c_smbus_read_word_data_2(struct i2c_client *client, u16 command)
                                 I2C_SMBUS_WORD_DATA, &data);
         return (status < 0) ? status : data.word;
 }
+EXPORT_SYMBOL(i2c_smbus_read_word_data_2);
 
 s32 i2c_smbus_write_word_data_2(struct i2c_client *client, u16 command, u16 value)
 {
@@ -610,6 +614,7 @@ s32 i2c_smbus_write_word_data_2(struct i2c_client *client, u16 command, u16 valu
                               I2C_SMBUS_WRITE,command >> 8, command & 0xff,
                               I2C_SMBUS_WORD_DATA,&data);
 }
+EXPORT_SYMBOL(i2c_smbus_write_word_data_2);
 
 s32 i2c_smbus_read_i2c_block_data_2(struct i2c_client *client, u16 command,
 		                                  u8 length, u8 *values)
@@ -629,6 +634,7 @@ s32 i2c_smbus_read_i2c_block_data_2(struct i2c_client *client, u16 command,
         memcpy(values, &data.block[1], data.block[0]);
         return data.block[0];
 }
+EXPORT_SYMBOL(i2c_smbus_read_i2c_block_data_2);
 
 
 s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client, u16 command,
@@ -644,3 +650,5 @@ s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client, u16 command,
                               I2C_SMBUS_WRITE, command >> 8, command & 0xff,
                               I2C_SMBUS_I2C_BLOCK_DATA, &data);
 }
+EXPORT_SYMBOL(i2c_smbus_write_i2c_block_data_2);
+#endif /* CONFIG_PB206X_I2C_SMBUS_2 */
