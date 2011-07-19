@@ -18,6 +18,7 @@
 #include <linux/init.h>
 #include <linux/i2c.h>
 #include <linux/interrupt.h>
+#include <linux/workqueue.h>
 
 #include <mach/map.h>
 #include <mach/gpio.h>
@@ -30,15 +31,40 @@
 
 struct pp876ax_device {
 	struct i2c_client *client;
+	struct work_struct work;
 	int irq;
 	/* TODO */
 };
 
-
 /* TODO */
+static void ppp876ax_work_func(struct work_struct *work)
+{
+	struct pp876ax_device *dev =
+		container_of(work, struct pp876ax_device, work);
+	struct i2c_client *client = dev->client;
+	int val;
+
+	val = i2c_smbus_read_word_data_2(client, 0x0002);
+	if (val < 0) {
+		dev_err(&client->dev, "%s: i2c read error\n", __func__);
+		return;
+	}
+
+	val = i2c_smbus_write_word_data_2(client, 0xffff, 1);
+	if (val < 0) {
+		dev_err(&client->dev, "%s: i2c write error\n", __func__);
+		return;
+	}
+
+	dev_dbg($client->dev, "interrupt handled!\n");
+}
+
 static irqreturn_t pp876ax_i2c_isr(int this_irq, void *dev_id)
 {
-	struct pp876ax_device *dev;
+	struct pp876ax_device *dev = dev_id;
+
+	/* workqueue is used as i2c operation might be sleeped */
+	schedule_work(&dev->work);
 
 	return IRQ_HANDLED;
 }
@@ -83,6 +109,8 @@ static int __devinit pp876ax_probe(struct i2c_client *client,
 	gpio_configure();
 	dev->irq = IRQ;
 
+	INIT_WORK(&dev->work, pp876ax_work_func);
+
 	ret = request_irq(dev->irq, pp876ax_i2c_isr, IRQF_TRIGGER_FALLING,
 			                        "pp876ax_i2c_client", dev);
 	if (ret) {
@@ -105,7 +133,7 @@ static int __devexit pp876ax_remove(struct i2c_client *client)
 	struct pp876ax_client *dev = i2c_get_clientdata(client);
 
 	/* TODO: do something */
-
+	cancel_work_sync(&dev->work);
 	kfree(dev);
 	return 0;
 }
