@@ -25,6 +25,7 @@
 /* s5pc100 specific header */
 #include <mach/map.h>
 #include <mach/gpio.h>
+#include <mach/regs-mem.h>
 #include <plat/gpio-cfg.h>
 #include <plat/gpio-bank-a1.h>
 #include <plat/gpio-bank-b.h>
@@ -101,10 +102,14 @@ static struct resource i2c_resources[][2] = {
  * SMC Bank 1 for PB206X I2C controller
  */
 static int smc_configure(void) {
+	/*
 	const unsigned smc_phy_base = S5PC1XX_PA_SROMC;
 	void __iomem *smc_base = NULL;
+	*/
 	unsigned long v;
+	/*
 
+	printk("%s()\n", __func__);
 	if (!request_mem_region(smc_phy_base, PAGE_SIZE, "SMC")) {
 		printk("%s: iomem request error\n", __func__);
 		return -EBUSY;
@@ -116,22 +121,26 @@ static int smc_configure(void) {
 		release_mem_region(smc_phy_base, PAGE_SIZE);
 		return -ENOMEM;
 	}
+	*/
 
-	v = readl(smc_base);
+	v = __raw_readl(S5PC1XX_SROM_BW);
 	v &= ~(0xf << 4);
+	/*
 	v |= (0 << 4) | // data width 8bit
 	     (0 << 5) | // address mode (ignored when data width 8bit)
 	     (0 << 6) | // disabled WAIT
 	     (1 << 7);  // Using UB/LB
-	writel(v, smc_base);
+	*/
+	__raw_writel(v, S5PC1XX_SROM_BW);
 
-	v = (0x6 << 4)  | // acp: 6 clock
-	    (0x4 << 8)  | // cah: 4 clock
-	    (0x1 << 12) | // coh: 1 clock
-	    (0xe << 16) | // acc: 14 clock
-	    (0x4 << 24) | // cos: 4 clock
-	    (0x0 << 28);  // acs: 0 clock
-	writel(v, smc_base + 0x08); // bank1
+	v = S5PC1XX_SROM_BCn_PMC_NORMAL |
+	    S5PC1XX_SROM_BCn_TACP(6) |   // acp: 6 clock
+	    S5PC1XX_SROM_BCn_TCAH(4) |   // cah: 4 clock
+	    S5PC1XX_SROM_BCn_TCOH(1) |   // coh: 1 clock
+	    S5PC1XX_SROM_BCn_TACC(0xe) | // acc: 14 clock
+	    S5PC1XX_SROM_BCn_TCOS(4) |   // cos: 4 clock
+	    S5PC1XX_SROM_BCn_TACS(0);    // acs: 0 clock
+	__raw_writel(v, S5PC1XX_SROM_BC1); // bank1
 
 	return 0;
 }
@@ -139,6 +148,7 @@ static int smc_configure(void) {
 static int gpio_configure(void) {
 	int ret;
 
+	printk("%s()\n", __func__);
 	ret = gpio_request(S5PC1XX_GPH1(1), "GPH1");
 	if (ret) {
 		printk("%s: gpio(GPH1(2) request error: %d\n", __func__, ret);

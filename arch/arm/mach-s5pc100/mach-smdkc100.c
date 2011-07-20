@@ -166,7 +166,7 @@ static struct platform_device *smdkc100_devices[] __initdata = {
 	&s3c_device_ts,
 	&s3c_device_adc,
         &s3c_device_rtc,
-	&s3c_device_smc911x,
+	//&s3c_device_smc911x,
 	&s3c_device_i2c0,
 	&s3c_device_i2c1,
         &s3c_device_usb,
@@ -547,7 +547,7 @@ static void __init smdkc100_machine_init(void)
         s3c_device_nand.dev.platform_data = &s3c_nand_mtd_part_info;
 	s3c_device_onenand.dev.platform_data = &s3c_onenand_data;
 
-	smdkc100_smc911x_set();
+	//smdkc100_smc911x_set();
 
 	s3c_ts_set_platdata(&s3c_ts_platform);
 	s3c_adc_set_platdata(&s3c_adc_platform);
