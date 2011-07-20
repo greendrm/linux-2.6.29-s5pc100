@@ -41,7 +41,7 @@ extern s32 i2c_smbus_write_word_data_2(struct i2c_client *cleint, u16 command,
 extern s32 i2c_smbus_read_i2c_block_data_2(struct i2c_client *client,
 		u16 command, u8 length, u8 *values);
 extern s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client,
-		u16 command, u8 length, u8 *values);
+		u16 command, u8 length, const u8 *values);
 #else
 inline s32 i2c_smbus_read_byte_data_2(struct i2c_client *client, u16 command)
 {
@@ -67,7 +67,7 @@ inline s32 i2c_smbus_read_i2c_block_data_2(struct i2c_client *client,
 	return 0;
 }
 inline s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client,
-		u16 command, u8 length, u8 *values)
+		u16 command, u8 length, const u8 *values)
 {
 	return 0;
 }
