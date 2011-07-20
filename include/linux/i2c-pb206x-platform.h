@@ -71,4 +71,5 @@ inline s32 i2c_smbus_write_i2c_block_data_2(struct i2c_client *client,
 {
 	return 0;
 }
+#endif
 #endif /* I2C_PB206X_PLATFORM_H */
