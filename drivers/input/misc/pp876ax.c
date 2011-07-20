@@ -37,7 +37,7 @@ struct pp876ax_device {
 };
 
 /* TODO */
-static void ppp876ax_work_func(struct work_struct *work)
+static void pp876ax_work_func(struct work_struct *work)
 {
 	struct pp876ax_device *dev =
 		container_of(work, struct pp876ax_device, work);
@@ -56,7 +56,7 @@ static void ppp876ax_work_func(struct work_struct *work)
 		return;
 	}
 
-	dev_dbg($client->dev, "interrupt handled!\n");
+	dev_dbg(&client->dev, "interrupt handled!\n");
 }
 
 static irqreturn_t pp876ax_i2c_isr(int this_irq, void *dev_id)
@@ -119,7 +119,7 @@ static int __devinit pp876ax_probe(struct i2c_client *client,
 		goto err_request_irq;
 	}
 
-	dev_info(&client->dev, "pp87xax probed\n");
+	dev_info(&client->dev, "pp876ax probed\n");
 	return 0;
 
 err_request_irq:
@@ -130,7 +130,7 @@ err_request_irq:
 
 static int __devexit pp876ax_remove(struct i2c_client *client)
 {
-	struct pp876ax_client *dev = i2c_get_clientdata(client);
+	struct pp876ax_device *dev = i2c_get_clientdata(client);
 
 	/* TODO: do something */
 	cancel_work_sync(&dev->work);
