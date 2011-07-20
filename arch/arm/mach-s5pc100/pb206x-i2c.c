@@ -16,7 +16,8 @@
 #include <linux/kernel.h>
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
-#include <asm/irq.h>
+#include <linux/irq.h>
+#include <linux/types.h>
 #include <asm/io.h>
 
 #include <linux/i2c-pb206x-platform.h>
