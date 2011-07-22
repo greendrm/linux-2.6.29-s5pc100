@@ -564,7 +564,7 @@ static void __init smdkc100_machine_init(void)
 	pb206x_i2c_add_bus(2);
 	pb206x_i2c_add_bus(3);
 	pb206x_i2c_add_bus(4);
-	pb206x_i2c_add_bus(5);
+	//pb206x_i2c_add_bus(5);
 
 	/* i2c client */
 	i2c_register_board_info(2, i2c_2_devs, ARRAY_SIZE(i2c_2_devs));

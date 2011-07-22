@@ -21,7 +21,7 @@
  *  i2c_smbus_write_i2c_block_data()
  */
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -58,7 +58,7 @@ static struct i2c_device_info pb206x_i2c_device_info[] = {
 #define PB206X_MAIN_CLOCK (19200) /* 19.2 MHz */
 
 /* timeout waiting for the controller to respond */
-#define PB206X_I2C_TIMEOUT 		(msecs_to_jiffies(1000))
+#define PB206X_I2C_TIMEOUT 		(msecs_to_jiffies(5000)) // 5 sec
 
 /* I2C controller registers */
 #define PB206X_I2C_FIFO_DATA_REG	0x00
@@ -123,18 +123,12 @@ struct pb206x_i2c_dev {
 static inline void pb206x_i2c_write_reg(struct pb206x_i2c_dev *i2c_dev,
 		int reg, u8 val)
 {
-	dev_dbg(i2c_dev->dev, "%s: %x:%x<--%x\n", __func__, 
-			i2c_dev->base, reg, val);
 	__raw_writeb(val, i2c_dev->base + reg);
 }
 
 static inline u8 pb206x_i2c_read_reg(struct pb206x_i2c_dev *i2c_dev, int reg)
 {
-	u8 val;
-	val = __raw_readb(i2c_dev->base + reg);
-	dev_dbg(i2c_dev->dev, "%s: %x:%x->%x\n", __func__,
-		i2c_dev->base, reg, val);
-	return val;
+	return  __raw_readb(i2c_dev->base + reg);
 }
 
 static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
@@ -142,8 +136,6 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 	unsigned long timeout;
 	unsigned long div;
 	
-
-	dev_dbg(dev->dev, "%s()\n", __func__);
 	/* reset */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG, PB206X_I2C_MC_RESET);
 	timeout = jiffies + PB206X_I2C_TIMEOUT;
@@ -187,7 +179,7 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 		div = 9;
 
 	pb206x_i2c_write_reg(dev, PB206X_I2C_CDL_REG, (u8)div);
-	pb206x_i2c_write_reg(dev, PB206X_I2C_CDL_REG, (u8)(div >> 8));
+	pb206x_i2c_write_reg(dev, PB206X_I2C_CDH_REG, (u8)(div >> 8));
 
 	return 0;
 }
@@ -261,9 +253,6 @@ static int __pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 		val = 0;
 	val |= addr & 0x7f;
 	pb206x_i2c_write_reg(dev, PB206X_I2C_SAD_REG, val);
-	dev_dbg(dev->dev, "%s: %x / %x\n", __func__,
-			val, pb206x_i2c_read_reg(dev, PB206X_I2C_SAD_REG));
-	
 
 	/* command */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_SSAH_REG, high_command);
@@ -281,6 +270,8 @@ static int __pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 	/* start i2c transaction */
 	if (read_write == I2C_SMBUS_READ)
 		val = PB206X_I2C_MC_RW_MODE; /* read */
+	else
+		val = 0;
 	val |= PB206X_I2C_MC_START;
 	pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG, val);
 
@@ -292,9 +283,17 @@ static int __pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 	if (ret < 0)
 		return ret;
 	if (ret == 0) {
-		dev_err(dev->dev, "controller timed out\n");
-		pb206x_i2c_init(dev);
-		return -ETIMEDOUT;
+		u8 stat = pb206x_i2c_read_reg(dev, PB206X_I2C_MS_REG);
+		if (!(stat & (PB206X_I2C_MS_RX_DONE | PB206X_I2C_MS_TX_DONE))) {
+			dev_err(dev->dev, "controller timed out (status %x)\n",
+					stat);
+			pb206x_i2c_init(dev);
+			return -ETIMEDOUT;
+		}
+		dev_warn(dev->dev, "controller timed out and recoverd (status %x)\n", stat);
+		/* clean the irq pending status */
+		pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG,
+				PB206X_I2C_MC_INT_CLR);
 	}
 
 	/* We have an error */
@@ -356,6 +355,9 @@ static irqreturn_t pb206x_i2c_isr(int this_irq, void *dev_id)
 			PB206X_I2C_MC_INT_CLR);
 
 	if (stat & bitmask_errors) {
+		dev_err(dev->dev, "ms: %x, mfs: %x\n",
+				stat, 
+				pb206x_i2c_read_reg(dev, PB206X_I2C_MFS_REG));
 		if (stat & PB206X_I2C_MS_TIMEOUT) 
 			dev_err(dev->dev, "Time out\n");
 
@@ -425,6 +427,7 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 	}
 
 	if (pdata->platform_init) {
+		dev_dbg(&pdev->dev, "platform_init() will be called\n");
 		ret = pdata->platform_init();
 		if (ret < 0) {
 			dev_err(&pdev->dev, "%s: platform_init failed\n",
@@ -476,7 +479,8 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 			
 	pb206x_i2c_init(dev);
 
-	set_irq_type(dev->irq, IRQ_TYPE_EDGE_FALLING);
+	//set_irq_type(dev->irq, IRQ_TYPE_EDGE_FALLING);
+	set_irq_type(dev->irq, IRQ_TYPE_LEVEL_LOW);
 	ret = request_irq(dev->irq, pb206x_i2c_isr, IRQF_DISABLED, 
 			pdev->name, dev);
 	if (ret) {

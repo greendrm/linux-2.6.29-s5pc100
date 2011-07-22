@@ -102,27 +102,9 @@ static struct resource i2c_resources[][2] = {
  * SMC Bank 1 for PB206X I2C controller
  */
 static int smc_configure(void) {
-	/*
-	const unsigned smc_phy_base = S5PC1XX_PA_SROMC;
-	void __iomem *smc_base = NULL;
-	*/
 	unsigned long v;
-	/*
 
 	printk("%s()\n", __func__);
-	if (!request_mem_region(smc_phy_base, PAGE_SIZE, "SMC")) {
-		printk("%s: iomem request error\n", __func__);
-		return -EBUSY;
-	}
-
-	smc_base = ioremap(smc_phy_base, PAGE_SIZE);
-	if (smc_base == NULL) {
-		printk("%s: iomem mapping error\n", __func__);
-		release_mem_region(smc_phy_base, PAGE_SIZE);
-		return -ENOMEM;
-	}
-	*/
-
 	v = __raw_readl(S5PC1XX_SROM_BW);
 	v &= ~(0xf << 4);
 	/*
@@ -132,6 +114,8 @@ static int smc_configure(void) {
 	     (1 << 7);  // Using UB/LB
 	*/
 	__raw_writel(v, S5PC1XX_SROM_BW);
+	printk("%s: S5PC1XX_SROM_BW (%x : %x)\n", __func__,
+			v, __raw_readl(S5PC1XX_SROM_BW));
 
 	v = S5PC1XX_SROM_BCn_PMC_NORMAL |
 	    S5PC1XX_SROM_BCn_TACP(6) |   // acp: 6 clock
@@ -141,6 +125,8 @@ static int smc_configure(void) {
 	    S5PC1XX_SROM_BCn_TCOS(4) |   // cos: 4 clock
 	    S5PC1XX_SROM_BCn_TACS(0);    // acs: 0 clock
 	__raw_writel(v, S5PC1XX_SROM_BC1); // bank1
+	printk("%s: S5PC1XX_SROM_BC1(%x : %x)\n", __func__,
+			v, __raw_readl(S5PC1XX_SROM_BC1));
 
 	return 0;
 }
@@ -167,7 +153,7 @@ static int gpio_configure(void) {
 		s3c_gpio_setpull(S5PC1XX_GPG1(0), S3C_GPIO_PULL_NONE);
 	}
 		
-	ret = gpio_request(S5PC1XX_GPH1(1), "GPH3");
+	ret = gpio_request(S5PC1XX_GPH3(7), "GPH3");
 	if (ret) {
 		printk("%s: gpio(GPH3(7) request error: %d\n", __func__, ret);
 	}
@@ -206,13 +192,17 @@ static int gpio_configure(void) {
 	return 0;
 }
 
-static atomic_t init_called = ATOMIC_INIT(0);
+//static atomic_t init_called = ATOMIC_INIT(0);
+static int init_called = 0;
 
 static int platform_init(void)
 {
 	int ret;
 
-	if (atomic_inc_and_test(&init_called)) {
+	printk("%s()\n", __func__);
+	//if (atomic_inc_and_test(&init_called)) {
+	if (init_called == 0) {
+		init_called = 1;
 		/* Init the EBI */
 		ret = smc_configure();
 		if (ret)
@@ -228,7 +218,7 @@ static int platform_init(void)
 }
 
 static struct i2c_pb206x_platform_data platform_data[] = {
-	I2C_DEV_DATA_BUILDER(0, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(0, platform_init, 100, -1, -1, -1),
 	I2C_DEV_DATA_BUILDER(1, platform_init, 400, -1, -1, -1),
 	I2C_DEV_DATA_BUILDER(2, platform_init, 400, -1, -1, -1),
 	I2C_DEV_DATA_BUILDER(3, platform_init, 400, -1, -1, -1),
