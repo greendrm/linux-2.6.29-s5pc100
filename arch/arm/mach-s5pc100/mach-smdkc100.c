@@ -516,7 +516,7 @@ static void __init smdkc100_smc911x_set(void)
 
 /* pp876ax */
 static struct i2c_board_info i2c_2_devs[] __initdata = {
-	{ I2C_BOARD_INFO("pp876ax_i2c_client", 0x1C), },
+	{ I2C_BOARD_INFO("pp876ax_i2c_client", (0x1C>>1)), },
 };
 
 /* pb206x i2c */

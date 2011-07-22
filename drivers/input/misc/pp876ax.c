@@ -43,14 +43,16 @@ static void pp876ax_work_func(struct work_struct *work)
 		container_of(work, struct pp876ax_device, work);
 	struct i2c_client *client = dev->client;
 	int val;
+	u32 data;
 
-	val = i2c_smbus_read_word_data_2(client, 0x0002);
+	//val = i2c_smbus_read_word_data_2(client, 0x0002);
+	val = i2c_smbus_read_i2c_block_data_2(client, 0x0002, 4, &data);
 	if (val < 0) {
 		dev_err(&client->dev, "%s: i2c read error\n", __func__);
 		return;
 	}
 
-	val = i2c_smbus_write_word_data_2(client, 0xffff, 1);
+	val = i2c_smbus_write_byte_data_2(client, 0xffff, 1);
 	if (val < 0) {
 		dev_err(&client->dev, "%s: i2c write error\n", __func__);
 		return;
