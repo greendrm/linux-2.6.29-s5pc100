@@ -515,9 +515,7 @@ static void __init smdkc100_smc911x_set(void)
 }
 
 /* pp876ax */
-static struct i2c_board_info i2c_2_devs[] __initdata = {
-	{ I2C_BOARD_INFO("pp876ax_i2c_client", (0x1C>>1)), },
-};
+extern int pp876ax_i2c_client_init(void);
 
 /* pb206x i2c */
 extern int pb206x_i2c_add_bus(int master_id);
@@ -567,7 +565,7 @@ static void __init smdkc100_machine_init(void)
 	//pb206x_i2c_add_bus(5);
 
 	/* i2c client */
-	i2c_register_board_info(2, i2c_2_devs, ARRAY_SIZE(i2c_2_devs));
+	pp876ax_i2c_client_init();
 
 	/* fimc */
 	s3c_fimc0_set_platdata(&fimc_plat);

@@ -34,3 +34,4 @@ obj-$(CONFIG_MACH_SMDKC100)	+= s5pc100-button.o
 
 # PB206X i2c
 obj-$(CONFIG_MACH_SMDKC100)	+= pb206x-i2c.o
+obj-$(CONFIG_MACH_SMDKC100)	+= pp876ax.o

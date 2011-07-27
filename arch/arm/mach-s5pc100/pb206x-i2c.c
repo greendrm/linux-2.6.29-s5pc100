@@ -1,4 +1,4 @@
-/* arch/arm/mach-s5pc100/i2c-pb206x.c
+/* arch/arm/mach-s5pc100/pb206x-i2c.c
  * 
  * Copyright (C) 2011 Pointchips, inc.
  * 
@@ -37,15 +37,15 @@
 
 /* FIXME */
 #define I2C_0_GPIO	S5PC1XX_GPH1(2) // eint
-#define I2C_1_GPIO	S5PC1XX_GPG1(0)
-#define I2C_2_GPIO	S5PC1XX_GPH3(7) // eint
-#define I2C_3_GPIO	S5PC1XX_GPA1(2)
+#define I2C_1_GPIO	S5PC1XX_GPH3(7) // eint
+#define I2C_2_GPIO	S5PC1XX_GPG1(0)
+#define I2C_3_GPIO	S5PC1XX_GPA1(1)
 #define I2C_4_GPIO	S5PC1XX_GPA1(0)
 #define I2C_5_GPIO	S5PC1XX_GPB(0)
 
 #define I2C_0_IRQ	IRQ_EINT10 // IRQ_EINT0 .. IRQ_EINT15
-#define I2C_1_IRQ	S3C_IRQ_GPIO(I2C_1_GPIO)
-#define I2C_2_IRQ	IRQ_EINT(31) // IRQ_EINT(16) ..
+#define I2C_1_IRQ	IRQ_EINT(31) // IRQ_EINT(16) ..
+#define I2C_2_IRQ	S3C_IRQ_GPIO(I2C_2_GPIO)
 #define I2C_3_IRQ	S3C_IRQ_GPIO(I2C_3_GPIO)
 #define I2C_4_IRQ	S3C_IRQ_GPIO(I2C_4_GPIO)
 #define I2C_5_IRQ	S3C_IRQ_GPIO(I2C_5_GPIO)
@@ -143,16 +143,7 @@ static int gpio_configure(void) {
 		s3c_gpio_cfgpin(S5PC1XX_GPH1(1), S5PC1XX_GPH1_2_WAKEUP_INT_10);
 		s3c_gpio_setpull(S5PC1XX_GPH1(1), S3C_GPIO_PULL_NONE);
 	}
-
-	ret = gpio_request(S5PC1XX_GPG1(0), "GPG1");
-	if (ret) {
-		printk("%s: gpio(GPG1(0) request error: %d\n", __func__, ret);
-	}
-	else {
-		s3c_gpio_cfgpin(S5PC1XX_GPG1(0), S5PC1XX_GPG1_0_GPIO_INT12_0);
-		s3c_gpio_setpull(S5PC1XX_GPG1(0), S3C_GPIO_PULL_NONE);
-	}
-		
+	
 	ret = gpio_request(S5PC1XX_GPH3(7), "GPH3");
 	if (ret) {
 		printk("%s: gpio(GPH3(7) request error: %d\n", __func__, ret);
@@ -162,13 +153,22 @@ static int gpio_configure(void) {
 		s3c_gpio_setpull(S5PC1XX_GPH3(7), S3C_GPIO_PULL_NONE);
 	}
 
-	ret = gpio_request(S5PC1XX_GPA1(2), "GPA1");
+	ret = gpio_request(S5PC1XX_GPG1(0), "GPG1");
 	if (ret) {
-		printk("%s: gpio(GPA1(2) request error: %d\n", __func__, ret);
+		printk("%s: gpio(GPG1(0) request error: %d\n", __func__, ret);
 	}
 	else {
-		s3c_gpio_cfgpin(S5PC1XX_GPA1(2), S5PC1XX_GPA1_2_GPIO_INT1_2);
-		s3c_gpio_setpull(S5PC1XX_GPA1(2), S3C_GPIO_PULL_NONE);
+		s3c_gpio_cfgpin(S5PC1XX_GPG1(0), S5PC1XX_GPG1_0_GPIO_INT12_0);
+		s3c_gpio_setpull(S5PC1XX_GPG1(0), S3C_GPIO_PULL_NONE);
+	}
+	
+	ret = gpio_request(S5PC1XX_GPA1(1), "GPA1");
+	if (ret) {
+		printk("%s: gpio(GPA1(1) request error: %d\n", __func__, ret);
+	}
+	else {
+		s3c_gpio_cfgpin(S5PC1XX_GPA1(1), S5PC1XX_GPA1_1_GPIO_INT1_1);
+		s3c_gpio_setpull(S5PC1XX_GPA1(1), S3C_GPIO_PULL_NONE);
 	}
 
 	ret = gpio_request(S5PC1XX_GPA1(0), "GPA1");
@@ -219,11 +219,11 @@ static int platform_init(void)
 
 static struct i2c_pb206x_platform_data platform_data[] = {
 	I2C_DEV_DATA_BUILDER(0, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(1, platform_init, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(2, platform_init, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(3, platform_init, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(4, platform_init, 400, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(5, platform_init, 400, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(1, platform_init, 100, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(2, platform_init, 100, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(3, platform_init, 100, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(4, platform_init, 100, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(5, platform_init, 100, -1, -1, -1),
 };
 
 /* 

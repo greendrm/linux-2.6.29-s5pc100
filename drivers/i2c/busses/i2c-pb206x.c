@@ -109,7 +109,7 @@ struct pb206x_i2c_dev {
 	struct device		*dev;
 	void __iomem		*base;
 	int			irq;
-	int			id;
+	int			id; /* master id */
 	struct completion	cmd_complete;
 	u32			speed;
 	u8			cmd_err;
@@ -123,18 +123,28 @@ struct pb206x_i2c_dev {
 static inline void pb206x_i2c_write_reg(struct pb206x_i2c_dev *i2c_dev,
 		int reg, u8 val)
 {
+	dev_dbg(i2c_dev->dev, "%s: %08x+%02x << %02x\n",
+			__func__, i2c_dev->base, reg, val);
 	__raw_writeb(val, i2c_dev->base + reg);
 }
 
 static inline u8 pb206x_i2c_read_reg(struct pb206x_i2c_dev *i2c_dev, int reg)
 {
-	return  __raw_readb(i2c_dev->base + reg);
+	u8 val;
+	val =  __raw_readb(i2c_dev->base + reg);
+	dev_dbg(i2c_dev->dev, "%s: %08x+%02x >> %02x\n",
+			__func__, i2c_dev->base, reg, val);
+	return val;
 }
 
 static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 {
 	unsigned long timeout;
 	unsigned long div;
+
+	if (dev->id == 5) {
+		__raw_writeb(1, ((u32)dev->base & ~0xFF)+0x3F);
+	}
 	
 	/* reset */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG, PB206X_I2C_MC_RESET);
@@ -211,6 +221,9 @@ static int __pb206x_smbus_xfer(struct i2c_adapter *adap, u16 addr,
 	int i;
 	int ret;
 	u8 val;
+
+	/* FIXME */
+	//pb206x_i2c_init(dev);
 
 	ret = pb206x_i2c_wait_for_bb(dev);
 	if (ret < 0)
@@ -351,6 +364,10 @@ static irqreturn_t pb206x_i2c_isr(int this_irq, void *dev_id)
 				PB206X_I2C_MS_CMD_ERR;
 
 	stat = pb206x_i2c_read_reg(dev, PB206X_I2C_MS_REG);
+	/* enable the interrupt */
+	pb206x_i2c_write_reg(dev, PB206X_I2C_MFS_REG,
+			PB206X_I2C_MFS_TX_IE | PB206X_I2C_MFS_RX_IE);
+	/* interrupt clear */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG,
 			PB206X_I2C_MC_INT_CLR);
 
@@ -489,8 +506,10 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 		goto err_request_irq;
 	}
 
-	dev_info(dev->dev, "bus %d tx_fifo %dbytes rx_fifo %dbytes at %d kHz (master %d)\n",
-			pdev->id, dev->tx_fifo_size, dev->rx_fifo_size, dev->speed, dev->id);
+	dev_info(dev->dev, "%d: %08x: bus-%d tx-%d rx-%d @%dkHz\n",
+			dev->id, dev->base, pdev->id,
+			dev->tx_fifo_size, dev->rx_fifo_size,
+			dev->speed);
 
 	adap = &dev->adapter;
 	i2c_set_adapdata(adap, dev);

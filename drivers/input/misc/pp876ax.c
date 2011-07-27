@@ -13,6 +13,8 @@
  *
  */
 
+#define DEBUG 1
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -64,23 +66,12 @@ static void pp876ax_work_func(struct work_struct *work)
 static irqreturn_t pp876ax_i2c_isr(int this_irq, void *dev_id)
 {
 	struct pp876ax_device *dev = dev_id;
+	struct i2c_client *client = dev->client;
 
 	/* workqueue is used as i2c operation might be sleeped */
 	schedule_work(&dev->work);
 
 	return IRQ_HANDLED;
-}
-
-static void gpio_configure(void)
-{
-	int ret;
-
-	ret = gpio_request(S5PC1XX_GPB(1), "GPB1");
-	if (ret) {
-		printk("%s: gpio(GPB(1) request error: %d\n", __func__, ret);
-	}
-	s3c_gpio_cfgpin(S5PC1XX_GPB(1), S5PC1XX_GPB1_GPIO_INT2_1);
-	s3c_gpio_setpull(S5PC1XX_GPB(1), S3C_GPIO_PULL_NONE);
 }
 
 static int __devinit pp876ax_probe(struct i2c_client *client,
@@ -107,9 +98,7 @@ static int __devinit pp876ax_probe(struct i2c_client *client,
 
 	// pdata = client->dev.platform_data;
 	
-	/* TODO: do something */
-	gpio_configure();
-	dev->irq = IRQ;
+	dev->irq = client->irq;
 
 	INIT_WORK(&dev->work, pp876ax_work_func);
 
