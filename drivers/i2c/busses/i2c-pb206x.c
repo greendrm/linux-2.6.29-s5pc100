@@ -119,6 +119,10 @@ struct pb206x_i2c_dev {
 	struct i2c_adapter	adapter;
 	int			rx_fifo_size;
 	int			tx_fifo_size;
+	int			gpio_pdn;
+	int			gpio_reset;
+	int			(*do_powerdown)(int);
+	void			(*do_reset)(void);
 };
 
 static inline void pb206x_i2c_write_reg(struct pb206x_i2c_dev *i2c_dev,
@@ -143,11 +147,15 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 	unsigned long timeout;
 	unsigned long div;
 
+	/* hw reset */
+	if (dev->do_reset)
+		dev->do_reset();
+
 	if (dev->id == 5) {
 		__raw_writeb(1, ((u32)dev->base & ~0xFF)+0x3F);
 	}
 	
-	/* reset */
+	/* sw reset */
 	pb206x_i2c_write_reg(dev, PB206X_I2C_MC_REG, PB206X_I2C_MC_RESET);
 	timeout = jiffies + PB206X_I2C_TIMEOUT;
 	while(pb206x_i2c_read_reg(dev, 
@@ -468,6 +476,11 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 		dev->external_main_clock = pdata->external_main_clock;
 	else
 		dev->external_main_clock = PB206X_MAIN_CLOCK;
+
+	if (pdata->do_powerdown)
+		dev->do_powerdown = pdata->do_powerdown;
+	if (pdata->do_reset)
+		dev->do_reset = pdata->do_reset;
 	
 	dev->speed = speed;
 	dev->dev = &pdev->dev;
@@ -576,13 +589,41 @@ static int __devexit pb206x_i2c_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
+static int pb206x_i2c_suspend(struct platform_device *pdev,
+		pm_message_t state)
+{
+	struct pb206x_i2c_dev *dev = platform_get_drvdata(pdev);
+
+	if (dev->do_powerdown)
+		dev->do_powerdown(1);
+
+	return 0;
+}
+
+static int pb206x_i2c_resume(struct platform_device *pdev)
+{
+	struct pb206x_i2c_dev *dev = platform_get_drvdata(pdev);
+
+	if (dev->do_powerdown)
+		dev->do_powerdown(0);
+
+	pb206x_i2c_init(dev);
+}
+#else
+#define pb206x_i2c_suspend NULL
+#define pb206x_i2c_resume NULL
+#endif
+
 static struct platform_driver pb206x_i2c_driver = {
 	.driver = {
 		.name  = "i2c-pb206x",
 		.owner = THIS_MODULE,
 	},
-	.probe = pb206x_i2c_probe,
-	.remove = __devexit_p(pb206x_i2c_remove),
+	.probe   = pb206x_i2c_probe,
+	.remove  = __devexit_p(pb206x_i2c_remove),
+	.suspend = pb206x_i2c_suspend,
+	.resume  = pb206x_i2c_resume,
 };
 	
 

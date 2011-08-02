@@ -83,8 +83,8 @@ static struct resource i2c_resources[][2] = {
 		.master_id = id,				\
 		.iomem = SMC_PHY_BASE,				\
 		.speed = (spd),					\
-		.gpio_pdn = pdn,				\
-		.gpio_reset = reset,				\
+		.do_powerdown = pdn,				\
+		.do_reset = reset,				\
 		.external_main_clock = PB206X_MAIN_CLOCK,	\
 	}
 
@@ -218,13 +218,24 @@ static int platform_init(void)
 	return 0;
 }
 
+static int do_powerdown(int sleep)
+{
+	// TODO
+	return 0;
+}
+
+static void do_rest(void)
+{
+	// TODO
+}
+
 static struct i2c_pb206x_platform_data platform_data[] = {
-	I2C_DEV_DATA_BUILDER(0, platform_init, 100, -1, -1),
-	I2C_DEV_DATA_BUILDER(1, platform_init, 100, -1, -1),
-	I2C_DEV_DATA_BUILDER(2, platform_init, 100, -1, -1),
-	I2C_DEV_DATA_BUILDER(3, platform_init, 100, -1, -1),
-	I2C_DEV_DATA_BUILDER(4, platform_init, 100, -1, -1),
-	I2C_DEV_DATA_BUILDER(5, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(0, platform_init, 100, 0, 0),
+	I2C_DEV_DATA_BUILDER(1, platform_init, 100, 0, 0),
+	I2C_DEV_DATA_BUILDER(2, platform_init, 100, 0, 0),
+	I2C_DEV_DATA_BUILDER(3, platform_init, 100, 0, 0),
+	I2C_DEV_DATA_BUILDER(4, platform_init, 100, 0, 0),
+	I2C_DEV_DATA_BUILDER(5, platform_init, 100, 0, 0),
 };
 
 /* 

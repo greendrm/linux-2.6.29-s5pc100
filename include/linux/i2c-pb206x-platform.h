@@ -8,11 +8,12 @@ struct i2c_pb206x_platform_data {
 				     * You should define the pin config
 				     * and the init ebi at here if needed
 				     */
+	int (*do_powerdown)(int);   /* power down pin */
+	void (*do_reset)(void);     /* hw reset (optional) */
+
 	int master_id;
 	u32 iomem;
 	u32 speed;
-	int gpio_pdn;               /* power down pin */
-	int gpio_reset;             /* hw reset (optional) */
 	int external_main_clock;    /* 19200 or 24000 (kHz) if needed */
 	int level_shift0_en:1;
 	int level_shift0_dir:1;
