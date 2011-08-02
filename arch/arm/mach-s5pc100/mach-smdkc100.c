@@ -518,7 +518,7 @@ static void __init smdkc100_smc911x_set(void)
 extern int pp876ax_i2c_client_init(void);
 
 /* pb206x i2c */
-extern int pb206x_i2c_add_bus(int master_id);
+extern int pb206x_i2c_add_bus(int master_id, int speed);
 
 static void __init smdkc100_machine_init(void)
 {
@@ -557,12 +557,12 @@ static void __init smdkc100_machine_init(void)
 	i2c_register_board_info(1, i2c_devs1, ARRAY_SIZE(i2c_devs1));
 
 	/* pb206x i2c */
-	pb206x_i2c_add_bus(0);
-	pb206x_i2c_add_bus(1);
-	pb206x_i2c_add_bus(2);
-	pb206x_i2c_add_bus(3);
-	pb206x_i2c_add_bus(4);
-	//pb206x_i2c_add_bus(5);
+	pb206x_i2c_add_bus(0, 100);
+	pb206x_i2c_add_bus(1, 100);
+	pb206x_i2c_add_bus(2, 100);
+	pb206x_i2c_add_bus(3, 100);
+	pb206x_i2c_add_bus(4, 100);
+	//pb206x_i2c_add_bus(5, 100);
 
 	/* i2c client */
 	pp876ax_i2c_client_init();

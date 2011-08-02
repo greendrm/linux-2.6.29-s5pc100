@@ -253,7 +253,7 @@ static struct platform_device i2c_devices[] = {
 /*
  * master_id : 0 .. 5
  */
-int __init pb206x_i2c_add_bus(int master_id)
+int __init pb206x_i2c_add_bus(int master_id, int speed)
 {
 	struct platform_device *pdev;
 	struct i2c_pb206x_platform_data *pdata;
@@ -264,6 +264,7 @@ int __init pb206x_i2c_add_bus(int master_id)
 	pdev = &i2c_devices[master_id];
 	/* TODO: do something if needed */
 	pdata = pdev->dev.platform_data;
+	pdata->speed = speed;
 
 	return platform_device_register(pdev);
 }
