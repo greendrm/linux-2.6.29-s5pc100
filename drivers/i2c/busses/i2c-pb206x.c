@@ -122,7 +122,6 @@ struct pb206x_i2c_dev {
 	int			gpio_pdn;
 	int			gpio_reset;
 	int			(*do_powerdown)(int);
-	void			(*do_reset)(void);
 };
 
 static inline void pb206x_i2c_write_reg(struct pb206x_i2c_dev *i2c_dev,
@@ -146,10 +145,6 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 {
 	unsigned long timeout;
 	unsigned long div;
-
-	/* hw reset */
-	if (dev->do_reset)
-		dev->do_reset();
 
 	if (dev->id == 5) {
 		__raw_writeb(1, ((u32)dev->base & ~0xFF)+0x3F);
@@ -479,8 +474,6 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 
 	if (pdata->do_powerdown)
 		dev->do_powerdown = pdata->do_powerdown;
-	if (pdata->do_reset)
-		dev->do_reset = pdata->do_reset;
 	
 	dev->speed = speed;
 	dev->dev = &pdev->dev;

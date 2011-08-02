@@ -9,7 +9,6 @@ struct i2c_pb206x_platform_data {
 				     * and the init ebi at here if needed
 				     */
 	int (*do_powerdown)(int);   /* power down pin */
-	void (*do_reset)(void);     /* hw reset (optional) */
 
 	int master_id;
 	u32 iomem;
