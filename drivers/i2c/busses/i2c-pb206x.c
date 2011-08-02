@@ -110,6 +110,7 @@ struct pb206x_i2c_dev {
 	void __iomem		*base;
 	int			irq;
 	int			id; /* master id */
+	int			external_main_clock;
 	struct completion	cmd_complete;
 	u32			speed;
 	u8			cmd_err;
@@ -170,9 +171,9 @@ static int pb206x_i2c_init(struct pb206x_i2c_dev *dev)
 
 	/* set the speed */
 	if (dev->speed <= 100)
-		div = (PB206X_MAIN_CLOCK / (5 * dev->speed)) - 1;
+		div = (dev->external_main_clock / (5 * dev->speed)) - 1;
 	else
-		div = (PB206X_MAIN_CLOCK / (6 * dev->speed));
+		div = (dev->external_main_clock / (6 * dev->speed));
 
 	/* max divide value is 0x7ff */
 	if (div > 0x7ff)
@@ -462,6 +463,11 @@ static int __devinit pb206x_i2c_probe(struct platform_device *pdev)
 		dev_warn(&pdev->dev, "max speed 400 kHz\n");
 		speed = 400;
 	}
+
+	if (pdata->external_main_clock > 0)
+		dev->external_main_clock = pdata->external_main_clock;
+	else
+		dev->external_main_clock = PB206X_MAIN_CLOCK;
 	
 	dev->speed = speed;
 	dev->dev = &pdev->dev;

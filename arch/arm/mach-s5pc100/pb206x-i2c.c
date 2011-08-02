@@ -58,6 +58,7 @@
 #define I2C_5_OFFSET	0x40
 
 static const char name[] = "i2c-pb206x";
+
 /* reference clock */
 #define PB206X_MAIN_CLOCK (19200) /* 19.2 MHz */
 
@@ -76,7 +77,7 @@ static struct resource i2c_resources[][2] = {
 	{ I2C_RESOURCE_BUILDER(I2C_5_IRQ) },
 };
 
-#define I2C_DEV_DATA_BUILDER(id, func, spd, pdn, reset, clock)	\
+#define I2C_DEV_DATA_BUILDER(id, func, spd, pdn, reset)		\
 	{							\
 		.platform_init = func,				\
 		.master_id = id,				\
@@ -84,7 +85,7 @@ static struct resource i2c_resources[][2] = {
 		.speed = (spd),					\
 		.gpio_pdn = pdn,				\
 		.gpio_reset = reset,				\
-		.external_main_clock = clock,			\
+		.external_main_clock = PB206X_MAIN_CLOCK,	\
 	}
 
 #define I2C_DEV_BUILDER(bus_id, res, data)		\
@@ -218,12 +219,12 @@ static int platform_init(void)
 }
 
 static struct i2c_pb206x_platform_data platform_data[] = {
-	I2C_DEV_DATA_BUILDER(0, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(1, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(2, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(3, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(4, platform_init, 100, -1, -1, -1),
-	I2C_DEV_DATA_BUILDER(5, platform_init, 100, -1, -1, -1),
+	I2C_DEV_DATA_BUILDER(0, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(1, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(2, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(3, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(4, platform_init, 100, -1, -1),
+	I2C_DEV_DATA_BUILDER(5, platform_init, 100, -1, -1),
 };
 
 /* 
